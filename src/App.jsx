@@ -36,129 +36,91 @@ function Icon({ name, size=18, color=T.mid }) {
   return <span style={s}>{icons[name] || null}</span>;
 }
 
-// ─── SEASON ILLUSTRATIONS — colored SVG drawings, no emoji ───────────────────
 function SeasonIllustration({ season, size = 32 }) {
-  const illustrations = {
+  const svgs = {
     spring: (
-      // Blooming flower — pink petals, green stem
-      <svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
-        {/* Stem */}
+      <svg viewBox="0 0 40 40" fill="none">
         <line x1="20" y1="32" x2="20" y2="20" stroke="#5A9A3A" strokeWidth="1.8" strokeLinecap="round"/>
-        {/* Leaf */}
         <path d="M20 27 C17 24 13 24 13 27 C13 30 17 29 20 27Z" fill="#7BC55A" stroke="#5A9A3A" strokeWidth="0.8"/>
-        {/* Petals */}
-        {[0,60,120,180,240,300].map((deg,i) => {
-          const rad = deg * Math.PI / 180;
-          const cx = 20 + 7 * Math.cos(rad);
-          const cy = 16 + 7 * Math.sin(rad);
-          return <ellipse key={i} cx={cx.toFixed(1)} cy={cy.toFixed(1)} rx="3.5" ry="5" fill="#F7A8C4" stroke="#E07090" strokeWidth="0.7" transform={`rotate(${deg} ${cx.toFixed(1)} ${cy.toFixed(1)})`}/>;
-        })}
-        {/* Center */}
+        <ellipse cx="20" cy="9" rx="3.5" ry="5" fill="#F7A8C4" stroke="#E07090" strokeWidth="0.7" transform="rotate(0 20 9)"/>
+        <ellipse cx="26.1" cy="11" rx="3.5" ry="5" fill="#F7A8C4" stroke="#E07090" strokeWidth="0.7" transform="rotate(60 26.1 11)"/>
+        <ellipse cx="26.1" cy="21" rx="3.5" ry="5" fill="#F7A8C4" stroke="#E07090" strokeWidth="0.7" transform="rotate(120 26.1 21)"/>
+        <ellipse cx="20" cy="23" rx="3.5" ry="5" fill="#F7A8C4" stroke="#E07090" strokeWidth="0.7" transform="rotate(180 20 23)"/>
+        <ellipse cx="13.9" cy="21" rx="3.5" ry="5" fill="#F7A8C4" stroke="#E07090" strokeWidth="0.7" transform="rotate(240 13.9 21)"/>
+        <ellipse cx="13.9" cy="11" rx="3.5" ry="5" fill="#F7A8C4" stroke="#E07090" strokeWidth="0.7" transform="rotate(300 13.9 11)"/>
         <circle cx="20" cy="16" r="4" fill="#FFD93D" stroke="#C8A000" strokeWidth="0.8"/>
-        {/* Pollen dots */}
         <circle cx="20" cy="14.5" r="0.8" fill="#A07800"/>
         <circle cx="18.8" cy="16.8" r="0.8" fill="#A07800"/>
         <circle cx="21.2" cy="16.8" r="0.8" fill="#A07800"/>
-        {/* Ground line */}
         <path d="M14 33 Q17 31 20 32 Q23 33 26 31" stroke="#7BC55A" strokeWidth="1.2" strokeLinecap="round" fill="none"/>
       </svg>
     ),
     summer: (
-      // Blazing sun with heat waves
-      <svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
-        {/* Sun rays */}
-        {[0,45,90,135,180,225,270,315].map((deg,i) => {
-          const rad = deg * Math.PI / 180;
-          const x1 = 20 + 10 * Math.cos(rad);
-          const y1 = 19 + 10 * Math.sin(rad);
-          const x2 = 20 + 14 * Math.cos(rad);
-          const y2 = 19 + 14 * Math.sin(rad);
-          return <line key={i} x1={x1.toFixed(1)} y1={y1.toFixed(1)} x2={x2.toFixed(1)} y2={y2.toFixed(1)} stroke="#F5A623" strokeWidth="2" strokeLinecap="round"/>;
-        })}
-        {/* Sun body */}
+      <svg viewBox="0 0 40 40" fill="none">
+        <line x1="20" y1="5" x2="20" y2="1" stroke="#F5A623" strokeWidth="2" strokeLinecap="round"/>
+        <line x1="20" y1="37" x2="20" y2="33" stroke="#F5A623" strokeWidth="2" strokeLinecap="round"/>
+        <line x1="5" y1="19" x2="1" y2="19" stroke="#F5A623" strokeWidth="2" strokeLinecap="round"/>
+        <line x1="39" y1="19" x2="35" y2="19" stroke="#F5A623" strokeWidth="2" strokeLinecap="round"/>
+        <line x1="9.4" y1="9.4" x2="6.6" y2="6.6" stroke="#F5A623" strokeWidth="2" strokeLinecap="round"/>
+        <line x1="33.4" y1="33.4" x2="30.6" y2="30.6" stroke="#F5A623" strokeWidth="2" strokeLinecap="round"/>
+        <line x1="30.6" y1="9.4" x2="33.4" y2="6.6" stroke="#F5A623" strokeWidth="2" strokeLinecap="round"/>
+        <line x1="6.6" y1="33.4" x2="9.4" y2="30.6" stroke="#F5A623" strokeWidth="2" strokeLinecap="round"/>
         <circle cx="20" cy="19" r="8" fill="#FFD93D" stroke="#F5A623" strokeWidth="1.2"/>
         <circle cx="20" cy="19" r="5.5" fill="#FFE566"/>
-        {/* Heat waves at bottom */}
         <path d="M13 32 Q16 29 19 32 Q22 35 25 32" stroke="#F5A623" strokeWidth="1.3" strokeLinecap="round" fill="none" opacity="0.7"/>
-        <path d="M15 36 Q17.5 33.5 20 36 Q22.5 38.5 25 36" stroke="#F5A623" strokeWidth="1" strokeLinecap="round" fill="none" opacity="0.4"/>
+        <path d="M15 37 Q17.5 34 20 37 Q22.5 40 25 37" stroke="#F5A623" strokeWidth="1" strokeLinecap="round" fill="none" opacity="0.35"/>
       </svg>
     ),
     fall: (
-      // Falling leaves — warm oranges and reds
-      <svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
-        {/* Branch */}
+      <svg viewBox="0 0 40 40" fill="none">
         <path d="M8 8 C12 12 16 10 22 14" stroke="#8B5A2B" strokeWidth="1.5" strokeLinecap="round"/>
-        {/* Leaf 1 — large orange */}
         <path d="M22 14 C24 10 30 9 32 13 C34 17 30 21 26 20 C22 19 20 18 22 14Z" fill="#E8732A" stroke="#C85A18" strokeWidth="0.9"/>
         <line x1="22" y1="14" x2="30" y2="17" stroke="#C85A18" strokeWidth="0.6"/>
-        {/* Leaf 2 — red falling */}
         <path d="M16 22 C17 18 22 17 24 20 C26 23 23 27 20 26 C17 25 15 25 16 22Z" fill="#D94020" stroke="#A83010" strokeWidth="0.9" transform="rotate(-20 20 22)"/>
-        {/* Leaf 3 — golden small */}
         <path d="M10 28 C11 25 15 24 16 27 C17 30 14 32 12 31 C10 30 9 30 10 28Z" fill="#F5C518" stroke="#C8960A" strokeWidth="0.9" transform="rotate(15 13 28)"/>
-        {/* Wind curve */}
         <path d="M6 20 Q14 16 22 20 Q30 24 36 20" stroke="#C85A18" strokeWidth="0.8" strokeLinecap="round" fill="none" opacity="0.4" strokeDasharray="2 2"/>
       </svg>
     ),
     winter: (
-      // Snowflake — clean geometric blue/white
-      <svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
-        {/* Main axes */}
-        {[0,60,120].map((deg,i) => {
-          const rad = deg * Math.PI / 180;
-          const x1 = 20 + 15 * Math.cos(rad);
-          const y1 = 20 + 15 * Math.sin(rad);
-          const x2 = 20 - 15 * Math.cos(rad);
-          const y2 = 20 - 15 * Math.sin(rad);
-          return <line key={i} x1={x1.toFixed(1)} y1={y1.toFixed(1)} x2={x2.toFixed(1)} y2={y2.toFixed(1)} stroke="#4A90D9" strokeWidth="2" strokeLinecap="round"/>;
-        })}
-        {/* Branch ticks on each arm */}
-        {[0,60,120,180,240,300].map((deg,i) => {
-          const rad = deg * Math.PI / 180;
-          const midX = 20 + 8 * Math.cos(rad);
-          const midY = 20 + 8 * Math.sin(rad);
-          const perpRad = (deg + 90) * Math.PI / 180;
-          const bx1 = midX + 3 * Math.cos(perpRad);
-          const by1 = midY + 3 * Math.sin(perpRad);
-          const bx2 = midX - 3 * Math.cos(perpRad);
-          const by2 = midY - 3 * Math.sin(perpRad);
-          return <line key={i} x1={bx1.toFixed(1)} y1={by1.toFixed(1)} x2={bx2.toFixed(1)} y2={by2.toFixed(1)} stroke="#4A90D9" strokeWidth="1.5" strokeLinecap="round"/>;
-        })}
-        {/* Center */}
-        <circle cx="20" cy="20" r="3" fill="#4A90D9"/>
-        <circle cx="20" cy="20" r="1.5" fill="#FFFFFF"/>
-        {/* Tip dots */}
-        {[0,60,120,180,240,300].map((deg,i) => {
-          const rad = deg * Math.PI / 180;
-          const cx = 20 + 15 * Math.cos(rad);
-          const cy = 20 + 15 * Math.sin(rad);
-          return <circle key={i} cx={cx.toFixed(1)} cy={cy.toFixed(1)} r="1.5" fill="#4A90D9"/>;
-        })}
+      <svg viewBox="0 0 40 40" fill="none">
+        <line x1="20" y1="5" x2="20" y2="35" stroke="#4A90D9" strokeWidth="2" strokeLinecap="round"/>
+        <line x1="7" y1="12.5" x2="33" y2="27.5" stroke="#4A90D9" strokeWidth="2" strokeLinecap="round"/>
+        <line x1="33" y1="12.5" x2="7" y2="27.5" stroke="#4A90D9" strokeWidth="2" strokeLinecap="round"/>
+        <line x1="17" y1="10" x2="23" y2="10" stroke="#4A90D9" strokeWidth="1.5" strokeLinecap="round"/>
+        <line x1="17" y1="30" x2="23" y2="30" stroke="#4A90D9" strokeWidth="1.5" strokeLinecap="round"/>
+        <line x1="9.5" y1="17" x2="12" y2="14" stroke="#4A90D9" strokeWidth="1.5" strokeLinecap="round"/>
+        <line x1="9.5" y1="23" x2="12" y2="26" stroke="#4A90D9" strokeWidth="1.5" strokeLinecap="round"/>
+        <line x1="30.5" y1="17" x2="28" y2="14" stroke="#4A90D9" strokeWidth="1.5" strokeLinecap="round"/>
+        <line x1="30.5" y1="23" x2="28" y2="26" stroke="#4A90D9" strokeWidth="1.5" strokeLinecap="round"/>
+        <circle cx="20" cy="20" r="3.5" fill="#4A90D9"/>
+        <circle cx="20" cy="20" r="2" fill="#FFFFFF"/>
+        <circle cx="20" cy="5" r="1.5" fill="#4A90D9"/>
+        <circle cx="20" cy="35" r="1.5" fill="#4A90D9"/>
+        <circle cx="7" cy="12.5" r="1.5" fill="#4A90D9"/>
+        <circle cx="33" cy="27.5" r="1.5" fill="#4A90D9"/>
+        <circle cx="33" cy="12.5" r="1.5" fill="#4A90D9"/>
+        <circle cx="7" cy="27.5" r="1.5" fill="#4A90D9"/>
       </svg>
     ),
   };
   return (
     <div style={{ width: size, height: size, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-      {illustrations[season]}
+      {svgs[season] || null}
     </div>
   );
 }
 
 // ─── BOTTLE ILLUSTRATION — for status badge & layering ───────────────────────
-function BottleDrawing({ size = 36, color = T.black, bg = T.black, isWhite = false }) {
-  const stroke = isWhite ? T.white : color;
+function BottleDrawing({ size = 36, isWhite = false }) {
+  const stroke = isWhite ? T.white : T.black;
   return (
     <svg width={size * 0.55} height={size * 0.75} viewBox="0 0 22 30" fill="none">
-      {/* Cap */}
       <rect x="7" y="0" width="8" height="4" rx="1.5" fill={stroke} opacity="0.9"/>
-      {/* Neck */}
       <path d="M9 4 L8 8 L14 8 L13 4Z" fill={stroke} opacity="0.7"/>
-      {/* Body */}
       <rect x="5" y="8" width="12" height="19" rx="3" fill={stroke} opacity="0.15"/>
       <rect x="5" y="8" width="12" height="19" rx="3" stroke={stroke} strokeWidth="1.4"/>
-      {/* Shoulder line */}
       <line x1="5" y1="13" x2="17" y2="13" stroke={stroke} strokeWidth="0.8" opacity="0.5"/>
-      {/* Label area */}
-      <rect x="7" y="15" width="8" height="8" rx="1" stroke={stroke} strokeWidth="0.7" opacity="0.4"/>
+      <rect x="7" y="15" width="8" height="7" rx="1" stroke={stroke} strokeWidth="0.7" opacity="0.4"/>
     </svg>
   );
 }
@@ -167,16 +129,11 @@ function SampleDrawing({ size = 36, isWhite = false }) {
   const stroke = isWhite ? T.white : T.mid;
   return (
     <svg width={size * 0.4} height={size * 0.75} viewBox="0 0 14 30" fill="none">
-      {/* Cap */}
       <rect x="4" y="0" width="6" height="3.5" rx="1" fill={stroke} opacity="0.85"/>
-      {/* Neck */}
       <path d="M5 3.5 L4.5 7 L9.5 7 L9 3.5Z" fill={stroke} opacity="0.6"/>
-      {/* Vial body */}
       <rect x="3" y="7" width="8" height="20" rx="2" stroke={stroke} strokeWidth="1.3"/>
       <rect x="3" y="7" width="8" height="20" rx="2" fill={stroke} opacity="0.1"/>
-      {/* Liquid level */}
       <rect x="3" y="17" width="8" height="10" rx="2" fill={stroke} opacity="0.25"/>
-      {/* Measurement lines */}
       <line x1="3" y1="17" x2="11" y2="17" stroke={stroke} strokeWidth="0.7" opacity="0.5"/>
       <line x1="3" y1="21" x2="7" y2="21" stroke={stroke} strokeWidth="0.5" opacity="0.4"/>
     </svg>
@@ -238,12 +195,12 @@ function SeasonHeat({ seasons }) {
         const sc = seasonColors[s];
         return (
           <div key={s} style={{ display: "flex", alignItems: "center", gap: 12 }}>
-            {/* Season illustration */}
+            
             <div style={{ width: 70, display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
               <SeasonIllustration season={s} size={28}/>
               <span style={{ fontFamily: sans, fontSize: 11, color: T.mid }}>{labels[s]}</span>
             </div>
-            {/* Colored bars */}
+            
             <div style={{ flex: 1, display: "flex", gap: 3 }}>
               {Array.from({ length: 10 }).map((_, i) => {
                 const filled = i < Math.round(relPct * 10);
@@ -359,44 +316,6 @@ function NoteIllustration({ name, size = 72 }) {
 }
 
 // ─── HOUSE STRIP — EXACT layout as screenshot: cards side by side below occasions ─
-function HouseStrip({ currentFrag, onOpenFrag }) {
-  const siblings = FRAGRANCES.filter(f => f.house === currentFrag.house && f.id !== currentFrag.id);
-  if (!siblings.length) return null;
-  return (
-    <div style={{ background: T.lift, borderRadius: 16, border: `1px solid ${T.rule}`, overflow: "hidden", marginTop: 4 }}>
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "14px 16px 10px", borderBottom: `1px solid ${T.rule}` }}>
-        <div>
-          <p style={{ fontFamily: sans, fontSize: 9, textTransform: "uppercase", letterSpacing: "0.12em", color: T.mid, margin: "0 0 2px" }}>From the same house</p>
-          <p style={{ fontFamily: serif, fontSize: 16, color: T.black, margin: 0 }}>{currentFrag.house}</p>
-        </div>
-        <span style={{ fontFamily: sans, fontSize: 10, color: T.mid, cursor: "pointer" }}>View all →</span>
-      </div>
-      {/* Cards side by side — exactly like screenshot */}
-      <div style={{ display: "flex", gap: 0, overflowX: "auto" }}>
-        {siblings.map((f, i) => (
-          <div key={f.id} onClick={() => onOpenFrag(f.id)}
-            style={{ flexShrink: 0, width: 160, cursor: "pointer", padding: "14px 16px", borderRight: i < siblings.length - 1 ? `1px solid ${T.rule}` : "none", transition: "background 0.15s" }}
-            onMouseEnter={e => e.currentTarget.style.background = T.white}
-            onMouseLeave={e => e.currentTarget.style.background = "transparent"}>
-            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
-              {/* Monogram tile matching screenshot */}
-              <div style={{ width: 36, height: 36, borderRadius: 8, background: T.white, border: `1px solid ${T.rule}`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                <span style={{ fontFamily: serif, fontSize: 11, color: T.ink }}>{f.name.split(" ").map(w => w[0]).join("").slice(0, 2).toUpperCase()}</span>
-              </div>
-              <div>
-                <p style={{ fontFamily: serif, fontSize: 13, color: T.black, margin: 0, lineHeight: 1.2 }}>{f.name}</p>
-                <p style={{ fontFamily: sans, fontSize: 10, color: T.mid, margin: "1px 0 0" }}>{f.year}</p>
-              </div>
-            </div>
-            <p style={{ fontFamily: sans, fontSize: 10, color: T.mid, margin: "0 0 5px" }}>{f.family}</p>
-            <div style={{ display: "flex", gap: 1 }}>{[1,2,3,4,5].map(i => <span key={i} style={{ fontSize: 9, color: i <= Math.round(f.rating) ? T.black : T.faint }}>★</span>)}</div>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
-
 // ─── STATUS BADGE WITH DRAWING — pill style matching screenshot ───────────────
 function StatusBadge({ statusKey }) {
   const st = STATUSES.find(s => s.key === statusKey);
@@ -413,7 +332,7 @@ function StatusBadge({ statusKey }) {
       border: `1px solid ${borderColor}`,
       background: bgColor,
     }}>
-      {/* Drawing instead of icon */}
+      
       {st.group === "bottle" && (
         <svg width="14" height="18" viewBox="0 0 22 30" fill="none">
           <rect x="7" y="0" width="8" height="4" rx="1.5" fill="white" opacity="0.9"/>
@@ -695,6 +614,43 @@ function Mono({ name, year, size=52 }) {
   );
 }
 
+// ─── HOUSE STRIP — always visible below Occasions ────────────────────────────
+function HouseStrip({ currentFrag, onOpenFrag }) {
+  const siblings = FRAGRANCES.filter(f => f.house === currentFrag.house && f.id !== currentFrag.id);
+  if (!siblings.length) return null;
+  return (
+    <div style={{ background: T.lift, borderRadius: 16, border: `1px solid ${T.rule}`, overflow: "hidden", marginTop: 4 }}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "14px 16px 10px", borderBottom: `1px solid ${T.rule}` }}>
+        <div>
+          <p style={{ fontFamily: sans, fontSize: 9, textTransform: "uppercase", letterSpacing: "0.12em", color: T.mid, margin: "0 0 2px" }}>From the same house</p>
+          <p style={{ fontFamily: serif, fontSize: 16, color: T.black, margin: 0 }}>{currentFrag.house}</p>
+        </div>
+        <span style={{ fontFamily: sans, fontSize: 10, color: T.mid, cursor: "pointer" }}>View all →</span>
+      </div>
+      <div style={{ display: "flex", gap: 0, overflowX: "auto" }}>
+        {siblings.map((f, i) => (
+          <div key={f.id} onClick={() => onOpenFrag(f.id)}
+            style={{ flexShrink: 0, width: 160, cursor: "pointer", padding: "14px 16px", borderRight: i < siblings.length - 1 ? `1px solid ${T.rule}` : "none", transition: "background 0.15s" }}
+            onMouseEnter={e => e.currentTarget.style.background = T.white}
+            onMouseLeave={e => e.currentTarget.style.background = "transparent"}>
+            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
+              <div style={{ width: 36, height: 36, borderRadius: 8, background: T.white, border: `1px solid ${T.rule}`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                <span style={{ fontFamily: serif, fontSize: 11, color: T.ink }}>{f.name.split(" ").map(w => w[0]).join("").slice(0, 2).toUpperCase()}</span>
+              </div>
+              <div>
+                <p style={{ fontFamily: serif, fontSize: 13, color: T.black, margin: 0, lineHeight: 1.2 }}>{f.name}</p>
+                <p style={{ fontFamily: sans, fontSize: 10, color: T.mid, margin: "1px 0 0" }}>{f.year}</p>
+              </div>
+            </div>
+            <p style={{ fontFamily: sans, fontSize: 10, color: T.mid, margin: "0 0 5px" }}>{f.family}</p>
+            <div style={{ display: "flex", gap: 1 }}>{[1,2,3,4,5].map(i => <span key={i} style={{ fontSize: 9, color: i <= Math.round(f.rating) ? T.black : T.faint }}>★</span>)}</div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 // ─── FRAG CARD ────────────────────────────────────────────────────────────────
 function FragCard({ frag, onClick, userStatus, reaction, onReaction, onOpenFrag }) {
   const [hov,setHov]=useState(false);
@@ -766,7 +722,7 @@ function DetailModal({ frag, onClose, userStatus, setUserStatus, privateNote, se
     <div onClick={onClose} style={{position:"fixed",inset:0,zIndex:50,background:"rgba(248,248,246,0.9)",backdropFilter:"blur(16px)",display:"flex",flexDirection:"column",justifyContent:"flex-end",alignItems:"center"}}>
       <div onClick={e=>e.stopPropagation()} style={{background:T.white,borderRadius:"24px 24px 0 0",border:`1px solid ${T.rule}`,borderBottom:"none",width:"100%",maxWidth:460,maxHeight:"93vh",overflowY:"auto"}}>
 
-        {/* Hero */}
+        
         <div style={{position:"relative",padding:"26px 24px 20px",borderBottom:`1px solid ${T.rule}`,overflow:"hidden"}}>
           <button onClick={onClose} style={{position:"absolute",top:16,right:16,width:30,height:30,borderRadius:"50%",border:`1px solid ${T.rule}`,background:T.white,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",fontSize:13,color:T.mid,zIndex:2}}>✕</button>
           <div style={{display:"flex",alignItems:"flex-start",gap:16}}>
@@ -783,14 +739,14 @@ function DetailModal({ frag, onClose, userStatus, setUserStatus, privateNote, se
           </div>
         </div>
 
-        {/* Tabs */}
+        
         <div style={{display:"flex",borderBottom:`1px solid ${T.rule}`,padding:"0 24px",overflowX:"auto"}}>
           {["overview","notes","pricing","my notes","status","community"].map(t=>(
             <button key={t} onClick={()=>setTab(t)} style={{marginRight:16,padding:"11px 0",whiteSpace:"nowrap",fontSize:10,textTransform:"uppercase",letterSpacing:"0.08em",color:tab===t?T.black:T.mid,background:"none",border:"none",borderBottom:tab===t?`2px solid ${T.black}`:"2px solid transparent",marginBottom:-1,cursor:"pointer",fontFamily:sans}}>{t}</button>
           ))}
         </div>
 
-        {/* Stats */}
+        
         {(tab==="overview"||tab==="community"||tab==="pricing")&&(
         <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",borderBottom:`1px solid ${T.rule}`}}>
           {[{label:"Rating",value:frag.rating},{label:"Longevity",value:`${frag.longevity}/5`},{label:"Sillage",value:`${frag.sillage}/5`}].map((s,i)=>(
@@ -803,7 +759,7 @@ function DetailModal({ frag, onClose, userStatus, setUserStatus, privateNote, se
         )}
 
         <div style={{padding:24}}>
-          {/* OVERVIEW */}
+          
           {tab==="overview"&&(
             <div>
               <p style={{fontFamily:sans,fontSize:14,color:T.mid,lineHeight:1.75,margin:"0 0 20px"}}>{frag.description}</p>
@@ -821,12 +777,12 @@ function DetailModal({ frag, onClose, userStatus, setUserStatus, privateNote, se
               <div style={{display:"flex",flexWrap:"wrap",gap:6,marginBottom:24}}>
                 {frag.occasions.map(o=><span key={o} style={{fontFamily:sans,fontSize:12,padding:"5px 12px",borderRadius:20,border:`1px solid ${T.rule}`,color:T.mid}}>{o}</span>)}
               </div>
-              {/* House strip — directly below occasions, always visible, exactly like screenshot */}
+              
               <HouseStrip currentFrag={frag} onOpenFrag={id=>{onClose();setTimeout(()=>onOpenFrag(id),50);}}/>
             </div>
           )}
 
-          {/* NOTES */}
+          
           {tab==="notes"&&(
             <div>
               {[
@@ -853,7 +809,7 @@ function DetailModal({ frag, onClose, userStatus, setUserStatus, privateNote, se
             </div>
           )}
 
-          {/* PRICING */}
+          
           {tab==="pricing"&&(
             <div>
               <p style={{fontFamily:sans,fontSize:13,color:T.mid,lineHeight:1.65,margin:"0 0 16px"}}>Official retail pricing across all available sizes.</p>
@@ -867,7 +823,7 @@ function DetailModal({ frag, onClose, userStatus, setUserStatus, privateNote, se
             </div>
           )}
 
-          {/* MY NOTES */}
+          
           {tab==="my notes"&&(
             <div>
               {privateNote?.text&&(
@@ -885,7 +841,7 @@ function DetailModal({ frag, onClose, userStatus, setUserStatus, privateNote, se
             </div>
           )}
 
-          {/* STATUS */}
+          
           {tab==="status"&&(
             <div>
               <p style={{fontFamily:sans,fontSize:13,color:T.mid,lineHeight:1.65,margin:"0 0 18px"}}>Track exactly where this fragrance lives in your life.</p>
@@ -893,7 +849,7 @@ function DetailModal({ frag, onClose, userStatus, setUserStatus, privateNote, se
             </div>
           )}
 
-          {/* COMMUNITY */}
+          
           {tab==="community"&&(
             <div>
               <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:20}}>
@@ -1191,7 +1147,7 @@ function LayeringTab() {
   const OpenLockSVG = ({ size=14, color=T.mid }) => (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
       <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
-      {/* Shackle open on right side */}
+      
       <path d="M7 11V7a5 5 0 0110 0"/>
     </svg>
   );
@@ -1240,10 +1196,10 @@ function LayeringTab() {
           <div style={{marginBottom:12}}><Lbl>Ratio</Lbl><select value={ratio} onChange={e=>setRatio(e.target.value)} style={{...inp,appearance:"none"}}>{["50 / 50","60 / 40","70 / 30","80 / 20","30 / 70","40 / 60"].map(r=><option key={r}>{r}</option>)}</select></div>
           <div style={{marginBottom:12}}><Lbl>Notes</Lbl><textarea value={note} onChange={e=>setNote(e.target.value)} placeholder="How to apply, what it smells like…" rows={3} style={{...inp,resize:"vertical",lineHeight:1.6}}/></div>
 
-          {/* Public/private toggle — with open/closed lock drawings */}
+          
           <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:14,padding:"10px 12px",background:T.white,borderRadius:8,border:`1px solid ${T.rule}`}}>
             <div style={{display:"flex",alignItems:"center",gap:10}}>
-              {/* Lock drawing */}
+              
               {isPublic ? <OpenLockSVG size={18} color={T.mid}/> : <ClosedLockSVG size={18} color={T.ink}/>}
               <div>
                 <p style={{fontFamily:sans,fontSize:12,fontWeight:500,color:T.ink,margin:0}}>{isPublic?"Public":"Private"}</p>
@@ -1267,7 +1223,7 @@ function LayeringTab() {
           <div style={{display:"flex",alignItems:"flex-start",justifyContent:"space-between",marginBottom:10}}>
             <div><p style={{fontFamily:serif,fontSize:16,color:T.ink,margin:0}}>{l.name}</p><p style={{fontFamily:sans,fontSize:11,color:T.mid,margin:"3px 0 0"}}>{l.date}</p></div>
             <div style={{display:"flex",alignItems:"center",gap:6}}>
-              {/* Public/private with lock drawing */}
+              
               <span style={{fontFamily:sans,fontSize:9,padding:"2px 8px 2px 6px",borderRadius:10,background:l.isPublic?T.lift:T.press,color:T.mid,border:`1px solid ${T.rule}`,display:"flex",alignItems:"center",gap:4}}>
                 {l.isPublic
                   ? <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke={T.mid} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0"/></svg>
