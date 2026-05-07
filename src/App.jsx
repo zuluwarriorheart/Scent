@@ -707,9 +707,9 @@ function DetailModal({ frag, onClose, userStatus, setUserStatus, privateNote, se
   const [replyTo,setReplyTo]=useState(null);
   const [replies,setReplies]=useState({});
   const REVIEWS=[
-    {id:0,user:"scentcollector_jw",rating:5,text:"Give it 20 minutes past the opening — the smoky birch dry-down is masterful.",date:"2 days ago",helpful:34},
-    {id:1,user:"niche_nomad",rating:4,text:"Overpriced? Yes. Masterpiece of construction? Undeniably.",date:"1 week ago",helpful:28},
-    {id:2,user:"basenotebrigade",rating:5,text:"Had three people ask what I was wearing at a conference. Projection is serious.",date:"2 weeks ago",helpful:19},
+    {id:0,username:"scentcollector_jw",name:"James W.",rating:5,text:"Give it 20 minutes past the opening — the smoky birch dry-down is masterful.",date:"2 days ago",helpful:34,user:{isFounder:true,memberNumber:12,isTopContributor:true,country:"GB"}},
+    {id:1,username:"niche_nomad",name:"Nadia M.",rating:4,text:"Overpriced? Yes. Masterpiece of construction? Undeniably.",date:"1 week ago",helpful:28,user:{isFounder:true,memberNumber:89,isTopContributor:false,country:"FR"}},
+    {id:2,username:"basenotebrigade",name:"Bruno K.",rating:5,text:"Had three people ask what I was wearing at a conference. Projection is serious.",date:"2 weeks ago",helpful:19,user:{isFounder:false,memberNumber:null,isTopContributor:true,country:"DE"}},
   ];
 
   function submitReply(reviewId){
@@ -862,12 +862,18 @@ function DetailModal({ frag, onClose, userStatus, setUserStatus, privateNote, se
               </div>
               {REVIEWS.map((r,ri)=>(
                 <div key={r.id} style={{border:`1px solid ${T.rule}`,borderRadius:12,padding:16,marginBottom:10,background:T.white}}>
-                  <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:10}}>
+                  <div style={{display:"flex",alignItems:"flex-start",justifyContent:"space-between",marginBottom:10}}>
                     <div style={{display:"flex",alignItems:"center",gap:8}}>
-                      <div style={{width:28,height:28,borderRadius:"50%",background:T.lift,border:`1px solid ${T.rule}`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:11,fontWeight:500,color:T.mid,fontFamily:sans}}>{r.user[0].toUpperCase()}</div>
-                      <span style={{fontFamily:sans,fontSize:12,color:T.mid}}>{r.user}</span>
+                      <div style={{width:28,height:28,borderRadius:"50%",background:T.lift,border:`1px solid ${T.rule}`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:11,fontWeight:500,color:T.mid,fontFamily:sans,flexShrink:0}}>{r.name[0].toUpperCase()}</div>
+                      <div>
+                        <div style={{display:"flex",alignItems:"center",gap:5,flexWrap:"wrap"}}>
+                          <span style={{fontFamily:sans,fontSize:12,color:T.ink,fontWeight:500}}>@{r.username}</span>
+                          <UserBadges user={r.user} size="small"/>
+                        </div>
+                        <span style={{fontFamily:sans,fontSize:10,color:T.faint}}>{r.date}</span>
+                      </div>
                     </div>
-                    <div style={{display:"flex",alignItems:"center",gap:8}}><Stars rating={r.rating} size={10}/><span style={{fontFamily:sans,fontSize:10,color:T.faint}}>{r.date}</span></div>
+                    <Stars rating={r.rating} size={10}/>
                   </div>
                   <p style={{fontFamily:sans,fontSize:13,color:T.mid,lineHeight:1.65,margin:"0 0 10px"}}>{r.text}</p>
                   <div style={{display:"flex",alignItems:"center",gap:12}}>
@@ -1351,73 +1357,1014 @@ function LearnTab() {
   );
 }
 
-// ─── ROOT ─────────────────────────────────────────────────────────────────────
-export default function SillageApp() {
-  const [activeTab,setActiveTab]=useState("Discover");
-  const [modalFragId,setModalFragId]=useState(null);
-  const [showSuggest,setShowSuggest]=useState(false);
-  const [userStatuses,setUserStatuses]=useState({1:"bottle_owned",2:"sample_wishlist",3:"sample_have",4:"tried_skin",5:"smelled",6:"bottle_wishlist"});
-  const [privateNotes,setPrivateNotes]=useState({});
-  const [reactions,setReactions]=useState({1:"love",3:"like"});
+// ─── COUNTRIES — flag via unicode regional indicators (no external deps) ──────
+const COUNTRIES = [
+  {code:"AU",name:"Australia"},{code:"AT",name:"Austria"},{code:"BE",name:"Belgium"},
+  {code:"BR",name:"Brazil"},{code:"CA",name:"Canada"},{code:"CN",name:"China"},
+  {code:"DK",name:"Denmark"},{code:"FI",name:"Finland"},{code:"FR",name:"France"},
+  {code:"DE",name:"Germany"},{code:"GR",name:"Greece"},{code:"HK",name:"Hong Kong"},
+  {code:"IN",name:"India"},{code:"ID",name:"Indonesia"},{code:"IE",name:"Ireland"},
+  {code:"IL",name:"Israel"},{code:"IT",name:"Italy"},{code:"JP",name:"Japan"},
+  {code:"KR",name:"South Korea"},{code:"LB",name:"Lebanon"},{code:"MY",name:"Malaysia"},
+  {code:"MX",name:"Mexico"},{code:"NL",name:"Netherlands"},{code:"NZ",name:"New Zealand"},
+  {code:"NO",name:"Norway"},{code:"PK",name:"Pakistan"},{code:"PH",name:"Philippines"},
+  {code:"PL",name:"Poland"},{code:"PT",name:"Portugal"},{code:"QA",name:"Qatar"},
+  {code:"RU",name:"Russia"},{code:"SA",name:"Saudi Arabia"},{code:"SG",name:"Singapore"},
+  {code:"ZA",name:"South Africa"},{code:"ES",name:"Spain"},{code:"SE",name:"Sweden"},
+  {code:"CH",name:"Switzerland"},{code:"TW",name:"Taiwan"},{code:"TH",name:"Thailand"},
+  {code:"TR",name:"Turkey"},{code:"AE",name:"UAE"},{code:"GB",name:"United Kingdom"},
+  {code:"US",name:"United States"},{code:"VN",name:"Vietnam"},
+];
 
-  const NAV=[{tab:"Discover",icon:"◈"},{tab:"Collection",icon:"◇"},{tab:"Layering",icon:"◎"},{tab:"Journal",icon:"▣"},{tab:"Learn",icon:"△"}];
-  const modalFrag=FRAGRANCES.find(f=>f.id===modalFragId);
-  function openFrag(id){setModalFragId(id);}
-  function onReaction(fragId,val){setReactions(p=>({...p,[fragId]:val}));}
+function countryFlag(code) {
+  if (!code || code.length !== 2) return "";
+  const offset = 127397;
+  return String.fromCodePoint(code.charCodeAt(0) + offset) + String.fromCodePoint(code.charCodeAt(1) + offset);
+}
+
+// ─── USER BADGES ──────────────────────────────────────────────────────────────
+function UserBadges({ user, size = "normal" }) {
+  if (!user) return null;
+  const isSmall = size === "small";
+  const badges = [];
+
+  if (user.isFounder) {
+    badges.push(
+      <span key="founder" title="Founding Member — first 1,000" style={{
+        display: "inline-flex", alignItems: "center", gap: isSmall ? 3 : 4,
+        padding: isSmall ? "2px 6px" : "3px 8px",
+        borderRadius: 20,
+        background: "#1A1A1A",
+        border: "1px solid #3A3A3A",
+        fontFamily: sans, fontSize: isSmall ? 9 : 10, fontWeight: 600,
+        color: "#D4AF37",
+        letterSpacing: "0.04em",
+        flexShrink: 0,
+      }}>
+        <svg width={isSmall ? 9 : 11} height={isSmall ? 9 : 11} viewBox="0 0 12 12" fill="none">
+          <polygon points="6,1 7.5,4.5 11,4.8 8.5,7.2 9.2,11 6,9.2 2.8,11 3.5,7.2 1,4.8 4.5,4.5" fill="#D4AF37"/>
+        </svg>
+        {!isSmall && "Founding Member"}
+        {isSmall && "#" + user.memberNumber}
+      </span>
+    );
+  }
+
+  if (user.isTopContributor) {
+    badges.push(
+      <span key="contrib" title="Top Contributor" style={{
+        display: "inline-flex", alignItems: "center", gap: isSmall ? 3 : 4,
+        padding: isSmall ? "2px 6px" : "3px 8px",
+        borderRadius: 20,
+        background: "#0A1628",
+        border: "1px solid #1E3A5F",
+        fontFamily: sans, fontSize: isSmall ? 9 : 10, fontWeight: 600,
+        color: "#5B9BD5",
+        letterSpacing: "0.04em",
+        flexShrink: 0,
+      }}>
+        <svg width={isSmall ? 9 : 11} height={isSmall ? 9 : 11} viewBox="0 0 12 12" fill="none">
+          <path d="M2 10 L2 6 L6 2 L10 6 L10 10Z" fill="none" stroke="#5B9BD5" strokeWidth="1.2" strokeLinejoin="round"/>
+          <path d="M4 10 L4 7 L6 5 L8 7 L8 10Z" fill="#5B9BD5"/>
+        </svg>
+        {!isSmall && "Top Contributor"}
+      </span>
+    );
+  }
+
+  if (user.country) {
+    badges.push(
+      <span key="flag" title={COUNTRIES.find(c => c.code === user.country)?.name || user.country} style={{
+        fontSize: isSmall ? 13 : 15,
+        lineHeight: 1,
+        flexShrink: 0,
+      }}>
+        {countryFlag(user.country)}
+      </span>
+    );
+  }
+
+  if (badges.length === 0) return null;
+  return (
+    <div style={{ display: "inline-flex", alignItems: "center", gap: 5, flexWrap: "wrap" }}>
+      {badges}
+    </div>
+  );
+}
+
+// ─── COUNTRY PICKER ───────────────────────────────────────────────────────────
+function CountryPicker({ value, onChange, style }) {
+  const [query, setQuery] = useState("");
+  const [open, setOpen] = useState(false);
+  const selected = COUNTRIES.find(c => c.code === value);
+  const filtered = query.trim()
+    ? COUNTRIES.filter(c => c.name.toLowerCase().includes(query.toLowerCase()))
+    : COUNTRIES;
 
   return (
-    <div style={{minHeight:"100vh",background:T.bg,fontFamily:sans}}>
-      <div style={{maxWidth:460,margin:"0 auto",position:"relative"}}>
-        <div style={{position:"sticky",top:0,zIndex:40,background:"rgba(248,248,246,0.97)",backdropFilter:"blur(14px)",borderBottom:`1px solid ${T.rule}`,padding:"0 20px"}}>
-          <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",paddingTop:14}}>
-            <div>
-              <h1 style={{fontFamily:serif,fontSize:21,letterSpacing:-0.5,color:T.black,margin:0}}>sillage<span style={{color:T.mid}}>.</span></h1>
-              <p style={{fontFamily:sans,fontSize:8,color:T.faint,textTransform:"uppercase",letterSpacing:"0.14em",margin:"2px 0 0"}}>Fragrance Journal</p>
+    <div style={{ position: "relative", ...style }}>
+      <button
+        type="button"
+        onClick={() => setOpen(o => !o)}
+        style={{
+          width: "100%", display: "flex", alignItems: "center", gap: 10,
+          padding: "13px 16px", borderRadius: 12, cursor: "pointer",
+          background: style && style.background ? style.background : T.lift,
+          border: style && style.border ? style.border : `1px solid ${T.rule}`,
+          color: selected ? T.ink : T.mid,
+          fontSize: 15, fontFamily: sans, textAlign: "left",
+          boxSizing: "border-box",
+        }}
+      >
+        {selected ? (
+          <>
+            <span style={{ fontSize: 18 }}>{countryFlag(selected.code)}</span>
+            <span style={{ flex: 1 }}>{selected.name}</span>
+          </>
+        ) : (
+          <span style={{ flex: 1 }}>Country (optional)</span>
+        )}
+        <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+          <path d="M2 4 L6 8 L10 4" stroke={T.mid} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+        </svg>
+      </button>
+
+      {open && (
+        <div style={{
+          position: "absolute", top: "calc(100% + 6px)", left: 0, right: 0, zIndex: 100,
+          background: T.white, border: `1px solid ${T.rule}`, borderRadius: 12,
+          boxShadow: "0 8px 24px rgba(0,0,0,0.10)", overflow: "hidden",
+        }}>
+          <div style={{ padding: "10px 12px", borderBottom: `1px solid ${T.rule}` }}>
+            <input
+              autoFocus
+              value={query}
+              onChange={e => setQuery(e.target.value)}
+              placeholder="Search countries…"
+              style={{
+                width: "100%", background: T.lift, border: `1px solid ${T.rule}`,
+                borderRadius: 8, padding: "8px 12px", fontSize: 13,
+                color: T.ink, outline: "none", fontFamily: sans, boxSizing: "border-box",
+              }}
+            />
+          </div>
+          <div style={{ maxHeight: 200, overflowY: "auto" }}>
+            {filtered.map(c => (
+              <button
+                key={c.code}
+                type="button"
+                onClick={() => { onChange(c.code); setOpen(false); setQuery(""); }}
+                style={{
+                  width: "100%", display: "flex", alignItems: "center", gap: 10,
+                  padding: "10px 14px", background: value === c.code ? T.lift : "transparent",
+                  border: "none", cursor: "pointer", fontFamily: sans, fontSize: 13, color: T.ink,
+                  textAlign: "left",
+                }}
+              >
+                <span style={{ fontSize: 16 }}>{countryFlag(c.code)}</span>
+                <span>{c.name}</span>
+              </button>
+            ))}
+            {filtered.length === 0 && (
+              <p style={{ padding: "12px 14px", fontFamily: sans, fontSize: 13, color: T.mid, margin: 0 }}>No results</p>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── WAITLIST SCREEN ──────────────────────────────────────────────────────────
+function WaitlistScreen({ onJoin }) {
+  const [email, setEmail] = useState("");
+  const [name, setName] = useState("");
+  const [submitted, setSubmitted] = useState(false);
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  const isValidEmail = (v) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v.trim());
+
+  function handleSubmit() {
+    if (!name.trim()) { setError("Please enter your name."); return; }
+    if (!isValidEmail(email)) { setError("Please enter a valid email address."); return; }
+    setError("");
+    setLoading(true);
+    setTimeout(() => { setLoading(false); setSubmitted(true); }, 900);
+  }
+
+  const inp = {
+    width: "100%", background: "rgba(255,255,255,0.07)",
+    border: "1px solid rgba(255,255,255,0.18)", borderRadius: 12,
+    padding: "14px 16px", fontSize: 15, color: T.white, outline: "none",
+    fontFamily: sans, boxSizing: "border-box", WebkitAppearance: "none",
+  };
+
+  return (
+    <div style={{ minHeight:"100vh", background:T.black, display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", padding:"40px 28px", boxSizing:"border-box", fontFamily:sans }}>
+      <div style={{ width:"100%", maxWidth:400 }}>
+        <div style={{ marginBottom:48 }}>
+          <h1 style={{ fontFamily:serif, fontSize:38, color:T.white, margin:"0 0 6px", letterSpacing:-1, lineHeight:1.1 }}>
+            sillage<span style={{ color:"rgba(255,255,255,0.3)" }}>.</span>
+          </h1>
+          <p style={{ fontFamily:sans, fontSize:9, color:"rgba(255,255,255,0.4)", textTransform:"uppercase", letterSpacing:"0.18em", margin:0 }}>Fragrance Journal</p>
+        </div>
+
+        {!submitted ? (
+          <>
+            <div style={{ marginBottom:36 }}>
+              <p style={{ fontFamily:sans, fontSize:9, color:"rgba(255,255,255,0.4)", textTransform:"uppercase", letterSpacing:"0.16em", margin:"0 0 12px" }}>Early access</p>
+              <h2 style={{ fontFamily:serif, fontSize:26, color:T.white, margin:"0 0 14px", letterSpacing:-0.5, lineHeight:1.25, fontWeight:"normal" }}>
+                The fragrance journal built for people who take scent seriously.
+              </h2>
+              <p style={{ fontFamily:sans, fontSize:14, color:"rgba(255,255,255,0.5)", lineHeight:1.7, margin:0 }}>
+                Track your collection. Layer with intention. Discover what you didn't know you were looking for. We're letting in members one cohort at a time.
+              </p>
             </div>
-            <div style={{display:"flex",alignItems:"center",gap:8}}>
-              <button onClick={()=>setShowSuggest(true)} style={{fontFamily:sans,fontSize:10,padding:"6px 12px",borderRadius:20,border:`1px solid ${T.rule}`,background:T.white,color:T.mid,cursor:"pointer",whiteSpace:"nowrap"}}>+ Suggest</button>
-              <div style={{width:30,height:30,borderRadius:"50%",background:T.black,display:"flex",alignItems:"center",justifyContent:"center",fontSize:11,fontWeight:600,color:T.white,fontFamily:sans}}>JW</div>
+            <div style={{ display:"flex", flexDirection:"column", gap:10, marginBottom:14 }}>
+              <input value={name} onChange={e => { setName(e.target.value); setError(""); }} placeholder="Your name" style={inp} onKeyDown={e => e.key==="Enter" && handleSubmit()}/>
+              <input value={email} onChange={e => { setEmail(e.target.value); setError(""); }} placeholder="Email address" type="email" style={inp} onKeyDown={e => e.key==="Enter" && handleSubmit()}/>
+            </div>
+            {error && <p style={{ fontFamily:sans, fontSize:12, color:"#FF6B6B", margin:"0 0 12px" }}>{error}</p>}
+            <button onClick={handleSubmit} disabled={loading} style={{ width:"100%", padding:"15px 0", borderRadius:12, background:loading?"rgba(255,255,255,0.15)":T.white, border:"none", color:loading?"rgba(255,255,255,0.5)":T.black, fontSize:14, fontFamily:sans, fontWeight:600, cursor:loading?"not-allowed":"pointer", transition:"all 0.2s" }}>
+              {loading ? "Joining…" : "Request early access"}
+            </button>
+            <div style={{ display:"flex", alignItems:"center", gap:12, margin:"24px 0" }}>
+              <div style={{ flex:1, height:1, background:"rgba(255,255,255,0.1)" }}/>
+              <span style={{ fontFamily:sans, fontSize:10, color:"rgba(255,255,255,0.3)" }}>Already have access?</span>
+              <div style={{ flex:1, height:1, background:"rgba(255,255,255,0.1)" }}/>
+            </div>
+            <button onClick={onJoin} style={{ width:"100%", padding:"14px 0", borderRadius:12, background:"transparent", border:"1px solid rgba(255,255,255,0.18)", color:"rgba(255,255,255,0.7)", fontSize:14, fontFamily:sans, cursor:"pointer" }}>Sign in</button>
+            <div style={{ marginTop:40, display:"flex", gap:20 }}>
+              {[["200+","Fragrances catalogued"],["6","Scent families mapped"],["∞","Combinations to explore"]].map(([num,label]) => (
+                <div key={label} style={{ flex:1 }}>
+                  <p style={{ fontFamily:serif, fontSize:22, color:T.white, margin:"0 0 3px" }}>{num}</p>
+                  <p style={{ fontFamily:sans, fontSize:10, color:"rgba(255,255,255,0.35)", lineHeight:1.4, margin:0 }}>{label}</p>
+                </div>
+              ))}
+            </div>
+            <p style={{ fontFamily:sans, fontSize:11, color:"rgba(255,255,255,0.2)", margin:"32px 0 0", lineHeight:1.6 }}>No spam. No sharing. Just a notification when your spot opens up.</p>
+          </>
+        ) : (
+          <div style={{ textAlign:"center" }}>
+            <div style={{ width:64, height:64, borderRadius:"50%", border:"1px solid rgba(255,255,255,0.2)", display:"flex", alignItems:"center", justifyContent:"center", margin:"0 auto 24px" }}>
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+            </div>
+            <h2 style={{ fontFamily:serif, fontSize:28, color:T.white, margin:"0 0 12px", fontWeight:"normal" }}>You're on the list.</h2>
+            <p style={{ fontFamily:sans, fontSize:14, color:"rgba(255,255,255,0.5)", lineHeight:1.7, margin:"0 0 32px" }}>
+              We'll reach out to <span style={{ color:"rgba(255,255,255,0.8)" }}>{email}</span> when your early access opens. We're releasing in small cohorts — expect to hear from us soon.
+            </p>
+            <div style={{ background:"rgba(255,255,255,0.05)", borderRadius:12, border:"1px solid rgba(255,255,255,0.1)", padding:"16px 20px", marginBottom:32, textAlign:"left" }}>
+              <p style={{ fontFamily:sans, fontSize:11, color:"rgba(255,255,255,0.4)", textTransform:"uppercase", letterSpacing:"0.12em", margin:"0 0 6px" }}>While you wait</p>
+              <p style={{ fontFamily:sans, fontSize:13, color:"rgba(255,255,255,0.6)", lineHeight:1.65, margin:0 }}>Start thinking about which fragrances you own, which you've tried, and which you've been meaning to sample. You'll be able to log everything the moment you get in.</p>
+            </div>
+            <button onClick={onJoin} style={{ width:"100%", padding:"14px 0", borderRadius:12, background:"transparent", border:"1px solid rgba(255,255,255,0.18)", color:"rgba(255,255,255,0.6)", fontSize:13, fontFamily:sans, cursor:"pointer" }}>I already have access — sign in</button>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ─── LOGIN / SIGNUP SCREEN ────────────────────────────────────────────────────
+function LoginScreen({ onLogin, onWaitlist }) {
+  const [mode, setMode] = useState("signin");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [name, setName] = useState("");
+  const [username, setUsername] = useState("");
+  const [country, setCountry] = useState("");
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  const isValidEmail = (v) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v.trim());
+  const isValidUsername = (v) => /^[a-zA-Z0-9_]{3,20}$/.test(v.trim());
+
+  function handleSubmit() {
+    setError("");
+    if (mode === "signup") {
+      if (!name.trim()) { setError("Please enter your name."); return; }
+      if (!isValidUsername(username)) { setError("Username must be 3–20 characters, letters, numbers, or underscores only."); return; }
+      if (!isValidEmail(email)) { setError("Please enter a valid email address."); return; }
+      if (password.length < 6) { setError("Password must be at least 6 characters."); return; }
+    } else {
+      if (!isValidEmail(email)) { setError("Please enter a valid email address."); return; }
+      if (password.length < 6) { setError("Password must be at least 6 characters."); return; }
+    }
+    setLoading(true);
+    setTimeout(() => {
+      setLoading(false);
+      onLogin({
+        name: name || email.split("@")[0],
+        username: username || email.split("@")[0],
+        email,
+        country,
+        method: "email",
+        isFounder: true,
+        memberNumber: 47,
+        isTopContributor: false,
+      });
+    }, 800);
+  }
+
+  function handleGoogle() {
+    setLoading(true);
+    setTimeout(() => {
+      setLoading(false);
+      if (mode === "signup") {
+        setMode("google-profile");
+        setLoading(false);
+      } else {
+        onLogin({ name: "James W.", username: "james_w", email: "jw@example.com", country: "GB", method: "google", isFounder: true, memberNumber: 12, isTopContributor: true });
+      }
+    }, 700);
+  }
+
+  function handleGoogleProfileDone() {
+    if (!isValidUsername(username)) { setError("Username must be 3–20 characters, letters, numbers, or underscores only."); return; }
+    setError("");
+    onLogin({ name: name || "New Member", username, email: "google@example.com", country, method: "google", isFounder: true, memberNumber: 48, isTopContributor: false });
+  }
+
+  const inp = {
+    width: "100%", background: T.lift, border: `1px solid ${T.rule}`, borderRadius: 12,
+    padding: "13px 16px", fontSize: 15, color: T.ink, outline: "none",
+    fontFamily: sans, boxSizing: "border-box", WebkitAppearance: "none",
+  };
+
+  if (mode === "google-profile") {
+    return (
+      <div style={{ minHeight:"100vh", background:T.bg, display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", padding:"40px 28px", boxSizing:"border-box", fontFamily:sans }}>
+        <div style={{ width:"100%", maxWidth:400 }}>
+          <div style={{ textAlign:"center", marginBottom:36 }}>
+            <h1 style={{ fontFamily:serif, fontSize:34, color:T.black, margin:"0 0 4px", letterSpacing:-1 }}>sillage<span style={{ color:T.mid }}>.</span></h1>
+            <p style={{ fontFamily:sans, fontSize:9, color:T.faint, textTransform:"uppercase", letterSpacing:"0.18em", margin:0 }}>Fragrance Journal</p>
+          </div>
+          <p style={{ fontFamily:sans, fontSize:9, color:T.mid, textTransform:"uppercase", letterSpacing:"0.14em", margin:"0 0 10px" }}>One last step</p>
+          <h2 style={{ fontFamily:serif, fontSize:24, color:T.black, margin:"0 0 6px", fontWeight:"normal" }}>Set up your profile</h2>
+          <p style={{ fontFamily:sans, fontSize:13, color:T.mid, lineHeight:1.65, margin:"0 0 28px" }}>Your username is how the community will know you. Choose carefully — it's how your reviews and layering combos are credited.</p>
+          <div style={{ display:"flex", flexDirection:"column", gap:10, marginBottom:14 }}>
+            <div>
+              <input value={username} onChange={e => { setUsername(e.target.value.replace(/[^a-zA-Z0-9_]/g, "")); setError(""); }} placeholder="Username (e.g. scenthunter_uk)" style={inp} maxLength={20}/>
+              <p style={{ fontFamily:sans, fontSize:11, color:T.faint, margin:"5px 0 0" }}>Letters, numbers, underscores. 3–20 characters.</p>
+            </div>
+            <CountryPicker value={country} onChange={setCountry}/>
+          </div>
+          {error && <p style={{ fontFamily:sans, fontSize:12, color:"#CC3333", margin:"0 0 12px" }}>{error}</p>}
+          <button onClick={handleGoogleProfileDone} style={{ width:"100%", padding:"15px 0", borderRadius:12, background:T.black, border:"none", color:T.white, fontSize:14, fontFamily:sans, fontWeight:500, cursor:"pointer", marginBottom:12 }}>Complete setup</button>
+          <p style={{ fontFamily:sans, fontSize:11, color:T.faint, textAlign:"center", margin:0 }}>You can update this anytime from your profile.</p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div style={{ minHeight:"100vh", background:T.bg, display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", padding:"40px 28px", boxSizing:"border-box", fontFamily:sans }}>
+      <div style={{ width:"100%", maxWidth:400 }}>
+        <div style={{ textAlign:"center", marginBottom:40 }}>
+          <h1 style={{ fontFamily:serif, fontSize:34, color:T.black, margin:"0 0 4px", letterSpacing:-1 }}>sillage<span style={{ color:T.mid }}>.</span></h1>
+          <p style={{ fontFamily:sans, fontSize:9, color:T.faint, textTransform:"uppercase", letterSpacing:"0.18em", margin:0 }}>Fragrance Journal</p>
+        </div>
+
+        <div style={{ background:T.lift, borderRadius:12, padding:4, display:"flex", marginBottom:24 }}>
+          {[["signin","Sign in"],["signup","Create account"]].map(([m,label]) => (
+            <button key={m} onClick={() => { setMode(m); setError(""); }} style={{ flex:1, padding:"9px 0", borderRadius:9, background:mode===m?T.white:"transparent", border:mode===m?`1px solid ${T.rule}`:"none", color:mode===m?T.black:T.mid, fontSize:13, fontFamily:sans, cursor:"pointer", fontWeight:mode===m?500:400, transition:"all 0.15s" }}>{label}</button>
+          ))}
+        </div>
+
+        <button onClick={handleGoogle} disabled={loading} style={{ width:"100%", padding:"14px 0", borderRadius:12, background:T.white, border:`1px solid ${T.rule}`, color:T.ink, fontSize:14, fontFamily:sans, cursor:loading?"not-allowed":"pointer", display:"flex", alignItems:"center", justifyContent:"center", gap:10, marginBottom:20, transition:"all 0.15s" }}>
+          <svg width="16" height="16" viewBox="0 0 24 24">
+            <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
+            <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
+            <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/>
+            <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
+          </svg>
+          Continue with Google
+        </button>
+
+        <div style={{ display:"flex", alignItems:"center", gap:12, marginBottom:20 }}>
+          <div style={{ flex:1, height:1, background:T.rule }}/>
+          <span style={{ fontFamily:sans, fontSize:11, color:T.faint }}>or</span>
+          <div style={{ flex:1, height:1, background:T.rule }}/>
+        </div>
+
+        <div style={{ display:"flex", flexDirection:"column", gap:10, marginBottom:14 }}>
+          {mode === "signup" && (
+            <>
+              <input value={name} onChange={e => { setName(e.target.value); setError(""); }} placeholder="Your name" style={inp} onKeyDown={e => e.key==="Enter" && handleSubmit()}/>
+              <div>
+                <input value={username} onChange={e => { setUsername(e.target.value.replace(/[^a-zA-Z0-9_]/g,"")); setError(""); }} placeholder="Username (e.g. scenthunter_uk)" style={inp} maxLength={20} onKeyDown={e => e.key==="Enter" && handleSubmit()}/>
+                <p style={{ fontFamily:sans, fontSize:11, color:T.faint, margin:"5px 0 0" }}>Letters, numbers, underscores. 3–20 characters. Publicly visible.</p>
+              </div>
+              <CountryPicker value={country} onChange={setCountry}/>
+            </>
+          )}
+          <input value={email} onChange={e => { setEmail(e.target.value); setError(""); }} placeholder="Email address" type="email" style={inp} onKeyDown={e => e.key==="Enter" && handleSubmit()}/>
+          <input value={password} onChange={e => { setPassword(e.target.value); setError(""); }} placeholder="Password" type="password" style={inp} onKeyDown={e => e.key==="Enter" && handleSubmit()}/>
+        </div>
+
+        {error && <p style={{ fontFamily:sans, fontSize:12, color:"#CC3333", margin:"0 0 12px" }}>{error}</p>}
+
+        <button onClick={handleSubmit} disabled={loading} style={{ width:"100%", padding:"15px 0", borderRadius:12, background:loading?T.faint:T.black, border:"none", color:T.white, fontSize:14, fontFamily:sans, fontWeight:500, cursor:loading?"not-allowed":"pointer", transition:"background 0.2s", marginBottom:20 }}>
+          {loading ? (mode==="signup" ? "Creating account…" : "Signing in…") : (mode==="signup" ? "Create account" : "Sign in")}
+        </button>
+
+        {mode === "signin" && <p style={{ fontFamily:sans, fontSize:12, color:T.mid, textAlign:"center", margin:"0 0 8px", cursor:"pointer" }}>Forgot your password?</p>}
+
+        <p style={{ fontFamily:sans, fontSize:12, color:T.mid, textAlign:"center", margin:0 }}>
+          Don't have early access?{" "}
+          <span onClick={onWaitlist} style={{ color:T.black, fontWeight:500, cursor:"pointer" }}>Join the waitlist →</span>
+        </p>
+      </div>
+    </div>
+  );
+}
+
+// ─── ROOT ─────────────────────────────────────────────────────────────────────
+export default function SillageApp() {
+  const [appScreen, setAppScreen] = useState("waitlist");
+  const [currentUser, setCurrentUser] = useState(null);
+  const [activeTab, setActiveTab] = useState("Discover");
+  const [modalFragId, setModalFragId] = useState(null);
+  const [showSuggest, setShowSuggest] = useState(false);
+  const [userStatuses, setUserStatuses] = useState({ 1:"bottle_owned", 2:"sample_wishlist", 3:"sample_have", 4:"tried_skin", 5:"smelled", 6:"bottle_wishlist" });
+  const [privateNotes, setPrivateNotes] = useState({});
+  const [reactions, setReactions] = useState({ 1:"love", 3:"like" });
+
+  const NAV = [{ tab:"Discover", icon:"◈" }, { tab:"Collection", icon:"◇" }, { tab:"Layering", icon:"◎" }, { tab:"Journal", icon:"▣" }, { tab:"Learn", icon:"△" }];
+  const modalFrag = FRAGRANCES.find(f => f.id === modalFragId);
+  function openFrag(id) { setModalFragId(id); }
+  function onReaction(fragId, val) { setReactions(p => ({ ...p, [fragId]: val })); }
+
+  function handleLogin(user) { setCurrentUser(user); setAppScreen("app"); }
+  function handleSignOut() { setCurrentUser(null); setAppScreen("waitlist"); }
+
+  const userInitials = currentUser
+    ? (currentUser.username || currentUser.name).slice(0, 2).toUpperCase()
+    : "?";
+
+  if (appScreen === "waitlist") return <WaitlistScreen onJoin={() => setAppScreen("login")}/>;
+  if (appScreen === "login") return <LoginScreen onLogin={handleLogin} onWaitlist={() => setAppScreen("waitlist")}/>;
+
+  return (
+    <div style={{ minHeight:"100vh", background:T.bg, fontFamily:sans }}>
+      <div style={{ maxWidth:460, margin:"0 auto", position:"relative" }}>
+        <div style={{ position:"sticky", top:0, zIndex:40, background:"rgba(248,248,246,0.97)", backdropFilter:"blur(14px)", borderBottom:`1px solid ${T.rule}`, padding:"0 20px" }}>
+          <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", paddingTop:14 }}>
+            <div>
+              <h1 style={{ fontFamily:serif, fontSize:21, letterSpacing:-0.5, color:T.black, margin:0 }}>sillage<span style={{ color:T.mid }}>.</span></h1>
+              <p style={{ fontFamily:sans, fontSize:8, color:T.faint, textTransform:"uppercase", letterSpacing:"0.14em", margin:"2px 0 0" }}>Fragrance Journal</p>
+            </div>
+            <div style={{ display:"flex", alignItems:"center", gap:8 }}>
+              <button onClick={() => setShowSuggest(true)} style={{ fontFamily:sans, fontSize:10, padding:"6px 12px", borderRadius:20, border:`1px solid ${T.rule}`, background:T.white, color:T.mid, cursor:"pointer", whiteSpace:"nowrap" }}>+ Suggest</button>
+              <button onClick={handleSignOut} title={currentUser ? "@" + currentUser.username : ""} style={{ width:30, height:30, borderRadius:"50%", background:T.black, display:"flex", alignItems:"center", justifyContent:"center", fontSize:11, fontWeight:600, color:T.white, fontFamily:sans, border:"none", cursor:"pointer" }}>
+                {userInitials}
+              </button>
             </div>
           </div>
-          <div style={{display:"flex",marginTop:12,overflowX:"auto"}}>
-            {NAV.map(({tab})=>(
-              <button key={tab} onClick={()=>setActiveTab(tab)} style={{marginRight:16,paddingBottom:11,fontSize:10,textTransform:"uppercase",letterSpacing:"0.08em",color:activeTab===tab?T.black:T.faint,background:"none",border:"none",borderBottom:activeTab===tab?`2px solid ${T.black}`:"2px solid transparent",marginBottom:-1,cursor:"pointer",whiteSpace:"nowrap",fontFamily:sans}}>{tab}</button>
+          <div style={{ display:"flex", marginTop:12, overflowX:"auto" }}>
+            {NAV.map(({ tab }) => (
+              <button key={tab} onClick={() => setActiveTab(tab)} style={{ marginRight:16, paddingBottom:11, fontSize:10, textTransform:"uppercase", letterSpacing:"0.08em", color:activeTab===tab?T.black:T.faint, background:"none", border:"none", borderBottom:activeTab===tab?`2px solid ${T.black}`:"2px solid transparent", marginBottom:-1, cursor:"pointer", whiteSpace:"nowrap", fontFamily:sans }}>{tab}</button>
             ))}
           </div>
         </div>
 
-        <div style={{padding:"28px 20px 130px"}}>
-          {activeTab==="Discover"   &&<DiscoverTab   onOpenFrag={openFrag} userStatuses={userStatuses} reactions={reactions} onReaction={onReaction} onSuggest={()=>setShowSuggest(true)}/>}
-          {activeTab==="Collection" &&<CollectionTab onOpenFrag={openFrag} statuses={userStatuses} reactions={reactions} onReaction={onReaction} onSuggest={()=>setShowSuggest(true)}/>}
-          {activeTab==="Layering"   &&<LayeringTab/>}
-          {activeTab==="Journal"    &&<JournalTab/>}
-          {activeTab==="Learn"      &&<LearnTab/>}
+        <div style={{ padding:"28px 20px 130px" }}>
+          {activeTab==="Discover"   && <DiscoverTab   onOpenFrag={openFrag} userStatuses={userStatuses} reactions={reactions} onReaction={onReaction} onSuggest={() => setShowSuggest(true)} currentUser={currentUser}/>}
+          {activeTab==="Collection" && <CollectionTab onOpenFrag={openFrag} statuses={userStatuses} reactions={reactions} onReaction={onReaction} onSuggest={() => setShowSuggest(true)}/>}
+          {activeTab==="Layering"   && <LayeringTab/>}
+          {activeTab==="Journal"    && <JournalTab/>}
+          {activeTab==="Learn"      && <LearnTab/>}
         </div>
 
-        <div style={{position:"fixed",bottom:0,left:"50%",transform:"translateX(-50%)",width:"100%",maxWidth:460,background:"rgba(248,248,246,0.97)",backdropFilter:"blur(12px)",borderTop:`1px solid ${T.rule}`,display:"flex"}}>
-          {NAV.map(({tab,icon})=>(
-            <button key={tab} onClick={()=>setActiveTab(tab)} style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",gap:3,padding:"11px 0 15px",background:"none",border:"none",cursor:"pointer"}}>
-              <span style={{fontSize:15,color:activeTab===tab?T.black:T.faint}}>{icon}</span>
-              <span style={{fontFamily:sans,fontSize:8,textTransform:"uppercase",letterSpacing:"0.07em",color:activeTab===tab?T.black:T.faint}}>{tab}</span>
+        <div style={{ position:"fixed", bottom:0, left:"50%", transform:"translateX(-50%)", width:"100%", maxWidth:460, background:"rgba(248,248,246,0.97)", backdropFilter:"blur(12px)", borderTop:`1px solid ${T.rule}`, display:"flex" }}>
+          {NAV.map(({ tab, icon }) => (
+            <button key={tab} onClick={() => setActiveTab(tab)} style={{ flex:1, display:"flex", flexDirection:"column", alignItems:"center", gap:3, padding:"11px 0 15px", background:"none", border:"none", cursor:"pointer" }}>
+              <span style={{ fontSize:15, color:activeTab===tab?T.black:T.faint }}>{icon}</span>
+              <span style={{ fontFamily:sans, fontSize:8, textTransform:"uppercase", letterSpacing:"0.07em", color:activeTab===tab?T.black:T.faint }}>{tab}</span>
             </button>
           ))}
         </div>
       </div>
 
-      {modalFrag&&(
+      {modalFrag && (
         <DetailModal
           frag={modalFrag}
-          onClose={()=>setModalFragId(null)}
+          onClose={() => setModalFragId(null)}
           userStatus={userStatuses[modalFrag.id]}
-          setUserStatus={s=>setUserStatuses(p=>({...p,[modalFrag.id]:s}))}
+          setUserStatus={s => setUserStatuses(p => ({ ...p, [modalFrag.id]: s }))}
           privateNote={privateNotes[modalFrag.id]}
-          setPrivateNote={n=>setPrivateNotes(p=>({...p,[modalFrag.id]:n}))}
+          setPrivateNote={n => setPrivateNotes(p => ({ ...p, [modalFrag.id]: n }))}
           reaction={reactions[modalFrag.id]}
-          setReaction={v=>onReaction(modalFrag.id,v)}
+          setReaction={v => onReaction(modalFrag.id, v)}
+          onOpenFrag={openFrag}
+          currentUser={currentUser}
+        />
+      )}
+      {showSuggest && <SuggestModal onClose={() => setShowSuggest(false)}/>}
+    </div>
+  );
+}
+  const [email, setEmail] = useState("");
+  const [name, setName] = useState("");
+  const [submitted, setSubmitted] = useState(false);
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  const isValidEmail = (v) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v.trim());
+
+  function handleSubmit() {
+    if (!name.trim()) { setError("Please enter your name."); return; }
+    if (!isValidEmail(email)) { setError("Please enter a valid email address."); return; }
+    setError("");
+    setLoading(true);
+    setTimeout(() => {
+      setLoading(false);
+      setSubmitted(true);
+    }, 900);
+  }
+
+  const inp = {
+    width: "100%",
+    background: "rgba(255,255,255,0.07)",
+    border: "1px solid rgba(255,255,255,0.18)",
+    borderRadius: 12,
+    padding: "14px 16px",
+    fontSize: 15,
+    color: T.white,
+    outline: "none",
+    fontFamily: sans,
+    boxSizing: "border-box",
+    WebkitAppearance: "none",
+  };
+
+  return (
+    <div style={{
+      minHeight: "100vh",
+      background: T.black,
+      display: "flex",
+      flexDirection: "column",
+      alignItems: "center",
+      justifyContent: "center",
+      padding: "40px 28px",
+      boxSizing: "border-box",
+      fontFamily: sans,
+    }}>
+      <div style={{ width: "100%", maxWidth: 400 }}>
+
+        <div style={{ marginBottom: 48 }}>
+          <h1 style={{ fontFamily: serif, fontSize: 38, color: T.white, margin: "0 0 6px", letterSpacing: -1, lineHeight: 1.1 }}>
+            sillage<span style={{ color: "rgba(255,255,255,0.3)" }}>.</span>
+          </h1>
+          <p style={{ fontFamily: sans, fontSize: 9, color: "rgba(255,255,255,0.4)", textTransform: "uppercase", letterSpacing: "0.18em", margin: 0 }}>
+            Fragrance Journal
+          </p>
+        </div>
+
+        {!submitted ? (
+          <>
+            <div style={{ marginBottom: 36 }}>
+              <p style={{ fontFamily: sans, fontSize: 9, color: "rgba(255,255,255,0.4)", textTransform: "uppercase", letterSpacing: "0.16em", margin: "0 0 12px" }}>
+                Early access
+              </p>
+              <h2 style={{ fontFamily: serif, fontSize: 26, color: T.white, margin: "0 0 14px", letterSpacing: -0.5, lineHeight: 1.25, fontWeight: "normal" }}>
+                The fragrance journal built for people who take scent seriously.
+              </h2>
+              <p style={{ fontFamily: sans, fontSize: 14, color: "rgba(255,255,255,0.5)", lineHeight: 1.7, margin: 0 }}>
+                Track your collection. Layer with intention. Discover what you didn't know you were looking for. We're letting in members one cohort at a time.
+              </p>
+            </div>
+
+            <div style={{ display: "flex", flexDirection: "column", gap: 10, marginBottom: 14 }}>
+              <input
+                value={name}
+                onChange={e => { setName(e.target.value); setError(""); }}
+                placeholder="Your name"
+                style={inp}
+                onKeyDown={e => e.key === "Enter" && handleSubmit()}
+              />
+              <input
+                value={email}
+                onChange={e => { setEmail(e.target.value); setError(""); }}
+                placeholder="Email address"
+                type="email"
+                style={inp}
+                onKeyDown={e => e.key === "Enter" && handleSubmit()}
+              />
+            </div>
+
+            {error && (
+              <p style={{ fontFamily: sans, fontSize: 12, color: "#FF6B6B", margin: "0 0 12px" }}>{error}</p>
+            )}
+
+            <button
+              onClick={handleSubmit}
+              disabled={loading}
+              style={{
+                width: "100%",
+                padding: "15px 0",
+                borderRadius: 12,
+                background: loading ? "rgba(255,255,255,0.15)" : T.white,
+                border: "none",
+                color: loading ? "rgba(255,255,255,0.5)" : T.black,
+                fontSize: 14,
+                fontFamily: sans,
+                fontWeight: 600,
+                cursor: loading ? "not-allowed" : "pointer",
+                transition: "all 0.2s",
+                letterSpacing: "0.01em",
+              }}
+            >
+              {loading ? "Joining…" : "Request early access"}
+            </button>
+
+            <div style={{ display: "flex", alignItems: "center", gap: 12, margin: "24px 0" }}>
+              <div style={{ flex: 1, height: 1, background: "rgba(255,255,255,0.1)" }} />
+              <span style={{ fontFamily: sans, fontSize: 10, color: "rgba(255,255,255,0.3)" }}>Already have access?</span>
+              <div style={{ flex: 1, height: 1, background: "rgba(255,255,255,0.1)" }} />
+            </div>
+
+            <button
+              onClick={onJoin}
+              style={{
+                width: "100%",
+                padding: "14px 0",
+                borderRadius: 12,
+                background: "transparent",
+                border: "1px solid rgba(255,255,255,0.18)",
+                color: "rgba(255,255,255,0.7)",
+                fontSize: 14,
+                fontFamily: sans,
+                cursor: "pointer",
+                transition: "all 0.2s",
+              }}
+            >
+              Sign in
+            </button>
+
+            <div style={{ marginTop: 40, display: "flex", gap: 20 }}>
+              {[["200+", "Fragrances catalogued"], ["6", "Scent families mapped"], ["∞", "Combinations to explore"]].map(([num, label]) => (
+                <div key={label} style={{ flex: 1 }}>
+                  <p style={{ fontFamily: serif, fontSize: 22, color: T.white, margin: "0 0 3px" }}>{num}</p>
+                  <p style={{ fontFamily: sans, fontSize: 10, color: "rgba(255,255,255,0.35)", lineHeight: 1.4, margin: 0 }}>{label}</p>
+                </div>
+              ))}
+            </div>
+
+            <p style={{ fontFamily: sans, fontSize: 11, color: "rgba(255,255,255,0.2)", margin: "32px 0 0", lineHeight: 1.6 }}>
+              No spam. No sharing. Just a notification when your spot opens up.
+            </p>
+          </>
+        ) : (
+          <div style={{ textAlign: "center" }}>
+            <div style={{
+              width: 64,
+              height: 64,
+              borderRadius: "50%",
+              border: "1px solid rgba(255,255,255,0.2)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              margin: "0 auto 24px",
+            }}>
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                <polyline points="20 6 9 17 4 12"/>
+              </svg>
+            </div>
+            <h2 style={{ fontFamily: serif, fontSize: 28, color: T.white, margin: "0 0 12px", fontWeight: "normal" }}>
+              You're on the list.
+            </h2>
+            <p style={{ fontFamily: sans, fontSize: 14, color: "rgba(255,255,255,0.5)", lineHeight: 1.7, margin: "0 0 32px" }}>
+              We'll reach out to <span style={{ color: "rgba(255,255,255,0.8)" }}>{email}</span> when your early access opens. We're releasing in small cohorts — expect to hear from us soon.
+            </p>
+            <div style={{ background: "rgba(255,255,255,0.05)", borderRadius: 12, border: "1px solid rgba(255,255,255,0.1)", padding: "16px 20px", marginBottom: 32, textAlign: "left" }}>
+              <p style={{ fontFamily: sans, fontSize: 11, color: "rgba(255,255,255,0.4)", textTransform: "uppercase", letterSpacing: "0.12em", margin: "0 0 6px" }}>While you wait</p>
+              <p style={{ fontFamily: sans, fontSize: 13, color: "rgba(255,255,255,0.6)", lineHeight: 1.65, margin: 0 }}>
+                Start thinking about which fragrances you own, which you've tried, and which you've been meaning to sample. You'll be able to log everything the moment you get in.
+              </p>
+            </div>
+            <button
+              onClick={onJoin}
+              style={{
+                width: "100%",
+                padding: "14px 0",
+                borderRadius: 12,
+                background: "transparent",
+                border: "1px solid rgba(255,255,255,0.18)",
+                color: "rgba(255,255,255,0.6)",
+                fontSize: 13,
+                fontFamily: sans,
+                cursor: "pointer",
+              }}
+            >
+              I already have access — sign in
+            </button>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ─── LOGIN SCREEN ─────────────────────────────────────────────────────────────
+function LoginScreen({ onLogin, onWaitlist }) {
+  const [mode, setMode] = useState("signin");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [name, setName] = useState("");
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  const isValidEmail = (v) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v.trim());
+
+  function handleSubmit() {
+    setError("");
+    if (!isValidEmail(email)) { setError("Please enter a valid email address."); return; }
+    if (password.length < 6) { setError("Password must be at least 6 characters."); return; }
+    if (mode === "signup" && !name.trim()) { setError("Please enter your name."); return; }
+    setLoading(true);
+    setTimeout(() => {
+      setLoading(false);
+      onLogin({ name: name || email.split("@")[0], email, method: "email" });
+    }, 800);
+  }
+
+  function handleGoogle() {
+    setLoading(true);
+    setTimeout(() => {
+      setLoading(false);
+      onLogin({ name: "JW", email: "jw@example.com", method: "google" });
+    }, 700);
+  }
+
+  const inp = {
+    width: "100%",
+    background: T.lift,
+    border: `1px solid ${T.rule}`,
+    borderRadius: 12,
+    padding: "13px 16px",
+    fontSize: 15,
+    color: T.ink,
+    outline: "none",
+    fontFamily: sans,
+    boxSizing: "border-box",
+    WebkitAppearance: "none",
+  };
+
+  return (
+    <div style={{
+      minHeight: "100vh",
+      background: T.bg,
+      display: "flex",
+      flexDirection: "column",
+      alignItems: "center",
+      justifyContent: "center",
+      padding: "40px 28px",
+      boxSizing: "border-box",
+      fontFamily: sans,
+    }}>
+      <div style={{ width: "100%", maxWidth: 400 }}>
+
+        <div style={{ textAlign: "center", marginBottom: 40 }}>
+          <h1 style={{ fontFamily: serif, fontSize: 34, color: T.black, margin: "0 0 4px", letterSpacing: -1 }}>
+            sillage<span style={{ color: T.mid }}>.</span>
+          </h1>
+          <p style={{ fontFamily: sans, fontSize: 9, color: T.faint, textTransform: "uppercase", letterSpacing: "0.18em", margin: 0 }}>
+            Fragrance Journal
+          </p>
+        </div>
+
+        <div style={{ background: T.lift, borderRadius: 12, padding: 4, display: "flex", marginBottom: 24 }}>
+          {[["signin", "Sign in"], ["signup", "Create account"]].map(([m, label]) => (
+            <button key={m} onClick={() => { setMode(m); setError(""); }}
+              style={{
+                flex: 1,
+                padding: "9px 0",
+                borderRadius: 9,
+                background: mode === m ? T.white : "transparent",
+                border: mode === m ? `1px solid ${T.rule}` : "none",
+                color: mode === m ? T.black : T.mid,
+                fontSize: 13,
+                fontFamily: sans,
+                cursor: "pointer",
+                fontWeight: mode === m ? 500 : 400,
+                transition: "all 0.15s",
+              }}
+            >{label}</button>
+          ))}
+        </div>
+
+        <button
+          onClick={handleGoogle}
+          disabled={loading}
+          style={{
+            width: "100%",
+            padding: "14px 0",
+            borderRadius: 12,
+            background: T.white,
+            border: `1px solid ${T.rule}`,
+            color: T.ink,
+            fontSize: 14,
+            fontFamily: sans,
+            cursor: loading ? "not-allowed" : "pointer",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            gap: 10,
+            marginBottom: 20,
+            transition: "all 0.15s",
+          }}
+        >
+          <svg width="16" height="16" viewBox="0 0 24 24">
+            <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
+            <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
+            <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/>
+            <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
+          </svg>
+          Continue with Google
+        </button>
+
+        <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 20 }}>
+          <div style={{ flex: 1, height: 1, background: T.rule }} />
+          <span style={{ fontFamily: sans, fontSize: 11, color: T.faint }}>or</span>
+          <div style={{ flex: 1, height: 1, background: T.rule }} />
+        </div>
+
+        <div style={{ display: "flex", flexDirection: "column", gap: 10, marginBottom: 14 }}>
+          {mode === "signup" && (
+            <input
+              value={name}
+              onChange={e => { setName(e.target.value); setError(""); }}
+              placeholder="Your name"
+              style={inp}
+              onKeyDown={e => e.key === "Enter" && handleSubmit()}
+            />
+          )}
+          <input
+            value={email}
+            onChange={e => { setEmail(e.target.value); setError(""); }}
+            placeholder="Email address"
+            type="email"
+            style={inp}
+            onKeyDown={e => e.key === "Enter" && handleSubmit()}
+          />
+          <input
+            value={password}
+            onChange={e => { setPassword(e.target.value); setError(""); }}
+            placeholder="Password"
+            type="password"
+            style={inp}
+            onKeyDown={e => e.key === "Enter" && handleSubmit()}
+          />
+        </div>
+
+        {error && (
+          <p style={{ fontFamily: sans, fontSize: 12, color: "#CC3333", margin: "0 0 12px" }}>{error}</p>
+        )}
+
+        <button
+          onClick={handleSubmit}
+          disabled={loading}
+          style={{
+            width: "100%",
+            padding: "15px 0",
+            borderRadius: 12,
+            background: loading ? T.faint : T.black,
+            border: "none",
+            color: T.white,
+            fontSize: 14,
+            fontFamily: sans,
+            fontWeight: 500,
+            cursor: loading ? "not-allowed" : "pointer",
+            transition: "background 0.2s",
+            marginBottom: 20,
+          }}
+        >
+          {loading ? (mode === "signup" ? "Creating account…" : "Signing in…") : (mode === "signup" ? "Create account" : "Sign in")}
+        </button>
+
+        {mode === "signin" && (
+          <p style={{ fontFamily: sans, fontSize: 12, color: T.mid, textAlign: "center", margin: "0 0 8px", cursor: "pointer" }}>
+            Forgot your password?
+          </p>
+        )}
+
+        <p style={{ fontFamily: sans, fontSize: 12, color: T.mid, textAlign: "center", margin: 0 }}>
+          Don't have early access?{" "}
+          <span
+            onClick={onWaitlist}
+            style={{ color: T.black, fontWeight: 500, cursor: "pointer" }}
+          >
+            Join the waitlist →
+          </span>
+        </p>
+      </div>
+    </div>
+  );
+}
+
+// ─── ROOT ─────────────────────────────────────────────────────────────────────
+export default function SillageApp() {
+  const [appScreen, setAppScreen] = useState("waitlist");
+  const [currentUser, setCurrentUser] = useState(null);
+  const [activeTab, setActiveTab] = useState("Discover");
+  const [modalFragId, setModalFragId] = useState(null);
+  const [showSuggest, setShowSuggest] = useState(false);
+  const [userStatuses, setUserStatuses] = useState({ 1:"bottle_owned", 2:"sample_wishlist", 3:"sample_have", 4:"tried_skin", 5:"smelled", 6:"bottle_wishlist" });
+  const [privateNotes, setPrivateNotes] = useState({});
+  const [reactions, setReactions] = useState({ 1:"love", 3:"like" });
+
+  const NAV = [{ tab:"Discover", icon:"◈" }, { tab:"Collection", icon:"◇" }, { tab:"Layering", icon:"◎" }, { tab:"Journal", icon:"▣" }, { tab:"Learn", icon:"△" }];
+  const modalFrag = FRAGRANCES.find(f => f.id === modalFragId);
+  function openFrag(id) { setModalFragId(id); }
+  function onReaction(fragId, val) { setReactions(p => ({ ...p, [fragId]: val })); }
+
+  function handleLogin(user) {
+    setCurrentUser(user);
+    setAppScreen("app");
+  }
+
+  function handleSignOut() {
+    setCurrentUser(null);
+    setAppScreen("waitlist");
+  }
+
+  const userInitials = currentUser
+    ? currentUser.name.split(" ").map(w => w[0]).join("").slice(0, 2).toUpperCase()
+    : "?";
+
+  if (appScreen === "waitlist") {
+    return <WaitlistScreen onJoin={() => setAppScreen("login")} />;
+  }
+
+  if (appScreen === "login") {
+    return (
+      <LoginScreen
+        onLogin={handleLogin}
+        onWaitlist={() => setAppScreen("waitlist")}
+      />
+    );
+  }
+
+  return (
+    <div style={{ minHeight:"100vh", background:T.bg, fontFamily:sans }}>
+      <div style={{ maxWidth:460, margin:"0 auto", position:"relative" }}>
+        <div style={{ position:"sticky", top:0, zIndex:40, background:"rgba(248,248,246,0.97)", backdropFilter:"blur(14px)", borderBottom:`1px solid ${T.rule}`, padding:"0 20px" }}>
+          <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", paddingTop:14 }}>
+            <div>
+              <h1 style={{ fontFamily:serif, fontSize:21, letterSpacing:-0.5, color:T.black, margin:0 }}>sillage<span style={{ color:T.mid }}>.</span></h1>
+              <p style={{ fontFamily:sans, fontSize:8, color:T.faint, textTransform:"uppercase", letterSpacing:"0.14em", margin:"2px 0 0" }}>Fragrance Journal</p>
+            </div>
+            <div style={{ display:"flex", alignItems:"center", gap:8 }}>
+              <button onClick={() => setShowSuggest(true)} style={{ fontFamily:sans, fontSize:10, padding:"6px 12px", borderRadius:20, border:`1px solid ${T.rule}`, background:T.white, color:T.mid, cursor:"pointer", whiteSpace:"nowrap" }}>+ Suggest</button>
+              <button
+                onClick={handleSignOut}
+                title="Sign out"
+                style={{ width:30, height:30, borderRadius:"50%", background:T.black, display:"flex", alignItems:"center", justifyContent:"center", fontSize:11, fontWeight:600, color:T.white, fontFamily:sans, border:"none", cursor:"pointer" }}
+              >
+                {userInitials}
+              </button>
+            </div>
+          </div>
+          <div style={{ display:"flex", marginTop:12, overflowX:"auto" }}>
+            {NAV.map(({ tab }) => (
+              <button key={tab} onClick={() => setActiveTab(tab)} style={{ marginRight:16, paddingBottom:11, fontSize:10, textTransform:"uppercase", letterSpacing:"0.08em", color:activeTab===tab?T.black:T.faint, background:"none", border:"none", borderBottom:activeTab===tab?`2px solid ${T.black}`:"2px solid transparent", marginBottom:-1, cursor:"pointer", whiteSpace:"nowrap", fontFamily:sans }}>{tab}</button>
+            ))}
+          </div>
+        </div>
+
+        <div style={{ padding:"28px 20px 130px" }}>
+          {activeTab==="Discover"   && <DiscoverTab   onOpenFrag={openFrag} userStatuses={userStatuses} reactions={reactions} onReaction={onReaction} onSuggest={() => setShowSuggest(true)}/>}
+          {activeTab==="Collection" && <CollectionTab onOpenFrag={openFrag} statuses={userStatuses} reactions={reactions} onReaction={onReaction} onSuggest={() => setShowSuggest(true)}/>}
+          {activeTab==="Layering"   && <LayeringTab/>}
+          {activeTab==="Journal"    && <JournalTab/>}
+          {activeTab==="Learn"      && <LearnTab/>}
+        </div>
+
+        <div style={{ position:"fixed", bottom:0, left:"50%", transform:"translateX(-50%)", width:"100%", maxWidth:460, background:"rgba(248,248,246,0.97)", backdropFilter:"blur(12px)", borderTop:`1px solid ${T.rule}`, display:"flex" }}>
+          {NAV.map(({ tab, icon }) => (
+            <button key={tab} onClick={() => setActiveTab(tab)} style={{ flex:1, display:"flex", flexDirection:"column", alignItems:"center", gap:3, padding:"11px 0 15px", background:"none", border:"none", cursor:"pointer" }}>
+              <span style={{ fontSize:15, color:activeTab===tab?T.black:T.faint }}>{icon}</span>
+              <span style={{ fontFamily:sans, fontSize:8, textTransform:"uppercase", letterSpacing:"0.07em", color:activeTab===tab?T.black:T.faint }}>{tab}</span>
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {modalFrag && (
+        <DetailModal
+          frag={modalFrag}
+          onClose={() => setModalFragId(null)}
+          userStatus={userStatuses[modalFrag.id]}
+          setUserStatus={s => setUserStatuses(p => ({ ...p, [modalFrag.id]: s }))}
+          privateNote={privateNotes[modalFrag.id]}
+          setPrivateNote={n => setPrivateNotes(p => ({ ...p, [modalFrag.id]: n }))}
+          reaction={reactions[modalFrag.id]}
+          setReaction={v => onReaction(modalFrag.id, v)}
           onOpenFrag={openFrag}
         />
       )}
-      {showSuggest&&<SuggestModal onClose={()=>setShowSuggest(false)}/>}
+      {showSuggest && <SuggestModal onClose={() => setShowSuggest(false)}/>}
     </div>
   );
 }
