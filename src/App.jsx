@@ -839,6 +839,59 @@ function HouseStrip({ currentFrag, onOpenFrag }) {
   );
 }
 
+// ─── PERFUMERS ────────────────────────────────────────────────────────────────
+const PERFUMERS = {
+  "Olivier Creed & Erwin Creed": { bio: "Olivier Creed built the house's modern reputation across five decades of bespoke commissions before handing creative leadership to his son Erwin. Aventus, created together in 2010, remains one of the most studied and imitated fragrances of the century. The Creeds have always worked with a deliberately closed process — raw materials sourced personally, formulas held privately.", nationality: "French / British", active: "1969 – present" },
+  "David Apel": { bio: "David Apel is an American perfumer at Symrise whose work spans commercial and niche commissions. Black Orchid remains his most discussed creation — a fragrance built around an accord that doesn't exist in nature. He has spoken about the brief asking for something 'opulent and dark without being heavy.'", nationality: "American", active: "1990s – present" },
+  "Pierre Negrin": { bio: "Pierre Negrin is a French perfumer who spent much of his career at Givaudan before moving to independent work. Oud Wood was an early commission that helped define what a Western interpretation of oud could be — restrained, papyrus-tinged, and accessible without being diluted.", nationality: "French", active: "1990s – present" },
+  "Francis Kurkdjian": { bio: "Francis Kurkdjian graduated from ISIPCA in 1992 and spent his early career creating some of the most commercially successful fragrances of the era — including Jean Paul Gaultier's Le Mâle. He founded Maison Francis Kurkdjian in 2009 with business partner Marc Chaya. His work is characterised by technical precision and an unusual ability to make complex accords smell simple. LVMH acquired the house in 2017.", nationality: "French / Armenian", active: "1992 – present" },
+  "Frank Voelkl": { bio: "Frank Voelkl is a German perfumer at Firmenich known for a restrained, materials-focused approach. Santal 33 was created for Le Labo's New York-specific city exclusive before being added to the permanent line. The papyrus and cardamom accord he built around the sandalwood has become one of the most recognised in contemporary perfumery — and one of the most debated.", nationality: "German", active: "1990s – present" },
+  "Josh Meyer": { bio: "Josh Meyer is a self-taught perfumer and founder of Imaginary Authors based in Portland, Oregon. Every fragrance in the line is named after a fictional book and accompanied by a back-cover blurb. His approach is literary and instinctive — materials chosen for narrative resonance rather than technical convention. He built the brand entirely independently and continues to run it without outside investment.", nationality: "American", active: "2011 – present" },
+};
+
+function PerfumerModal({ name, onClose }) {
+  const info = PERFUMERS[name];
+  const fragrances = FRAGRANCES.filter(f => f.perfumer === name);
+  return (
+    <div onClick={onClose} style={{ position:"fixed", inset:0, zIndex:70, background:"rgba(10,10,10,0.5)", backdropFilter:"blur(12px)", display:"flex", flexDirection:"column", justifyContent:"flex-end", alignItems:"center" }}>
+      <div onClick={e => e.stopPropagation()} style={{ background:T.white, borderRadius:"24px 24px 0 0", border:`1px solid ${T.rule}`, borderBottom:"none", width:"100%", maxWidth:460, maxHeight:"88vh", overflowY:"auto" }}>
+        <div style={{ position:"sticky", top:0, background:T.white, borderBottom:`1px solid ${T.rule}`, padding:"20px 24px 16px", display:"flex", alignItems:"flex-start", justifyContent:"space-between" }}>
+          <div>
+            <p style={{ fontFamily:sans, fontSize:9, textTransform:"uppercase", letterSpacing:"0.12em", color:T.faint, margin:"0 0 3px" }}>Perfumer</p>
+            <h2 style={{ fontFamily:serif, fontSize:24, color:T.black, margin:0, letterSpacing:-0.3 }}>{name}</h2>
+            {info && <p style={{ fontFamily:sans, fontSize:11, color:T.faint, margin:"4px 0 0" }}>{info.nationality} · {info.active}</p>}
+          </div>
+          <button onClick={onClose} style={{ width:30, height:30, borderRadius:"50%", border:`1px solid ${T.rule}`, background:T.white, cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", fontSize:13, color:T.mid, flexShrink:0 }}>✕</button>
+        </div>
+        <div style={{ padding:"20px 24px 48px" }}>
+          {info?.bio
+            ? <p style={{ fontFamily:sans, fontSize:13, color:T.mid, lineHeight:1.8, margin:"0 0 28px" }}>{info.bio}</p>
+            : <p style={{ fontFamily:sans, fontSize:13, color:T.faint, lineHeight:1.7, margin:"0 0 28px" }}>No biography on file for this perfumer yet. If you know this work well, use the Suggest feature to contribute.</p>
+          }
+          {fragrances.length > 0 && (
+            <>
+              <p style={{ fontFamily:sans, fontSize:9, textTransform:"uppercase", letterSpacing:"0.12em", color:T.mid, margin:"0 0 12px" }}>In the sillage. database — {fragrances.length}</p>
+              <div style={{ display:"flex", flexDirection:"column", gap:10 }}>
+                {fragrances.map(f => (
+                  <div key={f.id} style={{ display:"flex", alignItems:"center", gap:14, padding:"12px 14px", background:T.lift, borderRadius:12, border:`1px solid ${T.rule}` }}>
+                    <Mono name={f.name} year={f.year} size={44}/>
+                    <div style={{ flex:1, minWidth:0 }}>
+                      <p style={{ fontFamily:serif, fontSize:14, color:T.black, margin:0 }}>{f.name}</p>
+                      <p style={{ fontFamily:sans, fontSize:11, color:T.mid, margin:"2px 0 0" }}>{f.house} · {f.year}</p>
+                    </div>
+                    <span style={{ fontFamily:sans, fontSize:10, color:T.faint }}>{f.family}</span>
+                  </div>
+                ))}
+              </div>
+            </>
+          )}
+          {fragrances.length === 0 && <p style={{ fontFamily:sans, fontSize:12, color:T.faint, lineHeight:1.6 }}>No fragrances by this perfumer are currently in the database.</p>}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ─── OWNERSHIP BADGE ──────────────────────────────────────────────────────────
 function OwnershipBadge({ ownership, size = "normal", showTooltip = false }) {
   const [open, setOpen] = useState(false);
@@ -938,6 +991,7 @@ function FragCard({ frag, onClick, userStatus, reaction, onReaction, onOpenFrag 
 // ─── DETAIL MODAL ─────────────────────────────────────────────────────────────
 function DetailModal({ frag, onClose, userStatus, setUserStatus, privateNote, setPrivateNote, reaction, setReaction, onOpenFrag, onOpenProfile, onAddJournalEntry }) {
   const [tab,setTab]=useState("overview");
+  const [showPerfumer, setShowPerfumer]=useState(false);
   const [replyText,setReplyText]=useState("");
   const [replyTo,setReplyTo]=useState(null);
   const [replies,setReplies]=useState({});
@@ -965,9 +1019,16 @@ function DetailModal({ frag, onClose, userStatus, setUserStatus, privateNote, se
               <div style={{marginBottom:8}}><span style={{fontFamily:sans,fontSize:9,textTransform:"uppercase",letterSpacing:"0.12em",color:T.mid}}>{frag.house} · {frag.family}</span></div>
               <h2 style={{fontFamily:serif,fontSize:28,color:T.black,margin:"0 0 2px",letterSpacing:-0.5,lineHeight:1.1}}>{frag.name}</h2>
               <p style={{fontFamily:sans,fontSize:13,color:T.mid,margin:"0 0 0",lineHeight:1.4}}>{frag.year} · {frag.concentration}</p>
-              {frag.ownership && <div style={{margin:"3px 0 10px"}}><OwnershipBadge ownership={frag.ownership} size="normal" showTooltip={true}/></div>}
-              {!frag.ownership && <div style={{marginBottom:10}}/>}
+              {frag.ownership && <div style={{margin:"3px 0 0"}}><OwnershipBadge ownership={frag.ownership} size="normal" showTooltip={true}/></div>}
+              {frag.perfumer && frag.perfumer !== "Unknown" && (
+                <p onClick={()=>setShowPerfumer(true)} style={{fontFamily:sans,fontSize:12,color:T.mid,margin:"5px 0 10px",cursor:"pointer",display:"inline-flex",alignItems:"center",gap:4}}>
+                  <span style={{color:T.faint,fontSize:10}}>by</span>
+                  <span style={{color:T.black,borderBottom:`1px solid ${T.rule}`}}>{frag.perfumer}</span>
+                </p>
+              )}
+              {(!frag.perfumer || frag.perfumer==="Unknown") && <div style={{marginBottom:10}}/>}
               <ReactionBar value={reaction} onChange={setReaction}/>
+              {showPerfumer && <PerfumerModal name={frag.perfumer} onClose={()=>setShowPerfumer(false)}/>}
             </div>
             <div style={{width:80,height:100,borderRadius:12,background:`linear-gradient(160deg,${T.lift},${T.press})`,border:`1px solid ${T.rule}`,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",flexShrink:0,marginTop:4}}>
               <span style={{fontFamily:serif,fontSize:22,color:T.ink,opacity:0.3,lineHeight:1}}>{frag.name.split(" ").map(w=>w[0]).join("").slice(0,2).toUpperCase()}</span>
@@ -1143,6 +1204,88 @@ function DetailModal({ frag, onClose, userStatus, setUserStatus, privateNote, se
   );
 }
 
+// ─── TASTE PROFILE ────────────────────────────────────────────────────────────
+function TasteProfile({ userStatuses, reactions }) {
+  const [open, setOpen] = useState(true);
+
+  const AFFINITY_STATUSES = new Set(["bottle_owned","bottle_wishlist","sample_have","tried_skin"]);
+  const DISLIKE_STATUSES  = new Set(["tried_not_for_me"]);
+
+  // Build accord tallies
+  const likeTally   = {};
+  const dislikeTally = {};
+
+  FRAGRANCES.forEach(f => {
+    const status   = userStatuses[f.id];
+    const reaction = reactions[f.id];
+    const isLiked    = AFFINITY_STATUSES.has(status) || reaction === "love" || reaction === "like";
+    const isDisliked = DISLIKE_STATUSES.has(status)  || reaction === "dislike";
+
+    if (!isLiked && !isDisliked) return;
+    const target = isDisliked ? dislikeTally : likeTally;
+
+    (f.accords || []).forEach(a => {
+      target[a.n] = (target[a.n] || 0) + 1;
+    });
+    // Also tally family as an accord-level signal
+    if (f.family) target[f.family] = (target[f.family] || 0) + 1;
+  });
+
+  const likeEntries    = Object.entries(likeTally).sort((a,b) => b[1]-a[1]).slice(0,7);
+  const dislikeEntries = Object.entries(dislikeTally).sort((a,b) => b[1]-a[1]).slice(0,5);
+  const likeMax    = likeEntries[0]?.[1]    || 1;
+  const dislikeMax = dislikeEntries[0]?.[1] || 1;
+
+  if (likeEntries.length === 0 && dislikeEntries.length === 0) return null;
+
+  const Bar = ({ label, count, max, color }) => (
+    <div style={{ marginBottom:10 }}>
+      <div style={{ display:"flex", justifyContent:"space-between", alignItems:"baseline", marginBottom:4 }}>
+        <span style={{ fontFamily:sans, fontSize:12, color:T.ink }}>{label}</span>
+        <span style={{ fontFamily:sans, fontSize:10, color:T.faint }}>{count}</span>
+      </div>
+      <div style={{ height:5, background:T.lift, borderRadius:3, overflow:"hidden" }}>
+        <div style={{ height:"100%", width:`${Math.round((count/max)*100)}%`, background:color, borderRadius:3, transition:"width 0.6s ease" }}/>
+      </div>
+    </div>
+  );
+
+  return (
+    <div style={{ background:T.white, border:`1px solid ${T.rule}`, borderRadius:16, marginBottom:20, overflow:"hidden" }}>
+      <div onClick={() => setOpen(o => !o)} style={{ display:"flex", alignItems:"center", justifyContent:"space-between", padding:"14px 16px", cursor:"pointer" }}>
+        <div>
+          <p style={{ fontFamily:sans, fontSize:9, textTransform:"uppercase", letterSpacing:"0.12em", color:T.faint, margin:"0 0 2px" }}>Based on what you own and love</p>
+          <p style={{ fontFamily:serif, fontSize:16, color:T.black, margin:0 }}>Your taste profile</p>
+        </div>
+        <span style={{ fontFamily:sans, fontSize:12, color:T.faint, transition:"transform 0.2s", display:"inline-block", transform:open?"rotate(180deg)":"rotate(0deg)" }}>▾</span>
+      </div>
+
+      {open && (
+        <div style={{ padding:"0 16px 16px", borderTop:`1px solid ${T.lift}` }}>
+          {likeEntries.length > 0 && (
+            <div style={{ paddingTop:14 }}>
+              <p style={{ fontFamily:sans, fontSize:9, textTransform:"uppercase", letterSpacing:"0.1em", color:T.mid, margin:"0 0 12px" }}>What you keep reaching for</p>
+              {likeEntries.map(([label, count]) => (
+                <Bar key={label} label={label} count={count} max={likeMax} color={T.black}/>
+              ))}
+            </div>
+          )}
+
+          {dislikeEntries.length > 0 && (
+            <div style={{ paddingTop: likeEntries.length > 0 ? 16 : 14, borderTop: likeEntries.length > 0 ? `1px solid ${T.lift}` : "none" }}>
+              <p style={{ fontFamily:sans, fontSize:9, textTransform:"uppercase", letterSpacing:"0.1em", color:T.mid, margin:"0 0 12px" }}>Accords that haven't resonated</p>
+              {dislikeEntries.map(([label, count]) => (
+                <Bar key={label} label={label} count={count} max={dislikeMax} color="#C0392B"/>
+              ))}
+              <p style={{ fontFamily:sans, fontSize:11, color:T.faint, margin:"10px 0 0", lineHeight:1.6 }}>The nose uses this to filter out fragrances that are unlikely to work for you.</p>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ─── DISCOVER ─────────────────────────────────────────────────────────────────
 const CHAT_RESP={
   library:{text:"A library in autumn — paper, ink, a whisper of smoke. Oud Wood by Tom Ford is uncannily bookish.",fragId:3},
@@ -1271,6 +1414,7 @@ function CollectionTab({ onOpenFrag, statuses:userStatuses, reactions, onReactio
         <h2 style={{fontFamily:serif,fontSize:30,color:T.black,letterSpacing:-0.5,margin:0}}>My Collection</h2>
         <p style={{fontFamily:sans,fontSize:13,color:T.mid,margin:"6px 0 0"}}>Bottles, samples, and everything in between.</p>
       </div>
+      <TasteProfile userStatuses={userStatuses} reactions={reactions}/>
       <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:6}}>
         <div style={{background:T.black,borderRadius:14,padding:"16px 14px"}}>
           <p style={{fontFamily:serif,fontSize:32,color:T.white,margin:0}}>{counts["bottle_owned"]||0}</p>
@@ -2096,6 +2240,22 @@ function LoginScreen({ onLogin, onWaitlist }) {
 }
 
 // ─── MOCK COMMUNITY MEMBERS ───────────────────────────────────────────────────
+const SILLAGE_ACCOUNT = {
+  username: "sillage", name: "sillage.",
+  country: "—", isFounder: false, memberNumber: 0, isTopContributor: false,
+  isSillageOfficial: true,
+  bio: "The sillage. team. New houses, seasonal picks, and things worth your time. Not a brand account — just people who care about this.",
+  followers: 0, following: 0,
+  statuses: {}, reactions: {},
+  reviews: [],
+  layers: [],
+  posts: [
+    { date:"3 days ago", text:"Just added the full Imaginary Authors catalogue. Josh Meyer has been building something quietly remarkable in Portland since 2011. Start with Slow Explosions or The Cobra & The Canary." },
+    { date:"1 week ago", text:"A note on reformulations: we flag acquisition dates because they matter. Not every acquisition changes a house — but you deserve to know. Independent until proven otherwise." },
+    { date:"2 weeks ago", text:"Sampling is the only honest way to buy fragrance. A bottle is a commitment. A sample is a conversation. We'll always say this." },
+  ],
+};
+
 const MOCK_MEMBERS = [
   {
     username: "scentcollector_jw", name: "James W.",
@@ -2145,19 +2305,25 @@ const MOCK_MEMBERS = [
 ];
 
 // ─── PROFILE MODAL ────────────────────────────────────────────────────────────
-function ProfileModal({ username, onClose, currentUser, userStatuses, onOpenFrag }) {
+function ProfileModal({ username, onClose, currentUser, userStatuses, onOpenFrag, isFollowing, onToggleFollow, following, onOpenProfile }) {
   const [tab, setTab] = useState("reviews");
-  const [following, setFollowing] = useState(false);
 
   const isSelf = currentUser && currentUser.username === username;
+  const isSillage = username === "sillage";
 
-  const member = isSelf
-    ? { ...currentUser, bio: currentUser.bio || "Your sillage profile.", followers: 0, following: 0, statuses: userStatuses || {}, reactions: {}, reviews: [], layers: [] }
-    : MOCK_MEMBERS.find(m => m.username === username);
+  const followingList = isSelf && following
+    ? [SILLAGE_ACCOUNT, ...MOCK_MEMBERS.filter(m => following.has(m.username))]
+    : [];
+
+  const member = isSillage
+    ? SILLAGE_ACCOUNT
+    : isSelf
+      ? { ...currentUser, bio: currentUser.bio || "Your sillage profile.", followers: 1, following: following ? following.size : 1, statuses: userStatuses || {}, reactions: {}, reviews: [], layers: [] }
+      : MOCK_MEMBERS.find(m => m.username === username);
 
   if (!member) return null;
 
-  const initials = (member.username || member.name || "?").slice(0, 2).toUpperCase();
+  const initials = isSillage ? "s." : (member.username || member.name || "?").slice(0, 2).toUpperCase();
 
   const myFragIds = new Set(Object.keys(userStatuses || {}).map(Number));
   const theirFragIds = new Set(Object.keys(member.statuses || {}).map(Number));
@@ -2173,18 +2339,19 @@ function ProfileModal({ username, onClose, currentUser, userStatuses, onOpenFrag
         <div style={{ position:"sticky", top:0, background:T.white, zIndex:2, borderBottom:`1px solid ${T.rule}`, padding:"20px 24px 0" }}>
           <div style={{ display:"flex", alignItems:"flex-start", justifyContent:"space-between", marginBottom:18 }}>
             <div style={{ display:"flex", alignItems:"center", gap:14 }}>
-              <div style={{ width:54, height:54, borderRadius:"50%", background:T.black, display:"flex", alignItems:"center", justifyContent:"center", fontSize:18, fontWeight:600, color:T.white, fontFamily:sans, flexShrink:0, position:"relative" }}>
+              <div style={{ width:54, height:54, borderRadius:"50%", background:isSillage?T.black:T.black, display:"flex", alignItems:"center", justifyContent:"center", fontSize:isSillage?15:18, fontWeight:600, color:T.white, fontFamily:isSillage?serif:sans, flexShrink:0, position:"relative" }}>
                 {initials}
-                {member.country && (
+                {!isSillage && member.country && (
                   <span style={{ position:"absolute", bottom:-2, right:-2, fontSize:16, lineHeight:1 }}>{countryFlag(member.country)}</span>
                 )}
               </div>
               <div>
                 <div style={{ display:"flex", alignItems:"center", gap:6, marginBottom:4, flexWrap:"wrap" }}>
                   <span style={{ fontFamily:serif, fontSize:18, color:T.black, letterSpacing:-0.3 }}>{member.name}</span>
+                  {isSillage && <span style={{ fontFamily:sans, fontSize:9, textTransform:"uppercase", letterSpacing:"0.1em", color:T.faint, background:T.lift, padding:"2px 7px", borderRadius:10, border:`1px solid ${T.rule}` }}>Official</span>}
                 </div>
                 <span style={{ fontFamily:sans, fontSize:12, color:T.mid }}>@{member.username}</span>
-                {(member.isFounder || member.isTopContributor) && (
+                {!isSillage && (member.isFounder || member.isTopContributor) && (
                   <div style={{ marginTop:6 }}>
                     <UserBadges user={member} size="small"/>
                   </div>
@@ -2214,10 +2381,10 @@ function ProfileModal({ username, onClose, currentUser, userStatuses, onOpenFrag
           {!isSelf && (
             <div style={{ display:"flex", gap:8, marginBottom:18 }}>
               <button
-                onClick={() => setFollowing(f => !f)}
-                style={{ flex:1, padding:"11px 0", borderRadius:12, background:following?T.white:T.black, border:`1px solid ${following?T.rule:T.black}`, color:following?T.mid:T.white, fontSize:13, fontFamily:sans, fontWeight:500, cursor:"pointer", transition:"all 0.2s" }}
+                onClick={() => !isSillage && onToggleFollow && onToggleFollow(username)}
+                style={{ flex:1, padding:"11px 0", borderRadius:12, background:isFollowing?T.white:T.black, border:`1px solid ${isFollowing?T.rule:T.black}`, color:isFollowing?T.mid:T.white, fontSize:13, fontFamily:sans, fontWeight:500, cursor:isSillage?"default":"pointer", transition:"all 0.2s", opacity: isSillage ? 0.7 : 1 }}
               >
-                {following ? "Following" : "Follow"}
+                {isSillage ? "Following" : isFollowing ? "Following" : "Follow"}
               </button>
               {!isSelf && commonFrags.length > 0 && (
                 <div style={{ display:"flex", alignItems:"center", gap:8, padding:"11px 14px", borderRadius:12, border:`1px solid ${T.rule}`, background:T.lift }}>
@@ -2240,10 +2407,10 @@ function ProfileModal({ username, onClose, currentUser, userStatuses, onOpenFrag
           )}
 
           <div style={{ display:"flex", gap:0, overflowX:"auto" }}>
-            {["reviews","layering","collection","in common"].map(t => (
+            {(isSillage ? ["posts","reviews"] : isSelf ? ["reviews","layering","collection","following"] : ["reviews","layering","collection","in common"]).map(t => (
               (t === "in common" && (isSelf || commonFrags.length === 0)) ? null : (
                 <button key={t} onClick={() => setTab(t)} style={{ marginRight:16, paddingBottom:12, fontSize:10, textTransform:"uppercase", letterSpacing:"0.08em", color:tab===t?T.black:T.faint, background:"none", border:"none", borderBottom:tab===t?`2px solid ${T.black}`:"2px solid transparent", marginBottom:-1, cursor:"pointer", whiteSpace:"nowrap", fontFamily:sans }}>
-                  {t}{t==="layering"&&publicLayers.length>0?` (${publicLayers.length})`:""}
+                  {t}{t==="layering"&&publicLayers.length>0?` (${publicLayers.length})`:""}{t==="following"?` (${followingList.length})`:""}
                 </button>
               )
             ))}
@@ -2251,6 +2418,37 @@ function ProfileModal({ username, onClose, currentUser, userStatuses, onOpenFrag
         </div>
 
         <div style={{ padding:"20px 24px 40px" }}>
+
+          {tab === "posts" && isSillage && (
+            <div>
+              {(SILLAGE_ACCOUNT.posts || []).map((p, i) => (
+                <div key={i} style={{ paddingBottom:20, marginBottom:20, borderBottom:i < SILLAGE_ACCOUNT.posts.length-1 ? `1px solid ${T.lift}` : "none" }}>
+                  <p style={{ fontFamily:sans, fontSize:13, color:T.ink, lineHeight:1.75, margin:"0 0 6px" }}>{p.text}</p>
+                  <p style={{ fontFamily:sans, fontSize:11, color:T.faint, margin:0 }}>{p.date}</p>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {tab === "following" && isSelf && (
+            <div>
+              {followingList.map((m, i) => (
+                <div key={m.username} onClick={() => onOpenProfile && onOpenProfile(m.username)} style={{ display:"flex", alignItems:"center", gap:12, padding:"12px 0", borderBottom: i < followingList.length-1 ? `1px solid ${T.lift}` : "none", cursor:"pointer" }}>
+                  <div style={{ width:40, height:40, borderRadius:"50%", background:T.black, display:"flex", alignItems:"center", justifyContent:"center", fontSize:m.isSillageOfficial?13:14, fontWeight:600, color:T.white, fontFamily:m.isSillageOfficial?serif:sans, flexShrink:0 }}>
+                    {m.isSillageOfficial ? "s." : (m.username||m.name||"?").slice(0,2).toUpperCase()}
+                  </div>
+                  <div style={{ flex:1, minWidth:0 }}>
+                    <div style={{ display:"flex", alignItems:"center", gap:6 }}>
+                      <span style={{ fontFamily:serif, fontSize:14, color:T.black }}>{m.name}</span>
+                      {m.isSillageOfficial && <span style={{ fontFamily:sans, fontSize:9, textTransform:"uppercase", letterSpacing:"0.1em", color:T.faint, background:T.lift, padding:"1px 6px", borderRadius:8, border:`1px solid ${T.rule}` }}>Official</span>}
+                    </div>
+                    <span style={{ fontFamily:sans, fontSize:11, color:T.faint }}>@{m.username}</span>
+                  </div>
+                  {m.isSillageOfficial && <span style={{ fontFamily:sans, fontSize:10, color:T.faint }}>Always following</span>}
+                </div>
+              ))}
+            </div>
+          )}
 
           {tab === "reviews" && (
             <div>
@@ -2406,8 +2604,18 @@ export default function SillageApp() {
   const [privateNotes, setPrivateNotes] = useState({});
   const [reactions, setReactions] = useState({ 1:"love", 3:"like" });
   const [journalEntries, setJournalEntries] = useState([]);
+  // following: Set of usernames the current user follows. sillage. is always included.
+  const [following, setFollowing] = useState(new Set(["sillage"]));
 
   function addJournalEntry(entry) { setJournalEntries(p => [entry, ...p]); }
+  function toggleFollow(username) {
+    setFollowing(prev => {
+      const next = new Set(prev);
+      if (username === "sillage") return next; // can't unfollow sillage.
+      next.has(username) ? next.delete(username) : next.add(username);
+      return next;
+    });
+  }
 
   const NAV = [{ tab:"Discover", icon:"◈" }, { tab:"Collection", icon:"◇" }, { tab:"Layering", icon:"◎" }, { tab:"Journal", icon:"▣" }, { tab:"Learn", icon:"△" }];
   const modalFrag = FRAGRANCES.find(f => f.id === modalFragId);
@@ -2488,9 +2696,12 @@ export default function SillageApp() {
           currentUser={currentUser}
           userStatuses={userStatuses}
           onOpenFrag={id => { setProfileUsername(null); setTimeout(() => openFrag(id), 50); }}
+          isFollowing={following.has(profileUsername)}
+          onToggleFollow={toggleFollow}
+          following={following}
+          onOpenProfile={username => { setProfileUsername(null); setTimeout(() => setProfileUsername(username), 50); }}
         />
       )}
     </div>
   );
 }
-  
