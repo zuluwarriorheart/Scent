@@ -1854,7 +1854,7 @@ function WaitlistScreen({ onJoin }) {
   };
 
   return (
-    <div style={{ minHeight:"100vh", background:T.black, display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", padding:"40px 28px", boxSizing:"border-box", fontFamily:sans }}>
+    <div style={{ minHeight:"100svh", background:T.black, display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", padding:"40px 28px", boxSizing:"border-box", fontFamily:sans }}>
       <div style={{ width:"100%", maxWidth:400 }}>
         <div style={{ marginBottom:48 }}>
           <h1 style={{ fontFamily:serif, fontSize:38, color:T.white, margin:"0 0 6px", letterSpacing:-1, lineHeight:1.1 }}>
@@ -1983,7 +1983,7 @@ function LoginScreen({ onLogin, onWaitlist }) {
 
   if (mode === "google-profile") {
     return (
-      <div style={{ minHeight:"100vh", background:T.bg, display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", padding:"40px 28px", boxSizing:"border-box", fontFamily:sans }}>
+      <div style={{ minHeight:"100svh", background:T.bg, display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", padding:"40px 28px", boxSizing:"border-box", fontFamily:sans }}>
         <div style={{ width:"100%", maxWidth:400 }}>
           <div style={{ textAlign:"center", marginBottom:36 }}>
             <h1 style={{ fontFamily:serif, fontSize:34, color:T.black, margin:"0 0 4px", letterSpacing:-1 }}>sillage<span style={{ color:T.mid }}>.</span></h1>
@@ -2008,7 +2008,7 @@ function LoginScreen({ onLogin, onWaitlist }) {
   }
 
   return (
-    <div style={{ minHeight:"100vh", background:T.bg, display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", padding:"40px 28px", boxSizing:"border-box", fontFamily:sans }}>
+    <div style={{ minHeight:"100svh", background:T.bg, display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", padding:"40px 28px", boxSizing:"border-box", fontFamily:sans }}>
       <div style={{ width:"100%", maxWidth:400 }}>
         <div style={{ textAlign:"center", marginBottom:40 }}>
           <h1 style={{ fontFamily:serif, fontSize:34, color:T.black, margin:"0 0 4px", letterSpacing:-1 }}>sillage<span style={{ color:T.mid }}>.</span></h1>
@@ -2426,9 +2426,9 @@ export default function SillageApp() {
   if (appScreen === "login") return <LoginScreen onLogin={handleLogin} onWaitlist={() => setAppScreen("waitlist")}/>;
 
   return (
-    <div style={{ minHeight:"100vh", background:T.bg, fontFamily:sans }}>
-      <div style={{ maxWidth:460, margin:"0 auto", position:"relative" }}>
-        <div style={{ position:"sticky", top:0, zIndex:40, background:"rgba(248,248,246,0.97)", backdropFilter:"blur(14px)", borderBottom:`1px solid ${T.rule}`, padding:"0 20px" }}>
+    <div style={{ minHeight:"100svh", background:T.bg, fontFamily:sans }}>
+      <div style={{ width:"100%", position:"sticky", top:0, zIndex:40, background:"rgba(248,248,246,0.97)", backdropFilter:"blur(14px)", borderBottom:`1px solid ${T.rule}` }}>
+        <div style={{ maxWidth:860, margin:"0 auto", padding:"0 24px" }}>
           <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", paddingTop:14 }}>
             <div>
               <h1 style={{ fontFamily:serif, fontSize:21, letterSpacing:-0.5, color:T.black, margin:0 }}>sillage<span style={{ color:T.mid }}>.</span></h1>
@@ -2451,8 +2451,10 @@ export default function SillageApp() {
             ))}
           </div>
         </div>
+      </div>
 
-        <div style={{ padding:"28px 20px 48px" }}>
+      <div style={{ maxWidth:860, margin:"0 auto", padding:"28px 24px 64px", display:"grid", gridTemplateColumns:"minmax(0,1fr)", gap:0 }}>
+        <div style={{ maxWidth:560 }}>
           {activeTab==="Discover"   && <DiscoverTab   onOpenFrag={openFrag} userStatuses={userStatuses} reactions={reactions} onReaction={onReaction} onSuggest={() => setShowSuggest(true)} currentUser={currentUser}/>}
           {activeTab==="Collection" && <CollectionTab onOpenFrag={openFrag} statuses={userStatuses} reactions={reactions} onReaction={onReaction} onSuggest={() => setShowSuggest(true)}/>}
           {activeTab==="Layering"   && <LayeringTab/>}
@@ -2460,8 +2462,6 @@ export default function SillageApp() {
           {activeTab==="Learn"      && <LearnTab/>}
           <FooterLinks/>
         </div>
-
-
       </div>
 
       {modalFrag && (
@@ -2493,3 +2493,4 @@ export default function SillageApp() {
     </div>
   );
 }
+  
