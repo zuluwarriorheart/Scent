@@ -442,33 +442,178 @@ function StatusSelector({ value, onChange }) {
 }
 
 // ─── PRIVATE NOTE EDITOR ──────────────────────────────────────────────────────
-function PrivateNoteEditor({ note, onSave }) {
+function PrivateNoteEditor({ note, onSave, frag, onAddJournalEntry }) {
   const [text,setText]=useState(note?.text||"");
+  const [prompt,setPrompt]=useState(note?.prompt||"");
   const [where,setWhere]=useState(note?.where||"");
   const [date,setDate]=useState(note?.date||new Date().toLocaleDateString("en-US",{month:"short",day:"numeric",year:"numeric"}));
+  const [addToJournal,setAddToJournal]=useState(false);
+  const [publishAsReview,setPublishAsReview]=useState(false);
+  const [reviewRating,setReviewRating]=useState(0);
   const [saved,setSaved]=useState(false);
-  function save(){onSave({text,where,date});setSaved(true);setTimeout(()=>setSaved(false),1800);}
-  const inp={width:"100%",background:T.lift,border:`1px solid ${T.rule}`,borderRadius:8,padding:"9px 12px",fontSize:13,color:T.ink,outline:"none",fontFamily:sans,boxSizing:"border-box"};
-  return (
-    <div style={{ background:T.lift, borderRadius:14, border:`1px solid ${T.rule}`, padding:16 }}>
-      <div style={{ display:"flex", alignItems:"center", gap:6, marginBottom:14 }}>
-        <Icon name="lock" size={12} color={T.mid}/>
-        <span style={{ fontFamily:sans, fontSize:9, textTransform:"uppercase", letterSpacing:"0.1em", color:T.mid }}>Private — only visible to you</span>
+  const inp={width:"100%",background:T.white,border:`1px solid ${T.rule}`,borderRadius:8,padding:"9px 12px",fontSize:13,color:T.ink,outline:"none",fontFamily:sans,boxSizing:"border-box"};
+
+  function save(){
+    onSave({text,prompt,where,date});
+    if(addToJournal && text.trim() && onAddJournalEntry){
+      onAddJournalEntry({
+        fragId:frag.id, fragName:frag.name, house:frag.house,
+        family:frag.family, text, prompt, where, date,
+        publishedAsReview:publishAsReview,
+        reviewRating:publishAsReview?reviewRating:null,
+        shared:false,
+        id:Date.now(),
+      });
+    }
+    setSaved(true);
+    setTimeout(()=>setSaved(false),1800);
+  }
+
+  const Toggle = ({label, sub, active, onChange}) => (
+    <div onClick={()=>onChange(!active)} style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"11px 14px",borderRadius:10,border:`1px solid ${active?T.black:T.rule}`,background:active?T.black:T.white,cursor:"pointer",transition:"all 0.15s",marginBottom:8}}>
+      <div>
+        <p style={{fontFamily:sans,fontSize:12,fontWeight:500,color:active?T.white:T.ink,margin:0}}>{label}</p>
+        {sub&&<p style={{fontFamily:sans,fontSize:10,color:active?"rgba(255,255,255,0.6)":T.faint,margin:"1px 0 0"}}>{sub}</p>}
       </div>
-      <p style={{ fontFamily:sans, fontSize:9, textTransform:"uppercase", letterSpacing:"0.12em", color:T.mid, margin:"0 0 6px" }}>What did you think?</p>
-      <textarea value={text} onChange={e=>setText(e.target.value)} placeholder="First impression, dry-down, projection…" rows={4} style={{...inp,resize:"vertical",lineHeight:1.6,marginBottom:10}}/>
-      <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:8, marginBottom:14 }}>
-        <div><p style={{ fontFamily:sans, fontSize:9, textTransform:"uppercase", letterSpacing:"0.12em", color:T.mid, margin:"0 0 6px" }}>Where smelled</p><input value={where} onChange={e=>setWhere(e.target.value)} placeholder="e.g. Saks, blind buy…" style={inp}/></div>
-        <div><p style={{ fontFamily:sans, fontSize:9, textTransform:"uppercase", letterSpacing:"0.12em", color:T.mid, margin:"0 0 6px" }}>Date</p><input value={date} onChange={e=>setDate(e.target.value)} style={inp}/></div>
+      <div style={{width:32,height:18,borderRadius:9,background:active?"rgba(255,255,255,0.3)":"rgba(0,0,0,0.08)",position:"relative",flexShrink:0}}>
+        <div style={{position:"absolute",top:2,left:active?14:2,width:14,height:14,borderRadius:"50%",background:active?T.white:T.mid,transition:"left 0.15s"}}/>
       </div>
-      <button onClick={save} style={{ width:"100%", padding:"10px 0", borderRadius:8, background:saved?T.mid:T.black, border:"none", color:T.white, fontSize:12, fontFamily:sans, cursor:"pointer", transition:"background 0.2s" }}>{saved?"Saved ✓":"Save note"}</button>
     </div>
+  );
+
+  return (
+    <div style={{background:T.lift,borderRadius:14,border:`1px solid ${T.rule}`,padding:16}}>
+      <div style={{display:"flex",alignItems:"center",gap:6,marginBottom:14}}>
+        <Icon name="lock" size={12} color={T.mid}/>
+        <span style={{fontFamily:sans,fontSize:9,textTransform:"uppercase",letterSpacing:"0.1em",color:T.mid}}>Private — only visible to you</span>
+      </div>
+
+      <p style={{fontFamily:sans,fontSize:9,textTransform:"uppercase",letterSpacing:"0.12em",color:T.mid,margin:"0 0 6px"}}>What made you reach for this today?</p>
+      <input value={prompt} onChange={e=>setPrompt(e.target.value)} placeholder="A mood, an occasion, an instinct…" style={{...inp,marginBottom:12}}/>
+
+      <p style={{fontFamily:sans,fontSize:9,textTransform:"uppercase",letterSpacing:"0.12em",color:T.mid,margin:"0 0 6px"}}>Your thoughts</p>
+      <textarea value={text} onChange={e=>setText(e.target.value)} placeholder="First impression, dry-down, projection…" rows={4} style={{...inp,resize:"vertical",lineHeight:1.6,marginBottom:10}}/>
+
+      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:16}}>
+        <div><p style={{fontFamily:sans,fontSize:9,textTransform:"uppercase",letterSpacing:"0.12em",color:T.mid,margin:"0 0 6px"}}>Where smelled</p><input value={where} onChange={e=>setWhere(e.target.value)} placeholder="e.g. Saks, blind buy…" style={inp}/></div>
+        <div><p style={{fontFamily:sans,fontSize:9,textTransform:"uppercase",letterSpacing:"0.12em",color:T.mid,margin:"0 0 6px"}}>Date</p><input value={date} onChange={e=>setDate(e.target.value)} style={inp}/></div>
+      </div>
+
+      <div style={{borderTop:`1px solid ${T.rule}`,paddingTop:14,marginBottom:12}}>
+        <p style={{fontFamily:sans,fontSize:9,textTransform:"uppercase",letterSpacing:"0.12em",color:T.mid,margin:"0 0 10px"}}>Also save as</p>
+        <Toggle label="Add to Journal" sub="Appears in your private scent timeline" active={addToJournal} onChange={setAddToJournal}/>
+        <Toggle label="Publish as Review" sub="Shared with the community" active={publishAsReview} onChange={setPublishAsReview}/>
+        {publishAsReview&&(
+          <div style={{padding:"10px 14px",borderRadius:10,border:`1px solid ${T.rule}`,background:T.white,marginBottom:4}}>
+            <p style={{fontFamily:sans,fontSize:9,textTransform:"uppercase",letterSpacing:"0.12em",color:T.mid,margin:"0 0 8px"}}>Rating</p>
+            <div style={{display:"flex",gap:6}}>
+              {[1,2,3,4,5].map(n=>(
+                <span key={n} onClick={()=>setReviewRating(n)} style={{fontSize:22,cursor:"pointer",color:n<=reviewRating?T.black:T.faint,lineHeight:1}}>★</span>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+
+      <button onClick={save} disabled={!text.trim()} style={{width:"100%",padding:"10px 0",borderRadius:8,background:saved?T.mid:text.trim()?T.black:T.faint,border:"none",color:T.white,fontSize:12,fontFamily:sans,cursor:text.trim()?"pointer":"not-allowed",transition:"background 0.2s"}}>
+        {saved?"Saved ✓":"Save"}
+      </button>
+    </div>
+  );
+}
+
+// ─── LEGAL MODAL ──────────────────────────────────────────────────────────────
+const LEGAL_CONTENT = {
+  terms: {
+    title: "Terms of Service",
+    updated: "Last updated: June 2026",
+    sections: [
+      { heading: "Acceptance", body: "By accessing or using sillage. you agree to be bound by these terms. If you do not agree, please do not use the platform." },
+      { heading: "Your account", body: "You are responsible for maintaining the confidentiality of your account credentials. You must notify us immediately at hello@sillage.app if you suspect unauthorised access to your account." },
+      { heading: "Your content", body: "You retain ownership of notes, reviews, and journal entries you create. By publishing a review you grant sillage. a non-exclusive licence to display that content on the platform. Private notes are never shared." },
+      { heading: "Community standards", body: "Reviews and community content must be honest and based on personal experience. Spam, harassment, and fraudulent reviews are grounds for account suspension." },
+      { heading: "Samples and purchases", body: "sillage. facilitates discovery and may link to third-party sample services. We are not responsible for third-party transactions, shipping, or product quality." },
+      { heading: "Limitation of liability", body: "sillage. is provided as-is. We are not liable for any indirect or consequential damages arising from your use of the platform." },
+      { heading: "Changes", body: "We may update these terms from time to time. Continued use of sillage. after changes constitutes acceptance of the revised terms." },
+      { heading: "Contact", body: "Questions about these terms? Write to us at hello@sillage.app." },
+    ],
+  },
+  privacy: {
+    title: "Privacy Policy",
+    updated: "Last updated: June 2026",
+    sections: [
+      { heading: "What we collect", body: "We collect your name, email address, username, and country when you register. We collect fragrance interactions — statuses, reactions, journal entries, and reviews — to power your personal experience." },
+      { heading: "What we never do", body: "We do not sell your data. We do not share your personal information with advertisers. Private notes are encrypted and never accessible to the sillage. team." },
+      { heading: "How we use your data", body: "Your data is used to provide the sillage. service, personalise your discovery experience, and improve the platform. Aggregate, anonymised data may be used to identify fragrance trends." },
+      { heading: "Journal entries and private notes", body: "Private notes and journal entries marked as private are stored securely and are visible only to you. Publishing a journal entry or review makes that content visible to the community." },
+      { heading: "Cookies", body: "We use essential cookies to keep you signed in. We do not use advertising or tracking cookies." },
+      { heading: "Data retention", body: "You may delete your account at any time. Upon deletion, your personal data is removed within 30 days. Anonymised, published review content may be retained." },
+      { heading: "Your rights", body: "You have the right to access, correct, or delete your personal data. To exercise these rights, contact us at hello@sillage.app." },
+      { heading: "Contact", body: "Privacy questions or requests: hello@sillage.app." },
+    ],
+  },
+};
+
+function LegalModal({ type, onClose }) {
+  const content = LEGAL_CONTENT[type];
+  if (!content) return null;
+  return (
+    <div onClick={onClose} style={{ position:"fixed", inset:0, zIndex:80, background:"rgba(248,248,246,0.94)", backdropFilter:"blur(16px)", display:"flex", flexDirection:"column", justifyContent:"flex-end", alignItems:"center" }}>
+      <div onClick={e => e.stopPropagation()} style={{ background:T.white, borderRadius:"24px 24px 0 0", border:`1px solid ${T.rule}`, borderBottom:"none", width:"100%", maxWidth:460, maxHeight:"88vh", overflowY:"auto" }}>
+        <div style={{ position:"sticky", top:0, background:T.white, borderBottom:`1px solid ${T.rule}`, padding:"20px 24px 16px", display:"flex", alignItems:"flex-start", justifyContent:"space-between" }}>
+          <div>
+            <p style={{ fontFamily:sans, fontSize:9, textTransform:"uppercase", letterSpacing:"0.12em", color:T.mid, margin:"0 0 3px" }}>sillage.</p>
+            <h2 style={{ fontFamily:serif, fontSize:22, color:T.black, margin:0 }}>{content.title}</h2>
+            <p style={{ fontFamily:sans, fontSize:11, color:T.faint, margin:"3px 0 0" }}>{content.updated}</p>
+          </div>
+          <button onClick={onClose} style={{ width:30, height:30, borderRadius:"50%", border:`1px solid ${T.rule}`, background:T.white, cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", fontSize:13, color:T.mid, flexShrink:0 }}>✕</button>
+        </div>
+        <div style={{ padding:"20px 24px 40px" }}>
+          {content.sections.map((s, i) => (
+            <div key={i} style={{ marginBottom:20 }}>
+              <p style={{ fontFamily:sans, fontSize:11, fontWeight:600, color:T.ink, textTransform:"uppercase", letterSpacing:"0.08em", margin:"0 0 5px" }}>{s.heading}</p>
+              <p style={{ fontFamily:sans, fontSize:13, color:T.mid, lineHeight:1.75, margin:0 }}>{s.body}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── FOOTER LINKS ─────────────────────────────────────────────────────────────
+function FooterLinks({ dark = false }) {
+  const [legal, setLegal] = useState(null);
+  const col = dark ? "rgba(255,255,255,0.25)" : T.faint;
+  const colHov = dark ? "rgba(255,255,255,0.55)" : T.mid;
+  const sep = dark ? "rgba(255,255,255,0.12)" : T.rule;
+  const links = [
+    { label:"Contact", action:() => window.open("mailto:hello@sillage.app") },
+    { label:"Terms of Service", action:() => setLegal("terms") },
+    { label:"Privacy Policy", action:() => setLegal("privacy") },
+  ];
+  return (
+    <>
+      <div style={{ display:"flex", alignItems:"center", justifyContent:"center", gap:0, marginTop:32, flexWrap:"wrap" }}>
+        {links.map((l, i) => (
+          <span key={l.label} style={{ display:"inline-flex", alignItems:"center" }}>
+            <span onClick={l.action} style={{ fontFamily:sans, fontSize:11, color:col, cursor:"pointer", padding:"4px 10px" }}
+              onMouseEnter={e => e.currentTarget.style.color = colHov}
+              onMouseLeave={e => e.currentTarget.style.color = col}>
+              {l.label}
+            </span>
+            {i < links.length - 1 && <span style={{ width:1, height:10, background:sep, display:"inline-block" }}/>}
+          </span>
+        ))}
+      </div>
+      {legal && <LegalModal type={legal} onClose={() => setLegal(null)}/>}
+    </>
   );
 }
 
 // ─── SUGGEST MODAL ────────────────────────────────────────────────────────────
 function SuggestModal({ onClose }) {
-  const [form,setForm]=useState({name:"",house:"",houseUrl:"",year:"",family:"",concentration:"",notes:"",why:"",firstReview:""});
+  const [form,setForm]=useState({name:"",house:"",houseUrl:"",year:"",family:"",concentration:"",notes:"",why:"",firstReview:"",ownershipStatus:"",ownershipParent:"",ownershipYear:""});
   const [submitted,setSubmitted]=useState(false);
   const [imageFile,setImageFile]=useState(null);
   const [imagePreview,setImagePreview]=useState(null);
@@ -529,6 +674,35 @@ function SuggestModal({ onClose }) {
               </div>
             </div>
             <div style={{ marginBottom:12 }}><p style={{ fontFamily:sans, fontSize:9, textTransform:"uppercase", letterSpacing:"0.12em", color:T.mid, margin:"0 0 6px" }}>Key notes (if known)</p><input value={form.notes} onChange={e=>set("notes",e.target.value)} placeholder="e.g. Tobacco, Oud, Vanilla…" style={inp}/></div>
+            <div style={{ marginBottom:12 }}>
+              <p style={{ fontFamily:sans, fontSize:9, textTransform:"uppercase", letterSpacing:"0.12em", color:T.mid, margin:"0 0 8px" }}>Brand Ownership</p>
+              <div style={{ display:"flex", gap:8, marginBottom:10 }}>
+                {[{val:"independent",label:"Independent"},{val:"conglomerate",label:"Conglomerate-owned"}].map(opt=>(
+                  <button key={opt.val} onClick={()=>set("ownershipStatus",opt.val)} style={{
+                    flex:1, padding:"9px 0", borderRadius:8, border:`1px solid ${form.ownershipStatus===opt.val?T.black:T.rule}`,
+                    background:form.ownershipStatus===opt.val?T.black:T.white,
+                    color:form.ownershipStatus===opt.val?T.white:T.mid,
+                    fontFamily:sans, fontSize:12, cursor:"pointer", transition:"all 0.15s",
+                    fontWeight: form.ownershipStatus===opt.val ? 500 : 400,
+                  }}>{opt.label}</button>
+                ))}
+              </div>
+              {form.ownershipStatus==="independent" && (
+                <p style={{ fontFamily:sans, fontSize:11, color:"#2E7D32", lineHeight:1.6, margin:0 }}>The house is privately owned or founder-led with no conglomerate backing.</p>
+              )}
+              {form.ownershipStatus==="conglomerate" && (
+                <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:8 }}>
+                  <div style={{ gridColumn:"1/-1" }}>
+                    <p style={{ fontFamily:sans, fontSize:9, textTransform:"uppercase", letterSpacing:"0.12em", color:T.mid, margin:"0 0 6px" }}>Parent company</p>
+                    <input value={form.ownershipParent} onChange={e=>set("ownershipParent",e.target.value)} placeholder="e.g. LVMH, Estée Lauder Companies, Puig…" style={inp}/>
+                  </div>
+                  <div>
+                    <p style={{ fontFamily:sans, fontSize:9, textTransform:"uppercase", letterSpacing:"0.12em", color:T.mid, margin:"0 0 6px" }}>Year acquired (if known)</p>
+                    <input value={form.ownershipYear} onChange={e=>set("ownershipYear",e.target.value)} placeholder="e.g. 2017" style={inp}/>
+                  </div>
+                </div>
+              )}
+            </div>
             <div style={{ marginBottom:12 }}><p style={{ fontFamily:sans, fontSize:9, textTransform:"uppercase", letterSpacing:"0.12em", color:T.mid, margin:"0 0 6px" }}>Why should we add this?</p><textarea value={form.why} onChange={e=>set("why",e.target.value)} placeholder="Tell us why this fragrance deserves a place…" rows={2} style={{...inp,resize:"vertical",lineHeight:1.6}}/></div>
             <div style={{ marginBottom:20, background:T.lift, borderRadius:12, padding:14, border:`1px solid ${T.rule}` }}>
               <p style={{ fontFamily:sans, fontSize:9, textTransform:"uppercase", letterSpacing:"0.12em", color:T.mid, margin:"0 0 6px" }}>Your First Review (optional)</p>
@@ -545,6 +719,7 @@ function SuggestModal({ onClose }) {
 // ─── DATA ─────────────────────────────────────────────────────────────────────
 const FRAGRANCES = [
   { id:1, name:"Aventus", house:"Creed", year:2010, perfumer:"Olivier Creed & Erwin Creed", family:"Chypre Fruity", concentration:"Eau de Parfum",
+    ownership:{ status:"conglomerate", parent:"LVMH", acquiredYear:2020, note:"Acquired by LVMH in 2020. The Creed family retained creative involvement post-acquisition." },
     description:"Opens with explosive pineapple and blackcurrant before evolving into a smoky, mossy heart. Simultaneously powerful and quietly refined.",
     story:"Inspired by the legend of Napoleon — the smoke of battle, cool northern forests, the sweet spoils of victory.",
     prices:[{size:"100ml",price:"$495",perMl:"$4.95"},{size:"50ml",price:"$310",perMl:"$6.20"},{size:"10ml Travel",price:"$98",perMl:"$9.80"},{size:"2ml Sample",price:"$12",perMl:"$6.00",sample:true}],
@@ -552,6 +727,7 @@ const FRAGRANCES = [
     accords:[{n:"Fruity",v:85},{n:"Smoky",v:72},{n:"Woody",v:68},{n:"Fresh",v:55},{n:"Mossy",v:48}],
     longevity:4.2, sillage:3.8, seasons:{spring:70,summer:55,fall:85,winter:60}, occasions:["Work","Evening","Formal"], rating:4.6, votes:14823 },
   { id:2, name:"Black Orchid", house:"Tom Ford", year:2006, perfumer:"David Apel", family:"Floral Oriental", concentration:"Eau de Parfum",
+    ownership:{ status:"conglomerate", parent:"Estée Lauder Companies", acquiredYear:2005, note:"Tom Ford Beauty has been under Estée Lauder Companies since 2005. Tom Ford sold the remaining brand to Ermenegildo Zegna in 2023." },
     description:"Darkly luxurious — rare black truffle and ylang ylang bloom over orchid petals and lotus wood. Opulent, mysterious, unforgettable.",
     story:"Tom Ford's debut set the tone for everything that followed — maximalist, dark, unapologetically seductive.",
     prices:[{size:"100ml",price:"$235",perMl:"$2.35"},{size:"50ml",price:"$160",perMl:"$3.20"},{size:"10ml Travel",price:"$55",perMl:"$5.50"},{size:"2ml Sample",price:"$8",perMl:"$4.00",sample:true}],
@@ -559,6 +735,7 @@ const FRAGRANCES = [
     accords:[{n:"Floral",v:90},{n:"Dark",v:82},{n:"Oriental",v:75},{n:"Earthy",v:60},{n:"Sweet",v:45}],
     longevity:4.7, sillage:4.5, seasons:{spring:40,summer:25,fall:80,winter:95}, occasions:["Evening","Date Night"], rating:4.3, votes:9241 },
   { id:3, name:"Oud Wood", house:"Tom Ford", year:2007, perfumer:"Pierre Negrin", family:"Woody Oriental", concentration:"Eau de Parfum",
+    ownership:{ status:"conglomerate", parent:"Estée Lauder Companies", acquiredYear:2005, note:"Tom Ford Beauty has been under Estée Lauder Companies since 2005. Tom Ford sold the remaining brand to Ermenegildo Zegna in 2023." },
     description:"Rare agarwood blends with rosewood, cardamom, and sandalwood — ancient and modern simultaneously.",
     story:"Ford's distillation of the souk — incense smoke in hot air, rare woods in shadows, the smell of somewhere else.",
     prices:[{size:"100ml",price:"$280",perMl:"$2.80"},{size:"50ml",price:"$195",perMl:"$3.90"},{size:"10ml Travel",price:"$65",perMl:"$6.50"},{size:"2ml Sample",price:"$9",perMl:"$4.50",sample:true}],
@@ -566,6 +743,7 @@ const FRAGRANCES = [
     accords:[{n:"Woody",v:95},{n:"Oriental",v:78},{n:"Smoky",v:70},{n:"Spicy",v:65},{n:"Earthy",v:55}],
     longevity:4.5, sillage:3.9, seasons:{spring:50,summer:30,fall:85,winter:90}, occasions:["Evening","Formal"], rating:4.4, votes:11059 },
   { id:4, name:"Baccarat Rouge 540", house:"Maison Francis Kurkdjian", year:2015, perfumer:"Francis Kurkdjian", family:"Floral Woody Musk", concentration:"Eau de Parfum",
+    ownership:{ status:"conglomerate", parent:"LVMH", acquiredYear:2017, note:"Acquired by LVMH in 2017. Francis Kurkdjian remained as creative director and continues to lead the house." },
     description:"Saffron and jasmine float above amberwood and fir resin — an almost synesthetic experience of warmth without weight.",
     story:"Created for Baccarat crystal's 250th anniversary — light refracting through crystal, prismatic and pure.",
     prices:[{size:"200ml",price:"$830",perMl:"$4.15"},{size:"70ml",price:"$345",perMl:"$4.93"},{size:"35ml",price:"$215",perMl:"$6.14"},{size:"2ml Sample",price:"$14",perMl:"$7.00",sample:true}],
@@ -573,6 +751,7 @@ const FRAGRANCES = [
     accords:[{n:"Warm Spicy",v:88},{n:"Amber",v:80},{n:"Woody",v:78},{n:"Floral",v:65},{n:"Sweet",v:62}],
     longevity:4.8, sillage:4.6, seasons:{spring:75,summer:65,fall:90,winter:85}, occasions:["Work","Evening","Casual"], rating:4.5, votes:18302 },
   { id:5, name:"Santal 33", house:"Le Labo", year:2011, perfumer:"Frank Voelkl", family:"Woody", concentration:"Eau de Parfum",
+    ownership:{ status:"conglomerate", parent:"Estée Lauder Companies", acquiredYear:2014, note:"Acquired by Estée Lauder Companies in 2014. The founders Fabrice Penot and Edouard Roschi stayed on after acquisition." },
     description:"Papyrus, cedarwood, and cardamom over sandalwood and violet. The scent of the American West imagined by a New Yorker.",
     story:"An ode to the campfire — leather, wood smoke, and the open plains rendered in a quietly iconic bottle.",
     prices:[{size:"100ml",price:"$310",perMl:"$3.10"},{size:"50ml",price:"$200",perMl:"$4.00"},{size:"15ml Travel",price:"$78",perMl:"$5.20"},{size:"2ml Sample",price:"$10",perMl:"$5.00",sample:true}],
@@ -580,12 +759,21 @@ const FRAGRANCES = [
     accords:[{n:"Woody",v:92},{n:"Smoky",v:68},{n:"Creamy",v:60},{n:"Floral",v:45},{n:"Spicy",v:40}],
     longevity:4.0, sillage:3.5, seasons:{spring:60,summer:45,fall:88,winter:75}, occasions:["Casual","Work","Weekend"], rating:4.2, votes:7834 },
   { id:6, name:"Tobacco Vanille", house:"Tom Ford", year:2007, perfumer:"Unknown", family:"Oriental Spicy", concentration:"Eau de Parfum",
+    ownership:{ status:"conglomerate", parent:"Estée Lauder Companies", acquiredYear:2005, note:"Tom Ford Beauty has been under Estée Lauder Companies since 2005. Tom Ford sold the remaining brand to Ermenegildo Zegna in 2023." },
     description:"Rich tobacco leaf and aromatic spices blend into vanilla and tonka bean — warm, heady, and unapologetically indulgent.",
     story:"An English gentlemen's club filtered through Ford's unerring sense for luxury.",
     prices:[{size:"100ml",price:"$295",perMl:"$2.95"},{size:"50ml",price:"$195",perMl:"$3.90"},{size:"10ml Travel",price:"$68",perMl:"$6.80"},{size:"2ml Sample",price:"$9",perMl:"$4.50",sample:true}],
     notes:{top:[{n:"Cardamom"},{n:"Tobacco"}],mid:[{n:"Vanilla"},{n:"Cocoa"}],base:[{n:"Tonka Bean"},{n:"Amber"},{n:"Musk"}]},
     accords:[{n:"Tobacco",v:90},{n:"Sweet",v:82},{n:"Warm Spicy",v:74},{n:"Amber",v:68},{n:"Woody",v:55}],
     longevity:4.6, sillage:4.2, seasons:{spring:30,summer:15,fall:88,winter:95}, occasions:["Evening","Formal","Date Night"], rating:4.5, votes:12400 },
+  { id:7, name:"Violet and Amber", house:"Imaginary Authors", year:2013, perfumer:"Josh Meyer", family:"Floral Woody", concentration:"Eau de Parfum",
+    ownership:{ status:"independent", note:"Imaginary Authors is independently owned and operated by perfumer Josh Meyer from Portland, Oregon. Each fragrance is inspired by a fictional book." },
+    description:"Wet violet leaf and cedar open into a warm amber drydown — literary, wistful, and deeply personal.",
+    story:"Each Imaginary Authors fragrance is inspired by a fictional book. This one smells like the margins of something you never finished.",
+    prices:[{size:"100ml",price:"$115",perMl:"$1.15"},{size:"50ml",price:"$75",perMl:"$1.50"},{size:"5ml Sample",price:"$12",perMl:"$2.40",sample:true}],
+    notes:{top:[{n:"Violet Leaf"},{n:"Bergamot"}],mid:[{n:"Iris"},{n:"Cedar"}],base:[{n:"Amber"},{n:"Musk"},{n:"Sandalwood"}]},
+    accords:[{n:"Floral",v:78},{n:"Woody",v:70},{n:"Amber",v:65},{n:"Powdery",v:55},{n:"Fresh",v:42}],
+    longevity:3.8, sillage:3.2, seasons:{spring:75,summer:55,fall:70,winter:60}, occasions:["Casual","Work","Weekend"], rating:4.3, votes:3210 },
 ];
 
 const GLOSSARY = [
@@ -651,6 +839,52 @@ function HouseStrip({ currentFrag, onOpenFrag }) {
   );
 }
 
+// ─── OWNERSHIP BADGE ──────────────────────────────────────────────────────────
+function OwnershipBadge({ ownership, size = "normal", showTooltip = false }) {
+  const [open, setOpen] = useState(false);
+  if (!ownership) return null;
+  const isIndependent = ownership.status === "independent";
+  const isSmall = size === "small";
+  const label = isIndependent ? "Independent" : ownership.parent;
+  const color = isIndependent ? "#2E7D32" : "#C0392B";
+  const textStyle = {
+    fontFamily: sans,
+    fontSize: isSmall ? 9 : 11,
+    fontWeight: 500,
+    color,
+    letterSpacing: "0.01em",
+    cursor: showTooltip ? "pointer" : "default",
+    userSelect: "none",
+    background: "none",
+    border: "none",
+    padding: 0,
+    display: "inline",
+  };
+  if (!showTooltip) {
+    return <span style={textStyle}>{label}</span>;
+  }
+  return (
+    <div style={{ position: "relative", display: "inline" }}>
+      <span style={textStyle} onClick={() => setOpen(o => !o)}>{label}</span>
+      {open && (
+        <div onClick={e => e.stopPropagation()} style={{
+          position: "absolute", bottom: "calc(100% + 8px)", left: 0, zIndex: 100,
+          background: T.white, border: `1px solid ${T.rule}`, borderRadius: 12,
+          padding: "12px 14px", width: 240, boxShadow: "0 4px 20px rgba(0,0,0,0.10)",
+        }}>
+          <p style={{ fontFamily: sans, fontSize: 11, fontWeight: 600, color: T.ink, margin: "0 0 6px" }}>
+            {isIndependent ? "Independently owned" : `Owned by ${ownership.parent}`}
+            {ownership.acquiredYear && !isIndependent ? ` since ${ownership.acquiredYear}` : ""}
+          </p>
+          {ownership.note && (
+            <p style={{ fontFamily: sans, fontSize: 11, color: T.mid, lineHeight: 1.6, margin: 0 }}>{ownership.note}</p>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ─── FRAG CARD ────────────────────────────────────────────────────────────────
 function FragCard({ frag, onClick, userStatus, reaction, onReaction, onOpenFrag }) {
   const [hov,setHov]=useState(false);
@@ -663,8 +897,9 @@ function FragCard({ frag, onClick, userStatus, reaction, onReaction, onOpenFrag 
         <div style={{flex:1,minWidth:0}}>
           <div style={{display:"flex",alignItems:"flex-start",justifyContent:"space-between",gap:8}}>
             <div>
-              <p style={{fontFamily:serif,fontSize:15,color:T.black,margin:0,lineHeight:1.2}}>{frag.name}</p>
-              <p style={{fontFamily:sans,fontSize:11,color:T.mid,margin:"2px 0 0"}}>{frag.house}</p>
+              <div style={{fontFamily:serif,fontSize:15,color:T.black,margin:0,lineHeight:1.2}}>{frag.name}</div>
+              <div style={{fontFamily:sans,fontSize:11,color:T.mid,margin:0,lineHeight:1.4}}>{frag.house}</div>
+              {frag.ownership && <div style={{fontFamily:sans,fontSize:11,margin:0,lineHeight:1.4}}><OwnershipBadge ownership={frag.ownership} size="small"/></div>}
             </div>
             {userStatus && <StatusBadge statusKey={userStatus}/>}
           </div>
@@ -701,7 +936,7 @@ function FragCard({ frag, onClick, userStatus, reaction, onReaction, onOpenFrag 
 }
 
 // ─── DETAIL MODAL ─────────────────────────────────────────────────────────────
-function DetailModal({ frag, onClose, userStatus, setUserStatus, privateNote, setPrivateNote, reaction, setReaction, onOpenFrag, onOpenProfile }) {
+function DetailModal({ frag, onClose, userStatus, setUserStatus, privateNote, setPrivateNote, reaction, setReaction, onOpenFrag, onOpenProfile, onAddJournalEntry }) {
   const [tab,setTab]=useState("overview");
   const [replyText,setReplyText]=useState("");
   const [replyTo,setReplyTo]=useState(null);
@@ -728,8 +963,10 @@ function DetailModal({ frag, onClose, userStatus, setUserStatus, privateNote, se
           <div style={{display:"flex",alignItems:"flex-start",gap:16}}>
             <div style={{flex:1}}>
               <div style={{marginBottom:8}}><span style={{fontFamily:sans,fontSize:9,textTransform:"uppercase",letterSpacing:"0.12em",color:T.mid}}>{frag.house} · {frag.family}</span></div>
-              <h2 style={{fontFamily:serif,fontSize:28,color:T.black,margin:"0 0 4px",letterSpacing:-0.5,lineHeight:1.1}}>{frag.name}</h2>
-              <p style={{fontFamily:sans,fontSize:13,color:T.mid,margin:"0 0 14px"}}>{frag.year} · {frag.concentration}</p>
+              <h2 style={{fontFamily:serif,fontSize:28,color:T.black,margin:"0 0 2px",letterSpacing:-0.5,lineHeight:1.1}}>{frag.name}</h2>
+              <p style={{fontFamily:sans,fontSize:13,color:T.mid,margin:"0 0 0",lineHeight:1.4}}>{frag.year} · {frag.concentration}</p>
+              {frag.ownership && <div style={{margin:"3px 0 10px"}}><OwnershipBadge ownership={frag.ownership} size="normal" showTooltip={true}/></div>}
+              {!frag.ownership && <div style={{marginBottom:10}}/>}
               <ReactionBar value={reaction} onChange={setReaction}/>
             </div>
             <div style={{width:80,height:100,borderRadius:12,background:`linear-gradient(160deg,${T.lift},${T.press})`,border:`1px solid ${T.rule}`,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",flexShrink:0,marginTop:4}}>
@@ -837,7 +1074,7 @@ function DetailModal({ frag, onClose, userStatus, setUserStatus, privateNote, se
                   <p style={{fontFamily:sans,fontSize:13,color:T.ink,lineHeight:1.7,margin:0,fontStyle:"italic"}}>"{privateNote.text}"</p>
                 </div>
               )}
-              <PrivateNoteEditor note={privateNote} onSave={setPrivateNote}/>
+              <PrivateNoteEditor note={privateNote} onSave={setPrivateNote} frag={frag} onAddJournalEntry={onAddJournalEntry}/>
             </div>
           )}
 
@@ -1088,45 +1325,76 @@ function CollectionTab({ onOpenFrag, statuses:userStatuses, reactions, onReactio
 }
 
 // ─── JOURNAL ──────────────────────────────────────────────────────────────────
-function JournalTab() {
-  const entries=[
-    {frag:"Aventus",house:"Creed",note:"Wore to the client meeting. The smoky birch felt authoritative without trying.",date:"Today",where:"Own bottle",active:true},
-    {frag:"Oud Wood",house:"Tom Ford",note:"Evening wear. The papyrus note is mesmerizing in the cold. Long dry-down.",date:"3 days ago",where:"Sample — fragrance split",active:false},
-    {frag:"Baccarat Rouge 540",house:"MFK",note:"The saffron-amberwood accord is unlike anything I own. Need a decant.",date:"1 week ago",where:"Saks Fifth Avenue counter",active:false},
-    {frag:"Santal 33",house:"Le Labo",note:"Blind bought a sample. Smokier than I expected. Needs more skin time.",date:"2 weeks ago",where:"Blind buy — Decantery",active:false},
+function JournalTab({ entries }) {
+  const SEED = [
+    {id:-1, fragId:1, fragName:"Aventus", house:"Creed", family:"Chypre Fruity", prompt:"Client meeting — wanted something that felt authoritative.", text:"The smoky birch felt right for the room. Dry-down was masterful. Long day, held all the way through.", where:"Own bottle", date:"Today", publishedAsReview:false, reviewRating:null, shared:false},
+    {id:-2, fragId:3, fragName:"Oud Wood", house:"Tom Ford", family:"Woody Oriental", prompt:"Cold evening, wanted something with weight.", text:"The papyrus note is mesmerising in the cold. Long dry-down, incredible projection in the first hour.", where:"Sample — fragrance split", date:"3 days ago", publishedAsReview:true, reviewRating:5, shared:false},
+    {id:-3, fragId:4, fragName:"Baccarat Rouge 540", house:"Maison Francis Kurkdjian", family:"Floral Woody Musk", prompt:"Curious. Had heard about it for years.", text:"The saffron-amberwood accord is unlike anything I own. Need a decant.", where:"Saks Fifth Avenue counter", date:"1 week ago", publishedAsReview:false, reviewRating:null, shared:false},
+    {id:-4, fragId:5, fragName:"Santal 33", house:"Le Labo", family:"Woody", prompt:"Blind buy on a whim — regretted it immediately, then didn't.", text:"Smokier than I expected. Needs more skin time. The more I wear it the more I understand it.", where:"Blind buy — Decantery", date:"2 weeks ago", publishedAsReview:false, reviewRating:null, shared:false},
   ];
+
+  const all = [...(entries||[]), ...SEED].sort((a,b)=> a.id > 0 && b.id < 0 ? -1 : 1);
+
+  // Derive taste evolution from families
+  const families = all.map(e=>e.family).filter(Boolean);
+  const familyCount = families.reduce((acc,f)=>{acc[f]=(acc[f]||0)+1;return acc;},{});
+  const topFamilies = Object.entries(familyCount).sort((a,b)=>b[1]-a[1]);
+  const dominant = topFamilies[0]?.[0] || "Woody Oriental";
+  const previous = topFamilies.length > 1 ? topFamilies[topFamilies.length-1]?.[0] : "Fresh & Clean";
+
+  const MONTHLY_PROMPT = "Has anything surprised you about what you've been reaching for lately?";
+
   return (
     <div>
       <div style={{borderBottom:`2px solid ${T.black}`,paddingBottom:14,marginBottom:22}}>
         <p style={{fontFamily:sans,fontSize:9,textTransform:"uppercase",letterSpacing:"0.18em",color:T.mid,margin:"0 0 4px"}}>Personal record</p>
         <h2 style={{fontFamily:serif,fontSize:30,color:T.black,letterSpacing:-0.5,margin:0}}>Scent Journal</h2>
-        <p style={{fontFamily:sans,fontSize:13,color:T.mid,margin:"6px 0 0"}}>Every wear. Every first impression. Every place.</p>
+        <p style={{fontFamily:sans,fontSize:13,color:T.mid,margin:"6px 0 0"}}>What you reach for, and why. A record that becomes a mirror.</p>
       </div>
-      <div style={{background:T.lift,border:`1px solid ${T.rule}`,borderRadius:16,padding:18,marginBottom:24}}>
-        <Lbl>Taste Evolution</Lbl>
-        <p style={{fontFamily:sans,fontSize:13,color:T.mid,lineHeight:1.7,margin:"0 0 14px"}}>Your sampling is moving from <span style={{color:T.black,fontWeight:500}}>fresh aquatics</span> toward <span style={{color:T.black,fontWeight:500}}>woody orientals</span>.</p>
+
+      <div style={{background:T.lift,border:`1px solid ${T.rule}`,borderRadius:16,padding:18,marginBottom:16}}>
+        <Lbl>Taste this year</Lbl>
+        <p style={{fontFamily:sans,fontSize:13,color:T.mid,lineHeight:1.7,margin:"0 0 14px"}}>Your sampling is moving from <span style={{color:T.black,fontWeight:500}}>{previous}</span> toward <span style={{color:T.black,fontWeight:500}}>{dominant}</span>.</p>
         <div style={{display:"flex",alignItems:"center",gap:8}}>
-          <div style={{flex:1,textAlign:"center",padding:"8px 0",borderRadius:8,background:T.white,border:`1px solid ${T.rule}`}}><p style={{fontFamily:sans,fontSize:11,color:T.mid,margin:0}}>2023 · Fresh & Clean</p></div>
-          <span style={{color:T.faint}}>→</span>
-          <div style={{flex:1,textAlign:"center",padding:"8px 0",borderRadius:8,background:T.black}}><p style={{fontFamily:sans,fontSize:11,color:T.white,margin:0}}>Now · Woody Orientals</p></div>
+          <div style={{flex:1,textAlign:"center",padding:"8px 0",borderRadius:8,background:T.white,border:`1px solid ${T.rule}`}}><p style={{fontFamily:sans,fontSize:11,color:T.mid,margin:0}}>{previous}</p></div>
+          <span style={{color:T.faint,fontSize:12}}>→</span>
+          <div style={{flex:1,textAlign:"center",padding:"8px 0",borderRadius:8,background:T.black}}><p style={{fontFamily:sans,fontSize:11,color:T.white,margin:0}}>{dominant}</p></div>
         </div>
       </div>
-      <Lbl>Wear Log</Lbl>
+
+      <div style={{background:T.white,border:`1px solid ${T.rule}`,borderRadius:12,padding:"13px 16px",marginBottom:22}}>
+        <p style={{fontFamily:sans,fontSize:9,textTransform:"uppercase",letterSpacing:"0.1em",color:T.faint,margin:"0 0 4px"}}>This month</p>
+        <p style={{fontFamily:serif,fontSize:14,color:T.mid,fontStyle:"italic",margin:0,lineHeight:1.6}}>{MONTHLY_PROMPT}</p>
+      </div>
+
+      <Lbl mb={14}>Your entries — {all.length}</Lbl>
       <div style={{position:"relative"}}>
         <div style={{position:"absolute",left:9,top:10,bottom:24,width:1,background:T.rule}}/>
-        {entries.map((e,i)=>(
-          <div key={i} style={{display:"flex",gap:16,paddingBottom:22,position:"relative"}}>
-            <div style={{width:19,height:19,borderRadius:"50%",flexShrink:0,zIndex:1,marginTop:2,background:e.active?T.black:T.white,border:`1px solid ${e.active?T.black:T.rule}`,display:"flex",alignItems:"center",justifyContent:"center"}}>{e.active&&<div style={{width:5,height:5,borderRadius:"50%",background:T.white}}/>}</div>
-            <div style={{flex:1}}>
-              <div style={{display:"flex",alignItems:"baseline",justifyContent:"space-between"}}><span style={{fontFamily:serif,fontSize:14,color:T.black}}>{e.frag}</span><span style={{fontFamily:sans,fontSize:10,color:T.mid}}>{e.date}</span></div>
-              <p style={{fontFamily:sans,fontSize:11,color:T.mid,margin:"2px 0 3px"}}>{e.house}</p>
-              {e.where&&<div style={{display:"flex",alignItems:"center",gap:4,margin:"0 0 5px"}}><Icon name="pin" size={11} color={T.faint}/><p style={{fontFamily:sans,fontSize:10,color:T.faint,margin:0}}>{e.where}</p></div>}
-              <p style={{fontFamily:sans,fontSize:12,color:T.mid,lineHeight:1.65,fontStyle:"italic",margin:0}}>"{e.note}"</p>
+        {all.map((e,i)=>(
+          <div key={e.id} style={{display:"flex",gap:16,paddingBottom:24,position:"relative"}}>
+            <div style={{width:19,height:19,borderRadius:"50%",flexShrink:0,zIndex:1,marginTop:2,background:i===0?T.black:T.white,border:`1px solid ${i===0?T.black:T.rule}`,display:"flex",alignItems:"center",justifyContent:"center"}}>
+              {i===0&&<div style={{width:5,height:5,borderRadius:"50%",background:T.white}}/>}
+            </div>
+            <div style={{flex:1,minWidth:0}}>
+              <div style={{display:"flex",alignItems:"baseline",justifyContent:"space-between",gap:8,marginBottom:2}}>
+                <span style={{fontFamily:serif,fontSize:14,color:T.black}}>{e.fragName}</span>
+                <span style={{fontFamily:sans,fontSize:10,color:T.faint,flexShrink:0}}>{e.date}</span>
+              </div>
+              <p style={{fontFamily:sans,fontSize:11,color:T.faint,margin:"0 0 6px"}}>{e.house}{e.family?` · ${e.family}`:""}</p>
+              {e.prompt&&<p style={{fontFamily:sans,fontSize:12,color:T.mid,margin:"0 0 5px",lineHeight:1.55}}><span style={{color:T.faint}}>↳ </span>{e.prompt}</p>}
+              <p style={{fontFamily:sans,fontSize:13,color:T.ink,lineHeight:1.7,fontStyle:"italic",margin:"0 0 6px"}}>"{e.text}"</p>
+              <div style={{display:"flex",alignItems:"center",gap:10,flexWrap:"wrap"}}>
+                {e.where&&<div style={{display:"flex",alignItems:"center",gap:4}}><Icon name="pin" size={10} color={T.faint}/><span style={{fontFamily:sans,fontSize:10,color:T.faint}}>{e.where}</span></div>}
+                {e.publishedAsReview&&<div style={{display:"flex",alignItems:"center",gap:4}}><span style={{fontFamily:sans,fontSize:9,color:T.mid,background:T.lift,padding:"1px 7px",borderRadius:10,border:`1px solid ${T.rule}`}}>Published as review {e.reviewRating?`· ${"★".repeat(e.reviewRating)}`:""}</span></div>}
+                {e.shared&&<div style={{display:"flex",alignItems:"center",gap:4}}><Icon name="globe" size={10} color={T.faint}/><span style={{fontFamily:sans,fontSize:10,color:T.faint}}>Shared</span></div>}
+              </div>
             </div>
           </div>
         ))}
       </div>
-      <button style={{width:"100%",padding:"13px 0",borderRadius:10,border:`1.5px dashed ${T.rule}`,background:"transparent",color:T.mid,fontSize:12,fontFamily:sans,cursor:"pointer"}}>+ Log a wear</button>
+      {all.length===SEED.length&&(
+        <p style={{fontFamily:sans,fontSize:11,color:T.faint,textAlign:"center",marginTop:4,lineHeight:1.6}}>Save a note on any fragrance to add your first entry.</p>
+      )}
     </div>
   );
 }
@@ -1352,6 +1620,31 @@ function LearnTab() {
           ))}
         </div>
         <p style={{fontFamily:sans,fontSize:10,color:T.faint,margin:"12px 0 0",lineHeight:1.5}}>Dates vary year to year. Always check official websites for current scheduling.</p>
+      </div>
+
+      <div style={{borderTop:`2px solid ${T.black}`,marginTop:28,paddingTop:22}}>
+        <Lbl>Who Owns Your Fragrance House?</Lbl>
+        <p style={{fontFamily:sans,fontSize:13,color:T.mid,lineHeight:1.7,margin:"0 0 18px"}}>The fragrance industry has consolidated significantly over the past two decades. A handful of large conglomerates now own many of the houses that built their reputations as independent creative enterprises. This matters because ownership changes often bring pressure to reduce costs — which can mean reformulated ingredients, discontinued lines, or a shift in creative direction.</p>
+        <div style={{background:T.white,border:`1px solid ${T.rule}`,borderRadius:14,overflow:"hidden",marginBottom:16}}>
+          {[
+            { label:"Independent", color:"#2E7D32", text:"The house is privately owned, founder-led, or operated without conglomerate backing. Creative decisions are made by people with a direct stake in the house's identity." },
+            { label:"Conglomerate name in red", color:"#C0392B", text:"The house has been acquired by a larger group — most commonly LVMH, Estée Lauder Companies, Puig, or Interparfums. This doesn't mean the quality has changed, but it's worth knowing when it happened and who holds the reins." },
+          ].map((item, i, arr) => (
+            <div key={item.label} style={{padding:"16px 18px",borderBottom:i<arr.length-1?`1px solid ${T.lift}`:"none"}}>
+              <div style={{marginBottom:8}}>
+                <span style={{fontFamily:sans,fontSize:12,fontWeight:500,color:item.color}}>{item.label}</span>
+              </div>
+              <p style={{fontFamily:sans,fontSize:12,color:T.mid,lineHeight:1.65,margin:0}}>{item.text}</p>
+            </div>
+          ))}
+        </div>
+        <div style={{background:T.lift,border:`1px solid ${T.rule}`,borderRadius:12,padding:16,marginBottom:16}}>
+          <div style={{display:"flex",alignItems:"flex-start",gap:8}}>
+            <Icon name="tip" size={14} color={T.mid}/>
+            <p style={{fontFamily:sans,fontSize:12,color:T.mid,lineHeight:1.65,margin:0}}>Ownership is one signal, not a verdict. Some conglomerate-owned houses have maintained exceptional quality. Others have drifted. The acquisition date is often the more telling data point — a house acquired recently may not yet show the effects, while one acquired a decade ago has a longer track record to judge.</p>
+          </div>
+        </div>
+        <p style={{fontFamily:sans,fontSize:11,color:T.faint,margin:0,lineHeight:1.6}}>Ownership data is maintained by the sillage. community and updated when changes occur. If you notice an error, use the Suggest feature to flag it.</p>
       </div>
     </div>
   );
@@ -1595,15 +1888,8 @@ function WaitlistScreen({ onJoin }) {
               <div style={{ flex:1, height:1, background:"rgba(255,255,255,0.1)" }}/>
             </div>
             <button onClick={onJoin} style={{ width:"100%", padding:"14px 0", borderRadius:12, background:"transparent", border:"1px solid rgba(255,255,255,0.18)", color:"rgba(255,255,255,0.7)", fontSize:14, fontFamily:sans, cursor:"pointer" }}>Sign in</button>
-            <div style={{ marginTop:40, display:"flex", gap:20 }}>
-              {[["200+","Fragrances catalogued"],["6","Scent families mapped"],["∞","Combinations to explore"]].map(([num,label]) => (
-                <div key={label} style={{ flex:1 }}>
-                  <p style={{ fontFamily:serif, fontSize:22, color:T.white, margin:"0 0 3px" }}>{num}</p>
-                  <p style={{ fontFamily:sans, fontSize:10, color:"rgba(255,255,255,0.35)", lineHeight:1.4, margin:0 }}>{label}</p>
-                </div>
-              ))}
-            </div>
             <p style={{ fontFamily:sans, fontSize:11, color:"rgba(255,255,255,0.2)", margin:"32px 0 0", lineHeight:1.6 }}>No spam. No sharing. Just a notification when your spot opens up.</p>
+            <FooterLinks dark={true}/>
           </>
         ) : (
           <div style={{ textAlign:"center" }}>
@@ -1636,6 +1922,9 @@ function LoginScreen({ onLogin, onWaitlist }) {
   const [country, setCountry] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [forgotSent, setForgotSent] = useState(false);
+  const [showForgot, setShowForgot] = useState(false);
+  const [forgotEmail, setForgotEmail] = useState("");
 
   const isValidEmail = (v) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v.trim());
   const isValidUsername = (v) => /^[a-zA-Z0-9_]{3,20}$/.test(v.trim());
@@ -1769,12 +2058,38 @@ function LoginScreen({ onLogin, onWaitlist }) {
           {loading ? (mode==="signup" ? "Creating account…" : "Signing in…") : (mode==="signup" ? "Create account" : "Sign in")}
         </button>
 
-        {mode === "signin" && <p style={{ fontFamily:sans, fontSize:12, color:T.mid, textAlign:"center", margin:"0 0 8px", cursor:"pointer" }}>Forgot your password?</p>}
+        {mode === "signin" && !showForgot && (
+          <p onClick={() => { setShowForgot(true); setForgotEmail(email); }} style={{ fontFamily:sans, fontSize:12, color:T.mid, textAlign:"center", margin:"0 0 8px", cursor:"pointer" }}>
+            Forgot your password?
+          </p>
+        )}
+
+        {showForgot && (
+          <div style={{ background:T.lift, border:`1px solid ${T.rule}`, borderRadius:12, padding:16, marginBottom:16 }}>
+            {!forgotSent ? (
+              <>
+                <p style={{ fontFamily:sans, fontSize:12, color:T.ink, margin:"0 0 10px", lineHeight:1.6 }}>Enter the email address on your account and we'll send a reset link.</p>
+                <input value={forgotEmail} onChange={e => setForgotEmail(e.target.value)} placeholder="Email address" type="email" style={{ ...inp, marginBottom:10 }}/>
+                <div style={{ display:"flex", gap:8 }}>
+                  <button onClick={() => setShowForgot(false)} style={{ flex:1, padding:"10px 0", borderRadius:10, border:`1px solid ${T.rule}`, background:T.white, color:T.mid, fontSize:12, fontFamily:sans, cursor:"pointer" }}>Cancel</button>
+                  <button onClick={() => setForgotSent(true)} style={{ flex:2, padding:"10px 0", borderRadius:10, background:T.black, border:"none", color:T.white, fontSize:12, fontFamily:sans, cursor:"pointer" }}>Send reset link</button>
+                </div>
+              </>
+            ) : (
+              <div style={{ textAlign:"center", padding:"8px 0" }}>
+                <p style={{ fontFamily:sans, fontSize:13, color:T.ink, margin:"0 0 4px", fontWeight:500 }}>Check your inbox</p>
+                <p style={{ fontFamily:sans, fontSize:12, color:T.mid, margin:"0 0 12px", lineHeight:1.6 }}>A reset link has been sent to <strong>{forgotEmail}</strong>. If it doesn't arrive, check your spam folder or write to us at <span style={{ color:T.ink }}>hello@sillage.app</span>.</p>
+                <span onClick={() => { setShowForgot(false); setForgotSent(false); }} style={{ fontFamily:sans, fontSize:12, color:T.mid, cursor:"pointer" }}>Back to sign in</span>
+              </div>
+            )}
+          </div>
+        )}
 
         <p style={{ fontFamily:sans, fontSize:12, color:T.mid, textAlign:"center", margin:0 }}>
           Don't have early access?{" "}
           <span onClick={onWaitlist} style={{ color:T.black, fontWeight:500, cursor:"pointer" }}>Join the waitlist →</span>
         </p>
+        <FooterLinks/>
       </div>
     </div>
   );
@@ -2090,6 +2405,9 @@ export default function SillageApp() {
   const [userStatuses, setUserStatuses] = useState({ 1:"bottle_owned", 2:"sample_wishlist", 3:"sample_have", 4:"tried_skin", 5:"smelled", 6:"bottle_wishlist" });
   const [privateNotes, setPrivateNotes] = useState({});
   const [reactions, setReactions] = useState({ 1:"love", 3:"like" });
+  const [journalEntries, setJournalEntries] = useState([]);
+
+  function addJournalEntry(entry) { setJournalEntries(p => [entry, ...p]); }
 
   const NAV = [{ tab:"Discover", icon:"◈" }, { tab:"Collection", icon:"◇" }, { tab:"Layering", icon:"◎" }, { tab:"Journal", icon:"▣" }, { tab:"Learn", icon:"△" }];
   const modalFrag = FRAGRANCES.find(f => f.id === modalFragId);
@@ -2134,22 +2452,16 @@ export default function SillageApp() {
           </div>
         </div>
 
-        <div style={{ padding:"28px 20px 130px" }}>
+        <div style={{ padding:"28px 20px 48px" }}>
           {activeTab==="Discover"   && <DiscoverTab   onOpenFrag={openFrag} userStatuses={userStatuses} reactions={reactions} onReaction={onReaction} onSuggest={() => setShowSuggest(true)} currentUser={currentUser}/>}
           {activeTab==="Collection" && <CollectionTab onOpenFrag={openFrag} statuses={userStatuses} reactions={reactions} onReaction={onReaction} onSuggest={() => setShowSuggest(true)}/>}
           {activeTab==="Layering"   && <LayeringTab/>}
-          {activeTab==="Journal"    && <JournalTab/>}
+          {activeTab==="Journal"    && <JournalTab entries={journalEntries}/>}
           {activeTab==="Learn"      && <LearnTab/>}
+          <FooterLinks/>
         </div>
 
-        <div style={{ position:"fixed", bottom:0, left:"50%", transform:"translateX(-50%)", width:"100%", maxWidth:460, background:"rgba(248,248,246,0.97)", backdropFilter:"blur(12px)", borderTop:`1px solid ${T.rule}`, display:"flex" }}>
-          {NAV.map(({ tab, icon }) => (
-            <button key={tab} onClick={() => setActiveTab(tab)} style={{ flex:1, display:"flex", flexDirection:"column", alignItems:"center", gap:3, padding:"11px 0 15px", background:"none", border:"none", cursor:"pointer" }}>
-              <span style={{ fontSize:15, color:activeTab===tab?T.black:T.faint }}>{icon}</span>
-              <span style={{ fontFamily:sans, fontSize:8, textTransform:"uppercase", letterSpacing:"0.07em", color:activeTab===tab?T.black:T.faint }}>{tab}</span>
-            </button>
-          ))}
-        </div>
+
       </div>
 
       {modalFrag && (
@@ -2164,6 +2476,7 @@ export default function SillageApp() {
           setReaction={v => onReaction(modalFrag.id, v)}
           onOpenFrag={openFrag}
           onOpenProfile={openProfile}
+          onAddJournalEntry={addJournalEntry}
           currentUser={currentUser}
         />
       )}
