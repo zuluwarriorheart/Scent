@@ -1,4 +1,11 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { createClient } from "@supabase/supabase-js";
+
+// ─── SUPABASE CLIENT ──────────────────────────────────────────────────────────
+const supabase = createClient(
+  import.meta.env.VITE_SUPABASE_URL,
+  import.meta.env.VITE_SUPABASE_ANON_KEY
+);
 
 // ─── PALETTE ──────────────────────────────────────────────────────────────────
 const T = {
@@ -2606,6 +2613,68 @@ export default function SillageApp() {
   const [journalEntries, setJournalEntries] = useState([]);
   // following: Set of usernames the current user follows. sillage. is always included.
   const [following, setFollowing] = useState(new Set(["sillage"]));
+  const [fragrances, setFragrances] = useState(FRAGRANCES);
+  const [fragLoading, setFragLoading] = useState(false);
+
+  useEffect(() => {
+    async function loadFragrances() {
+      setFragLoading(true);
+      try {
+        const { data, error } = await supabase
+          .from("fragrances")
+          .select(`
+            id, slug, url, gender, year, perfumer, story, barcode, concentration,
+            house:houses ( name, slug, country, ownership, brand_origin, price_tier ),
+            notes ( note_name, position ),
+            accords ( accord_name, rank )
+          `)
+          .order("slug", { ascending: true })
+          .limit(200);
+
+        if (error) { console.error("Supabase error:", error); return; }
+
+        const mapped = data.map(f => ({
+          id: f.id,
+          name: f.slug.replace(/-/g, " ").replace(/\b\w/g, c => c.toUpperCase()),
+          house: f.house?.name || "",
+          houseSlug: f.house?.slug || "",
+          country: f.house?.country || "",
+          ownership: {
+            status: ["LVMH","L'Oréal","Puig","Estée Lauder","Coty","PE-backed","L'Occitane Group","Shiseido","Revlon","Interparfums","Kao"].includes(f.house?.ownership)
+              ? "conglomerate" : "independent",
+            parent: f.house?.ownership || "",
+          },
+          brand_origin: f.house?.brand_origin || "",
+          price_tier: f.house?.price_tier || "",
+          year: f.year,
+          perfumer: f.perfumer || "",
+          story: f.story || "",
+          concentration: f.concentration || "",
+          gender: f.gender,
+          url: f.url || "",
+          notes: {
+            top: f.notes.filter(n => n.position === "top").map(n => ({ n: n.note_name })),
+            mid: f.notes.filter(n => n.position === "mid").map(n => ({ n: n.note_name })),
+            base: f.notes.filter(n => n.position === "base").map(n => ({ n: n.note_name })),
+          },
+          accords: f.accords
+            .sort((a, b) => a.rank - b.rank)
+            .map(a => ({ n: a.accord_name, v: 80 - (a.rank - 1) * 10 })),
+          // Community fields — empty until populated
+          longevity: null, sillage: null, seasons: {}, occasions: [], rating: null, votes: 0,
+          prices: [],
+        }));
+
+        setFragrances(mapped);
+        console.log(`Loaded ${mapped.length} fragrances from Supabase`);
+      } catch (err) {
+        console.error("Failed to load fragrances:", err);
+      } finally {
+        setFragLoading(false);
+      }
+    }
+    loadFragrances();
+  }, []);
 
   function addJournalEntry(entry) { setJournalEntries(p => [entry, ...p]); }
   function toggleFollow(username) {
@@ -2618,7 +2687,7 @@ export default function SillageApp() {
   }
 
   const NAV = [{ tab:"Discover", icon:"◈" }, { tab:"Collection", icon:"◇" }, { tab:"Layering", icon:"◎" }, { tab:"Journal", icon:"▣" }, { tab:"Learn", icon:"△" }];
-  const modalFrag = FRAGRANCES.find(f => f.id === modalFragId);
+  const modalFrag = fragrances.find(f => f.id === modalFragId);
   function openFrag(id) { setModalFragId(id); }
   function openProfile(username) { setProfileUsername(username); }
   function onReaction(fragId, val) { setReactions(p => ({ ...p, [fragId]: val })); }
