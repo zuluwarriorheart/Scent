@@ -2063,8 +2063,27 @@ function WaitlistScreen({ onJoin }) {
   );
 }
 
-// ─── LOGIN / SIGNUP SCREEN ────────────────────────────────────────────────────
-function LoginScreen({ onLogin, onWaitlist }) {
+// ─── LOADING SCREEN ───────────────────────────────────────────────────────────
+function LoadingScreen() {
+  return (
+    <div style={{ minHeight:"100svh", background:T.black, display:"flex", alignItems:"center", justifyContent:"center", fontFamily:sans }}>
+      <div style={{ textAlign:"center" }}>
+        <h1 style={{ fontFamily:serif, fontSize:32, color:T.white, margin:"0 0 6px", letterSpacing:-1 }}>
+          sillage<span style={{ color:"rgba(255,255,255,0.3)" }}>.</span>
+        </h1>
+        <div style={{ display:"flex", gap:5, justifyContent:"center", marginTop:14 }}>
+          {[0,1,2].map(i=>(
+            <div key={i} style={{ width:5, height:5, borderRadius:"50%", background:"rgba(255,255,255,0.5)", animation:"sillagePulse 1.2s infinite", animationDelay:`${i*150}ms` }}/>
+          ))}
+        </div>
+        <style>{`@keyframes sillagePulse{0%,60%,100%{opacity:0.3}30%{opacity:1}}`}</style>
+      </div>
+    </div>
+  );
+}
+
+// ─── LOGIN / SIGNUP SCREEN — real Supabase Auth (email/password + Google OAuth) ─
+function LoginScreen({ onWaitlist }) {
   const [mode, setMode] = useState("signin");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -2073,6 +2092,7 @@ function LoginScreen({ onLogin, onWaitlist }) {
   const [country, setCountry] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [confirmPending, setConfirmPending] = useState(false);
   const [forgotSent, setForgotSent] = useState(false);
   const [showForgot, setShowForgot] = useState(false);
   const [forgotEmail, setForgotEmail] = useState("");
@@ -2080,50 +2100,62 @@ function LoginScreen({ onLogin, onWaitlist }) {
   const isValidEmail = (v) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v.trim());
   const isValidUsername = (v) => /^[a-zA-Z0-9_]{3,20}$/.test(v.trim());
 
-  function handleSubmit() {
+  async function handleSubmit() {
     setError("");
     if (mode === "signup") {
       if (!name.trim()) { setError("Please enter your name."); return; }
       if (!isValidUsername(username)) { setError("Username must be 3–20 characters, letters, numbers, or underscores only."); return; }
       if (!isValidEmail(email)) { setError("Please enter a valid email address."); return; }
       if (password.length < 6) { setError("Password must be at least 6 characters."); return; }
+
+      setLoading(true);
+      const { data, error: signUpError } = await supabase.auth.signUp({
+        email: email.trim(),
+        password,
+        options: { data: { username: username.trim(), display_name: name.trim(), country: country || null } },
+      });
+      setLoading(false);
+      if (signUpError) { setError(signUpError.message); return; }
+      if (!data.session) {
+        // Email confirmation required before a session exists
+        setConfirmPending(true);
+        return;
+      }
+      // Session exists — root SillageApp's onAuthStateChange listener takes over routing.
     } else {
       if (!isValidEmail(email)) { setError("Please enter a valid email address."); return; }
       if (password.length < 6) { setError("Password must be at least 6 characters."); return; }
-    }
-    setLoading(true);
-    setTimeout(() => {
-      setLoading(false);
-      onLogin({
-        name: name || email.split("@")[0],
-        username: username || email.split("@")[0],
-        email,
-        country,
-        method: "email",
-        isFounder: true,
-        memberNumber: 47,
-        isTopContributor: false,
+
+      setLoading(true);
+      const { error: signInError } = await supabase.auth.signInWithPassword({
+        email: email.trim(),
+        password,
       });
-    }, 800);
-  }
-
-  function handleGoogle() {
-    setLoading(true);
-    setTimeout(() => {
       setLoading(false);
-      if (mode === "signup") {
-        setMode("google-profile");
-        setLoading(false);
-      } else {
-        onLogin({ name: "James W.", username: "james_w", email: "jw@example.com", country: "GB", method: "google", isFounder: true, memberNumber: 12, isTopContributor: true });
-      }
-    }, 700);
+      if (signInError) { setError(signInError.message); return; }
+      // Success — root SillageApp's onAuthStateChange listener takes over routing.
+    }
   }
 
-  function handleGoogleProfileDone() {
-    if (!isValidUsername(username)) { setError("Username must be 3–20 characters, letters, numbers, or underscores only."); return; }
+  async function handleGoogle() {
     setError("");
-    onLogin({ name: name || "New Member", username, email: "google@example.com", country, method: "google", isFounder: true, memberNumber: 48, isTopContributor: false });
+    setLoading(true);
+    const { error: oauthError } = await supabase.auth.signInWithOAuth({
+      provider: "google",
+      options: { redirectTo: window.location.origin },
+    });
+    // On success this redirects the full page to Google — nothing further runs here.
+    if (oauthError) { setLoading(false); setError(oauthError.message); }
+  }
+
+  async function handleForgotSubmit() {
+    if (!isValidEmail(forgotEmail)) { setError("Please enter a valid email address."); return; }
+    setError("");
+    const { error: resetError } = await supabase.auth.resetPasswordForEmail(forgotEmail.trim(), {
+      redirectTo: window.location.origin,
+    });
+    if (resetError) { setError(resetError.message); return; }
+    setForgotSent(true);
   }
 
   const inp = {
@@ -2132,27 +2164,19 @@ function LoginScreen({ onLogin, onWaitlist }) {
     fontFamily: sans, boxSizing: "border-box", WebkitAppearance: "none",
   };
 
-  if (mode === "google-profile") {
+  if (confirmPending) {
     return (
       <div style={{ minHeight:"100svh", background:T.bg, display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", padding:"40px 28px", boxSizing:"border-box", fontFamily:sans }}>
-        <div style={{ width:"100%", maxWidth:400 }}>
-          <div style={{ textAlign:"center", marginBottom:36 }}>
-            <h1 style={{ fontFamily:serif, fontSize:34, color:T.black, margin:"0 0 4px", letterSpacing:-1 }}>sillage<span style={{ color:T.mid }}>.</span></h1>
-            <p style={{ fontFamily:sans, fontSize:9, color:T.faint, textTransform:"uppercase", letterSpacing:"0.18em", margin:0 }}>Fragrance Journal</p>
+        <div style={{ width:"100%", maxWidth:400, textAlign:"center" }}>
+          <h1 style={{ fontFamily:serif, fontSize:34, color:T.black, margin:"0 0 4px", letterSpacing:-1 }}>sillage<span style={{ color:T.mid }}>.</span></h1>
+          <div style={{ width:56, height:56, borderRadius:"50%", border:`1px solid ${T.rule}`, display:"flex", alignItems:"center", justifyContent:"center", margin:"32px auto 20px" }}>
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={T.black} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M4 4h16v16H4z"/><path d="M4 6l8 7 8-7"/></svg>
           </div>
-          <p style={{ fontFamily:sans, fontSize:9, color:T.mid, textTransform:"uppercase", letterSpacing:"0.14em", margin:"0 0 10px" }}>One last step</p>
-          <h2 style={{ fontFamily:serif, fontSize:24, color:T.black, margin:"0 0 6px", fontWeight:"normal" }}>Set up your profile</h2>
-          <p style={{ fontFamily:sans, fontSize:13, color:T.mid, lineHeight:1.65, margin:"0 0 28px" }}>Your username is how the community will know you. Choose carefully — it's how your reviews and layering combos are credited.</p>
-          <div style={{ display:"flex", flexDirection:"column", gap:10, marginBottom:14 }}>
-            <div>
-              <input value={username} onChange={e => { setUsername(e.target.value.replace(/[^a-zA-Z0-9_]/g, "")); setError(""); }} placeholder="Username (e.g. scenthunter_uk)" style={inp} maxLength={20}/>
-              <p style={{ fontFamily:sans, fontSize:11, color:T.faint, margin:"5px 0 0" }}>Letters, numbers, underscores. 3–20 characters.</p>
-            </div>
-            <CountryPicker value={country} onChange={setCountry}/>
-          </div>
-          {error && <p style={{ fontFamily:sans, fontSize:12, color:"#CC3333", margin:"0 0 12px" }}>{error}</p>}
-          <button onClick={handleGoogleProfileDone} style={{ width:"100%", padding:"15px 0", borderRadius:12, background:T.black, border:"none", color:T.white, fontSize:14, fontFamily:sans, fontWeight:500, cursor:"pointer", marginBottom:12 }}>Complete setup</button>
-          <p style={{ fontFamily:sans, fontSize:11, color:T.faint, textAlign:"center", margin:0 }}>You can update this anytime from your profile.</p>
+          <h2 style={{ fontFamily:serif, fontSize:24, color:T.black, margin:"0 0 10px", fontWeight:"normal" }}>Check your inbox</h2>
+          <p style={{ fontFamily:sans, fontSize:13, color:T.mid, lineHeight:1.7, margin:"0 0 28px" }}>
+            We sent a confirmation link to <strong style={{ color:T.ink }}>{email}</strong>. Click it to activate your account, then come back and sign in.
+          </p>
+          <button onClick={() => { setConfirmPending(false); setMode("signin"); }} style={{ width:"100%", padding:"14px 0", borderRadius:12, background:T.black, border:"none", color:T.white, fontSize:14, fontFamily:sans, cursor:"pointer" }}>Back to sign in</button>
         </div>
       </div>
     );
@@ -2210,7 +2234,7 @@ function LoginScreen({ onLogin, onWaitlist }) {
         </button>
 
         {mode === "signin" && !showForgot && (
-          <p onClick={() => { setShowForgot(true); setForgotEmail(email); }} style={{ fontFamily:sans, fontSize:12, color:T.mid, textAlign:"center", margin:"0 0 8px", cursor:"pointer" }}>
+          <p onClick={() => { setShowForgot(true); setForgotEmail(email); setError(""); }} style={{ fontFamily:sans, fontSize:12, color:T.mid, textAlign:"center", margin:"0 0 8px", cursor:"pointer" }}>
             Forgot your password?
           </p>
         )}
@@ -2223,7 +2247,7 @@ function LoginScreen({ onLogin, onWaitlist }) {
                 <input value={forgotEmail} onChange={e => setForgotEmail(e.target.value)} placeholder="Email address" type="email" style={{ ...inp, marginBottom:10 }}/>
                 <div style={{ display:"flex", gap:8 }}>
                   <button onClick={() => setShowForgot(false)} style={{ flex:1, padding:"10px 0", borderRadius:10, border:`1px solid ${T.rule}`, background:T.white, color:T.mid, fontSize:12, fontFamily:sans, cursor:"pointer" }}>Cancel</button>
-                  <button onClick={() => setForgotSent(true)} style={{ flex:2, padding:"10px 0", borderRadius:10, background:T.black, border:"none", color:T.white, fontSize:12, fontFamily:sans, cursor:"pointer" }}>Send reset link</button>
+                  <button onClick={handleForgotSubmit} style={{ flex:2, padding:"10px 0", borderRadius:10, background:T.black, border:"none", color:T.white, fontSize:12, fontFamily:sans, cursor:"pointer" }}>Send reset link</button>
                 </div>
               </>
             ) : (
@@ -2241,6 +2265,62 @@ function LoginScreen({ onLogin, onWaitlist }) {
           <span onClick={onWaitlist} style={{ color:T.black, fontWeight:500, cursor:"pointer" }}>Join the waitlist →</span>
         </p>
         <FooterLinks/>
+      </div>
+    </div>
+  );
+}
+
+// ─── ONBOARDING SCREEN — shown once for Google sign-ups needing a username ────
+function OnboardingScreen({ onComplete }) {
+  const [username, setUsername] = useState("");
+  const [country, setCountry] = useState("");
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  const isValidUsername = (v) => /^[a-zA-Z0-9_]{3,20}$/.test(v.trim());
+
+  async function handleDone() {
+    if (!isValidUsername(username)) { setError("Username must be 3–20 characters, letters, numbers, or underscores only."); return; }
+    setError("");
+    setLoading(true);
+    const { data: { user } } = await supabase.auth.getUser();
+    const { error: updateError } = await supabase
+      .from("profiles")
+      .update({ username: username.trim(), country: country || null, needs_setup: false })
+      .eq("id", user.id);
+    setLoading(false);
+    if (updateError) { setError(updateError.message); return; }
+    onComplete({ username: username.trim(), country: country || null, needs_setup: false });
+  }
+
+  const inp = {
+    width: "100%", background: T.lift, border: `1px solid ${T.rule}`, borderRadius: 12,
+    padding: "13px 16px", fontSize: 15, color: T.ink, outline: "none",
+    fontFamily: sans, boxSizing: "border-box", WebkitAppearance: "none",
+  };
+
+  return (
+    <div style={{ minHeight:"100svh", background:T.bg, display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", padding:"40px 28px", boxSizing:"border-box", fontFamily:sans }}>
+      <div style={{ width:"100%", maxWidth:400 }}>
+        <div style={{ textAlign:"center", marginBottom:36 }}>
+          <h1 style={{ fontFamily:serif, fontSize:34, color:T.black, margin:"0 0 4px", letterSpacing:-1 }}>sillage<span style={{ color:T.mid }}>.</span></h1>
+          <p style={{ fontFamily:sans, fontSize:9, color:T.faint, textTransform:"uppercase", letterSpacing:"0.18em", margin:0 }}>Fragrance Journal</p>
+        </div>
+        <p style={{ fontFamily:sans, fontSize:9, color:T.mid, textTransform:"uppercase", letterSpacing:"0.14em", margin:"0 0 10px" }}>One last step</p>
+        <h2 style={{ fontFamily:serif, fontSize:24, color:T.black, margin:"0 0 6px", fontWeight:"normal" }}>Set up your profile</h2>
+        <p style={{ fontFamily:sans, fontSize:13, color:T.mid, lineHeight:1.65, margin:"0 0 28px" }}>Your username is how the community will know you. Choose carefully — it's how your reviews and layering combos are credited.</p>
+        <div style={{ display:"flex", flexDirection:"column", gap:10, marginBottom:14 }}>
+          <div>
+            <input value={username} onChange={e => { setUsername(e.target.value.replace(/[^a-zA-Z0-9_]/g, "")); setError(""); }} placeholder="Username (e.g. scenthunter_uk)" style={inp} maxLength={20}/>
+            <p style={{ fontFamily:sans, fontSize:11, color:T.faint, margin:"5px 0 0" }}>Letters, numbers, underscores. 3–20 characters.</p>
+          </div>
+          <CountryPicker value={country} onChange={setCountry}/>
+        </div>
+        {error && <p style={{ fontFamily:sans, fontSize:12, color:"#CC3333", margin:"0 0 12px" }}>{error}</p>}
+        <button onClick={handleDone} disabled={loading} style={{ width:"100%", padding:"15px 0", borderRadius:12, background:loading?T.faint:T.black, border:"none", color:T.white, fontSize:14, fontFamily:sans, fontWeight:500, cursor:loading?"not-allowed":"pointer", marginBottom:12 }}>
+          {loading ? "Saving…" : "Complete setup"}
+        </button>
+        <p style={{ fontFamily:sans, fontSize:11, color:T.faint, textAlign:"center", margin:0 }}>You can update this anytime from your profile.</p>
       </div>
     </div>
   );
@@ -2312,7 +2392,7 @@ const MOCK_MEMBERS = [
 ];
 
 // ─── PROFILE MODAL ────────────────────────────────────────────────────────────
-function ProfileModal({ username, onClose, currentUser, userStatuses, onOpenFrag, isFollowing, onToggleFollow, following, onOpenProfile }) {
+function ProfileModal({ username, onClose, currentUser, userStatuses, onOpenFrag, isFollowing, onToggleFollow, following, onOpenProfile, onSignOut }) {
   const [tab, setTab] = useState("reviews");
 
   const isSelf = currentUser && currentUser.username === username;
@@ -2406,9 +2486,12 @@ function ProfileModal({ username, onClose, currentUser, userStatuses, onOpenFrag
           )}
 
           {isSelf && (
-            <div style={{ marginBottom:18 }}>
-              <button style={{ width:"100%", padding:"11px 0", borderRadius:12, border:`1px solid ${T.rule}`, background:T.white, color:T.mid, fontSize:13, fontFamily:sans, cursor:"pointer" }}>
+            <div style={{ display:"flex", gap:8, marginBottom:18 }}>
+              <button style={{ flex:1, padding:"11px 0", borderRadius:12, border:`1px solid ${T.rule}`, background:T.white, color:T.mid, fontSize:13, fontFamily:sans, cursor:"pointer" }}>
                 Edit profile
+              </button>
+              <button onClick={onSignOut} style={{ padding:"11px 18px", borderRadius:12, border:`1px solid ${T.rule}`, background:T.white, color:"#C0392B", fontSize:13, fontFamily:sans, cursor:"pointer" }}>
+                Sign out
               </button>
             </div>
           )}
@@ -2601,7 +2684,7 @@ function ProfileModal({ username, onClose, currentUser, userStatuses, onOpenFrag
 
 // ─── ROOT ─────────────────────────────────────────────────────────────────────
 export default function SillageApp() {
-  const [appScreen, setAppScreen] = useState("waitlist");
+  const [appScreen, setAppScreen] = useState("loading"); // loading | waitlist | login | onboarding | app
   const [currentUser, setCurrentUser] = useState(null);
   const [activeTab, setActiveTab] = useState("Discover");
   const [modalFragId, setModalFragId] = useState(null);
@@ -2616,6 +2699,53 @@ export default function SillageApp() {
   const [fragrances, setFragrances] = useState(FRAGRANCES);
   const [fragLoading, setFragLoading] = useState(false);
 
+  // ─── AUTH: session check + profile routing ────────────────────────────────
+  useEffect(() => {
+    let active = true;
+
+    async function routeSession(session) {
+      if (!session) {
+        if (active) { setCurrentUser(null); setAppScreen("waitlist"); }
+        return;
+      }
+      const { data: profile, error } = await supabase
+        .from("profiles")
+        .select("*")
+        .eq("id", session.user.id)
+        .maybeSingle();
+
+      if (!active) return;
+      if (error || !profile) {
+        // Session exists but no profile row yet (trigger lag) — treat as needing setup.
+        setCurrentUser({ id: session.user.id, email: session.user.email, username: "", needs_setup: true });
+        setAppScreen("onboarding");
+        return;
+      }
+      const user = {
+        id: profile.id,
+        email: session.user.email,
+        username: profile.username,
+        name: profile.display_name || profile.username,
+        country: profile.country || "",
+        bio: profile.bio || "",
+        isFounder: profile.member_number != null && profile.member_number <= 1000,
+        memberNumber: profile.member_number,
+        isTopContributor: !!profile.is_top_contributor,
+      };
+      setCurrentUser(user);
+      setAppScreen(profile.needs_setup ? "onboarding" : "app");
+    }
+
+    supabase.auth.getSession().then(({ data: { session } }) => routeSession(session));
+
+    const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
+      routeSession(session);
+    });
+
+    return () => { active = false; listener.subscription.unsubscribe(); };
+  }, []);
+
+  // ─── FRAGRANCE CATALOGUE: live fetch from Supabase ────────────────────────
   useEffect(() => {
     async function loadFragrances() {
       setFragLoading(true);
@@ -2692,15 +2822,23 @@ export default function SillageApp() {
   function openProfile(username) { setProfileUsername(username); }
   function onReaction(fragId, val) { setReactions(p => ({ ...p, [fragId]: val })); }
 
-  function handleLogin(user) { setCurrentUser(user); setAppScreen("app"); }
-  function handleSignOut() { setCurrentUser(null); setAppScreen("waitlist"); }
+  function handleOnboardingComplete(fields) {
+    setCurrentUser(p => ({ ...p, ...fields }));
+    setAppScreen("app");
+  }
+  async function handleSignOut() {
+    await supabase.auth.signOut();
+    // onAuthStateChange listener routes to "waitlist" once the session clears.
+  }
 
   const userInitials = currentUser
-    ? (currentUser.username || currentUser.name).slice(0, 2).toUpperCase()
+    ? (currentUser.username || currentUser.name || "?").slice(0, 2).toUpperCase()
     : "?";
 
+  if (appScreen === "loading") return <LoadingScreen/>;
   if (appScreen === "waitlist") return <WaitlistScreen onJoin={() => setAppScreen("login")}/>;
-  if (appScreen === "login") return <LoginScreen onLogin={handleLogin} onWaitlist={() => setAppScreen("waitlist")}/>;
+  if (appScreen === "login") return <LoginScreen onWaitlist={() => setAppScreen("waitlist")}/>;
+  if (appScreen === "onboarding") return <OnboardingScreen onComplete={handleOnboardingComplete}/>;
 
   return (
     <div style={{ minHeight:"100svh", background:T.bg, fontFamily:sans }}>
@@ -2769,6 +2907,7 @@ export default function SillageApp() {
           onToggleFollow={toggleFollow}
           following={following}
           onOpenProfile={username => { setProfileUsername(null); setTimeout(() => setProfileUsername(username), 50); }}
+          onSignOut={handleSignOut}
         />
       )}
     </div>
