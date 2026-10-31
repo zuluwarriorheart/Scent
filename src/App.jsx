@@ -78,12 +78,29 @@ input:focus-visible, textarea:focus-visible, select:focus-visible { outline:2px 
 
 .mos-tabs-top { display:flex; gap:20px; overflow-x:auto; }
 .mos-tabbar { display:none; }
-:root { --cover-w:158px; }
-@media (min-width:640px) { :root { --cover-w:184px; } }
+:root { --page-w:1240px; --gutter:20px; --cover-w:156px; }
+@media (min-width:640px) { :root { --gutter:28px; --cover-w:184px; } }
+@media (min-width:1100px) { :root { --gutter:40px; --cover-w:206px; } }
+body { overflow-x:clip; }
+.mos-wrap { width:100%; max-width:var(--page-w); margin-left:auto; margin-right:auto; padding-left:var(--gutter); padding-right:var(--gutter); }
+.mos-bleed { margin-left:calc(50% - 50vw); margin-right:calc(50% - 50vw); }
+.mos-bleed-pad { padding-left:max(var(--gutter), calc((100vw - var(--page-w)) / 2 + var(--gutter))); padding-right:max(var(--gutter), calc((100vw - var(--page-w)) / 2 + var(--gutter))); }
+.mos-shelf { scroll-padding-left:max(var(--gutter), calc((100vw - var(--page-w)) / 2 + var(--gutter))); }
+.mos-prose { max-width:880px; }
+.mos-grid { display:grid; grid-template-columns:1fr; gap:10px; }
+@media (min-width:900px) { .mos-grid { grid-template-columns:repeat(2, minmax(0,1fr)); gap:12px; } }
+@media (min-width:1280px) { .mos-grid { grid-template-columns:repeat(3, minmax(0,1fr)); } }
+.mos-two { display:grid; grid-template-columns:minmax(0,1fr); gap:0; }
+@media (min-width:760px) { .mos-two { grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:40px; } }
+@media (min-width:760px) {
+  .mos-sheet-wrap { justify-content:center !important; padding:32px 0; }
+  .mos-sheet { max-width:880px !important; border-radius:24px !important; border-bottom:1px solid var(--rule) !important; max-height:90vh !important; }
+}
 .mos-cover { transition:transform .18s ease, box-shadow .18s ease; }
 .mos-cover:hover { transform:translateY(-3px); }
+.mos-cover:focus-visible { outline:2px solid var(--accent); outline-offset:4px; border-radius:12px; }
 .mos-shelf::-webkit-scrollbar { display:none; }
-@media (max-width:639px) { .mos-band { background:var(--lift); } }
+.mos-band { background:var(--lift); }
 @media (max-width:639px) {
   .mos-tabs-top { display:none; }
   .mos-tabbar { display:flex; }
@@ -362,37 +379,42 @@ function SampleDrawing({ size = 36, isWhite = false }) {
   );
 }
 
-// ─── RADAR CHART ─────────────────────────────────────────────────────────────
-function RadarChart({ accords }) {
-  const N = accords.length;
-  const cx = 110, cy = 110, R = 80;
-  const levels = [0.25, 0.5, 0.75, 1.0];
-  function pt(i, frac) {
-    const angle = (Math.PI * 2 * i) / N - Math.PI / 2;
-    return { x: cx + R * frac * Math.cos(angle), y: cy + R * frac * Math.sin(angle) };
-  }
-  const gridPoints = levels.map(l => accords.map((_, i) => pt(i, l)));
-  const dataPoints = accords.map((a, i) => pt(i, a.v / 100));
-  const dataPath = dataPoints.map((p, i) => `${i === 0 ? "M" : "L"}${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(" ") + " Z";
-  const gridPath = level => gridPoints[level].map((p, i) => `${i === 0 ? "M" : "L"}${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(" ") + " Z";
+// ─── ACCORD BARS — ranked, one colour per accord ─────────────────────────────
+const ACCORD_COLORS = {
+  woody:"#A9744B", floral:"#E2639B", "white floral":"#F28CB8", fresh:"#34B3C6", citrus:"#EFC12C", fruity:"#F2883A",
+  sweet:"#D9568A", amber:"#D98A2B", musky:"#C9A6B8", powdery:"#E9A87C", green:"#5DAE5E", leather:"#8A4B3A",
+  smoky:"#7A6A8C", "warm spicy":"#D2552E", spicy:"#D2552E", aromatic:"#6FA58A", oud:"#6B3F36", vanilla:"#E8C58A",
+  gourmand:"#B5703E", mossy:"#6E8F52", patchouli:"#8D6E4C", aquatic:"#4AA3D8", earthy:"#8C7B5A", balsamic:"#B9824F",
+  animalic:"#9C6B5A", tobacco:"#9A6A3A", rose:"#E2639B", iris:"#A58BD6", lavender:"#A58BD6", coconut:"#E9D9BF",
+  honey:"#EBB13C", tropical:"#F0A63A", metallic:"#9AA7B0", ozonic:"#7CC3E0", cherry:"#C93255", almond:"#D6B08A",
+  caramel:"#C98A3C", coffee:"#7A5238", chocolate:"#6A4030", cacao:"#6A4030", incense:"#8F7AA8", resinous:"#B9824F",
+};
+const ACCORD_FALLBACK = ["#F2661C", "#E6397F", "#8E52D6", "#1E9CC4", "#E24A3D", "#9A3F8E"];
+function accordColor(name) {
+  const k = String(name).toLowerCase().trim();
+  if (ACCORD_COLORS[k]) return ACCORD_COLORS[k];
+  let h = 0;
+  for (const c of k) h = (h * 31 + c.charCodeAt(0)) >>> 0;
+  return ACCORD_FALLBACK[h % ACCORD_FALLBACK.length];
+}
+function onColor(hex) {
+  const n = parseInt(hex.slice(1), 16);
+  const lum = 0.299 * ((n >> 16) & 255) + 0.587 * ((n >> 8) & 255) + 0.114 * (n & 255);
+  return lum > 150 ? "#2A1F2E" : "#FFFFFF";
+}
+function AccordBars({ accords }) {
+  const list = [...(accords || [])].sort((a, b) => b.v - a.v);
+  if (!list.length) return null;
+  const max = Math.max(...list.map(a => a.v)) || 1;
   return (
-    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 16 }}>
-      <svg width={220} height={220} viewBox="0 0 220 220">
-        {levels.map((_, li) => <path key={li} d={gridPath(li)} fill="none" stroke={T.rule} strokeWidth={li === 3 ? 1 : 0.7}/>)}
-        {accords.map((_, i) => { const outer = pt(i, 1); return <line key={i} x1={cx} y1={cy} x2={outer.x.toFixed(1)} y2={outer.y.toFixed(1)} stroke={T.rule} strokeWidth={0.8}/>; })}
-        <path d={dataPath} fill={T.black} fillOpacity={0.07} stroke={T.black} strokeWidth={1.5} strokeLinejoin="round"/>
-        {dataPoints.map((p, i) => <circle key={i} cx={p.x.toFixed(1)} cy={p.y.toFixed(1)} r={3} fill={T.black}/>)}
-        {accords.map((a, i) => { const labelPt = pt(i, 1.22); return <text key={i} x={labelPt.x.toFixed(1)} y={labelPt.y.toFixed(1)} textAnchor="middle" dominantBaseline="middle" style={{ fontFamily: sans, fontSize: 10, fill: T.mid }}>{a.n}</text>; })}
-        {dataPoints.map((p, i) => { const lp = pt(i, (accords[i].v / 100) * 0.65); return <text key={i} x={lp.x.toFixed(1)} y={lp.y.toFixed(1)} textAnchor="middle" dominantBaseline="middle" style={{ fontFamily: sans, fontSize: 8, fill: T.mid }}>{accords[i].v}</text>; })}
-      </svg>
-      <div style={{ display: "flex", flexWrap: "wrap", justifyContent: "center", gap: 6 }}>
-        {accords.map(a => (
-          <div key={a.n} style={{ display: "flex", alignItems: "center", gap: 5 }}>
-            <div style={{ width: Math.round(2 + (a.v / 100) * 6), height: Math.round(2 + (a.v / 100) * 6), borderRadius: "50%", background: T.black, opacity: 0.4 + (a.v / 100) * 0.6 }}/>
-            <span style={{ fontFamily: sans, fontSize: 11, color: T.mid }}>{a.n}</span>
-          </div>
-        ))}
-      </div>
+    <div style={{ display:"flex", flexDirection:"column", gap:6 }}>
+      {list.map(a => {
+        const c = accordColor(a.n);
+        const w = Math.max(28, Math.round((a.v / max) * 100));
+        return (
+          <div key={a.n} style={{ width:`${w}%`, minWidth:110, height:34, borderRadius:9, padding:"0 14px", display:"flex", alignItems:"center", background:c, color:onColor(c), fontFamily:sans, fontSize:13, fontWeight:600, textTransform:"capitalize", letterSpacing:"0.01em" }}>{a.n}</div>
+        );
+      })}
     </div>
   );
 }
@@ -1231,34 +1253,46 @@ function DetailModal({ frag, onClose, userStatus, setUserStatus, privateNote, se
     setReplyText("");setReplyTo(null);
   }
 
+  const sortedAcc = [...(frag.accords || [])].sort((x, y) => y.v - x.v);
+  const accA = sortedAcc[0] ? accordColor(sortedAcc[0].n) : null;
+  const accB = sortedAcc[1] ? accordColor(sortedAcc[1].n) : accA;
+  const hasSeasons = !!frag.seasons && Object.keys(frag.seasons).length > 0;
+  const hasOcc = !!frag.occasions && frag.occasions.length > 0;
+  const hasLeft = !!(frag.description || frag.story);
+  const stats = [
+    { label:"Rating", value: frag.rating != null ? frag.rating : null },
+    { label:"Longevity", value: frag.longevity != null ? `${frag.longevity}/5` : null },
+    { label:"Sillage", value: frag.sillage != null ? `${frag.sillage}/5` : null },
+  ].filter(s => s.value != null);
   return (
-    <div onClick={onClose} style={{position:"fixed",inset:0,zIndex:50,background:T.scrim,backdropFilter:"blur(16px)",display:"flex",flexDirection:"column",justifyContent:"flex-end",alignItems:"center"}}>
-      <div onClick={e=>e.stopPropagation()} style={{background:T.white,borderRadius:"24px 24px 0 0",border:`1px solid ${T.rule}`,borderBottom:"none",width:"100%",maxWidth:460,maxHeight:"93vh",overflowY:"auto"}}>
+    <div className="mos-sheet-wrap" onClick={onClose} style={{position:"fixed",inset:0,zIndex:50,background:T.scrim,backdropFilter:"blur(16px)",display:"flex",flexDirection:"column",justifyContent:"flex-end",alignItems:"center"}}>
+      <div className="mos-sheet" onClick={e=>e.stopPropagation()} style={{background:T.white,borderRadius:"24px 24px 0 0",border:`1px solid ${T.rule}`,borderBottom:"none",width:"100%",maxWidth:460,maxHeight:"93vh",overflowY:"auto"}}>
 
         
-        <div style={{position:"relative",padding:"26px 24px 20px",borderBottom:`1px solid ${T.rule}`,overflow:"hidden"}}>
+        <div style={{position:"relative",padding:"26px 24px 20px",borderBottom:`1px solid ${T.rule}`,overflow:"hidden",background:accA?`linear-gradient(180deg,${accA}30 0%,transparent 78%)`:"transparent"}}>
           <button onClick={onClose} style={{position:"absolute",top:16,right:16,width:30,height:30,borderRadius:"50%",border:`1px solid ${T.rule}`,background:T.white,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",fontSize:13,color:T.mid,zIndex:2}}>✕</button>
           <div style={{display:"flex",alignItems:"flex-start",gap:16}}>
             <div style={{flex:1}}>
-              <div style={{marginBottom:8}}><span style={{fontFamily:sans,fontSize:9,textTransform:"uppercase",letterSpacing:"0.12em",color:T.mid}}>{frag.house} · {frag.family}</span></div>
+              <div style={{marginBottom:8}}><span style={{fontFamily:sans,fontSize:9,textTransform:"uppercase",letterSpacing:"0.12em",color:T.mid}}>{[frag.house, frag.family].filter(Boolean).join(" · ")}</span></div>
               <h2 style={{fontFamily:serif,fontSize:28,color:T.black,margin:"0 0 2px",letterSpacing:-0.5,lineHeight:1.1}}>{frag.name}</h2>
-              <p style={{fontFamily:sans,fontSize:13,color:T.mid,margin:"0 0 0",lineHeight:1.4}}>{frag.year} · {frag.concentration}</p>
+              <p style={{fontFamily:sans,fontSize:13,color:T.mid,margin:"0 0 0",lineHeight:1.4}}>{[frag.year, frag.concentration].filter(Boolean).join(" · ")}</p>
               {frag.ownership && <div style={{margin:"3px 0 0"}}><OwnershipBadge ownership={frag.ownership} size="normal" showTooltip={true}/></div>}
-              {frag.perfumer && frag.perfumer !== "Unknown" && (
+              {frag.perfumer && String(frag.perfumer).toLowerCase() !== "unknown" && (
                 <p onClick={()=>setShowPerfumer(true)} style={{fontFamily:sans,fontSize:12,color:T.mid,margin:"5px 0 10px",cursor:"pointer",display:"inline-flex",alignItems:"center",gap:4}}>
                   <span style={{color:T.faint,fontSize:10}}>by</span>
                   <span style={{color:T.black,borderBottom:`1px solid ${T.rule}`}}>{frag.perfumer}</span>
                 </p>
               )}
-              {(!frag.perfumer || frag.perfumer==="Unknown") && <div style={{marginBottom:10}}/>}
-              <ReactionBar value={reaction} onChange={setReaction}/>
+              {(!frag.perfumer || String(frag.perfumer).toLowerCase()==="unknown") && <div style={{marginBottom:10}}/>}
               {showPerfumer && <PerfumerModal name={frag.perfumer} onClose={()=>setShowPerfumer(false)}/>}
             </div>
-            <div style={{width:80,height:100,borderRadius:12,background:`linear-gradient(160deg,${T.lift},${T.press})`,border:`1px solid ${T.rule}`,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",flexShrink:0,marginTop:4}}>
-              <span style={{fontFamily:serif,fontSize:22,color:T.ink,opacity:0.3,lineHeight:1}}>{frag.name.split(" ").map(w=>w[0]).join("").slice(0,2).toUpperCase()}</span>
-              <span style={{fontFamily:sans,fontSize:8,color:T.faint,marginTop:4,textAlign:"center",lineHeight:1.3,padding:"0 4px"}}>No image yet</span>
+            <div style={{width:80,height:104,borderRadius:14,background:frag.image?T.white:`linear-gradient(160deg,${accA||"#C9206B"},${accB||"#8E52D6"})`,border:`1px solid ${T.rule}`,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,marginTop:34,overflow:"hidden",position:"relative"}}>
+              {frag.image
+                ? <img src={frag.image} alt={frag.name} style={{width:"100%",height:"100%",objectFit:"contain",padding:"8%"}}/>
+                : <span style={{fontFamily:serif,fontSize:30,color:"#fff",opacity:0.92,lineHeight:1}}>{frag.name.split(" ").map(w=>w[0]).join("").slice(0,2).toUpperCase()}</span>}
             </div>
           </div>
+          <div style={{marginTop:14}}><ReactionBar value={reaction} onChange={setReaction}/></div>
         </div>
 
         
@@ -1269,10 +1303,10 @@ function DetailModal({ frag, onClose, userStatus, setUserStatus, privateNote, se
         </div>
 
         
-        {(tab==="overview"||tab==="community"||tab==="pricing")&&(
-        <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",borderBottom:`1px solid ${T.rule}`}}>
-          {[{label:"Rating",value:frag.rating},{label:"Longevity",value:`${frag.longevity}/5`},{label:"Sillage",value:`${frag.sillage}/5`}].map((s,i)=>(
-            <div key={s.label} style={{padding:"12px 6px",textAlign:"center",borderRight:i<2?`1px solid ${T.rule}`:"none"}}>
+        {(tab==="overview"||tab==="community"||tab==="pricing")&&stats.length>0&&(
+        <div style={{display:"grid",gridTemplateColumns:`repeat(${stats.length},1fr)`,borderBottom:`1px solid ${T.rule}`}}>
+          {stats.map((s,i)=>(
+            <div key={s.label} style={{padding:"12px 6px",textAlign:"center",borderRight:i<stats.length-1?`1px solid ${T.rule}`:"none"}}>
               <p style={{fontFamily:serif,fontSize:16,color:T.black,margin:0}}>{s.value}</p>
               <p style={{fontFamily:sans,fontSize:9,color:T.mid,textTransform:"uppercase",letterSpacing:"0.09em",margin:"3px 0 0"}}>{s.label}</p>
             </div>
@@ -1284,23 +1318,35 @@ function DetailModal({ frag, onClose, userStatus, setUserStatus, privateNote, se
           
           {tab==="overview"&&(
             <div>
-              <p style={{fontFamily:sans,fontSize:14,color:T.mid,lineHeight:1.75,margin:"0 0 20px"}}>{frag.description}</p>
-              <div style={{background:T.lift,borderRadius:12,padding:16,marginBottom:24,border:`1px solid ${T.rule}`}}>
-                <Lbl>The Story</Lbl>
-                <p style={{fontFamily:sans,fontSize:13,color:T.mid,lineHeight:1.75,fontStyle:"italic",margin:0}}>{frag.story}</p>
+              <div className={hasLeft?"mos-two":""}>
+                {hasLeft&&(
+                  <div>
+                    {frag.description&&<p style={{fontFamily:sans,fontSize:14,color:T.mid,lineHeight:1.75,margin:"0 0 20px"}}>{frag.description}</p>}
+                    {frag.story&&(
+                      <div style={{background:T.lift,borderRadius:12,padding:16,marginBottom:24,border:`1px solid ${T.rule}`}}>
+                        <Lbl>The Story</Lbl>
+                        <p style={{fontFamily:sans,fontSize:13,color:T.mid,lineHeight:1.75,fontStyle:"italic",margin:0}}>{frag.story}</p>
+                      </div>
+                    )}
+                  </div>
+                )}
+                <div>
+                  {sortedAcc.length>0&&(<><Lbl mb={12}>Scent Accords</Lbl><AccordBars accords={frag.accords}/></>)}
+                  {hasSeasons&&(<><div style={{borderTop:`1px solid ${T.rule}`,margin:"24px 0"}}/><Lbl>Seasons</Lbl><SeasonHeat seasons={frag.seasons}/></>)}
+                  {hasOcc&&(
+                    <>
+                      <div style={{borderTop:`1px solid ${T.rule}`,margin:"24px 0"}}/>
+                      <Lbl>Occasions</Lbl>
+                      <div style={{display:"flex",flexWrap:"wrap",gap:6,marginBottom:8}}>
+                        {frag.occasions.map(o=><span key={o} style={{fontFamily:sans,fontSize:12,padding:"5px 12px",borderRadius:20,border:`1px solid ${T.rule}`,color:T.mid}}>{o}</span>)}
+                      </div>
+                    </>
+                  )}
+                </div>
               </div>
-              <Lbl>Scent Accords</Lbl>
-              <RadarChart accords={frag.accords}/>
-              <div style={{borderTop:`1px solid ${T.rule}`,margin:"24px 0"}}/>
-              <Lbl>Seasons</Lbl>
-              <SeasonHeat seasons={frag.seasons}/>
-              <div style={{borderTop:`1px solid ${T.rule}`,margin:"24px 0"}}/>
-              <Lbl>Occasions</Lbl>
-              <div style={{display:"flex",flexWrap:"wrap",gap:6,marginBottom:24}}>
-                {frag.occasions.map(o=><span key={o} style={{fontFamily:sans,fontSize:12,padding:"5px 12px",borderRadius:20,border:`1px solid ${T.rule}`,color:T.mid}}>{o}</span>)}
+              <div style={{marginTop:24}}>
+                <HouseStrip currentFrag={frag} onOpenFrag={id=>{onClose();setTimeout(()=>onOpenFrag(id),50);}}/>
               </div>
-              
-              <HouseStrip currentFrag={frag} onOpenFrag={id=>{onClose();setTimeout(()=>onOpenFrag(id),50);}}/>
             </div>
           )}
 
@@ -1314,7 +1360,7 @@ function DetailModal({ frag, onClose, userStatus, setUserStatus, privateNote, se
               ].map(({tier,label,time,notes:ns,desc},si)=>(
                 <div key={tier} style={{marginBottom:si<2?28:0}}>
                   <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:14,padding:"10px 14px",borderRadius:10,background:T.lift,border:`1px solid ${T.rule}`}}>
-                    <div style={{width:22,height:22,borderRadius:6,fontSize:10,fontWeight:700,fontFamily:sans,display:"flex",alignItems:"center",justifyContent:"center",background:T.black,color:T.white}}>
+                    <div style={{width:22,height:22,borderRadius:6,fontSize:10,fontWeight:700,fontFamily:sans,display:"flex",alignItems:"center",justifyContent:"center",background:tier==="top"?"#F2883A":tier==="mid"?"#E2639B":"#8E52D6",color:"#FFFFFF"}}>
                       {tier==="top"?"T":tier==="mid"?"H":"B"}
                     </div>
                     <div style={{flex:1}}>
@@ -1429,7 +1475,7 @@ function DetailModal({ frag, onClose, userStatus, setUserStatus, privateNote, se
 }
 
 // ─── TASTE PROFILE ────────────────────────────────────────────────────────────
-function TasteProfile({ userStatuses, reactions }) {
+function TasteProfile({ userStatuses, reactions, fragrances }) {
   const [open, setOpen] = useState(true);
 
   const AFFINITY_STATUSES = new Set(["bottle_owned","bottle_wishlist","sample_have","tried_skin"]);
@@ -1439,7 +1485,7 @@ function TasteProfile({ userStatuses, reactions }) {
   const likeTally   = {};
   const dislikeTally = {};
 
-  FRAGRANCES.forEach(f => {
+  ((fragrances && fragrances.length) ? fragrances : FRAGRANCES).forEach(f => {
     const status   = userStatuses[f.id];
     const reaction = reactions[f.id];
     const isLiked    = AFFINITY_STATUSES.has(status) || reaction === "love" || reaction === "like";
@@ -1463,9 +1509,9 @@ function TasteProfile({ userStatuses, reactions }) {
   if (likeEntries.length === 0 && dislikeEntries.length === 0) return null;
 
   const Bar = ({ label, count, max, color }) => (
-    <div style={{ marginBottom:10 }}>
+    <div style={{ marginBottom:10, maxWidth:560 }}>
       <div style={{ display:"flex", justifyContent:"space-between", alignItems:"baseline", marginBottom:4 }}>
-        <span style={{ fontFamily:sans, fontSize:12, color:T.ink }}>{label}</span>
+        <span style={{ fontFamily:sans, fontSize:12, color:T.ink, textTransform:"capitalize" }}>{label}</span>
         <span style={{ fontFamily:sans, fontSize:10, color:T.faint }}>{count}</span>
       </div>
       <div style={{ height:5, background:T.lift, borderRadius:3, overflow:"hidden" }}>
@@ -1490,7 +1536,7 @@ function TasteProfile({ userStatuses, reactions }) {
             <div style={{ paddingTop:14 }}>
               <p style={{ fontFamily:sans, fontSize:9, textTransform:"uppercase", letterSpacing:"0.1em", color:T.mid, margin:"0 0 12px" }}>What you keep reaching for</p>
               {likeEntries.map(([label, count]) => (
-                <Bar key={label} label={label} count={count} max={likeMax} color={T.trail}/>
+                <Bar key={label} label={label} count={count} max={likeMax} color={accordColor(label)}/>
               ))}
             </div>
           )}
@@ -1521,45 +1567,36 @@ function getResp(msg){const l=msg.toLowerCase();if(l.includes("library")||l.incl
 
 
 // ─── SHELVES: large cover tiles, Fable-style ─────────────────────────────────
-const COVER_BG = {
-  tangerine:"linear-gradient(158deg,#F67A2A 0%,#C94010 100%)",
-  coral:"linear-gradient(158deg,#F4605A 0%,#B8322F 100%)",
-  pink:"linear-gradient(158deg,#EC4A8C 0%,#A8175A 100%)",
-  orchid:"linear-gradient(158deg,#B968AC 0%,#6B2A66 100%)",
-  violet:"linear-gradient(158deg,#9A62E0 0%,#4B2A9A 100%)",
-  teal:"linear-gradient(158deg,#2BB0D6 0%,#0F5C73 100%)",
-};
-const COVER_RINGS = "repeating-radial-gradient(circle at 82% 96%, rgba(255,255,255,0.20) 0 1.5px, transparent 1.5px 13px)";
+// Tiles are neutral on purpose: each one holds the bottle photo (frag.image) once images exist.
 function CoverTile({ frag, onClick, userStatus }) {
-  const hue = hueFor(frag.name + "|" + frag.house);
-  const len = frag.name.length;
-  const fs = len > 22 ? 20 : len > 14 ? 24 : 29;
   const owned = userStatus === "bottle_owned";
+  const ini = frag.name.split(" ").map(w => w[0]).join("").slice(0, 2).toUpperCase();
   return (
     <button onClick={() => onClick(frag.id)} className="mos-cover" aria-label={`${frag.name} by ${frag.house}`}
-      style={{ flex:"0 0 auto", width:"var(--cover-w)", aspectRatio:"0.69", borderRadius:6, border:"none", padding:0, cursor:"pointer", position:"relative", overflow:"hidden", background:COVER_BG[hue], boxShadow:"0 6px 18px rgba(23,16,28,0.16)", textAlign:"left", scrollSnapAlign:"start" }}>
-      <span style={{ position:"absolute", inset:0, background:COVER_RINGS, pointerEvents:"none" }}/>
-      <span style={{ position:"absolute", left:0, right:0, top:0, bottom:0, padding:"16px 14px 14px", display:"flex", flexDirection:"column", justifyContent:"space-between" }}>
-        <span style={{ fontFamily:sans, fontSize:9, fontWeight:600, textTransform:"uppercase", letterSpacing:"0.16em", color:"rgba(255,255,255,0.86)", lineHeight:1.4, paddingRight:22 }}>{frag.house}</span>
-        <span style={{ fontFamily:serif, fontSize:fs, fontWeight:500, letterSpacing:-0.6, lineHeight:1.02, color:"#fff", textShadow:"0 1px 10px rgba(0,0,0,0.18)" }}>{frag.name}</span>
-        <span style={{ fontFamily:sans, fontSize:10, letterSpacing:"0.08em", color:"rgba(255,255,255,0.78)" }}>{[frag.year, frag.family].filter(Boolean).join(" · ")}</span>
+      style={{ flex:"0 0 auto", width:"var(--cover-w)", padding:0, border:"none", background:"none", cursor:"pointer", textAlign:"left", scrollSnapAlign:"start", fontFamily:sans }}>
+      <span style={{ display:"block", position:"relative", width:"100%", aspectRatio:"0.8", borderRadius:12, overflow:"hidden", background:T.white, border:`1px solid ${T.rule}` }}>
+        {frag.image
+          ? <img src={frag.image} alt="" loading="lazy" style={{ position:"absolute", inset:0, width:"100%", height:"100%", objectFit:"contain", padding:"8%" }}/>
+          : <span style={{ position:"absolute", inset:0, display:"flex", alignItems:"center", justifyContent:"center", fontFamily:serif, fontSize:46, fontWeight:400, letterSpacing:-1, color:T.faint }}>{ini}</span>}
+        {userStatus && (
+          <span style={{ position:"absolute", top:8, right:8, width:26, height:26, borderRadius:"50%", background:owned?ACCENT_FILL:T.lift, display:"flex", alignItems:"center", justifyContent:"center" }}>
+            <Icon name={owned?"bottle":"bookmark"} size={14} color={owned?ON_ACCENT:T.mid}/>
+          </span>
+        )}
       </span>
-      {userStatus && (
-        <span style={{ position:"absolute", top:10, right:10, width:24, height:24, borderRadius:"50%", background:owned?"#fff":"rgba(255,255,255,0.26)", display:"flex", alignItems:"center", justifyContent:"center", backdropFilter:"blur(6px)" }}>
-          <Icon name={owned?"bottle":"bookmark"} size={13} color={owned?"#C9206B":"#fff"}/>
-        </span>
-      )}
+      <span style={{ display:"-webkit-box", WebkitLineClamp:2, WebkitBoxOrient:"vertical", overflow:"hidden", marginTop:10, fontFamily:serif, fontSize:16, lineHeight:1.2, letterSpacing:-0.2, color:T.black }}>{frag.name}</span>
+      <span style={{ display:"block", marginTop:3, fontSize:12, color:T.mid, whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis" }}>{frag.house}</span>
     </button>
   );
 }
 function Shelf({ title, blurb, items, onOpenFrag, userStatuses, tinted }) {
   return (
-    <section className={tinted?"mos-band":""} style={{ margin:"0 -20px", padding:"26px 0 28px" }}>
-      <div style={{ padding:"0 20px", marginBottom:16 }}>
+    <section className={"mos-bleed" + (tinted ? " mos-band" : "")} style={{ padding:"26px 0 22px" }}>
+      <div className="mos-bleed-pad" style={{ marginBottom:16 }}>
         <h3 style={{ fontFamily:serif, fontSize:26, fontWeight:400, letterSpacing:-0.6, color:T.black, margin:0, lineHeight:1.1 }}>{title}</h3>
         <p style={{ fontFamily:sans, fontSize:14, color:T.mid, margin:"6px 0 0", lineHeight:1.5 }}>{blurb}</p>
       </div>
-      <div className="mos-shelf" style={{ display:"flex", gap:12, overflowX:"auto", padding:"2px 20px 14px", scrollSnapType:"x proximity", scrollPaddingLeft:20, WebkitOverflowScrolling:"touch" }}>
+      <div className="mos-shelf mos-bleed-pad" style={{ display:"flex", gap:14, overflowX:"auto", paddingTop:2, paddingBottom:14, scrollSnapType:"x proximity", WebkitOverflowScrolling:"touch" }}>
         {items.map(f => <CoverTile key={f.id} frag={f} onClick={onOpenFrag} userStatus={userStatuses[f.id]}/>)}
       </div>
     </section>
@@ -1602,7 +1639,8 @@ function buildShelves(list) {
 }
 
 function DiscoverTab({ onOpenFrag, userStatuses, reactions, onReaction, onSuggest, fragrances }) {
-  const [messages,setMessages]=useState([{role:"ai",text:"Tell me what you're in the mood for — a memory, a mood, an aesthetic. I'll find your next fragrance."}]);
+  const [mode,setMode]=useState("browse");
+  const [messages,setMessages]=useState([{role:"ai",text:"Tell me what you're in the mood for: a memory, a mood, an aesthetic. I'll find your next fragrance."}]);
   const [input,setInput]=useState("");
   const [typing,setTyping]=useState(false);
   const [search,setSearch]=useState("");
@@ -1614,79 +1652,90 @@ function DiscoverTab({ onOpenFrag, userStatuses, reactions, onReaction, onSugges
     const q = search.toLowerCase();
     return f.name.toLowerCase().includes(q) || f.house.toLowerCase().includes(q) || (f.family||"").toLowerCase().includes(q) ||
       f.notes.top.concat(f.notes.mid, f.notes.base).some(n => n.n.toLowerCase().includes(q)) ||
-      f.occasions.some(o => o.toLowerCase().includes(q));
+      (f.occasions||[]).some(o => o.toLowerCase().includes(q));
   }) : [];
 
   function send(text){const msg=text||input;if(!msg.trim())return;setMessages(m=>[...m,{role:"user",text:msg}]);setInput("");setTyping(true);setTimeout(()=>{const r=getResp(msg);const frag=FRAGRANCES.find(f=>f.id===r.fragId);setTyping(false);setMessages(m=>[...m,{role:"ai",text:r.text,frag}]);},1300);}
 
+  const modeBtn=(key,label)=>(
+    <button key={key} role="tab" aria-selected={mode===key} onClick={()=>setMode(key)} style={{position:"relative",padding:"0 2px 13px",marginRight:30,background:"none",border:"none",cursor:"pointer",fontFamily:sans,fontSize:15,fontWeight:600,color:mode===key?T.black:T.mid}}>
+      {label}
+      {mode===key&&<span style={{position:"absolute",left:0,right:0,bottom:-1,height:3,borderRadius:3,background:T.trail}}/>}
+    </button>
+  );
+
   return (
     <div>
-      <div className="mos-pagehead">
+      <div style={{marginBottom:20}}>
         <p style={{fontFamily:sans,fontSize:10,fontWeight:600,textTransform:"uppercase",letterSpacing:"0.18em",color:T.accent,margin:"0 0 6px"}}>Discover</p>
-        <h2 style={{fontFamily:serif,fontSize:32,color:T.black,letterSpacing:-0.8,margin:0,fontWeight:400}}>Find Your Scent</h2>
-        <p style={{fontFamily:sans,fontSize:13,color:T.mid,margin:"6px 0 0"}}>Search by name, or let the Nose guide you.</p>
+        <h2 style={{fontFamily:serif,fontSize:32,color:T.black,letterSpacing:-0.8,margin:0,fontWeight:400}}>{mode==="browse"?"Find Your Scent":"The Nose"}</h2>
+        <p style={{fontFamily:sans,fontSize:13,color:T.mid,margin:"6px 0 0"}}>{mode==="browse"?"Search by name, or browse by category.":"Describe a memory, a mood or a place."}</p>
+      </div>
+      <div role="tablist" aria-label="Discover" style={{display:"flex",borderBottom:`1px solid ${T.rule}`,marginBottom:22}}>
+        {modeBtn("browse","Browse")}
+        {modeBtn("nose","Nose")}
       </div>
 
-      <div style={{marginBottom:search?10:28}}>
-        <div style={{position:"relative"}}>
-          <span style={{position:"absolute",left:14,top:"50%",transform:"translateY(-50%)",pointerEvents:"none"}}><Icon name="search" size={15} color={T.faint}/></span>
-          <input
-            value={search}
-            onChange={e=>setSearch(e.target.value)}
-            placeholder="Search by name, house, note, family…"
-            style={{width:"100%",background:T.white,border:`1.5px solid ${search?T.accent:T.rule}`,borderRadius:14,padding:"14px 44px 14px 44px",fontSize:14,color:T.black,outline:"none",boxSizing:"border-box",fontFamily:serif,letterSpacing:"0.01em",transition:"border-color 0.15s,box-shadow 0.15s",boxShadow:search?"0 2px 12px rgba(0,0,0,0.07)":"none"}}
-          />
-          {search&&<button onClick={()=>setSearch("")} style={{position:"absolute",right:14,top:"50%",transform:"translateY(-50%)",background:"none",border:"none",fontSize:14,color:T.mid,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",width:24,height:24}}>✕</button>}
-        </div>
-        {search&&(
-          <div style={{marginTop:6}}>
-            {searchResults.length>0 ? (
-              <>
-                <p style={{fontFamily:sans,fontSize:11,color:T.mid,margin:"0 0 10px"}}>{searchResults.length} result{searchResults.length!==1?"s":""} for "<strong style={{color:T.ink}}>{search}</strong>"</p>
-                <div style={{display:"flex",flexDirection:"column",gap:8}}>
-                  {searchResults.map(f=><FragCard key={f.id} frag={f} onClick={onOpenFrag} userStatus={userStatuses[f.id]} reaction={reactions[f.id]} onReaction={v=>onReaction(f.id,v)} onOpenFrag={onOpenFrag}/>)}
-                </div>
-              </>
-            ) : (
-              <div style={{textAlign:"center",padding:"32px 0",color:T.faint}}>
-                <p style={{fontSize:24,marginBottom:6}}>○</p>
-                <p style={{fontFamily:sans,fontSize:13,color:T.mid,margin:"0 0 12px"}}>No results for "{search}"</p>
-                <button onClick={()=>setSearch("")} style={{fontFamily:sans,fontSize:11,padding:"7px 16px",borderRadius:20,border:`1px solid ${T.rule}`,background:T.white,color:T.mid,cursor:"pointer"}}>Clear</button>
-              </div>
-            )}
-          </div>
-        )}
-      </div>
-
-      
-
-      {!search&&(
+      {mode==="browse"&&(
         <>
-          <div style={{background:T.white,border:`1px solid ${T.rule}`,borderRadius:18,overflow:"hidden",marginBottom:14}}>
-            <div style={{display:"flex",alignItems:"center",gap:8,padding:"11px 16px",borderBottom:`1px solid ${T.lift}`}}>
-              <div style={{width:7,height:7,borderRadius:"50%",background:T.black}}/>
-              <span style={{fontFamily:sans,fontSize:10,textTransform:"uppercase",letterSpacing:"0.1em",color:T.mid}}>Ask the Nose</span>
-              <span style={{fontFamily:sans,fontSize:10,color:T.faint,marginLeft:"auto"}}>Describe a mood or feeling</span>
+          <div style={{marginBottom:search?10:6,maxWidth:760}}>
+            <div style={{position:"relative"}}>
+              <span style={{position:"absolute",left:14,top:"50%",transform:"translateY(-50%)",pointerEvents:"none"}}><Icon name="search" size={15} color={T.faint}/></span>
+              <input
+                value={search}
+                onChange={e=>setSearch(e.target.value)}
+                placeholder="Search by name, house, note, family…"
+                style={{width:"100%",background:T.white,border:`1.5px solid ${search?T.accent:T.rule}`,borderRadius:14,padding:"14px 44px 14px 44px",fontSize:14,color:T.black,outline:"none",boxSizing:"border-box",fontFamily:serif,letterSpacing:"0.01em",transition:"border-color 0.15s,box-shadow 0.15s"}}
+              />
+              {search&&<button onClick={()=>setSearch("")} aria-label="Clear search" style={{position:"absolute",right:14,top:"50%",transform:"translateY(-50%)",background:"none",border:"none",fontSize:14,color:T.mid,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",width:24,height:24}}>✕</button>}
             </div>
-            {(messages.length>1||typing)&&<div style={{padding:16,minHeight:120,maxHeight:260,overflowY:"auto",display:"flex",flexDirection:"column",gap:12}}>
+          </div>
+          {search&&(
+            <div style={{marginTop:6}}>
+              {searchResults.length>0 ? (
+                <>
+                  <p style={{fontFamily:sans,fontSize:11,color:T.mid,margin:"0 0 10px"}}>{searchResults.length} result{searchResults.length!==1?"s":""} for "<strong style={{color:T.ink}}>{search}</strong>"</p>
+                  <div className="mos-grid">
+                    {searchResults.map(f=><FragCard key={f.id} frag={f} onClick={onOpenFrag} userStatus={userStatuses[f.id]} reaction={reactions[f.id]} onReaction={v=>onReaction(f.id,v)} onOpenFrag={onOpenFrag}/>)}
+                  </div>
+                </>
+              ) : (
+                <div style={{textAlign:"center",padding:"32px 0",color:T.faint}}>
+                  <p style={{fontFamily:sans,fontSize:13,color:T.mid,margin:"0 0 12px"}}>No results for "{search}"</p>
+                  <button onClick={()=>setSearch("")} style={{fontFamily:sans,fontSize:11,padding:"7px 16px",borderRadius:20,border:`1px solid ${T.rule}`,background:T.white,color:T.mid,cursor:"pointer"}}>Clear</button>
+                </div>
+              )}
+            </div>
+          )}
+          {!search&&(
+            <>
+              {shelves.map((s,i)=><Shelf key={s.key} title={s.title} blurb={s.blurb} items={s.items} onOpenFrag={onOpenFrag} userStatuses={userStatuses} tinted={i%2===0}/>)}
+              <div style={{height:24}}/>
+              <button onClick={onSuggest} style={{width:"100%",maxWidth:760,padding:"13px 0",borderRadius:12,border:`1px solid ${T.rule}`,background:T.white,color:T.mid,fontSize:12,fontFamily:sans,cursor:"pointer"}}>+ Can't find a fragrance? Suggest it →</button>
+            </>
+          )}
+        </>
+      )}
+
+      {mode==="nose"&&(
+        <div style={{maxWidth:760}}>
+          <div style={{background:T.white,border:`1px solid ${T.rule}`,borderRadius:18,overflow:"hidden",marginBottom:14}}>
+            <div style={{padding:16,minHeight:240,maxHeight:"52vh",overflowY:"auto",display:"flex",flexDirection:"column",gap:12}}>
               {messages.map((m,i)=>(
                 <div key={i} style={{display:"flex",flexDirection:"column",alignItems:m.role==="user"?"flex-end":"flex-start"}}>
                   <div style={{maxWidth:"82%",padding:"10px 14px",borderRadius:16,borderTopRightRadius:m.role==="user"?4:16,borderTopLeftRadius:m.role==="ai"?4:16,background:m.role==="user"?T.black:T.lift,color:m.role==="user"?T.white:T.ink,fontSize:13,lineHeight:1.65,fontFamily:sans}}>{m.text}</div>
-                  {m.frag&&<div onClick={()=>onOpenFrag(m.frag.id)} style={{marginTop:8,maxWidth:"82%",background:T.white,border:`1px solid ${T.rule}`,borderRadius:12,padding:"10px 12px",display:"flex",alignItems:"center",gap:10,cursor:"pointer"}}><Mono name={m.frag.name} size={36}/><div><p style={{fontFamily:serif,fontSize:13,color:T.black,margin:0}}>{m.frag.name}</p><p style={{fontFamily:sans,fontSize:10,color:T.mid,margin:"2px 0 0"}}>{m.frag.house} · {m.frag.family}</p></div></div>}
+                  {m.frag&&<div onClick={()=>onOpenFrag(m.frag.id)} style={{marginTop:8,maxWidth:"82%",background:T.white,border:`1px solid ${T.rule}`,borderRadius:12,padding:"10px 12px",display:"flex",alignItems:"center",gap:10,cursor:"pointer"}}><Mono name={m.frag.name} size={36}/><div><p style={{fontFamily:serif,fontSize:13,color:T.black,margin:0}}>{m.frag.name}</p><p style={{fontFamily:sans,fontSize:10,color:T.mid,margin:"2px 0 0"}}>{m.frag.house}{m.frag.family?` · ${m.frag.family}`:""}</p></div></div>}
                 </div>
               ))}
               {typing&&<div style={{display:"flex"}}><div style={{background:T.lift,borderRadius:16,borderTopLeftRadius:4,padding:"12px 14px",display:"flex",gap:4}}>{[0,1,2].map(i=><div key={i} style={{width:5,height:5,borderRadius:"50%",background:T.mid,animation:"bounce 1.2s infinite",animationDelay:`${i*150}ms`}}/>)}</div></div>}
-            </div>}
+            </div>
             <div style={{display:"flex",gap:8,padding:"11px 16px",borderTop:`1px solid ${T.lift}`}}>
-              <input value={input} onChange={e=>setInput(e.target.value)} onKeyDown={e=>e.key==="Enter"&&send()} placeholder="Tell me a memory, a mood, an aesthetic…" style={{flex:1,background:T.lift,border:`1px solid ${T.rule}`,borderRadius:10,padding:"9px 14px",fontSize:13,color:T.black,outline:"none",fontFamily:sans}}/>
-              <button onClick={()=>send()} style={{width:38,height:38,borderRadius:10,background:T.black,border:"none",color:T.white,fontSize:16,cursor:"pointer",flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center"}}>↑</button>
+              <input value={input} onChange={e=>setInput(e.target.value)} onKeyDown={e=>e.key==="Enter"&&send()} placeholder="A library in autumn…" style={{flex:1,minWidth:0,background:T.lift,border:`1px solid ${T.rule}`,borderRadius:10,padding:"9px 14px",fontSize:13,color:T.black,outline:"none",fontFamily:sans}}/>
+              <button onClick={()=>send()} aria-label="Send" style={{width:38,height:38,borderRadius:10,background:T.black,border:"none",color:T.white,fontSize:16,cursor:"pointer",flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center"}}>↑</button>
             </div>
           </div>
-          <div className="mos-shelf" style={{display:"flex",gap:7,marginBottom:6,overflowX:"auto",paddingBottom:4}}>{CHIPS.map(c=><button key={c.label} onClick={()=>send(c.query)} style={{fontFamily:sans,fontSize:11,padding:"6px 13px",borderRadius:20,background:T.white,border:`1px solid ${T.rule}`,color:T.mid,cursor:"pointer",whiteSpace:"nowrap",flexShrink:0}}>{c.label}</button>)}</div>
-          {shelves.map((s,i)=><Shelf key={s.key} title={s.title} blurb={s.blurb} items={s.items} onOpenFrag={onOpenFrag} userStatuses={userStatuses} tinted={i%2===0}/>)}
-          <div style={{height:20}}/>
-          <button onClick={onSuggest} style={{width:"100%",padding:"13px 0",borderRadius:12,border:`1px solid ${T.rule}`,background:T.white,color:T.mid,fontSize:12,fontFamily:sans,cursor:"pointer"}}>+ Can't find a fragrance? Suggest it →</button>
-        </>
+          <div style={{display:"flex",flexWrap:"wrap",gap:7}}>{CHIPS.map(c=><button key={c.label} onClick={()=>send(c.query)} style={{fontFamily:sans,fontSize:11,padding:"6px 13px",borderRadius:20,background:T.white,border:`1px solid ${T.rule}`,color:T.mid,cursor:"pointer"}}>{c.label}</button>)}</div>
+        </div>
       )}
       <style>{`@keyframes bounce{0%,60%,100%{transform:translateY(0)}30%{transform:translateY(-4px)}}`}</style>
     </div>
@@ -1694,7 +1743,8 @@ function DiscoverTab({ onOpenFrag, userStatuses, reactions, onReaction, onSugges
 }
 
 // ─── COLLECTION ───────────────────────────────────────────────────────────────
-function CollectionTab({ onOpenFrag, statuses:userStatuses, reactions, onReaction, onSuggest }) {
+function CollectionTab({ onOpenFrag, statuses:userStatuses, reactions, onReaction, onSuggest, fragrances }) {
+  const FR = (fragrances && fragrances.length) ? fragrances : FRAGRANCES;
   const [activeFilter,setActiveFilter]=useState("all");
   const [search,setSearch]=useState("");
   const filters=[
@@ -1709,16 +1759,16 @@ function CollectionTab({ onOpenFrag, statuses:userStatuses, reactions, onReactio
     {key:"like",label:"Like",iconName:"thumbsup"},
     {key:"dislike",label:"Dislike",iconName:"thumbsdown"},
   ];
-  const counts={};STATUSES.forEach(s=>{counts[s.key]=FRAGRANCES.filter(f=>userStatuses[f.id]===s.key).length;});
+  const counts={};STATUSES.forEach(s=>{counts[s.key]=FR.filter(f=>userStatuses[f.id]===s.key).length;});
   const rCounts={love:0,like:0,dislike:0};Object.values(reactions).forEach(r=>{if(r)rCounts[r]++;});
-  const filtered=FRAGRANCES.filter(f=>{const rf=["love","like","dislike"];const ms=activeFilter==="all"||(rf.includes(activeFilter)?reactions[f.id]===activeFilter:userStatuses[f.id]===activeFilter);const mq=!search||f.name.toLowerCase().includes(search.toLowerCase())||f.house.toLowerCase().includes(search.toLowerCase())||f.family.toLowerCase().includes(search.toLowerCase())||f.notes.top.concat(f.notes.mid,f.notes.base).some(n=>n.n.toLowerCase().includes(search.toLowerCase()));return ms&&mq;});
+  const filtered=FR.filter(f=>{const rf=["love","like","dislike"];const ms=activeFilter==="all"||(rf.includes(activeFilter)?reactions[f.id]===activeFilter:userStatuses[f.id]===activeFilter);const mq=!search||f.name.toLowerCase().includes(search.toLowerCase())||f.house.toLowerCase().includes(search.toLowerCase())||f.family.toLowerCase().includes(search.toLowerCase())||f.notes.top.concat(f.notes.mid,f.notes.base).some(n=>n.n.toLowerCase().includes(search.toLowerCase()));return ms&&mq;});
   return (
     <div>
       <div className="mos-pagehead">
         <h2 style={{fontFamily:serif,fontSize:32,color:T.black,letterSpacing:-0.8,margin:0,fontWeight:400}}>My Collection</h2>
         <p style={{fontFamily:sans,fontSize:13,color:T.mid,margin:"6px 0 0"}}>Bottles, samples, and everything in between.</p>
       </div>
-      <TasteProfile userStatuses={userStatuses} reactions={reactions}/>
+      <TasteProfile userStatuses={userStatuses} reactions={reactions} fragrances={FR}/>
       <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:6}}>
         <div style={{background:T.cta,borderRadius:14,padding:"16px 14px"}}>
           <p style={{fontFamily:serif,fontSize:32,color:ON_ACCENT,margin:0}}>{counts["bottle_owned"]||0}</p>
@@ -1763,9 +1813,9 @@ function CollectionTab({ onOpenFrag, statuses:userStatuses, reactions, onReactio
         {search&&<button onClick={()=>setSearch("")} style={{position:"absolute",right:12,top:"50%",transform:"translateY(-50%)",background:"none",border:"none",fontSize:14,color:T.mid,cursor:"pointer"}}>✕</button>}
       </div>
       {search&&<p style={{fontFamily:sans,fontSize:11,color:T.mid,margin:"0 0 12px"}}>{filtered.length} result{filtered.length!==1?"s":""} for "{search}"</p>}
-      <div style={{display:"flex",flexDirection:"column",gap:10}}>
+      <div className="mos-grid">
         {filtered.map(f=><FragCard key={f.id} frag={f} onClick={onOpenFrag} userStatus={userStatuses[f.id]} reaction={reactions[f.id]} onReaction={v=>onReaction(f.id,v)} onOpenFrag={onOpenFrag}/>)}
-        {filtered.length===0&&<div style={{textAlign:"center",padding:"48px 0",color:T.faint}}><p style={{fontSize:28,marginBottom:8}}>○</p><p style={{fontSize:13,marginBottom:16}}>Nothing found</p></div>}
+        {filtered.length===0&&<div style={{gridColumn:"1 / -1",textAlign:"center",padding:"48px 0",color:T.faint}}><p style={{fontSize:28,marginBottom:8}}>○</p><p style={{fontSize:13,marginBottom:16}}>Nothing found</p></div>}
       </div>
       <div style={{marginTop:20}}><button onClick={onSuggest} style={{width:"100%",padding:"13px 0",borderRadius:12,border:`1px solid ${T.rule}`,background:T.white,color:T.mid,fontSize:12,fontFamily:sans,cursor:"pointer"}}>+ Missing a fragrance? Suggest it →</button></div>
     </div>
@@ -3139,7 +3189,7 @@ export default function SillageApp() {
     <div style={{ minHeight:"100svh", background:"transparent", fontFamily:sans, position:"relative" }}>
       <header style={{ position:"sticky", top:0, zIndex:40, background:T.glass, backdropFilter:"blur(16px)", WebkitBackdropFilter:"blur(16px)" }}>
         <div style={{ height:3, background:T.trail }}/>
-        <div style={{ maxWidth:640, margin:"0 auto", padding:"0 20px" }}>
+        <div className="mos-wrap">
           <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", padding:"12px 0 10px", gap:10 }}>
             <Logo size={19}/>
             <div style={{ display:"flex", alignItems:"center", gap:8 }}>
@@ -3170,12 +3220,12 @@ export default function SillageApp() {
         <div style={{ height:1, background:T.rule }}/>
       </header>
 
-      <main className="mos-main" style={{ position:"relative", zIndex:1, maxWidth:640, margin:"0 auto", padding:"28px 20px 64px" }}>
+      <main className="mos-main mos-wrap" style={{ position:"relative", zIndex:1, paddingTop:28, paddingBottom:64 }}>
         {activeTab==="Discover"   && <DiscoverTab   fragrances={fragrances} onOpenFrag={openFrag} userStatuses={userStatuses} reactions={reactions} onReaction={onReaction} onSuggest={() => setShowSuggest(true)} currentUser={currentUser}/>}
-        {activeTab==="Collection" && <CollectionTab onOpenFrag={openFrag} statuses={userStatuses} reactions={reactions} onReaction={onReaction} onSuggest={() => setShowSuggest(true)}/>}
-        {activeTab==="Layering"   && <LayeringTab/>}
-        {activeTab==="Journal"    && <JournalTab entries={journalEntries}/>}
-        {activeTab==="Learn"      && <LearnTab/>}
+        {activeTab==="Collection" && <CollectionTab fragrances={fragrances} onOpenFrag={openFrag} statuses={userStatuses} reactions={reactions} onReaction={onReaction} onSuggest={() => setShowSuggest(true)}/>}
+        {activeTab==="Layering"   && <div className="mos-prose"><LayeringTab/></div>}
+        {activeTab==="Journal"    && <div className="mos-prose"><JournalTab entries={journalEntries}/></div>}
+        {activeTab==="Learn"      && <div className="mos-prose"><LearnTab/></div>}
         <FooterLinks/>
       </main>
 
