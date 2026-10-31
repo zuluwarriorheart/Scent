@@ -104,6 +104,12 @@ body { overflow-x:clip; }
 .mos-spec { display:grid; grid-template-columns:minmax(0,1fr); gap:20px; }
 @media (min-width:600px) { .mos-spec { grid-template-columns:180px minmax(0,1fr); gap:28px; } }
 .mos-map { overflow-x:auto; }
+.mos-formgrid { display:grid; grid-template-columns:minmax(0,1fr); gap:34px; }
+@media (min-width:900px) { .mos-formgrid { grid-template-columns:repeat(2,minmax(0,1fr)); gap:40px 64px; } }
+.mos-in { width:100%; box-sizing:border-box; min-height:46px; padding:11px 14px; border-radius:10px; border:1px solid var(--rule); background:var(--lift); color:var(--ink); font-family:'DM Sans Variable','Helvetica Neue',Helvetica,Arial,sans-serif; font-size:16px; outline:none; }
+.mos-in:focus { border-color:var(--ink-strong); }
+@media (min-width:760px) { .mos-in { font-size:14px; } }
+.mos-samples { display:grid; grid-template-columns:repeat(auto-fit,minmax(230px,1fr)); gap:10px; }
 .mos-cover { transition:transform .18s ease, box-shadow .18s ease; }
 .mos-cover:hover { transform:translateY(-3px); }
 .mos-cover:focus-visible { outline:2px solid var(--accent); outline-offset:4px; border-radius:12px; }
@@ -496,7 +502,8 @@ const NOTE_COLORS = {
 function getNoteColor(n) { return NOTE_COLORS[n] || NOTE_COLORS._default; }
 
 // ─── NOTE ILLUSTRATIONS ───────────────────────────────────────────────────────
-function NoteIllustration({ name, size = 72 }) {
+function NoteIllustration({ name: rawName, size = 72 }) {
+  const name = String(rawName || "").replace(/(^|[\s-])([a-z])/g, (m, p, ch) => p + ch.toUpperCase());
   const c = getNoteColor(name);
   const arts = {
     "Pineapple": <svg viewBox="0 0 60 60" fill="none"><ellipse cx="30" cy="38" rx="13" ry="15" fill={c.fill} stroke={c.stroke} strokeWidth="1.3"/>{[30,34,38,42].map((y,i)=><path key={i} d={`M18 ${y} Q30 ${y-5} 42 ${y}`} stroke={c.accent} strokeWidth="0.8" fill="none"/>)}{[-8,0,8].map((dx,i)=><path key={i} d={`M${30+dx} 23 C${28+dx} 14 ${30+dx} 10 ${32+dx} 8`} stroke={c.stroke} strokeWidth="1.2" fill={c.fill}/>)}<path d="M30 23 L30 15" stroke={c.accent} strokeWidth="0.7"/></svg>,
@@ -844,103 +851,125 @@ function FooterLinks({ dark = false }) {
 }
 
 // ─── SUGGEST MODAL ────────────────────────────────────────────────────────────
-function SuggestModal({ onClose }) {
-  const [form,setForm]=useState({name:"",house:"",houseUrl:"",year:"",family:"",concentration:"",notes:"",why:"",firstReview:"",ownershipStatus:"",ownershipParent:"",ownershipYear:""});
+function SuggestModal({ onClose, currentUser }) {
+  const blank={name:"",house:"",year:"",concentration:"",perfumer:"",family:"",priceTier:"",website:"",country:"",ownershipStatus:"",ownershipParent:"",ownershipYear:"",top:"",heart:"",base:"",accords:"",story:"",why:"",sampleWhere:"",imageUrl:"",sourceUrl:"",firstReview:""};
+  const [form,setForm]=useState(blank);
   const [submitted,setSubmitted]=useState(false);
-  const [imageFile,setImageFile]=useState(null);
-  const [imagePreview,setImagePreview]=useState(null);
-  const inp={width:"100%",background:T.lift,border:`1px solid ${T.rule}`,borderRadius:8,padding:"9px 12px",fontSize:13,color:T.ink,outline:"none",fontFamily:sans,boxSizing:"border-box"};
+  const [busy,setBusy]=useState(false);
+  const [err,setErr]=useState("");
   function set(k,v){setForm(f=>({...f,[k]:v}));}
-  function handleImage(e){const file=e.target.files[0];if(file){setImageFile(file);const reader=new FileReader();reader.onload=ev=>setImagePreview(ev.target.result);reader.readAsDataURL(file);}}
+  async function submit(){
+    if(!form.name.trim()||!form.house.trim()){setErr("Add the fragrance name and the house first.");return;}
+    setBusy(true);setErr("");
+    try{
+      const { error } = await supabase.from("suggestions").insert({ user_id:(currentUser&&currentUser.id)||null, payload:form });
+      if(error) throw error;
+      setSubmitted(true);
+    }catch(e){
+      console.error("Suggestion failed:",e);
+      setErr("That did not send. Please try again, or email hello@memoironskin.com.");
+    }
+    setBusy(false);
+  }
+  const Field=({label,req,hint,children})=>(
+    <label style={{display:"block",marginBottom:16}}>
+      <span style={{display:"block",fontFamily:sans,fontSize:11,textTransform:"uppercase",letterSpacing:"0.12em",color:T.mid,margin:"0 0 7px"}}>{label}{req&&<span style={{color:T.accent}}> *</span>}</span>
+      {children}
+      {hint&&<span style={{display:"block",fontFamily:sans,fontSize:12,color:T.faint,margin:"6px 0 0",lineHeight:1.5}}>{hint}</span>}
+    </label>
+  );
+  const Sec=({title,sub,children})=>(
+    <section>
+      <h3 style={{fontFamily:serif,fontSize:"clamp(20px, 1.8vw, 26px)",fontWeight:400,letterSpacing:-0.3,color:T.black,margin:"0 0 4px"}}>{title}</h3>
+      {sub&&<p style={{fontFamily:sans,fontSize:13,color:T.mid,lineHeight:1.6,margin:"0 0 18px"}}>{sub}</p>}
+      {!sub&&<div style={{height:14}}/>}
+      {children}
+    </section>
+  );
+  const input=(k,ph,props={})=><input className="mos-in" value={form[k]} onChange={e=>set(k,e.target.value)} placeholder={ph} {...props}/>;
+  const choice=(k,opts)=>(
+    <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
+      {opts.map(o=>{const on=form[k]===o.val;return (
+        <button type="button" key={o.val} onClick={()=>set(k,on?"":o.val)} aria-pressed={on} style={{flex:"1 1 auto",minHeight:46,padding:"0 16px",borderRadius:10,border:`1px solid ${on?T.black:T.rule}`,background:on?T.black:T.white,color:on?T.white:T.ink,fontFamily:sans,fontSize:14,fontWeight:on?600:400,cursor:"pointer"}}>{o.label}</button>
+      );})}
+    </div>
+  );
   return (
-    <div onClick={onClose} style={{ position:"fixed", inset:0, zIndex:60, background:T.scrim, backdropFilter:"blur(16px)", display:"flex", flexDirection:"column", justifyContent:"flex-end", alignItems:"center" }}>
-      <div onClick={e=>e.stopPropagation()} style={{ background:T.white, borderRadius:"24px 24px 0 0", border:`1px solid ${T.rule}`, borderBottom:"none", width:"100%", maxWidth:460, maxHeight:"90vh", overflowY:"auto" }}>
-        <div style={{ padding:"24px 24px 0" }}>
-          <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:6 }}>
-            <div>
-              <p style={{ fontFamily:sans, fontSize:9, textTransform:"uppercase", letterSpacing:"0.12em", color:T.mid, margin:"0 0 4px" }}>Community</p>
-              <h2 style={{ fontFamily:serif, fontSize:24, color:T.black, margin:0 }}>Suggest a Fragrance</h2>
-            </div>
-            <button onClick={onClose} style={{ width:30, height:30, borderRadius:"50%", border:`1px solid ${T.rule}`, background:T.white, cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", fontSize:13, color:T.mid }}>✕</button>
-          </div>
-          <p style={{ fontFamily:sans, fontSize:13, color:T.mid, lineHeight:1.65, margin:"8px 0 20px" }}>Help us build the most complete fragrance database. Every suggestion is reviewed and typically added within 48 hours.</p>
+    <div className="mos-sheet-wrap" onClick={onClose} style={{ position:"fixed", inset:0, zIndex:60, background:T.scrim, backdropFilter:"blur(16px)", display:"flex", flexDirection:"column", justifyContent:"flex-end", alignItems:"center" }}>
+      <div className="mos-sheet" onClick={e=>e.stopPropagation()} style={{ background:T.white, borderRadius:"24px 24px 0 0", border:`1px solid ${T.rule}`, borderBottom:"none", width:"100%", maxWidth:460, maxHeight:"93vh", overflowY:"auto" }}>
+        <div className="mos-pad" style={{ position:"relative", padding:"26px 24px 22px", borderBottom:`1px solid ${T.rule}` }}>
+          <button className="mos-close" onClick={onClose} aria-label="Close" style={{ position:"absolute", top:16, right:16, width:34, height:34, borderRadius:"50%", border:`1px solid ${T.rule}`, background:T.white, cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", fontSize:14, color:T.mid }}>✕</button>
+          <p style={{ fontFamily:sans, fontSize:11, fontWeight:600, textTransform:"uppercase", letterSpacing:"0.18em", color:T.accent, margin:"0 0 6px" }}>Community</p>
+          <h2 style={{ fontFamily:serif, fontSize:"clamp(30px, 3vw, 46px)", fontWeight:400, letterSpacing:-0.6, color:T.black, margin:0, paddingRight:40 }}>Suggest a fragrance</h2>
+          <p style={{ fontFamily:sans, fontSize:"clamp(14px, 1.1vw, 16px)", color:T.mid, lineHeight:1.65, margin:"10px 0 0", maxWidth:640 }}>Can't find it? Tell us what you know. Only the name and house are required, and every extra detail saves us a search. A person reviews each suggestion before it goes in.</p>
         </div>
         {submitted ? (
-          <div style={{ padding:"40px 24px", textAlign:"center" }}>
-            <div style={{ width:56, height:56, borderRadius:"50%", background:T.black, display:"flex", alignItems:"center", justifyContent:"center", margin:"0 auto 16px", fontSize:24, color:T.white }}>✓</div>
-            <h3 style={{ fontFamily:serif, fontSize:22, color:T.black, margin:"0 0 8px" }}>Thank you</h3>
-            <p style={{ fontFamily:sans, fontSize:13, color:T.mid, lineHeight:1.65, margin:"0 0 24px" }}><strong style={{ color:T.ink }}>{form.name}</strong> by {form.house} has been submitted.</p>
-            <button onClick={onClose} style={{ padding:"11px 24px", borderRadius:10, background:T.black, border:"none", color:T.white, fontSize:13, fontFamily:sans, cursor:"pointer" }}>Done</button>
+          <div className="mos-pad" style={{ padding:"56px 24px 72px", textAlign:"center" }}>
+            <h3 style={{ fontFamily:serif, fontSize:"clamp(26px, 2.4vw, 36px)", fontWeight:400, color:T.black, margin:"0 0 10px" }}>Thank you</h3>
+            <p style={{ fontFamily:sans, fontSize:15, color:T.mid, lineHeight:1.65, margin:"0 auto 28px", maxWidth:440 }}><strong style={{ color:T.ink }}>{form.name}</strong> by {form.house} is in the queue for review.</p>
+            <div style={{ display:"flex", gap:10, justifyContent:"center", flexWrap:"wrap" }}>
+              <button onClick={()=>{setForm(blank);setSubmitted(false);}} style={{ minHeight:48, padding:"0 24px", borderRadius:10, background:T.white, border:`1px solid ${T.rule}`, color:T.ink, fontSize:14, fontFamily:sans, cursor:"pointer" }}>Suggest another</button>
+              <button onClick={onClose} style={{ minHeight:48, padding:"0 28px", borderRadius:10, background:T.black, border:"none", color:T.white, fontSize:14, fontFamily:sans, cursor:"pointer" }}>Done</button>
+            </div>
           </div>
         ) : (
-          <div style={{ padding:"0 24px 32px" }}>
-            <div style={{ marginBottom:16 }}>
-              <p style={{ fontFamily:sans, fontSize:9, textTransform:"uppercase", letterSpacing:"0.12em", color:T.mid, margin:"0 0 8px" }}>Fragrance Image</p>
-              <label style={{ display:"block", cursor:"pointer" }}>
-                <input type="file" accept="image/*" onChange={handleImage} style={{ display:"none" }}/>
-                {imagePreview ? (
-                  <div style={{ position:"relative", height:120, borderRadius:12, overflow:"hidden", border:`1px solid ${T.rule}` }}>
-                    <img src={imagePreview} style={{ width:"100%", height:"100%", objectFit:"cover" }} alt="preview"/>
-                    <div style={{ position:"absolute", inset:0, background:"rgba(0,0,0,0.3)", display:"flex", alignItems:"center", justifyContent:"center" }}>
-                      <span style={{ fontFamily:sans, fontSize:11, color:ON_ACCENT }}>Change image</span>
+          <div className="mos-pad" style={{ padding:"28px 24px 56px" }}>
+            <div className="mos-formgrid">
+              <div>
+                <Sec title="The fragrance" sub="What goes at the top of the card.">
+                  <Field label="Fragrance name" req>{input("name","e.g. Tobacco Oud")}</Field>
+                  <Field label="House" req>{input("house","e.g. Maison Example")}</Field>
+                  <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12}}>
+                    <Field label="Year">{input("year","e.g. 2018",{inputMode:"numeric"})}</Field>
+                    <Field label="Concentration">
+                      <select className="mos-in" value={form.concentration} onChange={e=>set("concentration",e.target.value)}>
+                        <option value="">Select</option>
+                        {["Eau de Parfum","Eau de Toilette","Parfum","Extrait","Eau de Cologne","Eau Fraîche"].map(c=><option key={c}>{c}</option>)}
+                      </select>
+                    </Field>
+                  </div>
+                  <Field label="Perfumer">{input("perfumer","Nose or creator, if known")}</Field>
+                  <Field label="Family">{input("family","e.g. Woody, Floral, Amber")}</Field>
+                  <Field label="Price tier">{choice("priceTier",[{val:"Mass-market",label:"Mass-market"},{val:"Prestige",label:"Prestige"},{val:"Luxury",label:"Luxury"}])}</Field>
+                </Sec>
+                <div style={{height:34}}/>
+                <Sec title="Notes and accords" sub="Separate each with a comma. Leave blank what you don't know.">
+                  <Field label="Top notes">{input("top","e.g. Bergamot, Saffron")}</Field>
+                  <Field label="Heart notes">{input("heart","e.g. Rose, Iris")}</Field>
+                  <Field label="Base notes">{input("base","e.g. Sandalwood, Musk")}</Field>
+                  <Field label="Main accords" hint="Up to five, strongest first. e.g. Woody, Floral, Powdery.">{input("accords","Woody, Floral, Powdery")}</Field>
+                </Sec>
+              </div>
+              <div>
+                <Sec title="The house" sub="Shown next to the house name on the card.">
+                  <Field label="House website">{input("website","maisonexample.com",{inputMode:"url",autoCapitalize:"none"})}</Field>
+                  <Field label="Country">{input("country","Where the house is based")}</Field>
+                  <Field label="Ownership">{choice("ownershipStatus",[{val:"independent",label:"Independent"},{val:"conglomerate",label:"Conglomerate-owned"}])}</Field>
+                  {form.ownershipStatus==="conglomerate"&&(
+                    <div style={{display:"grid",gridTemplateColumns:"1.6fr 1fr",gap:12}}>
+                      <Field label="Parent company">{input("ownershipParent","e.g. LVMH, Puig")}</Field>
+                      <Field label="Year acquired">{input("ownershipYear","If known",{inputMode:"numeric"})}</Field>
                     </div>
-                  </div>
-                ) : (
-                  <div style={{ height:80, borderRadius:12, border:`1.5px dashed ${T.rule}`, background:T.lift, display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", gap:6 }}>
-                    <span style={{ fontFamily:sans, fontSize:11, color:T.mid }}>Upload bottle photo</span>
-                  </div>
-                )}
-              </label>
-            </div>
-            <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:10, marginBottom:12 }}>
-              <div style={{ gridColumn:"1/-1" }}><p style={{ fontFamily:sans, fontSize:9, textTransform:"uppercase", letterSpacing:"0.12em", color:T.mid, margin:"0 0 6px" }}>Fragrance name *</p><input value={form.name} onChange={e=>set("name",e.target.value)} placeholder="e.g. Tobacco Oud" style={inp}/></div>
-              <div><p style={{ fontFamily:sans, fontSize:9, textTransform:"uppercase", letterSpacing:"0.12em", color:T.mid, margin:"0 0 6px" }}>House *</p><input value={form.house} onChange={e=>set("house",e.target.value)} placeholder="e.g. Tom Ford" style={inp}/></div>
-              <div><p style={{ fontFamily:sans, fontSize:9, textTransform:"uppercase", letterSpacing:"0.12em", color:T.mid, margin:"0 0 6px" }}>House Website</p><input value={form.houseUrl} onChange={e=>set("houseUrl",e.target.value)} placeholder="tomford.com" style={inp}/></div>
-              <div><p style={{ fontFamily:sans, fontSize:9, textTransform:"uppercase", letterSpacing:"0.12em", color:T.mid, margin:"0 0 6px" }}>Year</p><input value={form.year} onChange={e=>set("year",e.target.value)} placeholder="e.g. 2018" style={inp}/></div>
-              <div><p style={{ fontFamily:sans, fontSize:9, textTransform:"uppercase", letterSpacing:"0.12em", color:T.mid, margin:"0 0 6px" }}>Family</p><input value={form.family} onChange={e=>set("family",e.target.value)} placeholder="e.g. Woody Oriental" style={inp}/></div>
-              <div style={{ gridColumn:"1/-1" }}><p style={{ fontFamily:sans, fontSize:9, textTransform:"uppercase", letterSpacing:"0.12em", color:T.mid, margin:"0 0 6px" }}>Concentration</p>
-                <select value={form.concentration} onChange={e=>set("concentration",e.target.value)} style={{...inp,appearance:"none"}}>
-                  <option value="">Select…</option>
-                  {["Eau de Parfum","Eau de Toilette","Parfum","Eau de Cologne","Eau Fraîche"].map(c=><option key={c}>{c}</option>)}
-                </select>
+                  )}
+                </Sec>
+                <div style={{height:34}}/>
+                <Sec title="The story" sub="A line or two in your own words.">
+                  <Field label="What is it about?"><textarea className="mos-in" rows={3} value={form.story} onChange={e=>set("story",e.target.value)} placeholder="The idea, the inspiration, how it wears" style={{resize:"vertical",lineHeight:1.6}}/></Field>
+                  <Field label="Why should we add it?"><textarea className="mos-in" rows={2} value={form.why} onChange={e=>set("why",e.target.value)} placeholder="Optional" style={{resize:"vertical",lineHeight:1.6}}/></Field>
+                </Sec>
+                <div style={{height:34}}/>
+                <Sec title="Samples and sources" sub="Helps us fill in the rest of the card.">
+                  <Field label="Where can people get a sample?" hint="A retailer or the house's own shop, if you know one.">{input("sampleWhere","Retailer name or link")}</Field>
+                  <Field label="Link to the fragrance">{input("sourceUrl","Brand page or reference link",{inputMode:"url",autoCapitalize:"none"})}</Field>
+                  <Field label="Link to a bottle photo">{input("imageUrl","Image link, if you have one",{inputMode:"url",autoCapitalize:"none"})}</Field>
+                  <Field label="Your first review"><textarea className="mos-in" rows={3} value={form.firstReview} onChange={e=>set("firstReview",e.target.value)} placeholder="Optional. How does it open and dry down?" style={{resize:"vertical",lineHeight:1.6}}/></Field>
+                </Sec>
               </div>
             </div>
-            <div style={{ marginBottom:12 }}><p style={{ fontFamily:sans, fontSize:9, textTransform:"uppercase", letterSpacing:"0.12em", color:T.mid, margin:"0 0 6px" }}>Key notes (if known)</p><input value={form.notes} onChange={e=>set("notes",e.target.value)} placeholder="e.g. Tobacco, Oud, Vanilla…" style={inp}/></div>
-            <div style={{ marginBottom:12 }}>
-              <p style={{ fontFamily:sans, fontSize:9, textTransform:"uppercase", letterSpacing:"0.12em", color:T.mid, margin:"0 0 8px" }}>Brand Ownership</p>
-              <div style={{ display:"flex", gap:8, marginBottom:10 }}>
-                {[{val:"independent",label:"Independent"},{val:"conglomerate",label:"Conglomerate-owned"}].map(opt=>(
-                  <button key={opt.val} onClick={()=>set("ownershipStatus",opt.val)} style={{
-                    flex:1, padding:"9px 0", borderRadius:8, border:`1px solid ${form.ownershipStatus===opt.val?T.black:T.rule}`,
-                    background:form.ownershipStatus===opt.val?T.black:T.white,
-                    color:form.ownershipStatus===opt.val?T.white:T.mid,
-                    fontFamily:sans, fontSize:12, cursor:"pointer", transition:"all 0.15s",
-                    fontWeight: form.ownershipStatus===opt.val ? 500 : 400,
-                  }}>{opt.label}</button>
-                ))}
-              </div>
-              {form.ownershipStatus==="independent" && (
-                <p style={{ fontFamily:sans, fontSize:11, color:T.good, lineHeight:1.6, margin:0 }}>The house is privately owned or founder-led with no conglomerate backing.</p>
-              )}
-              {form.ownershipStatus==="conglomerate" && (
-                <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:8 }}>
-                  <div style={{ gridColumn:"1/-1" }}>
-                    <p style={{ fontFamily:sans, fontSize:9, textTransform:"uppercase", letterSpacing:"0.12em", color:T.mid, margin:"0 0 6px" }}>Parent company</p>
-                    <input value={form.ownershipParent} onChange={e=>set("ownershipParent",e.target.value)} placeholder="e.g. LVMH, Estée Lauder Companies, Puig…" style={inp}/>
-                  </div>
-                  <div>
-                    <p style={{ fontFamily:sans, fontSize:9, textTransform:"uppercase", letterSpacing:"0.12em", color:T.mid, margin:"0 0 6px" }}>Year acquired (if known)</p>
-                    <input value={form.ownershipYear} onChange={e=>set("ownershipYear",e.target.value)} placeholder="e.g. 2017" style={inp}/>
-                  </div>
-                </div>
-              )}
+            <div style={{ marginTop:36, maxWidth:420 }}>
+              {err&&<p role="alert" style={{ fontFamily:sans, fontSize:13, color:T.bad, margin:"0 0 12px", lineHeight:1.5 }}>{err}</p>}
+              <button onClick={submit} disabled={busy} style={{ width:"100%", minHeight:52, borderRadius:12, background:T.black, border:"none", color:T.white, fontSize:15, fontWeight:500, fontFamily:sans, cursor:busy?"default":"pointer", opacity:busy?0.6:1 }}>{busy?"Sending":"Send suggestion"}</button>
             </div>
-            <div style={{ marginBottom:12 }}><p style={{ fontFamily:sans, fontSize:9, textTransform:"uppercase", letterSpacing:"0.12em", color:T.mid, margin:"0 0 6px" }}>Why should we add this?</p><textarea value={form.why} onChange={e=>set("why",e.target.value)} placeholder="Tell us why this fragrance deserves a place…" rows={2} style={{...inp,resize:"vertical",lineHeight:1.6}}/></div>
-            <div style={{ marginBottom:20, background:T.lift, borderRadius:12, padding:14, border:`1px solid ${T.rule}` }}>
-              <p style={{ fontFamily:sans, fontSize:9, textTransform:"uppercase", letterSpacing:"0.12em", color:T.mid, margin:"0 0 6px" }}>Your First Review (optional)</p>
-              <textarea value={form.firstReview} onChange={e=>set("firstReview",e.target.value)} placeholder="How does it open? What does the dry-down smell like? Who is this for?" rows={3} style={{...inp,resize:"vertical",lineHeight:1.6}}/>
-            </div>
-            <button onClick={()=>{if(form.name&&form.house)setSubmitted(true);}} style={{ width:"100%", padding:"13px 0", borderRadius:10, background:form.name&&form.house?T.black:T.faint, border:"none", color:T.white, fontSize:13, fontFamily:sans, cursor:form.name&&form.house?"pointer":"not-allowed" }}>Submit suggestion</button>
           </div>
         )}
       </div>
@@ -1036,8 +1065,78 @@ function Mono({ name, year, size=52 }) {
 }
 
 // ─── HOUSE STRIP — always visible below Occasions ────────────────────────────
+// ─── LIVE CATALOGUE HELPERS ───────────────────────────────────────────────────
+const FRAG_SELECT_FULL = `
+  id, slug, url, gender, year, perfumer, story, barcode, concentration, ownership, brand_origin, price_tier, line,
+  house:houses ( name, slug, country, ownership, brand_origin, price_tier, website ),
+  notes ( note_name, position ),
+  accords ( accord_name, rank )
+`;
+const FRAG_SELECT_BASE = FRAG_SELECT_FULL.replace(", ownership, brand_origin, price_tier, line,", ",").replace(", website", "");
+// Runs a query with the full column list, and again without the newer columns if they are not in the database yet.
+async function fetchFragRows(build) {
+  let r = await build(FRAG_SELECT_FULL);
+  if (r.error && /website|line|ownership|brand_origin|price_tier/i.test(r.error.message || "")) r = await build(FRAG_SELECT_BASE);
+  return r;
+}
+function mapFrag(f) {
+  const own = f.ownership || (f.house && f.house.ownership) || "";
+  const notes = f.notes || [];
+  const accords = f.accords || [];
+  return {
+    id: f.id,
+    name: f.slug.replace(/-/g, " ").replace(/\b\w/g, c => c.toUpperCase()),
+    house: (f.house && f.house.name) || "",
+    houseSlug: (f.house && f.house.slug) || "",
+    country: (f.house && f.house.country) || "",
+    ownership: own ? { status: own === "Independent" ? "independent" : "conglomerate", parent: own } : null,
+    line: f.line || "",
+    brand_origin: f.brand_origin || (f.house && f.house.brand_origin) || "",
+    website: (f.house && f.house.website) || "",
+    price_tier: f.price_tier || (f.house && f.house.price_tier) || "",
+    year: f.year,
+    perfumer: f.perfumer || "",
+    story: f.story || "",
+    concentration: f.concentration || "",
+    gender: f.gender,
+    url: f.url || "",
+    notes: {
+      top: notes.filter(n => n.position === "top").map(n => ({ n: n.note_name })),
+      mid: notes.filter(n => n.position === "mid").map(n => ({ n: n.note_name })),
+      base: notes.filter(n => n.position === "base").map(n => ({ n: n.note_name })),
+    },
+    accords: [...accords].sort((x, y) => x.rank - y.rank).map(x => ({ n: x.accord_name, v: 80 - (x.rank - 1) * 10 })),
+    longevity: null, sillage: null, seasons: {}, occasions: [], rating: null, votes: 0,
+    prices: [],
+  };
+}
+// The app registers its catalogue cache here so any component can add fragrances it loads.
+const fragSink = { fn: null };
+// Other fragrances from the same house, loaded on demand.
+function useHouseSiblings(frag, enabled) {
+  const [list, setList] = useState(null);
+  useEffect(() => {
+    if (!enabled || !frag.houseSlug) return;
+    let off = false;
+    (async () => {
+      try {
+        const { data: h } = await supabase.from("houses").select("id").eq("slug", frag.houseSlug).maybeSingle();
+        if (!h) { if (!off) setList([]); return; }
+        const { data, error } = await fetchFragRows(sel => supabase.from("fragrances").select(sel).eq("house_id", h.id).neq("id", frag.id).order("slug", { ascending: true }).limit(12));
+        if (off) return;
+        if (error || !data) { setList([]); return; }
+        const m = data.map(mapFrag);
+        if (fragSink.fn) fragSink.fn(m);
+        setList(m);
+      } catch (e) { if (!off) setList([]); }
+    })();
+    return () => { off = true; };
+  }, [enabled, frag.id, frag.houseSlug]);
+  return list;
+}
+
 function HouseStrip({ currentFrag, onOpenFrag }) {
-  const siblings = FRAGRANCES.filter(f => f.house === currentFrag.house && f.id !== currentFrag.id);
+  const siblings = useHouseSiblings(currentFrag, true) || [];
   if (!siblings.length) return null;
   return (
     <div style={{ background: T.lift, borderRadius: 16, border: `1px solid ${T.rule}`, overflow: "hidden", marginTop: 4 }}>
@@ -1175,7 +1274,8 @@ function OwnershipBadge({ ownership, size = "normal", showTooltip = false }) {
 function FragCard({ frag, onClick, userStatus, reaction, onReaction, onOpenFrag }) {
   const [hov,setHov]=useState(false);
   const [showHouse,setShowHouse]=useState(false);
-  const siblings=FRAGRANCES.filter(f=>f.house===frag.house&&f.id!==frag.id);
+  const sibList=useHouseSiblings(frag,showHouse);
+  const siblings=sibList||[];
   return (
     <div style={{background:T.white,borderRadius:16,border:`1px solid ${hov?T.black:T.rule}`,transition:"border-color 0.15s",overflow:"hidden"}}>
       <div onClick={()=>onClick(frag.id)} onMouseEnter={()=>setHov(true)} onMouseLeave={()=>setHov(false)} style={{padding:"14px 16px",display:"flex",alignItems:"center",gap:14,cursor:"pointer"}}>
@@ -1199,7 +1299,7 @@ function FragCard({ frag, onClick, userStatus, reaction, onReaction, onOpenFrag 
         <ReactionBar value={reaction} onChange={onReaction} compact/>
         <span style={{fontFamily:sans,fontSize:10,color:T.mid,cursor:"pointer"}} onClick={()=>onClick(frag.id)}>Details →</span>
       </div>
-      {siblings.length>0&&(
+      {!!frag.houseSlug&&(
         <div style={{borderTop:`1px solid ${T.lift}`}}>
           <button onClick={()=>setShowHouse(!showHouse)} style={{width:"100%",padding:"9px 16px",display:"flex",alignItems:"center",justifyContent:"space-between",background:"none",border:"none",cursor:"pointer"}}>
             <span style={{fontFamily:sans,fontSize:10,color:T.mid}}>More from {frag.house}</span>
@@ -1207,6 +1307,8 @@ function FragCard({ frag, onClick, userStatus, reaction, onReaction, onOpenFrag 
           </button>
           {showHouse&&(
             <div style={{display:"flex",overflowX:"auto",gap:0,borderTop:`1px solid ${T.lift}`}}>
+              {sibList===null&&<p style={{fontFamily:sans,fontSize:11,color:T.mid,margin:0,padding:"10px 14px"}}>Loading</p>}
+              {sibList&&sibList.length===0&&<p style={{fontFamily:sans,fontSize:11,color:T.mid,margin:0,padding:"10px 14px"}}>Nothing else from this house yet.</p>}
               {siblings.map((s,i)=>(
                 <div key={s.id} onClick={()=>onOpenFrag&&onOpenFrag(s.id)} style={{flexShrink:0,padding:"10px 14px",borderRight:i<siblings.length-1?`1px solid ${T.lift}`:"none",cursor:"pointer",minWidth:120}} onMouseEnter={e=>e.currentTarget.style.background=T.lift} onMouseLeave={e=>e.currentTarget.style.background="transparent"}>
                   <p style={{fontFamily:serif,fontSize:12,color:T.black,margin:0}}>{s.name}</p>
@@ -1279,10 +1381,10 @@ function SamplesSection({ defaultRegion }) {
           );
         })}
       </div>
-      <div style={{ border:`1px solid ${T.rule}`, borderRadius:12, overflow:"hidden" }}>
+      <div className="mos-samples">
         {list.map((r, i) => (
           <a key={r.name} href={r.url} target="_blank" rel="noopener noreferrer"
-            style={{ display:"flex", alignItems:"center", justifyContent:"space-between", gap:12, padding:"15px 16px", borderTop:i?`1px solid ${T.rule}`:"none", textDecoration:"none", color:T.black, background:T.white, minHeight:48, boxSizing:"border-box" }}>
+            style={{ display:"flex", alignItems:"center", justifyContent:"space-between", gap:12, padding:"15px 16px", border:`1px solid ${T.rule}`, borderRadius:12, textDecoration:"none", color:T.black, background:T.white, minHeight:52, boxSizing:"border-box" }}>
             <span style={{ fontFamily:serif, fontSize:17 }}>{r.name}</span>
             <span style={{ display:"inline-flex", alignItems:"center", gap:6, fontFamily:sans, fontSize:12, color:T.mid }}>Visit<ExtArrow/></span>
           </a>
@@ -1343,7 +1445,7 @@ function DetailModal({ frag, onClose, userStatus, setUserStatus, privateNote, se
   const accB = sortedAcc[1] ? accordColor(sortedAcc[1].n) : accA;
   const hasSeasons = !!frag.seasons && Object.keys(frag.seasons).length > 0;
   const hasOcc = !!frag.occasions && frag.occasions.length > 0;
-  const hasLeft = !!(frag.description || frag.story);
+  const hasLeft = true;
   const stats = [
     { label:"Rating", value: frag.rating != null ? frag.rating : null },
     { label:"Longevity", value: frag.longevity != null ? `${frag.longevity}/5` : null },
@@ -1358,10 +1460,13 @@ function DetailModal({ frag, onClose, userStatus, setUserStatus, privateNote, se
           <button className="mos-close" onClick={onClose} style={{position:"absolute",top:16,right:16,width:30,height:30,borderRadius:"50%",border:`1px solid ${T.rule}`,background:T.white,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",fontSize:13,color:T.mid,zIndex:2}}>✕</button>
           <div style={{display:"flex",alignItems:"flex-start",gap:16}}>
             <div style={{flex:1}}>
-              <div style={{marginBottom:8}}><span style={{fontFamily:sans,fontSize:9,textTransform:"uppercase",letterSpacing:"0.12em",color:T.mid}}>{[frag.house, frag.family].filter(Boolean).join(" · ")}</span></div>
+              <div style={{marginBottom:8}}><span style={{fontFamily:sans,fontSize:9,textTransform:"uppercase",letterSpacing:"0.12em",color:T.mid}}>{[frag.house, frag.line, frag.family].filter(Boolean).join(" · ")}</span></div>
               <h2 style={{fontFamily:serif,fontSize:28,color:T.black,margin:"0 0 2px",letterSpacing:-0.5,lineHeight:1.1}}>{frag.name}</h2>
               <p style={{fontFamily:sans,fontSize:13,color:T.mid,margin:"0 0 0",lineHeight:1.4}}>{[frag.year, frag.concentration].filter(Boolean).join(" · ")}</p>
-              {frag.ownership && <div style={{margin:"3px 0 0"}}><OwnershipBadge ownership={frag.ownership} size="normal" showTooltip={true}/></div>}
+              <div style={{margin:"3px 0 0",display:"flex",alignItems:"center",flexWrap:"wrap",gap:"4px 14px"}}>
+                {frag.ownership && <OwnershipBadge ownership={frag.ownership} size="normal" showTooltip={true}/>}
+                {frag.price_tier && <span style={{fontFamily:sans,fontSize:12,color:T.mid}}>Price tier <strong style={{color:T.black,fontWeight:600}}>{frag.price_tier}</strong></span>}
+              </div>
               {safeUrl(frag.website)&&(
                 <a href={safeUrl(frag.website)} target="_blank" rel="noopener noreferrer" style={{display:"inline-flex",alignItems:"center",gap:6,margin:"8px 0 0",padding:"6px 12px",minHeight:32,boxSizing:"border-box",borderRadius:20,border:`1px solid ${T.rule}`,background:T.white,fontFamily:sans,fontSize:12,color:T.ink,textDecoration:"none"}}>Brand website<ExtArrow size={11}/></a>
               )}
@@ -1406,6 +1511,9 @@ function DetailModal({ frag, onClose, userStatus, setUserStatus, privateNote, se
           
           {tab==="overview"&&(
             <div>
+              <div style={{background:T.lift,border:`1px solid ${T.rule}`,borderRadius:16,padding:"22px 18px 20px",marginBottom:32}}>
+                <SamplesSection defaultRegion={regionFor(currentUser)}/>
+              </div>
               <div className={hasLeft?"mos-two":""}>
                 {hasLeft&&(
                   <div>
@@ -1416,6 +1524,10 @@ function DetailModal({ frag, onClose, userStatus, setUserStatus, privateNote, se
                         <p style={{fontFamily:sans,fontSize:13,color:T.mid,lineHeight:1.75,fontStyle:"italic",margin:0}}>{frag.story}</p>
                       </div>
                     )}
+                    <div style={{marginBottom:8}}>
+                      <Lbl mb={14}>Fragrance Notes</Lbl>
+                      <NotesPyramid notes={frag.notes}/>
+                    </div>
                   </div>
                 )}
                 <div>
@@ -1430,16 +1542,6 @@ function DetailModal({ frag, onClose, userStatus, setUserStatus, privateNote, se
                       </div>
                     </>
                   )}
-                </div>
-              </div>
-              <div style={{borderTop:`1px solid ${T.rule}`,margin:"28px 0 24px"}}/>
-              <div className="mos-two">
-                <div style={{marginBottom:36}}>
-                  <Lbl mb={14}>Fragrance Notes</Lbl>
-                  <NotesPyramid notes={frag.notes}/>
-                </div>
-                <div>
-                  <SamplesSection defaultRegion={regionFor(currentUser)}/>
                 </div>
               </div>
               <div style={{marginTop:28}}>
@@ -1679,12 +1781,34 @@ const ACCORD_BLURBS = {
   oud:"Dark, resinous and deep.",
   gourmand:"Cocoa, caramel and coffee.",
 };
+function houseGroups(f) {
+  const bo = String(f.brand_origin || "").toLowerCase();
+  if (bo === "indie" || bo === "independent") return ["independent"];
+  if (bo === "niche") return ["niche"];
+  if (bo === "designer") return ["designer"];
+  const tier = String(f.price_tier || "").toLowerCase();
+  const indie = !!(f.ownership && f.ownership.status === "independent");
+  const designer = !indie || tier === "mass-market" || tier === "prestige";
+  const g = [];
+  if (indie) g.push("independent");
+  if (indie && !designer) g.push("niche");
+  if (designer) g.push("designer");
+  return g;
+}
+const HOUSE_GROUPS = [
+  { key:"all", label:"All" },
+  { key:"independent", label:"Independent" },
+  { key:"niche", label:"Niche" },
+  { key:"designer", label:"Designer" },
+];
 function buildShelves(list) {
   const shelves = [];
   const add = (key, title, blurb, items, max=12) => { if (items.length >= 2) shelves.push({ key, title, blurb, items: items.slice(0, max) }); };
   const withYear = list.filter(f => Number(f.year) > 0);
   add("new", "New to the shelf", "The most recent releases in the library.", [...withYear].sort((a,b)=>b.year-a.year));
   add("indie", "Independent houses", "Made by houses that answer to no conglomerate.", list.filter(f => f.ownership && f.ownership.status === "independent"));
+  add("niche", "Niche houses", "Small, independent houses where fragrance is the whole point.", list.filter(f => houseGroups(f).includes("niche")));
+  add("designer", "Designer houses", "The fashion and heritage names most people meet first.", list.filter(f => houseGroups(f).includes("designer")));
   const counts = {};
   list.forEach(f => (f.accords||[]).slice(0,3).forEach(a => { const k=String(a.n).toLowerCase(); counts[k]=(counts[k]||0)+1; }));
   Object.entries(counts).filter(([,c])=>c>=3).sort((a,b)=>b[1]-a[1]).slice(0,4).forEach(([k]) => {
@@ -1692,26 +1816,55 @@ function buildShelves(list) {
     add("acc-"+k, label, ACCORD_BLURBS[k] || `Fragrances built around ${k}.`, list.filter(f => (f.accords||[]).slice(0,3).some(a => String(a.n).toLowerCase()===k)));
   });
   add("classics", "Classics", "Where it started. The older bottles still worth knowing.", [...withYear].filter(f=>f.year<=2010).sort((a,b)=>a.year-b.year));
-  return shelves.slice(0, 7);
+  return shelves.slice(0, 9);
 }
 
-function DiscoverTab({ onOpenFrag, userStatuses, reactions, onReaction, onSuggest, fragrances }) {
+function DiscoverTab({ onOpenFrag, userStatuses, reactions, onReaction, onSuggest, fragrances, serverShelves, onSearch }) {
   const [mode,setMode]=useState("browse");
   const [messages,setMessages]=useState([{role:"ai",text:"Tell me what you're in the mood for: a memory, a mood, an aesthetic. I'll find your next fragrance."}]);
   const [input,setInput]=useState("");
   const [typing,setTyping]=useState(false);
   const [search,setSearch]=useState("");
+  const [group,setGroup]=useState("all");
+  const serverMode=!!(serverShelves&&onSearch);
+  const [results,setResults]=useState([]);
+  const [total,setTotal]=useState(0);
+  const [searching,setSearching]=useState(false);
+  const [moreBusy,setMoreBusy]=useState(false);
+  useEffect(()=>{
+    if(!serverMode) return;
+    const q=search.trim();
+    if(q.length<2&&group==="all"){setResults([]);setTotal(0);setSearching(false);return;}
+    let cancelled=false;setSearching(true);
+    const timer=setTimeout(async()=>{
+      try{const r=await onSearch(q.length>=2?q:"",group,0);if(!cancelled){setResults(r.items);setTotal(r.total);}}
+      catch(e){console.error("Search failed:",e);if(!cancelled){setResults([]);setTotal(0);}}
+      finally{if(!cancelled)setSearching(false);}
+    },300);
+    return ()=>{cancelled=true;clearTimeout(timer);};
+  },[search,group,serverMode]);
+  async function showMore(){
+    setMoreBusy(true);
+    try{const q=search.trim();const r=await onSearch(q.length>=2?q:"",group,results.length);setResults(p=>[...p,...r.items]);}
+    catch(e){console.error("Search failed:",e);}
+    setMoreBusy(false);
+  }
   const CHIPS=[{label:"Library in autumn",query:"something that smells like a library in autumn"},{label:"Quiet luxury",query:"expensive but quiet, not loud"},{label:"Cold winter nights",query:"cold winter nights by a fire"},{label:"Office fresh",query:"fresh and clean for the office"}];
 
   const LIST = (fragrances && fragrances.length) ? fragrances : FRAGRANCES;
-  const shelves = buildShelves(LIST);
-  const searchResults = search.trim().length > 0 ? LIST.filter(f => {
-    const q = search.toLowerCase();
+  const shelves = serverMode ? serverShelves : buildShelves(LIST);
+  const searchResults = (search.trim().length > 0 || group !== "all") ? LIST.filter(f => {
+    if (group !== "all" && !houseGroups(f).includes(group)) return false;
+    if (!search.trim()) return true;
+    const q = search.trim().toLowerCase();
     return f.name.toLowerCase().includes(q) || f.house.toLowerCase().includes(q) || (f.family||"").toLowerCase().includes(q) ||
       f.notes.top.concat(f.notes.mid, f.notes.base).some(n => n.n.toLowerCase().includes(q)) ||
       (f.occasions||[]).some(o => o.toLowerCase().includes(q));
   }) : [];
 
+  const isSearching = serverMode ? (search.trim().length>=2||group!=="all") : (!!search||group!=="all");
+  const shown = serverMode ? results : searchResults;
+  const shownTotal = serverMode ? total : searchResults.length;
   function send(text){const msg=text||input;if(!msg.trim())return;setMessages(m=>[...m,{role:"user",text:msg}]);setInput("");setTyping(true);setTimeout(()=>{const r=getResp(msg);const frag=FRAGRANCES.find(f=>f.id===r.fragId);setTyping(false);setMessages(m=>[...m,{role:"ai",text:r.text,frag}]);},1300);}
 
   const modeBtn=(key,label)=>(
@@ -1747,24 +1900,36 @@ function DiscoverTab({ onOpenFrag, userStatuses, reactions, onReaction, onSugges
               {search&&<button onClick={()=>setSearch("")} aria-label="Clear search" style={{position:"absolute",right:14,top:"50%",transform:"translateY(-50%)",background:"none",border:"none",fontSize:14,color:T.mid,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",width:24,height:24}}>✕</button>}
             </div>
           </div>
-          {search&&(
+          <div role="group" aria-label="House type" style={{display:"flex",gap:8,overflowX:"auto",padding:"6px 0 10px",marginBottom:6}}>
+            {HOUSE_GROUPS.map(g=>{const on=group===g.key;return (
+              <button key={g.key} onClick={()=>setGroup(g.key)} aria-pressed={on} style={{fontFamily:sans,fontSize:14,fontWeight:on?600:500,padding:"0 20px",minHeight:42,borderRadius:22,whiteSpace:"nowrap",border:`1px solid ${on?T.black:T.rule}`,background:on?T.black:T.white,color:on?T.white:T.ink,cursor:"pointer",flexShrink:0}}>{g.label}</button>
+            );})}
+          </div>
+          {isSearching&&(
             <div style={{marginTop:6}}>
-              {searchResults.length>0 ? (
+              {shown.length>0 ? (
                 <>
-                  <p style={{fontFamily:sans,fontSize:11,color:T.mid,margin:"0 0 10px"}}>{searchResults.length} result{searchResults.length!==1?"s":""} for "<strong style={{color:T.ink}}>{search}</strong>"</p>
+                  <p style={{fontFamily:sans,fontSize:11,color:T.mid,margin:"0 0 10px"}}>{shownTotal} result{shownTotal!==1?"s":""}{search?<> for "<strong style={{color:T.ink}}>{search}</strong>"</>:null}{group!=="all"?` in ${group}`:""}</p>
                   <div className="mos-grid">
-                    {searchResults.map(f=><FragCard key={f.id} frag={f} onClick={onOpenFrag} userStatus={userStatuses[f.id]} reaction={reactions[f.id]} onReaction={v=>onReaction(f.id,v)} onOpenFrag={onOpenFrag}/>)}
+                    {shown.map(f=><FragCard key={f.id} frag={f} onClick={onOpenFrag} userStatus={userStatuses[f.id]} reaction={reactions[f.id]} onReaction={v=>onReaction(f.id,v)} onOpenFrag={onOpenFrag}/>)}
                   </div>
+                  {serverMode&&shown.length<shownTotal&&(
+                    <div style={{textAlign:"center",margin:"22px 0 8px"}}>
+                      <button onClick={showMore} disabled={moreBusy} style={{fontFamily:sans,fontSize:14,minHeight:46,padding:"0 28px",borderRadius:23,border:`1px solid ${T.rule}`,background:T.white,color:T.ink,cursor:"pointer",opacity:moreBusy?0.6:1}}>{moreBusy?"Loading":`Show more (${shownTotal-shown.length} left)`}</button>
+                    </div>
+                  )}
                 </>
+              ) : searching ? (
+                <p style={{fontFamily:sans,fontSize:13,color:T.mid,margin:"24px 0"}}>Searching</p>
               ) : (
                 <div style={{textAlign:"center",padding:"32px 0",color:T.faint}}>
-                  <p style={{fontFamily:sans,fontSize:13,color:T.mid,margin:"0 0 12px"}}>No results for "{search}"</p>
-                  <button onClick={()=>setSearch("")} style={{fontFamily:sans,fontSize:11,padding:"7px 16px",borderRadius:20,border:`1px solid ${T.rule}`,background:T.white,color:T.mid,cursor:"pointer"}}>Clear</button>
+                  <p style={{fontFamily:sans,fontSize:13,color:T.mid,margin:"0 0 12px"}}>No results{search?` for "${search}"`:""}</p>
+                  <button onClick={()=>{setSearch("");setGroup("all");}} style={{fontFamily:sans,fontSize:11,padding:"7px 16px",borderRadius:20,border:`1px solid ${T.rule}`,background:T.white,color:T.mid,cursor:"pointer"}}>Clear</button>
                 </div>
               )}
             </div>
           )}
-          {!search&&(
+          {!isSearching&&(
             <>
               {shelves.map((s,i)=><Shelf key={s.key} title={s.title} blurb={s.blurb} items={s.items} onOpenFrag={onOpenFrag} userStatuses={userStatuses} tinted={i%2===0}/>)}
               <div style={{height:24}}/>
@@ -1887,6 +2052,7 @@ function CollectionTab({ onOpenFrag, statuses:userStatuses, reactions, onReactio
   ];
   const counts={};STATUSES.forEach(s=>{counts[s.key]=FR.filter(f=>userStatuses[f.id]===s.key).length;});
   const rCounts={love:0,like:0,dislike:0};Object.values(reactions).forEach(r=>{if(r)rCounts[r]++;});
+  const chipCount=k=>k==="all"?FR.filter(x=>userStatuses[x.id]||reactions[x.id]).length:(rCounts[k]!==undefined?rCounts[k]:(counts[k]||0));
   const filtered=FR.filter(f=>{const rf=["love","like","dislike"];const ms=activeFilter==="all"||(rf.includes(activeFilter)?reactions[f.id]===activeFilter:userStatuses[f.id]===activeFilter);const mq=!search||f.name.toLowerCase().includes(search.toLowerCase())||f.house.toLowerCase().includes(search.toLowerCase())||f.family.toLowerCase().includes(search.toLowerCase())||f.notes.top.concat(f.notes.mid,f.notes.base).some(n=>n.n.toLowerCase().includes(search.toLowerCase()));return ms&&mq;});
   return (
     <div>
@@ -1895,43 +2061,11 @@ function CollectionTab({ onOpenFrag, statuses:userStatuses, reactions, onReactio
         <p style={{fontFamily:sans,fontSize:"clamp(13px, 1.1vw, 17px)",color:T.mid,margin:"6px 0 0"}}>Bottles, samples, and everything in between.</p>
       </div>
       <CollectionMap items={FR.filter(f=>userStatuses[f.id])} onOpenFrag={onOpenFrag}/>
-      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:6}}>
-        <div style={{background:T.black,borderRadius:14,padding:"16px 14px"}}>
-          <p style={{fontFamily:serif,fontSize:32,color:T.white,margin:0}}>{counts["bottle_owned"]||0}</p>
-          <div style={{display:"flex",alignItems:"center",gap:5,marginTop:5}}><Icon name="bottle" size={13} color={T.onInkDim}/><p style={{fontFamily:sans,fontSize:9,textTransform:"uppercase",letterSpacing:"0.1em",color:T.onInkDim,margin:0}}>Bottles owned</p></div>
-        </div>
-        <div style={{background:T.white,border:`1px solid ${T.rule}`,borderRadius:14,padding:"16px 14px"}}>
-          <p style={{fontFamily:serif,fontSize:32,color:T.black,margin:0}}>{counts["sample_have"]||0}</p>
-          <div style={{display:"flex",alignItems:"center",gap:5,marginTop:5}}><Icon name="sample" size={13} color={T.mid}/><p style={{fontFamily:sans,fontSize:9,textTransform:"uppercase",letterSpacing:"0.1em",color:T.mid,margin:0}}>Samples in hand</p></div>
-        </div>
-      </div>
-      <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:8,marginBottom:8}}>
-        {[{k:"love",iconName:"flame",label:"Love"},{k:"like",iconName:"thumbsup",label:"Like"},{k:"dislike",iconName:"thumbsdown",label:"Dislike"}].map(r=>(
-          <div key={r.k} onClick={()=>setActiveFilter(activeFilter===r.k?"all":r.k)} style={{background:activeFilter===r.k?T.black:T.white,border:`1px solid ${activeFilter===r.k?T.black:T.rule}`,borderRadius:12,padding:"12px 8px",textAlign:"center",cursor:"pointer",transition:"all 0.15s"}}>
-            <p style={{fontFamily:serif,fontSize:22,color:activeFilter===r.k?T.white:T.black,margin:0}}>{rCounts[r.k]}</p>
-            <div style={{display:"flex",alignItems:"center",justifyContent:"center",gap:4,marginTop:4}}>
-              <Icon name={r.iconName} size={12} color={activeFilter===r.k?"#888":T.mid}/>
-              <p style={{fontFamily:sans,fontSize:8,textTransform:"uppercase",letterSpacing:"0.07em",color:activeFilter===r.k?"#888":T.mid,margin:0}}>{r.label}</p>
-            </div>
-          </div>
-        ))}
-      </div>
-      <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:8,marginBottom:20}}>
-        {[{key:"tried_skin",iconName:"skin",label:"Tried"},{key:"smelled",iconName:"nose",label:"Smelled"},{key:"bottle_wishlist",iconName:"wishstar",label:"WL"},{key:"sample_wishlist",iconName:"bookmark",label:"Samples"}].map(s=>(
-          <div key={s.key} style={{background:T.white,border:`1px solid ${T.rule}`,borderRadius:12,padding:"12px 8px",textAlign:"center"}}>
-            <p style={{fontFamily:serif,fontSize:22,color:T.black,margin:0}}>{counts[s.key]||0}</p>
-            <div style={{display:"flex",alignItems:"center",justifyContent:"center",gap:3,marginTop:4}}>
-              <Icon name={s.iconName} size={11} color={T.mid}/>
-              <p style={{fontFamily:sans,fontSize:8,textTransform:"uppercase",letterSpacing:"0.07em",color:T.mid,margin:0}}>{s.label}</p>
-            </div>
-          </div>
-        ))}
-      </div>
       <TasteProfile userStatuses={userStatuses} reactions={reactions} fragrances={FR}/>
       <div style={{display:"flex",gap:6,overflowX:"auto",paddingBottom:4,marginBottom:14}}>{filters.map(f=>(
         <button key={f.key} onClick={()=>setActiveFilter(f.key)} style={{fontFamily:sans,fontSize:10,padding:"5px 12px",borderRadius:20,whiteSpace:"nowrap",border:`1px solid ${activeFilter===f.key?T.black:T.rule}`,background:activeFilter===f.key?T.black:T.white,color:activeFilter===f.key?T.white:T.mid,cursor:"pointer",display:"flex",alignItems:"center",gap:5}}>
-          {f.iconName&&<Icon name={f.iconName} size={11} color={activeFilter===f.key?T.white:T.mid}/>}
-          {f.label}
+          {f.iconName&&<Icon name={f.iconName} size={13} color={activeFilter===f.key?T.white:T.mid}/>}
+          {f.label}<span style={{opacity:0.65,marginLeft:2}}>{chipCount(f.key)}</span>
         </button>
       ))}</div>
       <div style={{position:"relative",marginBottom:12}}>
@@ -3329,59 +3463,67 @@ export default function SillageApp() {
     return () => { active = false; listener.subscription.unsubscribe(); };
   }, []);
 
-  // ─── FRAGRANCE CATALOGUE: live fetch from Supabase ────────────────────────
+  // ─── FRAGRANCE CATALOGUE: live from Supabase ──────────────────────────────
+  // The library is large, so Discover asks the database for shelves and search results
+  // instead of loading everything. Anything loaded is kept in `fragrances` so it can be opened later.
+  const [serverShelves, setServerShelves] = useState(null);
+  function mergeFrags(list) {
+    setFragrances(prev => {
+      const map = new Map(prev.filter(p => typeof p.id === "string").map(p => [p.id, p]));
+      list.forEach(f => map.set(f.id, f));
+      return [...map.values()];
+    });
+  }
+  useEffect(() => { fragSink.fn = mergeFrags; return () => { fragSink.fn = null; }; }, []);
+  async function searchFrags(q, group, offset) {
+    const { data: hits, error } = await supabase.rpc("search_fragrances", { q, grp: group, lim: 24, off: offset });
+    if (error) throw error;
+    const ids = (hits || []).map(h => h.id);
+    const total = ids.length ? Number(hits[0].total) : 0;
+    if (!ids.length) return { items: [], total };
+    const { data, error: e2 } = await fetchFragRows(sel => supabase.from("fragrances").select(sel).in("id", ids));
+    if (e2) throw e2;
+    const mapped = data.map(mapFrag);
+    mergeFrags(mapped);
+    const byId = new Map(mapped.map(f => [f.id, f]));
+    return { items: ids.map(id => byId.get(id)).filter(Boolean), total };
+  }
   useEffect(() => {
+    const SHELF_META = {
+      new: ["New to the shelf", "The most recent releases in the library."],
+      indie: ["Independent houses", "Made by houses that answer to no conglomerate."],
+      niche: ["Niche houses", "Small houses where fragrance is the whole point."],
+      designer: ["Designer houses", "The fashion and heritage names most people meet first."],
+      "acc-woody": ["Woody", ACCORD_BLURBS.woody || "Fragrances built around woody."],
+      "acc-floral": ["Floral", ACCORD_BLURBS.floral || "Fragrances built around floral."],
+      "acc-citrus": ["Citrus", ACCORD_BLURBS.citrus || "Fragrances built around citrus."],
+      "acc-sweet": ["Sweet", ACCORD_BLURBS.sweet || "Fragrances built around sweet."],
+      classics: ["Classics", "Where it started. The older bottles still worth knowing."],
+    };
     async function loadFragrances() {
       setFragLoading(true);
       try {
-        const FRAG_SELECT = `
-            id, slug, url, gender, year, perfumer, story, barcode, concentration,
-            house:houses ( name, slug, country, ownership, brand_origin, price_tier, website ),
-            notes ( note_name, position ),
-            accords ( accord_name, rank )
-          `;
-        const run = sel => supabase.from("fragrances").select(sel).order("slug", { ascending: true }).limit(200);
-        let { data, error } = await run(FRAG_SELECT);
-        // If the houses.website column has not been added yet, load without it.
-        if (error && /website/i.test(error.message || "")) ({ data, error } = await run(FRAG_SELECT.replace(", website", "")));
-
+        // Preferred path: shelves chosen by the database.
+        const { data: rows, error: shErr } = await supabase.rpc("discover_shelves");
+        if (!shErr && rows && rows.length) {
+          const ids = [...new Set(rows.map(r => r.id))];
+          const { data, error } = await fetchFragRows(sel => supabase.from("fragrances").select(sel).in("id", ids));
+          if (!error && data) {
+            const mapped = data.map(mapFrag);
+            mergeFrags(mapped);
+            const byId = new Map(mapped.map(f => [f.id, f]));
+            const shelves = Object.keys(SHELF_META).map(key => {
+              const items = rows.filter(r => r.shelf === key).sort((x, y) => x.pos - y.pos).map(r => byId.get(r.id)).filter(Boolean);
+              return { key, title: SHELF_META[key][0], blurb: SHELF_META[key][1], items };
+            }).filter(s => s.items.length >= 2);
+            setServerShelves(shelves);
+            return;
+          }
+        }
+        // Fallback while the search functions are not installed: first 200 alphabetically.
+        const { data, error } = await fetchFragRows(sel => supabase.from("fragrances").select(sel).order("slug", { ascending: true }).limit(200));
         if (error) { console.error("Supabase error:", error); return; }
-
-        const mapped = data.map(f => ({
-          id: f.id,
-          name: f.slug.replace(/-/g, " ").replace(/\b\w/g, c => c.toUpperCase()),
-          house: f.house?.name || "",
-          houseSlug: f.house?.slug || "",
-          country: f.house?.country || "",
-          ownership: {
-            status: ["LVMH","L'Oréal","Puig","Estée Lauder","Coty","PE-backed","L'Occitane Group","Shiseido","Revlon","Interparfums","Kao"].includes(f.house?.ownership)
-              ? "conglomerate" : "independent",
-            parent: f.house?.ownership || "",
-          },
-          brand_origin: f.house?.brand_origin || "",
-          website: f.house?.website || "",
-          price_tier: f.house?.price_tier || "",
-          year: f.year,
-          perfumer: f.perfumer || "",
-          story: f.story || "",
-          concentration: f.concentration || "",
-          gender: f.gender,
-          url: f.url || "",
-          notes: {
-            top: f.notes.filter(n => n.position === "top").map(n => ({ n: n.note_name })),
-            mid: f.notes.filter(n => n.position === "mid").map(n => ({ n: n.note_name })),
-            base: f.notes.filter(n => n.position === "base").map(n => ({ n: n.note_name })),
-          },
-          accords: f.accords
-            .sort((a, b) => a.rank - b.rank)
-            .map(a => ({ n: a.accord_name, v: 80 - (a.rank - 1) * 10 })),
-          // Community fields — empty until populated
-          longevity: null, sillage: null, seasons: {}, occasions: [], rating: null, votes: 0,
-          prices: [],
-        }));
-
-        setFragrances(mapped);
-        console.log(`Loaded ${mapped.length} fragrances from Supabase`);
+        mergeFrags(data.map(mapFrag));
       } catch (err) {
         console.error("Failed to load fragrances:", err);
       } finally {
@@ -3460,7 +3602,7 @@ export default function SillageApp() {
       </header>
 
       <main className="mos-main mos-wrap" style={{ position:"relative", zIndex:1, paddingTop:28, paddingBottom:64 }}>
-        {activeTab==="Discover"   && <DiscoverTab   fragrances={fragrances} onOpenFrag={openFrag} userStatuses={userStatuses} reactions={reactions} onReaction={onReaction} onSuggest={() => setShowSuggest(true)} currentUser={currentUser}/>}
+        {activeTab==="Discover"   && <DiscoverTab   fragrances={fragrances} serverShelves={serverShelves} onSearch={serverShelves ? searchFrags : null} onOpenFrag={openFrag} userStatuses={userStatuses} reactions={reactions} onReaction={onReaction} onSuggest={() => setShowSuggest(true)} currentUser={currentUser}/>}
         {activeTab==="Collection" && <CollectionTab fragrances={fragrances} onOpenFrag={openFrag} statuses={userStatuses} reactions={reactions} onReaction={onReaction} onSuggest={() => setShowSuggest(true)}/>}
         {activeTab==="Layering"   && <div className="mos-prose"><LayeringTab/></div>}
         {activeTab==="Journal"    && <div className="mos-prose"><JournalTab entries={journalEntries}/></div>}
@@ -3497,7 +3639,7 @@ export default function SillageApp() {
           currentUser={currentUser}
         />
       )}
-      {showSuggest && <SuggestModal onClose={() => setShowSuggest(false)}/>}
+      {showSuggest && <SuggestModal onClose={() => setShowSuggest(false)} currentUser={currentUser}/>}
       {profileUsername && (
         <ProfileModal
           username={profileUsername}
