@@ -502,9 +502,21 @@ const NOTE_COLORS = {
 function getNoteColor(n) { return NOTE_COLORS[n] || NOTE_COLORS._default; }
 
 // ─── NOTE ILLUSTRATIONS ───────────────────────────────────────────────────────
+const NOTE_FALLBACK_PAL = [
+  { bg:"#FBEFE6", stroke:"#B5703F", fill:"#EDBF95", accent:"#8A4F25" },
+  { bg:"#F3EAF6", stroke:"#8A5BA6", fill:"#D7BDE6", accent:"#5E3578" },
+  { bg:"#E8F1EA", stroke:"#4F8A5E", fill:"#B7D9BF", accent:"#2F6A3E" },
+  { bg:"#E7F0F4", stroke:"#3F8196", fill:"#B5D8E4", accent:"#1F5C72" },
+  { bg:"#FBEDEF", stroke:"#B5465A", fill:"#EFB9C3", accent:"#872B3D" },
+  { bg:"#FBF4DD", stroke:"#B08A12", fill:"#F0DC8C", accent:"#7D6208" },
+];
+function noteFallback(name) {
+  let h = 0; for (const ch of String(name).toLowerCase()) h = (h * 31 + ch.charCodeAt(0)) >>> 0;
+  return NOTE_FALLBACK_PAL[h % NOTE_FALLBACK_PAL.length];
+}
 function NoteIllustration({ name: rawName, size = 72 }) {
   const name = String(rawName || "").replace(/(^|[\s-])([a-z])/g, (m, p, ch) => p + ch.toUpperCase());
-  const c = getNoteColor(name);
+  const c = NOTE_COLORS[name] || noteFallback(name);
   const arts = {
     "Pineapple": <svg viewBox="0 0 60 60" fill="none"><ellipse cx="30" cy="38" rx="13" ry="15" fill={c.fill} stroke={c.stroke} strokeWidth="1.3"/>{[30,34,38,42].map((y,i)=><path key={i} d={`M18 ${y} Q30 ${y-5} 42 ${y}`} stroke={c.accent} strokeWidth="0.8" fill="none"/>)}{[-8,0,8].map((dx,i)=><path key={i} d={`M${30+dx} 23 C${28+dx} 14 ${30+dx} 10 ${32+dx} 8`} stroke={c.stroke} strokeWidth="1.2" fill={c.fill}/>)}<path d="M30 23 L30 15" stroke={c.accent} strokeWidth="0.7"/></svg>,
     "Blackcurrant": <svg viewBox="0 0 60 60" fill="none">{[[22,28,7],[35,25,6],[28,38,7.5],[18,38,5],[38,34,5.5]].map(([cx,cy,r],i)=><circle key={i} cx={cx} cy={cy} r={r} fill={c.fill} stroke={c.stroke} strokeWidth="1.1"/>)}{[[22,28],[35,25],[28,38],[18,38],[38,34]].map(([cx,cy],i)=><circle key={i} cx={cx} cy={cy} r="1.8" fill={c.accent}/>)}<path d="M24 21 C26 15 30 12 32 10 C34 12 36 15 35 20" stroke={c.stroke} strokeWidth="0.9" fill="none"/></svg>,
@@ -542,7 +554,7 @@ function NoteIllustration({ name: rawName, size = 72 }) {
     "Tobacco": <svg viewBox="0 0 60 60" fill="none"><ellipse cx="30" cy="34" rx="13" ry="16" fill={c.fill} stroke={c.stroke} strokeWidth="1.2"/><ellipse cx="30" cy="34" rx="6" ry="7" fill={c.accent} opacity="0.3"/><path d="M29 18 C29 14 30 10 30 8" stroke={c.stroke} strokeWidth="0.9" strokeLinecap="round"/></svg>,
     "Cocoa": <svg viewBox="0 0 60 60" fill="none"><path d="M16 26 C16 18 22 14 30 14 C38 14 44 18 44 26 C44 38 36 48 30 50 C24 48 16 38 16 26Z" fill={c.fill} stroke={c.stroke} strokeWidth="1.2"/><ellipse cx="30" cy="30" rx="8" ry="6" fill={c.accent} opacity="0.3"/></svg>,
   };
-  const art = arts[name] || <svg viewBox="0 0 60 60" fill="none"><circle cx="30" cy="30" r="16" fill={c.fill} stroke={c.stroke} strokeWidth="1.2"/><circle cx="30" cy="30" r="3" fill={c.accent}/></svg>;
+  const art = arts[name] || <svg viewBox="0 0 60 60" fill="none"><circle cx="30" cy="30" r="20" fill={c.fill} stroke={c.stroke} strokeWidth="1.2"/><text x="30" y="38.5" textAnchor="middle" fontFamily={serif} fontSize="24" fill={c.accent}>{String(name).charAt(0).toUpperCase()}</text></svg>;
   return (
     <div style={{ display:"flex", flexDirection:"column", alignItems:"center", gap:5 }}>
       <div style={{ width:size, height:size, borderRadius:12, background:c.bg, border:`1px solid ${c.stroke}22`, overflow:"hidden", display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0 }}>
@@ -1514,36 +1526,31 @@ function DetailModal({ frag, onClose, userStatus, setUserStatus, privateNote, se
               <div style={{background:T.lift,border:`1px solid ${T.rule}`,borderRadius:16,padding:"22px 18px 20px",marginBottom:32}}>
                 <SamplesSection defaultRegion={regionFor(currentUser)}/>
               </div>
-              <div className={hasLeft?"mos-two":""}>
-                {hasLeft&&(
-                  <div>
-                    {frag.description&&<p style={{fontFamily:sans,fontSize:14,color:T.mid,lineHeight:1.75,margin:"0 0 20px"}}>{frag.description}</p>}
-                    {frag.story&&(
-                      <div style={{background:T.lift,borderRadius:12,padding:16,marginBottom:24,border:`1px solid ${T.rule}`}}>
-                        <Lbl>The Story</Lbl>
-                        <p style={{fontFamily:sans,fontSize:13,color:T.mid,lineHeight:1.75,fontStyle:"italic",margin:0}}>{frag.story}</p>
-                      </div>
-                    )}
-                    <div style={{marginBottom:8}}>
-                      <Lbl mb={14}>Fragrance Notes</Lbl>
-                      <NotesPyramid notes={frag.notes}/>
+              {(frag.description||frag.story)&&(
+                <div style={{marginBottom:32}}>
+                  {frag.description&&<p style={{fontFamily:sans,fontSize:14,color:T.mid,lineHeight:1.75,margin:"0 0 20px"}}>{frag.description}</p>}
+                  {frag.story&&(
+                    <div style={{background:T.lift,borderRadius:12,padding:16,border:`1px solid ${T.rule}`}}>
+                      <Lbl>The Story</Lbl>
+                      <p style={{fontFamily:sans,fontSize:13,color:T.mid,lineHeight:1.75,fontStyle:"italic",margin:0}}>{frag.story}</p>
                     </div>
-                  </div>
-                )}
-                <div>
-                  {sortedAcc.length>0&&(<><Lbl mb={12}>Scent Accords</Lbl><AccordBars accords={frag.accords}/></>)}
-                  {hasSeasons&&(<><div style={{borderTop:`1px solid ${T.rule}`,margin:"24px 0"}}/><Lbl>Seasons</Lbl><SeasonHeat seasons={frag.seasons}/></>)}
-                  {hasOcc&&(
-                    <>
-                      <div style={{borderTop:`1px solid ${T.rule}`,margin:"24px 0"}}/>
-                      <Lbl>Occasions</Lbl>
-                      <div style={{display:"flex",flexWrap:"wrap",gap:6,marginBottom:8}}>
-                        {frag.occasions.map(o=><span key={o} style={{fontFamily:sans,fontSize:12,padding:"5px 12px",borderRadius:20,border:`1px solid ${T.rule}`,color:T.mid}}>{o}</span>)}
-                      </div>
-                    </>
                   )}
                 </div>
+              )}
+              {sortedAcc.length>0&&(<div style={{marginBottom:36}}><Lbl mb={12}>Scent Accords</Lbl><AccordBars accords={frag.accords}/></div>)}
+              <div style={{marginBottom:36}}>
+                <Lbl mb={14}>Fragrance Notes</Lbl>
+                <NotesPyramid notes={frag.notes}/>
               </div>
+              {hasSeasons&&(<div style={{marginBottom:36}}><Lbl>Seasons</Lbl><SeasonHeat seasons={frag.seasons}/></div>)}
+              {hasOcc&&(
+                <div style={{marginBottom:36}}>
+                  <Lbl>Occasions</Lbl>
+                  <div style={{display:"flex",flexWrap:"wrap",gap:6}}>
+                    {frag.occasions.map(o=><span key={o} style={{fontFamily:sans,fontSize:12,padding:"5px 12px",borderRadius:20,border:`1px solid ${T.rule}`,color:T.mid}}>{o}</span>)}
+                  </div>
+                </div>
+              )}
               <div style={{marginTop:28}}>
                 <HouseStrip currentFrag={frag} onOpenFrag={id=>{onClose();setTimeout(()=>onOpenFrag(id),50);}}/>
               </div>
@@ -2417,10 +2424,116 @@ function IngredientGuide({ name, onBack, fragrances, onOpenFrag }) {
   );
 }
 
+// ─── FRAGRANCE STORES DIRECTORY ──────────────────────────────────────────────
+function StoreFinder({ onBack }) {
+  const [rows, setRows] = useState(null);
+  const [failed, setFailed] = useState(false);
+  const [continent, setContinent] = useState("All");
+  const [cat, setCat] = useState("all");
+  const [q, setQ] = useState("");
+  const [open, setOpen] = useState({});
+  useEffect(() => {
+    let off = false;
+    (async () => {
+      try {
+        const { data, error } = await supabase.from("stores")
+          .select("id, continent, country, region, city, name, house, category, address, website, notes, needs_check")
+          .order("country").order("city").order("name").limit(3000);
+        if (off) return;
+        if (error) { setFailed(true); setRows([]); return; }
+        setRows(data || []);
+      } catch (e) { if (!off) { setFailed(true); setRows([]); } }
+    })();
+    return () => { off = true; };
+  }, []);
+  const all = rows || [];
+  const continents = ["All", ...Object.entries(all.reduce((m, r) => { if (r.continent) m[r.continent] = (m[r.continent] || 0) + 1; return m; }, {})).sort((x, y) => y[1] - x[1]).map(e => e[0])];
+  const needle = q.trim().toLowerCase();
+  const list = all.filter(r =>
+    (continent === "All" || r.continent === continent) &&
+    (cat === "all" || (cat === "multi" ? r.category === "Multi-brand store" : r.category === "House boutique")) &&
+    (!needle || [r.name, r.city, r.country, r.house, r.address].some(v => String(v || "").toLowerCase().includes(needle))));
+  const byCountry = {};
+  list.forEach(r => { (byCountry[r.country] = byCountry[r.country] || []).push(r); });
+  const countries = Object.keys(byCountry).sort((x, y) => x.localeCompare(y));
+  const autoOpen = needle.length > 1 || countries.length === 1;
+  const chip = (on, label, fn, key) => (
+    <button key={key || label} onClick={fn} aria-pressed={on} style={{ fontFamily:sans, fontSize:14, fontWeight:on?600:500, padding:"0 18px", minHeight:40, borderRadius:20, whiteSpace:"nowrap", border:`1px solid ${on?T.black:T.rule}`, background:on?T.black:T.white, color:on?T.white:T.ink, cursor:"pointer", flexShrink:0 }}>{label}</button>
+  );
+  const tag = r => r.category === "House boutique" ? (r.house ? `${r.house} boutique` : "House boutique") : r.category === "Multi-brand store" ? "Multi-brand" : (r.category || "");
+  return (
+    <div>
+      {onBack && <button onClick={onBack} style={{ fontFamily:sans, fontSize:13, color:T.mid, background:"none", border:"none", padding:0, cursor:"pointer", marginBottom:22 }}>&lsaquo; Back to Learn</button>}
+      <h3 style={{ fontFamily:serif, fontSize:"clamp(30px, 3.4vw, 50px)", fontWeight:400, letterSpacing:-0.6, color:T.black, margin:"0 0 10px" }}>Fragrance stores around the world</h3>
+      <p style={{ fontFamily:sans, fontSize:"clamp(14px, 1.1vw, 16px)", color:T.mid, lineHeight:1.65, margin:"0 0 22px", maxWidth:680 }}>Places to smell before you buy. Listings come from store pages and public guides, so check hours and ranges on the store's own site before you go.</p>
+      <input className="mos-in" value={q} onChange={e => setQ(e.target.value)} placeholder="Search by city, country, store or house" style={{ marginBottom:12, maxWidth:560 }}/>
+      <div style={{ display:"flex", gap:8, overflowX:"auto", padding:"2px 0 8px" }}>{continents.map(c => chip(continent === c, c, () => setContinent(c)))}</div>
+      <div style={{ display:"flex", gap:8, overflowX:"auto", padding:"2px 0 14px" }}>
+        {chip(cat === "all", "All kinds", () => setCat("all"), "k-all")}
+        {chip(cat === "multi", "Multi-brand stores", () => setCat("multi"), "k-multi")}
+        {chip(cat === "boutique", "House boutiques", () => setCat("boutique"), "k-boutique")}
+      </div>
+      {rows === null && <p style={{ fontFamily:sans, fontSize:13, color:T.mid }}>Loading</p>}
+      {rows !== null && failed && <p style={{ fontFamily:sans, fontSize:14, color:T.mid, lineHeight:1.6 }}>The store list is not available yet. Please check back soon.</p>}
+      {rows !== null && !failed && (
+        <>
+          <p style={{ fontFamily:sans, fontSize:12, color:T.mid, margin:"0 0 10px" }}>{list.length} {list.length === 1 ? "store" : "stores"} in {countries.length} {countries.length === 1 ? "country" : "countries"}</p>
+          <div style={{ borderTop:`1px solid ${T.rule}` }}>
+            {countries.map(c => {
+              const isOpen = autoOpen || open[c];
+              const items = byCountry[c];
+              const cities = [...new Set(items.map(r => r.city || ""))];
+              return (
+                <div key={c} style={{ borderBottom:`1px solid ${T.rule}` }}>
+                  <button onClick={() => setOpen(o => ({ ...o, [c]: !o[c] }))} aria-expanded={!!isOpen} style={{ width:"100%", display:"flex", alignItems:"center", justifyContent:"space-between", gap:12, padding:"16px 2px", minHeight:56, background:"none", border:"none", cursor:"pointer", textAlign:"left" }}>
+                    <span style={{ fontFamily:serif, fontSize:"clamp(19px, 1.6vw, 24px)", color:T.black }}>{c}</span>
+                    <span style={{ fontFamily:sans, fontSize:12, color:T.mid, display:"inline-flex", alignItems:"center", gap:10 }}>{items.length}<span style={{ display:"inline-block", transition:"transform 0.2s", transform:isOpen?"rotate(180deg)":"none" }}>▾</span></span>
+                  </button>
+                  {isOpen && (
+                    <div style={{ padding:"0 2px 18px" }}>
+                      {cities.map(city => (
+                        <div key={city} style={{ marginBottom:14 }}>
+                          {city && <p style={{ fontFamily:sans, fontSize:11, letterSpacing:"0.16em", textTransform:"uppercase", color:T.mid, margin:"6px 0 8px" }}>{city}</p>}
+                          <div className="mos-samples">
+                            {items.filter(r => (r.city || "") === city).map(r => {
+                              const site = safeUrl(r.website);
+                              const maps = "https://www.google.com/maps/search/?api=1&query=" + encodeURIComponent([r.name, r.address].filter(Boolean).join(" "));
+                              return (
+                                <div key={r.id} style={{ border:`1px solid ${T.rule}`, borderRadius:12, padding:"14px 16px", background:T.white }}>
+                                  <p style={{ fontFamily:serif, fontSize:17, color:T.black, margin:0, lineHeight:1.25 }}>{r.name}</p>
+                                  <p style={{ fontFamily:sans, fontSize:11, color:T.accent, margin:"4px 0 0", letterSpacing:"0.04em" }}>{tag(r)}</p>
+                                  {r.address && <p style={{ fontFamily:sans, fontSize:12, color:T.mid, lineHeight:1.5, margin:"8px 0 0" }}>{r.address}</p>}
+                                  {r.notes && <p style={{ fontFamily:sans, fontSize:12, color:T.mid, lineHeight:1.5, margin:"6px 0 0", fontStyle:"italic" }}>{r.notes}</p>}
+                                  {r.needs_check && <p style={{ fontFamily:sans, fontSize:11, color:T.faint, margin:"6px 0 0" }}>Details not yet confirmed</p>}
+                                  <div style={{ display:"flex", gap:16, marginTop:12 }}>
+                                    {site && <a href={site} target="_blank" rel="noopener noreferrer" style={{ fontFamily:sans, fontSize:13, color:T.ink, textDecoration:"none", display:"inline-flex", alignItems:"center", gap:5, minHeight:32 }}>Website<ExtArrow size={11}/></a>}
+                                    <a href={maps} target="_blank" rel="noopener noreferrer" style={{ fontFamily:sans, fontSize:13, color:T.ink, textDecoration:"none", display:"inline-flex", alignItems:"center", gap:5, minHeight:32 }}>Map<ExtArrow size={11}/></a>
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+          {list.length === 0 && <p style={{ fontFamily:sans, fontSize:14, color:T.mid, margin:"20px 0" }}>No stores match that search.</p>}
+        </>
+      )}
+    </div>
+  );
+}
+
 function LearnTab({ fragrances, onOpenFrag }) {
   const [openTerm,setOpenTerm]=useState(null);
   const [openExpo,setOpenExpo]=useState(null);
   const [openNote,setOpenNote]=useState(null);
+  const [tab,setTab]=useState("glossary");
+  const LEARN_TABS=[["glossary","Glossary"],["ingredients","Ingredient guide"],["stores","Fragrance stores"],["expos","Fragrance expos"],["articles","Articles"]];
   if (openNote) return <IngredientGuide name={openNote} onBack={()=>setOpenNote(null)} fragrances={fragrances} onOpenFrag={onOpenFrag}/>;
   return (
     <div>
@@ -2436,6 +2549,13 @@ function LearnTab({ fragrances, onOpenFrag }) {
         <p style={{fontFamily:sans,fontSize:13,color:T.mid,lineHeight:1.7,margin:"0 0 14px"}}>The invisible trail a fragrance leaves in the air behind you, from the French word for "wake." High sillage announces your presence before you enter the room.</p>
         <p style={{fontFamily:sans,fontSize:10,color:T.mid,margin:0}}>Found in <span style={{color:T.black,cursor:"pointer"}}>Aventus</span>, <span style={{color:T.black,cursor:"pointer"}}>Black Orchid</span></p>
       </div>
+      <div role="tablist" style={{display:"flex",gap:4,overflowX:"auto",borderBottom:`1px solid ${T.rule}`,marginBottom:24,WebkitOverflowScrolling:"touch"}}>
+        {LEARN_TABS.map(([k,l])=>(
+          <button key={k} role="tab" aria-selected={tab===k} onClick={()=>setTab(k)} style={{fontFamily:sans,fontSize:13,fontWeight:tab===k?600:500,letterSpacing:"0.04em",color:tab===k?T.black:T.mid,background:"none",border:"none",borderBottom:`2px solid ${tab===k?T.black:"transparent"}`,padding:"0 16px",minHeight:46,whiteSpace:"nowrap",cursor:"pointer",flexShrink:0,marginBottom:-1}}>{l}</button>
+        ))}
+      </div>
+      {tab==="stores"&&<StoreFinder/>}
+      {tab==="ingredients"&&<>
       <Lbl>Ingredient guide</Lbl>
       <p style={{fontFamily:sans,fontSize:13,color:T.mid,lineHeight:1.6,margin:"0 0 14px"}}>Where each ingredient comes from, how it is made, and where you have smelled it. Tap one marked Guide.</p>
       <div style={{display:"flex",flexWrap:"wrap",gap:14,marginBottom:28}}>
@@ -2446,6 +2566,8 @@ function LearnTab({ fragrances, onOpenFrag }) {
           </button>
         );})}
       </div>
+      </>}
+      {tab==="glossary"&&<>
       <Lbl>Glossary</Lbl>
       <div style={{background:T.white,border:`1px solid ${T.rule}`,borderRadius:14,overflow:"hidden",marginBottom:24}}>
         {GLOSSARY.map((g,i)=>(
@@ -2458,6 +2580,8 @@ function LearnTab({ fragrances, onOpenFrag }) {
           </div>
         ))}
       </div>
+      </>}
+      {tab==="articles"&&<>
       <Lbl>Learning Paths</Lbl>
       {[{icon:"△",name:"The Fragrance Pyramid",sub:"How scents evolve on skin over time",progress:0},{icon:"◈",name:"The 7 Fragrance Families",sub:"From florals to orientals, the full map",progress:33},{icon:"◇",name:"Niche vs. Designer",sub:"What separates a $50 from a $500 bottle",progress:0},{icon:"◎",name:"The Art of Sampling",sub:"How to get the most from a 2ml vial",progress:0}].map(p=>(
         <div key={p.name} style={{background:T.white,border:`1px solid ${T.rule}`,borderRadius:12,padding:14,display:"flex",alignItems:"center",gap:12,cursor:"pointer",marginBottom:8}}>
@@ -2466,7 +2590,8 @@ function LearnTab({ fragrances, onOpenFrag }) {
           <span style={{fontFamily:sans,fontSize:11,color:T.mid}}>{p.progress>0?`${p.progress}%`:"Start"}</span>
         </div>
       ))}
-      <div style={{borderTop:`2px solid ${T.black}`,marginTop:28,paddingTop:22}}>
+      </>}
+      {tab==="expos"&&<div>
         <Lbl>Fragrance Expos & Events</Lbl>
         <p style={{fontFamily:sans,fontSize:13,color:T.mid,lineHeight:1.65,margin:"0 0 18px"}}>Every major fragrance exhibition worldwide, from trade fairs to community events.</p>
         <div style={{background:T.white,border:`1px solid ${T.rule}`,borderRadius:14,overflow:"hidden"}}>
@@ -2491,9 +2616,9 @@ function LearnTab({ fragrances, onOpenFrag }) {
           ))}
         </div>
         <p style={{fontFamily:sans,fontSize:10,color:T.faint,margin:"12px 0 0",lineHeight:1.5}}>Dates vary year to year. Always check official websites for current scheduling.</p>
-      </div>
+      </div>}
 
-      <div style={{borderTop:`2px solid ${T.black}`,marginTop:28,paddingTop:22}}>
+      {tab==="articles"&&<div style={{borderTop:`2px solid ${T.black}`,marginTop:28,paddingTop:22}}>
         <Lbl>Who Owns Your Fragrance House?</Lbl>
         <p style={{fontFamily:sans,fontSize:13,color:T.mid,lineHeight:1.7,margin:"0 0 18px"}}>The fragrance industry has consolidated significantly over the past two decades. A handful of large conglomerates now own many of the houses that built their reputations as independent creative enterprises. This matters because ownership changes often bring pressure to reduce costs, which can mean reformulated ingredients, discontinued lines, or a shift in creative direction.</p>
         <div style={{background:T.white,border:`1px solid ${T.rule}`,borderRadius:14,overflow:"hidden",marginBottom:16}}>
@@ -2516,7 +2641,7 @@ function LearnTab({ fragrances, onOpenFrag }) {
           </div>
         </div>
         <p style={{fontFamily:sans,fontSize:11,color:T.faint,margin:0,lineHeight:1.6}}>Ownership data is maintained by the Memoir on Skin community and updated when changes occur. If you notice an error, use the Suggest feature to flag it.</p>
-      </div>
+      </div>}
     </div>
   );
 }
