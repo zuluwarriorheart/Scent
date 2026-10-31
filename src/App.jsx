@@ -109,6 +109,10 @@ body { overflow-x:clip; }
 .mos-in { width:100%; box-sizing:border-box; min-height:46px; padding:11px 14px; border-radius:10px; border:1px solid var(--rule); background:var(--lift); color:var(--ink); font-family:'DM Sans Variable','Helvetica Neue',Helvetica,Arial,sans-serif; font-size:16px; outline:none; }
 .mos-in:focus { border-color:var(--ink-strong); }
 @media (min-width:760px) { .mos-in { font-size:14px; } }
+.mos-country-sel{display:block}.mos-country-chips{display:none !important}@media(min-width:900px){.mos-country-sel{display:none}.mos-country-chips{display:flex !important}}
+.mos-country-sel { display:block; }
+.mos-country-chips { display:none !important; }
+@media (min-width:900px){ .mos-country-sel { display:none !important; } .mos-country-chips { display:flex !important; } }
 .mos-samples { display:grid; grid-template-columns:repeat(auto-fit,minmax(230px,1fr)); gap:10px; }
 .mos-cover { transition:transform .18s ease, box-shadow .18s ease; }
 .mos-cover:hover { transform:translateY(-3px); }
@@ -2428,7 +2432,7 @@ function IngredientGuide({ name, onBack, fragrances, onOpenFrag }) {
 function StoreFinder({ onBack }) {
   const [rows, setRows] = useState(null);
   const [failed, setFailed] = useState(false);
-  const [continent, setContinent] = useState("All");
+  const [country, setCountry] = useState("All");
   const [cat, setCat] = useState("all");
   const [q, setQ] = useState("");
   const [open, setOpen] = useState({});
@@ -2447,17 +2451,16 @@ function StoreFinder({ onBack }) {
     return () => { off = true; };
   }, []);
   const all = rows || [];
-  const continents = ["All", ...Object.entries(all.reduce((m, r) => { if (r.continent) m[r.continent] = (m[r.continent] || 0) + 1; return m; }, {})).sort((x, y) => y[1] - x[1]).map(e => e[0])];
+  const countryList = ["All", ...[...new Set(all.map(r => r.country).filter(Boolean))].sort((x, y) => x.localeCompare(y))];
   const needle = q.trim().toLowerCase();
   const list = all.filter(r =>
-    (continent === "All" || r.continent === continent) &&
+    (country === "All" || r.country === country) &&
     (cat === "all" || (cat === "multi" ? r.category === "Multi-brand store" : r.category === "House boutique")) &&
     (!needle || [r.name, r.city, r.country, r.house, r.address].some(v => String(v || "").toLowerCase().includes(needle))));
   const byCountry = {};
   list.forEach(r => { (byCountry[r.country] = byCountry[r.country] || []).push(r); });
   const countries = Object.keys(byCountry).sort((x, y) => x.localeCompare(y));
-  const autoOpen = needle.length > 1 || countries.length === 1;
-  const chip = (on, label, fn, key) => (
+    const chip = (on, label, fn, key) => (
     <button key={key || label} onClick={fn} aria-pressed={on} style={{ fontFamily:sans, fontSize:14, fontWeight:on?600:500, padding:"0 18px", minHeight:40, borderRadius:20, whiteSpace:"nowrap", border:`1px solid ${on?T.black:T.rule}`, background:on?T.black:T.white, color:on?T.white:T.ink, cursor:"pointer", flexShrink:0 }}>{label}</button>
   );
   const tag = r => r.category === "House boutique" ? (r.house ? `${r.house} boutique` : "House boutique") : r.category === "Multi-brand store" ? "Multi-brand" : (r.category || "");
@@ -2467,8 +2470,9 @@ function StoreFinder({ onBack }) {
       <h3 style={{ fontFamily:serif, fontSize:"clamp(30px, 3.4vw, 50px)", fontWeight:400, letterSpacing:-0.6, color:T.black, margin:"0 0 10px" }}>Fragrance stores around the world</h3>
       <p style={{ fontFamily:sans, fontSize:"clamp(14px, 1.1vw, 16px)", color:T.mid, lineHeight:1.65, margin:"0 0 22px", maxWidth:680 }}>Places to smell before you buy. Listings come from store pages and public guides, so check hours and ranges on the store's own site before you go.</p>
       <input className="mos-in" value={q} onChange={e => setQ(e.target.value)} placeholder="Search by city, country, store or house" style={{ marginBottom:12, maxWidth:560 }}/>
-      <div style={{ display:"flex", gap:8, overflowX:"auto", padding:"2px 0 8px" }}>{continents.map(c => chip(continent === c, c, () => setContinent(c)))}</div>
-      <div style={{ display:"flex", gap:8, overflowX:"auto", padding:"2px 0 14px" }}>
+      <select className="mos-in mos-country-sel" aria-label="Country" value={country} onChange={e => setCountry(e.target.value)} style={{ marginBottom:12, maxWidth:560 }}>{countryList.map(c => <option key={c} value={c}>{c === "All" ? "All countries" : c}</option>)}</select>
+      <div className="mos-country-chips" style={{ display:"flex", flexWrap:"wrap", gap:8, padding:"2px 0 12px" }}>{countryList.map(c => chip(country === c, c === "All" ? "All" : c, () => setCountry(c)))}</div>
+      <div style={{ display:"flex", flexWrap:"wrap", gap:8, padding:"2px 0 14px" }}>
         {chip(cat === "all", "All kinds", () => setCat("all"), "k-all")}
         {chip(cat === "multi", "Multi-brand stores", () => setCat("multi"), "k-multi")}
         {chip(cat === "boutique", "House boutiques", () => setCat("boutique"), "k-boutique")}
@@ -2480,15 +2484,15 @@ function StoreFinder({ onBack }) {
           <p style={{ fontFamily:sans, fontSize:12, color:T.mid, margin:"0 0 10px" }}>{list.length} {list.length === 1 ? "store" : "stores"} in {countries.length} {countries.length === 1 ? "country" : "countries"}</p>
           <div style={{ borderTop:`1px solid ${T.rule}` }}>
             {countries.map(c => {
-              const isOpen = autoOpen || open[c];
+              const isOpen = true;
               const items = byCountry[c];
               const cities = [...new Set(items.map(r => r.city || ""))];
               return (
                 <div key={c} style={{ borderBottom:`1px solid ${T.rule}` }}>
-                  <button onClick={() => setOpen(o => ({ ...o, [c]: !o[c] }))} aria-expanded={!!isOpen} style={{ width:"100%", display:"flex", alignItems:"center", justifyContent:"space-between", gap:12, padding:"16px 2px", minHeight:56, background:"none", border:"none", cursor:"pointer", textAlign:"left" }}>
-                    <span style={{ fontFamily:serif, fontSize:"clamp(19px, 1.6vw, 24px)", color:T.black }}>{c}</span>
-                    <span style={{ fontFamily:sans, fontSize:12, color:T.mid, display:"inline-flex", alignItems:"center", gap:10 }}>{items.length}<span style={{ display:"inline-block", transition:"transform 0.2s", transform:isOpen?"rotate(180deg)":"none" }}>▾</span></span>
-                  </button>
+                  <div style={{ display:"flex", alignItems:"baseline", justifyContent:"space-between", gap:12, padding:"22px 2px 14px" }}>
+                    <span style={{ fontFamily:serif, fontSize:"clamp(22px, 1.9vw, 28px)", color:T.black }}>{c}</span>
+                    <span style={{ fontFamily:sans, fontSize:12, color:T.mid }}>{items.length}</span>
+                  </div>
                   {isOpen && (
                     <div style={{ padding:"0 2px 18px" }}>
                       {cities.map(city => (
@@ -2572,11 +2576,10 @@ function LearnTab({ fragrances, onOpenFrag }) {
       <div style={{background:T.white,border:`1px solid ${T.rule}`,borderRadius:14,overflow:"hidden",marginBottom:24}}>
         {GLOSSARY.map((g,i)=>(
           <div key={g.term} style={{borderBottom:i<GLOSSARY.length-1?`1px solid ${T.lift}`:"none"}}>
-            <button onClick={()=>setOpenTerm(openTerm===g.term?null:g.term)} style={{width:"100%",display:"flex",alignItems:"center",justifyContent:"space-between",padding:"14px 16px",background:"none",border:"none",cursor:"pointer"}}>
-              <span style={{fontFamily:sans,fontSize:13,fontWeight:500,color:T.ink}}>{g.term}</span>
-              <span style={{fontSize:11,color:T.faint,display:"inline-block",transition:"transform 0.2s",transform:openTerm===g.term?"rotate(180deg)":"none"}}>▾</span>
-            </button>
-            {openTerm===g.term&&<p style={{fontFamily:sans,fontSize:13,color:T.mid,lineHeight:1.65,padding:"0 16px 14px",margin:0}}>{g.def}</p>}
+            <div style={{padding:"16px 18px"}}>
+              <p style={{fontFamily:serif,fontSize:18,color:T.black,margin:"0 0 6px"}}>{g.term}</p>
+              <p style={{fontFamily:sans,fontSize:13,color:T.mid,lineHeight:1.65,margin:0}}>{g.def}</p>
+            </div>
           </div>
         ))}
       </div>
@@ -2597,21 +2600,14 @@ function LearnTab({ fragrances, onOpenFrag }) {
         <div style={{background:T.white,border:`1px solid ${T.rule}`,borderRadius:14,overflow:"hidden"}}>
           {FRAGRANCE_EXPOS.map((expo,i)=>(
             <div key={expo.name} style={{borderBottom:i<FRAGRANCE_EXPOS.length-1?`1px solid ${T.lift}`:"none"}}>
-              <button onClick={()=>setOpenExpo(openExpo===expo.name?null:expo.name)} style={{width:"100%",display:"flex",alignItems:"center",justifyContent:"space-between",padding:"14px 16px",background:"none",border:"none",cursor:"pointer",textAlign:"left"}}>
-                <div style={{flex:1}}>
-                  <div style={{display:"flex",alignItems:"center",gap:8}}>
-                    <span style={{fontFamily:serif,fontSize:14,color:T.ink}}>{expo.name}</span>
-                    <span style={{fontFamily:sans,fontSize:9,padding:"2px 7px",borderRadius:10,background:T.lift,color:T.mid,border:`1px solid ${T.rule}`}}>{expo.month}</span>
-                  </div>
-                  <p style={{fontFamily:sans,fontSize:11,color:T.mid,margin:"2px 0 0"}}>{expo.city}</p>
+              <div style={{padding:"16px 18px"}}>
+                <div style={{display:"flex",alignItems:"center",gap:8,flexWrap:"wrap"}}>
+                  <span style={{fontFamily:serif,fontSize:18,color:T.black}}>{expo.name}</span>
+                  <span style={{fontFamily:sans,fontSize:10,padding:"2px 8px",borderRadius:10,background:T.lift,color:T.mid,border:`1px solid ${T.rule}`}}>{expo.month}</span>
                 </div>
-                <span style={{fontSize:11,color:T.faint,display:"inline-block",transition:"transform 0.2s",transform:openExpo===expo.name?"rotate(180deg)":"none",flexShrink:0,marginLeft:8}}>▾</span>
-              </button>
-              {openExpo===expo.name&&(
-                <div style={{padding:"0 16px 14px"}}>
-                  <p style={{fontFamily:sans,fontSize:13,color:T.mid,lineHeight:1.65,margin:0}}>{expo.description}</p>
-                </div>
-              )}
+                <p style={{fontFamily:sans,fontSize:12,color:T.mid,margin:"4px 0 8px"}}>{expo.city}</p>
+                <p style={{fontFamily:sans,fontSize:13,color:T.mid,lineHeight:1.65,margin:0}}>{expo.description}</p>
+              </div>
             </div>
           ))}
         </div>
