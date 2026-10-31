@@ -20,7 +20,7 @@ const T = {
   accent:"var(--accent)", accentSoft:"var(--accent-soft)", cta:"var(--cta)", trail:"var(--trail)",
   good:"var(--good)", bad:"var(--bad)",
 };
-const ACCENT_FILL = "#C9206B";   // solid brand pink — always carries white text
+const ACCENT_FILL = "#C9206B";   // solid brand pink, always carries white text
 const ON_ACCENT   = "#FFFFFF";
 const serif = "'Fraunces Variable',Georgia,'Times New Roman',serif";
 const sans  = "'DM Sans Variable','Helvetica Neue',Helvetica,Arial,sans-serif";
@@ -67,35 +67,43 @@ html[data-theme="dark"] {
 }
 html { background:var(--bg); }
 body { background:transparent; color:var(--ink); font-family:${sans}; }
-body::before { content:""; position:fixed; inset:0; z-index:-1; pointer-events:none; background:var(--glow); }
 h1, h2, h3 { font-weight:500; }
 ::selection { background:#C9206B; color:#fff; }
 button:focus-visible, [role="button"]:focus-visible { outline:2px solid var(--accent); outline-offset:2px; }
 input:focus-visible, textarea:focus-visible, select:focus-visible { outline:2px solid var(--accent) !important; outline-offset:1px; }
 
 .mos-pagehead { position:relative; padding-bottom:18px; margin-bottom:24px; border-bottom:1px solid var(--rule); }
-.mos-pagehead::after { content:""; position:absolute; left:0; bottom:-2px; width:44px; height:3px; border-radius:3px; background:var(--trail); }
+.mos-pagehead::after { content:""; position:absolute; left:0; bottom:-1px; width:40px; height:2px; background:var(--ink-strong); }
 
-.mos-tabs-top { display:flex; gap:20px; overflow-x:auto; }
+.mos-tabs-top { display:flex; gap:var(--nav-gap); overflow-x:auto; }
 .mos-tabbar { display:none; }
-:root { --page-w:1240px; --gutter:20px; --cover-w:156px; }
-@media (min-width:640px) { :root { --gutter:28px; --cover-w:184px; } }
-@media (min-width:1100px) { :root { --gutter:40px; --cover-w:206px; } }
+:root { --page-w:1240px; --gutter:20px; --cover-w:156px; --logo-fs:23px; --ctl:34px; --ctl-fs:12px; --nav-fs:12px; --nav-gap:26px; }
+@media (min-width:640px) { :root { --gutter:28px; --cover-w:184px; --logo-fs:28px; --ctl:38px; --ctl-fs:13px; --nav-fs:13px; --nav-gap:32px; } }
+@media (min-width:1100px) { :root { --gutter:40px; --cover-w:206px; --logo-fs:34px; --ctl:42px; --ctl-fs:14px; --nav-fs:14px; --nav-gap:40px; } }
 body { overflow-x:clip; }
 .mos-wrap { width:100%; max-width:var(--page-w); margin-left:auto; margin-right:auto; padding-left:var(--gutter); padding-right:var(--gutter); }
 .mos-bleed { margin-left:calc(50% - 50vw); margin-right:calc(50% - 50vw); }
 .mos-bleed-pad { padding-left:max(var(--gutter), calc((100vw - var(--page-w)) / 2 + var(--gutter))); padding-right:max(var(--gutter), calc((100vw - var(--page-w)) / 2 + var(--gutter))); }
 .mos-shelf { scroll-padding-left:max(var(--gutter), calc((100vw - var(--page-w)) / 2 + var(--gutter))); }
-.mos-prose { max-width:880px; }
+.mos-prose { max-width:1040px; }
 .mos-grid { display:grid; grid-template-columns:1fr; gap:10px; }
 @media (min-width:900px) { .mos-grid { grid-template-columns:repeat(2, minmax(0,1fr)); gap:12px; } }
 @media (min-width:1280px) { .mos-grid { grid-template-columns:repeat(3, minmax(0,1fr)); } }
 .mos-two { display:grid; grid-template-columns:minmax(0,1fr); gap:0; }
 @media (min-width:760px) { .mos-two { grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:40px; } }
 @media (min-width:760px) {
-  .mos-sheet-wrap { justify-content:center !important; padding:32px 0; }
-  .mos-sheet { max-width:880px !important; border-radius:24px !important; border-bottom:1px solid var(--rule) !important; max-height:90vh !important; }
+  .mos-sheet-wrap { justify-content:flex-start !important; align-items:stretch !important; padding:0 !important; }
+  .mos-sheet { max-width:none !important; width:100% !important; height:100vh !important; max-height:100vh !important; border-radius:0 !important; border:none !important; }
+  .mos-pad { padding-left:max(32px, calc((100% - 1120px) / 2)) !important; padding-right:max(32px, calc((100% - 1120px) / 2)) !important; }
+  .mos-dtabs { overflow-x:visible !important; }
+  .mos-dtabs > button { flex:1 1 0 !important; margin-right:0 !important; text-align:center !important; font-size:13px !important; padding-top:18px !important; padding-bottom:18px !important; }
+  .mos-close { right:max(28px, calc((100% - 1120px) / 2)) !important; }
 }
+.mos-guide { display:grid; grid-template-columns:minmax(0,1fr); gap:44px; }
+@media (min-width:900px) { .mos-guide { grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:72px; } }
+.mos-spec { display:grid; grid-template-columns:minmax(0,1fr); gap:20px; }
+@media (min-width:600px) { .mos-spec { grid-template-columns:180px minmax(0,1fr); gap:28px; } }
+.mos-map { overflow-x:auto; }
 .mos-cover { transition:transform .18s ease, box-shadow .18s ease; }
 .mos-cover:hover { transform:translateY(-3px); }
 .mos-cover:focus-visible { outline:2px solid var(--accent); outline-offset:4px; border-radius:12px; }
@@ -167,47 +175,26 @@ function useTheme() {
   return { pref, resolved, setPref: setThemePref };
 }
 
-// ─── LOGO ─────────────────────────────────────────────────────────────────────
-// A stitched spiral: an embroidered dot, a fingerprint, a memory winding inward.
-const MARK_PATH = "M23.74 21.36C23.84 21.16 24.07 20.95 24.38 20.84C24.70 20.73 25.10 20.72 25.47 20.87C25.84 21.01 26.19 21.31 26.37 21.73C26.56 22.16 26.59 22.70 26.38 23.26C26.18 23.81 25.75 24.37 25.13 24.79C24.51 25.21 23.70 25.48 22.85 25.50C22.01 25.51 21.13 25.27 20.42 24.76C19.71 24.25 19.17 23.48 18.98 22.56C18.78 21.64 18.92 20.59 19.44 19.60C19.96 18.60 20.86 17.69 22 17.06C23.15 16.43 24.54 16.09 25.92 16.17C27.29 16.25 28.65 16.74 29.69 17.61C30.74 18.48 31.47 19.73 31.67 21.14C31.88 22.55 31.57 24.12 30.73 25.55C29.90 26.98 28.54 28.25 26.87 29.10C25.20 29.94 23.22 30.34 21.32 30.17C19.41 30 17.57 29.25 16.19 28.01C14.81 26.78 13.90 25.06 13.68 23.16C13.46 21.25 13.94 19.16 15.09 17.30C16.24 15.44 18.07 13.80 20.26 12.75C22.46 11.70 25.01 11.23 27.45 11.50C29.89 11.76 32.20 12.76 33.92 14.36C35.63 15.96 36.74 18.15 36.97 20.55C37.21 22.95 36.56 25.55 35.09 27.85C33.61 30.15 31.33 32.14 28.61 33.40C25.89 34.67 22.75 35.20 19.78 34.84C16.81 34.48 14.02 33.23 11.97 31.27C9.92 29.31 8.62 26.64 8.38 23.75C8.13 20.85 8.95 17.74 10.74 15.01C12.53 12.27 15.28 9.92 18.52 8.44";
-function LogoMark({ size = 32, weight = 2.8 }) {
-  const id = "mk" + useId().replace(/:/g, "");
-  return (
-    <svg width={size} height={size} viewBox="4 2 40 40" fill="none" style={{ display:"block", flexShrink:0 }} aria-hidden="true">
-      <defs>
-        <linearGradient id={id} gradientUnits="userSpaceOnUse" x1="8" y1="38" x2="41" y2="6">
-          <stop offset="0" stopColor="#F2661C"/>
-          <stop offset="0.3" stopColor="#F0476A"/>
-          <stop offset="0.55" stopColor="#E6397F"/>
-          <stop offset="0.78" stopColor="#8E52D6"/>
-          <stop offset="1" stopColor="#1E9CC4"/>
-        </linearGradient>
-      </defs>
-      <path d={MARK_PATH} stroke={`url(#${id})`} strokeWidth={weight} strokeLinecap="round"/>
-    </svg>
-  );
-}
+// ─── LOGO: a typographic wordmark, nothing else ──────────────────────────────
 function Wordmark({ size = 22 }) {
   return (
-    <span aria-hidden="true" style={{ fontFamily:serif, fontSize:size, lineHeight:1, letterSpacing:-size * 0.02, color:T.black, fontWeight:500, display:"inline-flex", alignItems:"baseline", gap:size * 0.24, whiteSpace:"nowrap" }}>
+    <span aria-hidden="true" style={{ fontFamily:serif, fontSize:size, lineHeight:1, letterSpacing:"-0.02em", color:T.black, fontWeight:500, display:"inline-flex", alignItems:"baseline", gap:"0.24em", whiteSpace:"nowrap" }}>
       <span>memoir</span>
       <span style={{ fontStyle:"italic", fontWeight:400, color:T.accent }}>on skin</span>
     </span>
   );
 }
-function Logo({ size = 20, stacked = false, align = "left" }) {
+function Logo({ size = 20, stacked = false, align = "left", fluid = false }) {
   if (stacked) {
     return (
-      <div role="img" aria-label="Memoir on Skin" style={{ display:"flex", flexDirection:"column", alignItems:align === "center" ? "center" : "flex-start", gap:size * 0.55 }}>
-        <LogoMark size={size * 2.8} weight={2.6}/>
-        <Wordmark size={size * 1.6}/>
+      <div role="img" aria-label="Memoir on Skin" style={{ display:"flex", justifyContent:align === "center" ? "center" : "flex-start" }}>
+        <Wordmark size={size * 1.9}/>
       </div>
     );
   }
   return (
-    <div role="img" aria-label="Memoir on Skin" style={{ display:"inline-flex", alignItems:"center", gap:size * 0.42 }}>
-      <LogoMark size={size * 1.5} weight={3}/>
-      <Wordmark size={size}/>
+    <div role="img" aria-label="Memoir on Skin" style={{ display:"inline-flex", alignItems:"center" }}>
+      <Wordmark size={fluid ? "var(--logo-fs)" : size}/>
     </div>
   );
 }
@@ -653,10 +640,10 @@ function PriceTable({ prices }) {
 
 // ─── STATUS SELECTOR ─────────────────────────────────────────────────────────
 const STATUSES = [
-  { key:"bottle_owned",    label:"Bottle — Owned",    iconName:"bottle",   group:"bottle" },
-  { key:"bottle_wishlist", label:"Bottle — Wishlist", iconName:"wishstar", group:"bottle" },
-  { key:"sample_have",     label:"Sample — In hand",  iconName:"sample",   group:"sample" },
-  { key:"sample_wishlist", label:"Sample — Wishlist", iconName:"bookmark", group:"sample" },
+  { key:"bottle_owned",    label:"Bottle, owned",    iconName:"bottle",   group:"bottle" },
+  { key:"bottle_wishlist", label:"Bottle, wishlist", iconName:"wishstar", group:"bottle" },
+  { key:"sample_have",     label:"Sample, in hand",  iconName:"sample",   group:"sample" },
+  { key:"sample_wishlist", label:"Sample, wishlist", iconName:"bookmark", group:"sample" },
   { key:"smelled",         label:"Smelled",           iconName:"nose",     group:"tried"  },
   { key:"tried_skin",      label:"Tried on skin",     iconName:"skin",     group:"tried"  },
 ];
@@ -730,7 +717,7 @@ function PrivateNoteEditor({ note, onSave, frag, onAddJournalEntry }) {
     <div style={{background:T.lift,borderRadius:14,border:`1px solid ${T.rule}`,padding:16}}>
       <div style={{display:"flex",alignItems:"center",gap:6,marginBottom:14}}>
         <Icon name="lock" size={12} color={T.mid}/>
-        <span style={{fontFamily:sans,fontSize:9,textTransform:"uppercase",letterSpacing:"0.1em",color:T.mid}}>Private — only visible to you</span>
+        <span style={{fontFamily:sans,fontSize:9,textTransform:"uppercase",letterSpacing:"0.1em",color:T.mid}}>Private, only visible to you</span>
       </div>
 
       <p style={{fontFamily:sans,fontSize:9,textTransform:"uppercase",letterSpacing:"0.12em",color:T.mid,margin:"0 0 6px"}}>What made you reach for this today?</p>
@@ -787,7 +774,7 @@ const LEGAL_CONTENT = {
     title: "Privacy Policy",
     updated: "Last updated: June 2026",
     sections: [
-      { heading: "What we collect", body: "We collect your name, email address, username, and country when you register. We collect fragrance interactions — statuses, reactions, journal entries, and reviews — to power your personal experience." },
+      { heading: "What we collect", body: "We collect your name, email address, username, and country when you register. We collect fragrance interactions, statuses, reactions, journal entries, and reviews, to power your personal experience." },
       { heading: "What we never do", body: "We do not sell your data. We do not share your personal information with advertisers. Private notes are encrypted and never accessible to the Memoir on Skin team." },
       { heading: "How we use your data", body: "Your data is used to provide the Memoir on Skin service, personalise your discovery experience, and improve the platform. Aggregate, anonymised data may be used to identify fragrance trends." },
       { heading: "Journal entries and private notes", body: "Private notes and journal entries marked as private are stored securely and are visible only to you. Publishing a journal entry or review makes that content visible to the community." },
@@ -953,7 +940,7 @@ function SuggestModal({ onClose }) {
               <p style={{ fontFamily:sans, fontSize:9, textTransform:"uppercase", letterSpacing:"0.12em", color:T.mid, margin:"0 0 6px" }}>Your First Review (optional)</p>
               <textarea value={form.firstReview} onChange={e=>set("firstReview",e.target.value)} placeholder="How does it open? What does the dry-down smell like? Who is this for?" rows={3} style={{...inp,resize:"vertical",lineHeight:1.6}}/>
             </div>
-            <button onClick={()=>{if(form.name&&form.house)setSubmitted(true);}} style={{ width:"100%", padding:"13px 0", borderRadius:10, background:form.name&&form.house?T.cta:T.faint, border:"none", color:ON_ACCENT, fontSize:13, fontFamily:sans, cursor:form.name&&form.house?"pointer":"not-allowed" }}>Submit suggestion</button>
+            <button onClick={()=>{if(form.name&&form.house)setSubmitted(true);}} style={{ width:"100%", padding:"13px 0", borderRadius:10, background:form.name&&form.house?T.black:T.faint, border:"none", color:T.white, fontSize:13, fontFamily:sans, cursor:form.name&&form.house?"pointer":"not-allowed" }}>Submit suggestion</button>
           </div>
         )}
       </div>
@@ -966,31 +953,31 @@ const FRAGRANCES = [
   { id:1, name:"Aventus", house:"Creed", year:2010, perfumer:"Olivier Creed & Erwin Creed", family:"Chypre Fruity", concentration:"Eau de Parfum",
     ownership:{ status:"conglomerate", parent:"LVMH", acquiredYear:2020, note:"Acquired by LVMH in 2020. The Creed family retained creative involvement post-acquisition." },
     description:"Opens with explosive pineapple and blackcurrant before evolving into a smoky, mossy heart. Simultaneously powerful and quietly refined.",
-    story:"Inspired by the legend of Napoleon — the smoke of battle, cool northern forests, the sweet spoils of victory.",
+    story:"Inspired by the legend of Napoleon, the smoke of battle, cool northern forests, the sweet spoils of victory.",
     prices:[{size:"100ml",price:"$495",perMl:"$4.95"},{size:"50ml",price:"$310",perMl:"$6.20"},{size:"10ml Travel",price:"$98",perMl:"$9.80"},{size:"2ml Sample",price:"$12",perMl:"$6.00",sample:true}],
     notes:{top:[{n:"Pineapple"},{n:"Blackcurrant"},{n:"Apple"},{n:"Bergamot"}],mid:[{n:"Birch"},{n:"Patchouli"},{n:"Jasmine"},{n:"Rose"}],base:[{n:"Musk"},{n:"Oakmoss"},{n:"Ambergris"},{n:"Vanilla"}]},
     accords:[{n:"Fruity",v:85},{n:"Smoky",v:72},{n:"Woody",v:68},{n:"Fresh",v:55},{n:"Mossy",v:48}],
     longevity:4.2, sillage:3.8, seasons:{spring:70,summer:55,fall:85,winter:60}, occasions:["Work","Evening","Formal"], rating:4.6, votes:14823 },
   { id:2, name:"Black Orchid", house:"Tom Ford", year:2006, perfumer:"David Apel", family:"Floral Oriental", concentration:"Eau de Parfum",
     ownership:{ status:"conglomerate", parent:"Estée Lauder Companies", acquiredYear:2005, note:"Tom Ford Beauty has been under Estée Lauder Companies since 2005. Tom Ford sold the remaining brand to Ermenegildo Zegna in 2023." },
-    description:"Darkly luxurious — rare black truffle and ylang ylang bloom over orchid petals and lotus wood. Opulent, mysterious, unforgettable.",
-    story:"Tom Ford's debut set the tone for everything that followed — maximalist, dark, unapologetically seductive.",
+    description:"Darkly luxurious, rare black truffle and ylang ylang bloom over orchid petals and lotus wood. Opulent, mysterious, unforgettable.",
+    story:"Tom Ford's debut set the tone for everything that followed, maximalist, dark, unapologetically seductive.",
     prices:[{size:"100ml",price:"$235",perMl:"$2.35"},{size:"50ml",price:"$160",perMl:"$3.20"},{size:"10ml Travel",price:"$55",perMl:"$5.50"},{size:"2ml Sample",price:"$8",perMl:"$4.00",sample:true}],
     notes:{top:[{n:"Black Truffle"},{n:"Ylang-Ylang"},{n:"Bergamot"},{n:"Blackcurrant"}],mid:[{n:"Black Orchid"},{n:"Jasmine"},{n:"Gardenia"},{n:"Lotus"}],base:[{n:"Patchouli"},{n:"Vanilla"},{n:"Sandalwood"},{n:"Incense"}]},
     accords:[{n:"Floral",v:90},{n:"Dark",v:82},{n:"Oriental",v:75},{n:"Earthy",v:60},{n:"Sweet",v:45}],
     longevity:4.7, sillage:4.5, seasons:{spring:40,summer:25,fall:80,winter:95}, occasions:["Evening","Date Night"], rating:4.3, votes:9241 },
   { id:3, name:"Oud Wood", house:"Tom Ford", year:2007, perfumer:"Pierre Negrin", family:"Woody Oriental", concentration:"Eau de Parfum",
     ownership:{ status:"conglomerate", parent:"Estée Lauder Companies", acquiredYear:2005, note:"Tom Ford Beauty has been under Estée Lauder Companies since 2005. Tom Ford sold the remaining brand to Ermenegildo Zegna in 2023." },
-    description:"Rare agarwood blends with rosewood, cardamom, and sandalwood — ancient and modern simultaneously.",
-    story:"Ford's distillation of the souk — incense smoke in hot air, rare woods in shadows, the smell of somewhere else.",
+    description:"Rare agarwood blends with rosewood, cardamom, and sandalwood, ancient and modern simultaneously.",
+    story:"Ford's distillation of the souk, incense smoke in hot air, rare woods in shadows, the smell of somewhere else.",
     prices:[{size:"100ml",price:"$280",perMl:"$2.80"},{size:"50ml",price:"$195",perMl:"$3.90"},{size:"10ml Travel",price:"$65",perMl:"$6.50"},{size:"2ml Sample",price:"$9",perMl:"$4.50",sample:true}],
     notes:{top:[{n:"Oud"},{n:"Rosewood"},{n:"Cardamom"}],mid:[{n:"Sandalwood"},{n:"Vetiver"},{n:"Papyrus"}],base:[{n:"Tonka Bean"},{n:"Amber"},{n:"Musk"}]},
     accords:[{n:"Woody",v:95},{n:"Oriental",v:78},{n:"Smoky",v:70},{n:"Spicy",v:65},{n:"Earthy",v:55}],
     longevity:4.5, sillage:3.9, seasons:{spring:50,summer:30,fall:85,winter:90}, occasions:["Evening","Formal"], rating:4.4, votes:11059 },
   { id:4, name:"Baccarat Rouge 540", house:"Maison Francis Kurkdjian", year:2015, perfumer:"Francis Kurkdjian", family:"Floral Woody Musk", concentration:"Eau de Parfum",
     ownership:{ status:"conglomerate", parent:"LVMH", acquiredYear:2017, note:"Acquired by LVMH in 2017. Francis Kurkdjian remained as creative director and continues to lead the house." },
-    description:"Saffron and jasmine float above amberwood and fir resin — an almost synesthetic experience of warmth without weight.",
-    story:"Created for Baccarat crystal's 250th anniversary — light refracting through crystal, prismatic and pure.",
+    description:"Saffron and jasmine float above amberwood and fir resin, an almost synesthetic experience of warmth without weight.",
+    story:"Created for Baccarat crystal's 250th anniversary, light refracting through crystal, prismatic and pure.",
     prices:[{size:"200ml",price:"$830",perMl:"$4.15"},{size:"70ml",price:"$345",perMl:"$4.93"},{size:"35ml",price:"$215",perMl:"$6.14"},{size:"2ml Sample",price:"$14",perMl:"$7.00",sample:true}],
     notes:{top:[{n:"Saffron"},{n:"Jasmine"}],mid:[{n:"Amberwood"},{n:"Ambergris"}],base:[{n:"Fir Resin"},{n:"Cedar"}]},
     accords:[{n:"Warm Spicy",v:88},{n:"Amber",v:80},{n:"Woody",v:78},{n:"Floral",v:65},{n:"Sweet",v:62}],
@@ -998,14 +985,14 @@ const FRAGRANCES = [
   { id:5, name:"Santal 33", house:"Le Labo", year:2011, perfumer:"Frank Voelkl", family:"Woody", concentration:"Eau de Parfum",
     ownership:{ status:"conglomerate", parent:"Estée Lauder Companies", acquiredYear:2014, note:"Acquired by Estée Lauder Companies in 2014. The founders Fabrice Penot and Edouard Roschi stayed on after acquisition." },
     description:"Papyrus, cedarwood, and cardamom over sandalwood and violet. The scent of the American West imagined by a New Yorker.",
-    story:"An ode to the campfire — leather, wood smoke, and the open plains rendered in a quietly iconic bottle.",
+    story:"An ode to the campfire, leather, wood smoke, and the open plains rendered in a quietly iconic bottle.",
     prices:[{size:"100ml",price:"$310",perMl:"$3.10"},{size:"50ml",price:"$200",perMl:"$4.00"},{size:"15ml Travel",price:"$78",perMl:"$5.20"},{size:"2ml Sample",price:"$10",perMl:"$5.00",sample:true}],
     notes:{top:[{n:"Cardamom"},{n:"Iris"},{n:"Violet"}],mid:[{n:"Amberwood"},{n:"Cedarwood"},{n:"Sandalwood"}],base:[{n:"Papyrus"},{n:"Leather"},{n:"Musk"}]},
     accords:[{n:"Woody",v:92},{n:"Smoky",v:68},{n:"Creamy",v:60},{n:"Floral",v:45},{n:"Spicy",v:40}],
     longevity:4.0, sillage:3.5, seasons:{spring:60,summer:45,fall:88,winter:75}, occasions:["Casual","Work","Weekend"], rating:4.2, votes:7834 },
   { id:6, name:"Tobacco Vanille", house:"Tom Ford", year:2007, perfumer:"Unknown", family:"Oriental Spicy", concentration:"Eau de Parfum",
     ownership:{ status:"conglomerate", parent:"Estée Lauder Companies", acquiredYear:2005, note:"Tom Ford Beauty has been under Estée Lauder Companies since 2005. Tom Ford sold the remaining brand to Ermenegildo Zegna in 2023." },
-    description:"Rich tobacco leaf and aromatic spices blend into vanilla and tonka bean — warm, heady, and unapologetically indulgent.",
+    description:"Rich tobacco leaf and aromatic spices blend into vanilla and tonka bean, warm, heady, and unapologetically indulgent.",
     story:"An English gentlemen's club filtered through Ford's unerring sense for luxury.",
     prices:[{size:"100ml",price:"$295",perMl:"$2.95"},{size:"50ml",price:"$195",perMl:"$3.90"},{size:"10ml Travel",price:"$68",perMl:"$6.80"},{size:"2ml Sample",price:"$9",perMl:"$4.50",sample:true}],
     notes:{top:[{n:"Cardamom"},{n:"Tobacco"}],mid:[{n:"Vanilla"},{n:"Cocoa"}],base:[{n:"Tonka Bean"},{n:"Amber"},{n:"Musk"}]},
@@ -1013,7 +1000,7 @@ const FRAGRANCES = [
     longevity:4.6, sillage:4.2, seasons:{spring:30,summer:15,fall:88,winter:95}, occasions:["Evening","Formal","Date Night"], rating:4.5, votes:12400 },
   { id:7, name:"Violet and Amber", house:"Imaginary Authors", year:2013, perfumer:"Josh Meyer", family:"Floral Woody", concentration:"Eau de Parfum",
     ownership:{ status:"independent", note:"Imaginary Authors is independently owned and operated by perfumer Josh Meyer from Portland, Oregon. Each fragrance is inspired by a fictional book." },
-    description:"Wet violet leaf and cedar open into a warm amber drydown — literary, wistful, and deeply personal.",
+    description:"Wet violet leaf and cedar open into a warm amber drydown, literary, wistful, and deeply personal.",
     story:"Each Imaginary Authors fragrance is inspired by a fictional book. This one smells like the margins of something you never finished.",
     prices:[{size:"100ml",price:"$115",perMl:"$1.15"},{size:"50ml",price:"$75",perMl:"$1.50"},{size:"5ml Sample",price:"$12",perMl:"$2.40",sample:true}],
     notes:{top:[{n:"Violet Leaf"},{n:"Bergamot"}],mid:[{n:"Iris"},{n:"Cedar"}],base:[{n:"Amber"},{n:"Musk"},{n:"Sandalwood"}]},
@@ -1022,11 +1009,11 @@ const FRAGRANCES = [
 ];
 
 const GLOSSARY = [
-  {term:"Sillage",  def:"The trail a fragrance leaves in the air behind you — from the French word for 'wake.'"},
+  {term:"Sillage",  def:"The trail a fragrance leaves in the air behind you, from the French word for 'wake.'"},
   {term:"Dry Down", def:"The final phase after top and middle notes evaporate, revealing the true character of the base."},
   {term:"Chypre",   def:"Built on bergamot, labdanum, and oakmoss. Named after the island of Cyprus."},
   {term:"Oud",      def:"Agarwood resin from infected Aquilaria trees. One of the rarest materials in perfumery."},
-  {term:"Accord",   def:"A blend of notes that creates a unified impression — like a chord in music."},
+  {term:"Accord",   def:"A blend of notes that creates a unified impression, like a chord in music."},
   {term:"Fougère",  def:"From the French for 'fern.' Classic structure of lavender, coumarin, and oakmoss."},
 ];
 
@@ -1087,12 +1074,12 @@ function HouseStrip({ currentFrag, onOpenFrag }) {
 
 // ─── PERFUMERS ────────────────────────────────────────────────────────────────
 const PERFUMERS = {
-  "Olivier Creed & Erwin Creed": { bio: "Olivier Creed built the house's modern reputation across five decades of bespoke commissions before handing creative leadership to his son Erwin. Aventus, created together in 2010, remains one of the most studied and imitated fragrances of the century. The Creeds have always worked with a deliberately closed process — raw materials sourced personally, formulas held privately.", nationality: "French / British", active: "1969 – present" },
-  "David Apel": { bio: "David Apel is an American perfumer at Symrise whose work spans commercial and niche commissions. Black Orchid remains his most discussed creation — a fragrance built around an accord that doesn't exist in nature. He has spoken about the brief asking for something 'opulent and dark without being heavy.'", nationality: "American", active: "1990s – present" },
-  "Pierre Negrin": { bio: "Pierre Negrin is a French perfumer who spent much of his career at Givaudan before moving to independent work. Oud Wood was an early commission that helped define what a Western interpretation of oud could be — restrained, papyrus-tinged, and accessible without being diluted.", nationality: "French", active: "1990s – present" },
-  "Francis Kurkdjian": { bio: "Francis Kurkdjian graduated from ISIPCA in 1992 and spent his early career creating some of the most commercially successful fragrances of the era — including Jean Paul Gaultier's Le Mâle. He founded Maison Francis Kurkdjian in 2009 with business partner Marc Chaya. His work is characterised by technical precision and an unusual ability to make complex accords smell simple. LVMH acquired the house in 2017.", nationality: "French / Armenian", active: "1992 – present" },
-  "Frank Voelkl": { bio: "Frank Voelkl is a German perfumer at Firmenich known for a restrained, materials-focused approach. Santal 33 was created for Le Labo's New York-specific city exclusive before being added to the permanent line. The papyrus and cardamom accord he built around the sandalwood has become one of the most recognised in contemporary perfumery — and one of the most debated.", nationality: "German", active: "1990s – present" },
-  "Josh Meyer": { bio: "Josh Meyer is a self-taught perfumer and founder of Imaginary Authors based in Portland, Oregon. Every fragrance in the line is named after a fictional book and accompanied by a back-cover blurb. His approach is literary and instinctive — materials chosen for narrative resonance rather than technical convention. He built the brand entirely independently and continues to run it without outside investment.", nationality: "American", active: "2011 – present" },
+  "Olivier Creed & Erwin Creed": { bio: "Olivier Creed built the house's modern reputation across five decades of bespoke commissions before handing creative leadership to his son Erwin. Aventus, created together in 2010, remains one of the most studied and imitated fragrances of the century. The Creeds have always worked with a deliberately closed process, raw materials sourced personally, formulas held privately.", nationality: "French / British", active: "1969 – present" },
+  "David Apel": { bio: "David Apel is an American perfumer at Symrise whose work spans commercial and niche commissions. Black Orchid remains his most discussed creation, a fragrance built around an accord that doesn't exist in nature. He has spoken about the brief asking for something 'opulent and dark without being heavy.'", nationality: "American", active: "1990s – present" },
+  "Pierre Negrin": { bio: "Pierre Negrin is a French perfumer who spent much of his career at Givaudan before moving to independent work. Oud Wood was an early commission that helped define what a Western interpretation of oud could be, restrained, papyrus-tinged, and accessible without being diluted.", nationality: "French", active: "1990s – present" },
+  "Francis Kurkdjian": { bio: "Francis Kurkdjian graduated from ISIPCA in 1992 and spent his early career creating some of the most commercially successful fragrances of the era, including Jean Paul Gaultier's Le Mâle. He founded Maison Francis Kurkdjian in 2009 with business partner Marc Chaya. His work is characterised by technical precision and an unusual ability to make complex accords smell simple. LVMH acquired the house in 2017.", nationality: "French / Armenian", active: "1992 – present" },
+  "Frank Voelkl": { bio: "Frank Voelkl is a German perfumer at Firmenich known for a restrained, materials-focused approach. Santal 33 was created for Le Labo's New York-specific city exclusive before being added to the permanent line. The papyrus and cardamom accord he built around the sandalwood has become one of the most recognised in contemporary perfumery, and one of the most debated.", nationality: "German", active: "1990s – present" },
+  "Josh Meyer": { bio: "Josh Meyer is a self-taught perfumer and founder of Imaginary Authors based in Portland, Oregon. Every fragrance in the line is named after a fictional book and accompanied by a back-cover blurb. His approach is literary and instinctive, materials chosen for narrative resonance rather than technical convention. He built the brand entirely independently and continues to run it without outside investment.", nationality: "American", active: "2011 – present" },
 };
 
 function PerfumerModal({ name, onClose }) {
@@ -1116,7 +1103,7 @@ function PerfumerModal({ name, onClose }) {
           }
           {fragrances.length > 0 && (
             <>
-              <p style={{ fontFamily:sans, fontSize:9, textTransform:"uppercase", letterSpacing:"0.12em", color:T.mid, margin:"0 0 12px" }}>In the Memoir on Skin database — {fragrances.length}</p>
+              <p style={{ fontFamily:sans, fontSize:9, textTransform:"uppercase", letterSpacing:"0.12em", color:T.mid, margin:"0 0 12px" }}>In the Memoir on Skin database, {fragrances.length}</p>
               <div style={{ display:"flex", flexDirection:"column", gap:10 }}>
                 {fragrances.map(f => (
                   <div key={f.id} style={{ display:"flex", alignItems:"center", gap:14, padding:"12px 14px", background:T.lift, borderRadius:12, border:`1px solid ${T.rule}` }}>
@@ -1242,7 +1229,7 @@ function DetailModal({ frag, onClose, userStatus, setUserStatus, privateNote, se
   const [replyTo,setReplyTo]=useState(null);
   const [replies,setReplies]=useState({});
   const REVIEWS=[
-    {id:0,username:"scentcollector_jw",name:"James W.",rating:5,text:"Give it 20 minutes past the opening — the smoky birch dry-down is masterful.",date:"2 days ago",helpful:34,user:{isFounder:true,memberNumber:12,isTopContributor:true,country:"GB"}},
+    {id:0,username:"scentcollector_jw",name:"James W.",rating:5,text:"Give it 20 minutes past the opening, the smoky birch dry-down is masterful.",date:"2 days ago",helpful:34,user:{isFounder:true,memberNumber:12,isTopContributor:true,country:"GB"}},
     {id:1,username:"niche_nomad",name:"Nadia M.",rating:4,text:"Overpriced? Yes. Masterpiece of construction? Undeniably.",date:"1 week ago",helpful:28,user:{isFounder:true,memberNumber:89,isTopContributor:false,country:"FR"}},
     {id:2,username:"basenotebrigade",name:"Bruno K.",rating:5,text:"Had three people ask what I was wearing at a conference. Projection is serious.",date:"2 weeks ago",helpful:19,user:{isFounder:false,memberNumber:null,isTopContributor:true,country:"DE"}},
   ];
@@ -1269,8 +1256,8 @@ function DetailModal({ frag, onClose, userStatus, setUserStatus, privateNote, se
       <div className="mos-sheet" onClick={e=>e.stopPropagation()} style={{background:T.white,borderRadius:"24px 24px 0 0",border:`1px solid ${T.rule}`,borderBottom:"none",width:"100%",maxWidth:460,maxHeight:"93vh",overflowY:"auto"}}>
 
         
-        <div style={{position:"relative",padding:"26px 24px 20px",borderBottom:`1px solid ${T.rule}`,overflow:"hidden",background:accA?`linear-gradient(180deg,${accA}30 0%,transparent 78%)`:"transparent"}}>
-          <button onClick={onClose} style={{position:"absolute",top:16,right:16,width:30,height:30,borderRadius:"50%",border:`1px solid ${T.rule}`,background:T.white,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",fontSize:13,color:T.mid,zIndex:2}}>✕</button>
+        <div className="mos-pad" style={{position:"relative",padding:"26px 24px 20px",borderBottom:`1px solid ${T.rule}`,overflow:"hidden",background:accA?`${accA}1F`:"transparent"}}>
+          <button className="mos-close" onClick={onClose} style={{position:"absolute",top:16,right:16,width:30,height:30,borderRadius:"50%",border:`1px solid ${T.rule}`,background:T.white,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",fontSize:13,color:T.mid,zIndex:2}}>✕</button>
           <div style={{display:"flex",alignItems:"flex-start",gap:16}}>
             <div style={{flex:1}}>
               <div style={{marginBottom:8}}><span style={{fontFamily:sans,fontSize:9,textTransform:"uppercase",letterSpacing:"0.12em",color:T.mid}}>{[frag.house, frag.family].filter(Boolean).join(" · ")}</span></div>
@@ -1286,7 +1273,7 @@ function DetailModal({ frag, onClose, userStatus, setUserStatus, privateNote, se
               {(!frag.perfumer || String(frag.perfumer).toLowerCase()==="unknown") && <div style={{marginBottom:10}}/>}
               {showPerfumer && <PerfumerModal name={frag.perfumer} onClose={()=>setShowPerfumer(false)}/>}
             </div>
-            <div style={{width:80,height:104,borderRadius:14,background:frag.image?T.white:`linear-gradient(160deg,${accA||"#C9206B"},${accB||"#8E52D6"})`,border:`1px solid ${T.rule}`,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,marginTop:34,overflow:"hidden",position:"relative"}}>
+            <div style={{width:80,height:104,borderRadius:14,background:frag.image?T.white:(accA||"#C9206B"),border:`1px solid ${T.rule}`,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,marginTop:34,overflow:"hidden",position:"relative"}}>
               {frag.image
                 ? <img src={frag.image} alt={frag.name} style={{width:"100%",height:"100%",objectFit:"contain",padding:"8%"}}/>
                 : <span style={{fontFamily:serif,fontSize:30,color:"#fff",opacity:0.92,lineHeight:1}}>{frag.name.split(" ").map(w=>w[0]).join("").slice(0,2).toUpperCase()}</span>}
@@ -1296,7 +1283,7 @@ function DetailModal({ frag, onClose, userStatus, setUserStatus, privateNote, se
         </div>
 
         
-        <div style={{display:"flex",borderBottom:`1px solid ${T.rule}`,padding:"0 24px",overflowX:"auto"}}>
+        <div className="mos-pad mos-dtabs" style={{display:"flex",borderBottom:`1px solid ${T.rule}`,padding:"0 24px",overflowX:"auto"}}>
           {["overview","notes","pricing","my notes","status","community"].map(t=>(
             <button key={t} onClick={()=>setTab(t)} style={{marginRight:16,padding:"11px 0",whiteSpace:"nowrap",fontSize:10,textTransform:"uppercase",letterSpacing:"0.08em",color:tab===t?T.black:T.mid,background:"none",border:"none",borderBottom:tab===t?`2px solid ${T.black}`:"2px solid transparent",marginBottom:-1,cursor:"pointer",fontFamily:sans}}>{t}</button>
           ))}
@@ -1314,7 +1301,7 @@ function DetailModal({ frag, onClose, userStatus, setUserStatus, privateNote, se
         </div>
         )}
 
-        <div style={{padding:24}}>
+        <div className="mos-pad" style={{padding:24}}>
           
           {tab==="overview"&&(
             <div>
@@ -1385,7 +1372,7 @@ function DetailModal({ frag, onClose, userStatus, setUserStatus, privateNote, se
               <div style={{background:T.lift,borderRadius:10,padding:12,border:`1px solid ${T.rule}`,marginTop:14}}>
                 <div style={{display:"flex",alignItems:"flex-start",gap:8}}>
                   <Icon name="tip" size={14} color={T.mid}/>
-                  <p style={{fontFamily:sans,fontSize:11,color:T.mid,lineHeight:1.55,margin:0}}><strong style={{color:T.ink}}>Always try a sample first.</strong> A 2ml sample gives you 2–3 full wears — enough to know the dry-down.</p>
+                  <p style={{fontFamily:sans,fontSize:11,color:T.mid,lineHeight:1.55,margin:0}}><strong style={{color:T.ink}}>Always try a sample first.</strong> A 2ml sample gives you 2–3 full wears, enough to know the dry-down.</p>
                 </div>
               </div>
             </div>
@@ -1558,7 +1545,7 @@ function TasteProfile({ userStatuses, reactions, fragrances }) {
 
 // ─── DISCOVER ─────────────────────────────────────────────────────────────────
 const CHAT_RESP={
-  library:{text:"A library in autumn — paper, ink, a whisper of smoke. Oud Wood by Tom Ford is uncannily bookish.",fragId:3},
+  library:{text:"A library in autumn, paper, ink, a whisper of smoke. Oud Wood by Tom Ford is uncannily bookish.",fragId:3},
   quiet:{text:"Quiet luxury that announces itself only when someone leans close. Baccarat Rouge 540 is the archetype.",fragId:4},
   winter:{text:"Cold weather makes fragrances bloom differently. Black Orchid is built for exactly this.",fragId:2},
   default:{text:"Based on what you're describing, I'd start with Aventus. The pineapple opening fades to something smoky and quietly powerful.",fragId:1},
@@ -1593,8 +1580,8 @@ function Shelf({ title, blurb, items, onOpenFrag, userStatuses, tinted }) {
   return (
     <section className={"mos-bleed" + (tinted ? " mos-band" : "")} style={{ padding:"26px 0 22px" }}>
       <div className="mos-bleed-pad" style={{ marginBottom:16 }}>
-        <h3 style={{ fontFamily:serif, fontSize:26, fontWeight:400, letterSpacing:-0.6, color:T.black, margin:0, lineHeight:1.1 }}>{title}</h3>
-        <p style={{ fontFamily:sans, fontSize:14, color:T.mid, margin:"6px 0 0", lineHeight:1.5 }}>{blurb}</p>
+        <h3 style={{ fontFamily:serif, fontSize:"clamp(26px, 2.3vw, 38px)", fontWeight:400, letterSpacing:-0.6, color:T.black, margin:0, lineHeight:1.1 }}>{title}</h3>
+        <p style={{ fontFamily:sans, fontSize:"clamp(14px, 1.1vw, 17px)", color:T.mid, margin:"6px 0 0", lineHeight:1.5 }}>{blurb}</p>
       </div>
       <div className="mos-shelf mos-bleed-pad" style={{ display:"flex", gap:14, overflowX:"auto", paddingTop:2, paddingBottom:14, scrollSnapType:"x proximity", WebkitOverflowScrolling:"touch" }}>
         {items.map(f => <CoverTile key={f.id} frag={f} onClick={onOpenFrag} userStatus={userStatuses[f.id]}/>)}
@@ -1660,7 +1647,7 @@ function DiscoverTab({ onOpenFrag, userStatuses, reactions, onReaction, onSugges
   const modeBtn=(key,label)=>(
     <button key={key} role="tab" aria-selected={mode===key} onClick={()=>setMode(key)} style={{position:"relative",padding:"0 2px 13px",marginRight:30,background:"none",border:"none",cursor:"pointer",fontFamily:sans,fontSize:15,fontWeight:600,color:mode===key?T.black:T.mid}}>
       {label}
-      {mode===key&&<span style={{position:"absolute",left:0,right:0,bottom:-1,height:3,borderRadius:3,background:T.trail}}/>}
+      {mode===key&&<span style={{position:"absolute",left:0,right:0,bottom:-1,height:2,background:T.black}}/>}
     </button>
   );
 
@@ -1668,8 +1655,8 @@ function DiscoverTab({ onOpenFrag, userStatuses, reactions, onReaction, onSugges
     <div>
       <div style={{marginBottom:20}}>
         <p style={{fontFamily:sans,fontSize:10,fontWeight:600,textTransform:"uppercase",letterSpacing:"0.18em",color:T.accent,margin:"0 0 6px"}}>Discover</p>
-        <h2 style={{fontFamily:serif,fontSize:32,color:T.black,letterSpacing:-0.8,margin:0,fontWeight:400}}>{mode==="browse"?"Find Your Scent":"The Nose"}</h2>
-        <p style={{fontFamily:sans,fontSize:13,color:T.mid,margin:"6px 0 0"}}>{mode==="browse"?"Search by name, or browse by category.":"Describe a memory, a mood or a place."}</p>
+        <h2 style={{fontFamily:serif,fontSize:"clamp(32px, 3.2vw, 50px)",color:T.black,letterSpacing:-0.8,margin:0,fontWeight:400}}>{mode==="browse"?"Find your scent":"The Nose"}</h2>
+        <p style={{fontFamily:sans,fontSize:"clamp(13px, 1.1vw, 17px)",color:T.mid,margin:"6px 0 0"}}>{mode==="browse"?"Search by name, or browse by category.":"Describe a memory, a mood or a place."}</p>
       </div>
       <div role="tablist" aria-label="Discover" style={{display:"flex",borderBottom:`1px solid ${T.rule}`,marginBottom:22}}>
         {modeBtn("browse","Browse")}
@@ -1711,7 +1698,7 @@ function DiscoverTab({ onOpenFrag, userStatuses, reactions, onReaction, onSugges
             <>
               {shelves.map((s,i)=><Shelf key={s.key} title={s.title} blurb={s.blurb} items={s.items} onOpenFrag={onOpenFrag} userStatuses={userStatuses} tinted={i%2===0}/>)}
               <div style={{height:24}}/>
-              <button onClick={onSuggest} style={{width:"100%",maxWidth:760,padding:"13px 0",borderRadius:12,border:`1px solid ${T.rule}`,background:T.white,color:T.mid,fontSize:12,fontFamily:sans,cursor:"pointer"}}>+ Can't find a fragrance? Suggest it →</button>
+              <button onClick={onSuggest} style={{width:"100%",maxWidth:760,padding:"13px 0",borderRadius:12,border:`1px solid ${T.rule}`,background:T.white,color:T.mid,fontSize:12,fontFamily:sans,cursor:"pointer"}}>+ Can't find a fragrance? Suggest it</button>
             </>
           )}
         </>
@@ -1743,6 +1730,75 @@ function DiscoverTab({ onOpenFrag, userStatuses, reactions, onReaction, onSugges
 }
 
 // ─── COLLECTION ───────────────────────────────────────────────────────────────
+// ─── COLLECTION MAP: bottles placed by decade (across) and leading accord (down) ─
+function CollectionMap({ items, onOpenFrag }) {
+  const topAccord = f => { const a = [...(f.accords || [])].sort((x, y) => y.v - x.v)[0]; return a ? String(a.n).toLowerCase() : "other"; };
+  const placed = items.filter(f => Number(f.year) > 0);
+  const counts = {};
+  placed.forEach(f => { const k = topAccord(f); counts[k] = (counts[k] || 0) + 1; });
+  let rows = Object.entries(counts).sort((x, y) => y[1] - x[1]).map(e => e[0]);
+  if (rows.length > 6) rows = [...rows.slice(0, 5), "other"];
+  const empty = rows.length === 0;
+  const rowList = empty ? ["woody", "amber", "floral", "citrus", "aromatic"] : rows;
+  const nowDec = Math.floor(new Date().getFullYear() / 10) * 10;
+  const decs = placed.map(f => Math.floor(f.year / 10) * 10);
+  let hi = Math.max(nowDec, ...(decs.length ? decs : [nowDec]));
+  let lo = decs.length ? Math.min(...decs) : hi - 30;
+  if (hi - lo < 20) lo = hi - 20;
+  if (hi - lo > 50) lo = hi - 50;
+  const cols = [];
+  for (let d = lo; d <= hi; d += 10) cols.push(d);
+  const rowOf = f => { const k = topAccord(f); return rowList.includes(k) ? k : "other"; };
+  const colOf = f => Math.max(lo, Math.floor(f.year / 10) * 10);
+  const tile = f => {
+    const ini = f.name.split(" ").map(w => w[0]).join("").slice(0, 2).toUpperCase();
+    return (
+      <button key={f.id} onClick={() => onOpenFrag(f.id)} title={`${f.name}, ${f.house}`} aria-label={`${f.name} by ${f.house}`}
+        style={{ position:"relative", width:56, height:72, borderRadius:8, background:T.white, border:`1px solid ${T.rule}`, boxShadow:"0 5px 12px rgba(23,16,28,0.10)", cursor:"pointer", padding:0, overflow:"hidden", display:"flex", alignItems:"center", justifyContent:"center" }}>
+        <span style={{ position:"absolute", left:0, right:0, top:0, height:4, background:accordColor(topAccord(f)) }}/>
+        {f.image
+          ? <img src={f.image} alt="" loading="lazy" style={{ width:"100%", height:"100%", objectFit:"contain", padding:6 }}/>
+          : <span style={{ fontFamily:serif, fontSize:19, color:T.mid }}>{ini}</span>}
+      </button>
+    );
+  };
+  const labelW = 112;
+  return (
+    <div style={{ background:T.white, border:`1px solid ${T.rule}`, borderRadius:16, padding:"20px 20px 14px", marginBottom:20 }}>
+      <div style={{ display:"flex", alignItems:"baseline", justifyContent:"space-between", gap:12, flexWrap:"wrap", marginBottom:16 }}>
+        <h3 style={{ fontFamily:serif, fontSize:"clamp(20px, 1.8vw, 26px)", fontWeight:400, letterSpacing:-0.4, color:T.black, margin:0 }}>Your collection, mapped</h3>
+        <span style={{ fontFamily:sans, fontSize:12, color:T.mid }}>{empty ? "Release decade across, leading accord down" : `${placed.length} placed by release decade and leading accord`}</span>
+      </div>
+      <div className="mos-map">
+        <div style={{ minWidth:labelW + cols.length * 104, position:"relative" }}>
+          <span aria-hidden="true" style={{ position:"absolute", left:labelW - 5, top:-4, width:0, height:0, borderLeft:"5px solid transparent", borderRight:"5px solid transparent", borderBottom:`8px solid ${T.black}` }}/>
+          <div style={{ display:"grid", gridTemplateColumns:`${labelW}px repeat(${cols.length}, minmax(96px, 1fr))` }}>
+            {rowList.map(r => (
+              <div key={r} style={{ display:"contents" }}>
+                <div style={{ display:"flex", alignItems:"center", gap:8, padding:"10px 10px 10px 0", borderRight:`2px solid ${T.black}`, borderBottom:`1px solid ${T.rule}`, minHeight:96 }}>
+                  <span style={{ width:10, height:10, borderRadius:"50%", background:accordColor(r), flexShrink:0 }}/>
+                  <span style={{ fontFamily:sans, fontSize:13, color:T.ink, textTransform:"capitalize" }}>{r}</span>
+                </div>
+                {cols.map(c => (
+                  <div key={r + c} style={{ display:"flex", flexWrap:"wrap", alignContent:"center", gap:6, padding:8, borderBottom:`1px solid ${T.rule}`, borderRight:`1px solid ${T.lift}`, minHeight:96 }}>
+                    {placed.filter(f => rowOf(f) === r && colOf(f) === c).map(tile)}
+                  </div>
+                ))}
+              </div>
+            ))}
+          </div>
+          <div style={{ display:"grid", gridTemplateColumns:`${labelW}px repeat(${cols.length}, minmax(96px, 1fr))`, borderTop:`2px solid ${T.black}`, position:"relative" }}>
+            <span aria-hidden="true" style={{ position:"absolute", right:-2, top:-6, width:0, height:0, borderTop:"5px solid transparent", borderBottom:"5px solid transparent", borderLeft:`8px solid ${T.black}` }}/>
+            <div/>
+            {cols.map(c => <div key={c} style={{ fontFamily:sans, fontSize:12, color:T.mid, textAlign:"center", padding:"10px 0 4px" }}>{c}s</div>)}
+          </div>
+        </div>
+      </div>
+      {empty && <p style={{ fontFamily:sans, fontSize:13, color:T.mid, margin:"10px 0 4px" }}>Mark a fragrance as owned, sampled or wishlisted and it lands here.</p>}
+    </div>
+  );
+}
+
 function CollectionTab({ onOpenFrag, statuses:userStatuses, reactions, onReaction, onSuggest, fragrances }) {
   const FR = (fragrances && fragrances.length) ? fragrances : FRAGRANCES;
   const [activeFilter,setActiveFilter]=useState("all");
@@ -1765,14 +1821,14 @@ function CollectionTab({ onOpenFrag, statuses:userStatuses, reactions, onReactio
   return (
     <div>
       <div className="mos-pagehead">
-        <h2 style={{fontFamily:serif,fontSize:32,color:T.black,letterSpacing:-0.8,margin:0,fontWeight:400}}>My Collection</h2>
-        <p style={{fontFamily:sans,fontSize:13,color:T.mid,margin:"6px 0 0"}}>Bottles, samples, and everything in between.</p>
+        <h2 style={{fontFamily:serif,fontSize:"clamp(32px, 3.2vw, 50px)",color:T.black,letterSpacing:-0.8,margin:0,fontWeight:400}}>My collection</h2>
+        <p style={{fontFamily:sans,fontSize:"clamp(13px, 1.1vw, 17px)",color:T.mid,margin:"6px 0 0"}}>Bottles, samples, and everything in between.</p>
       </div>
-      <TasteProfile userStatuses={userStatuses} reactions={reactions} fragrances={FR}/>
+      <CollectionMap items={FR.filter(f=>userStatuses[f.id])} onOpenFrag={onOpenFrag}/>
       <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:6}}>
-        <div style={{background:T.cta,borderRadius:14,padding:"16px 14px"}}>
-          <p style={{fontFamily:serif,fontSize:32,color:ON_ACCENT,margin:0}}>{counts["bottle_owned"]||0}</p>
-          <div style={{display:"flex",alignItems:"center",gap:5,marginTop:5}}><Icon name="bottle" size={13} color="rgba(255,255,255,0.8)"/><p style={{fontFamily:sans,fontSize:9,textTransform:"uppercase",letterSpacing:"0.1em",color:"rgba(255,255,255,0.8)",margin:0}}>Bottles owned</p></div>
+        <div style={{background:T.black,borderRadius:14,padding:"16px 14px"}}>
+          <p style={{fontFamily:serif,fontSize:32,color:T.white,margin:0}}>{counts["bottle_owned"]||0}</p>
+          <div style={{display:"flex",alignItems:"center",gap:5,marginTop:5}}><Icon name="bottle" size={13} color={T.onInkDim}/><p style={{fontFamily:sans,fontSize:9,textTransform:"uppercase",letterSpacing:"0.1em",color:T.onInkDim,margin:0}}>Bottles owned</p></div>
         </div>
         <div style={{background:T.white,border:`1px solid ${T.rule}`,borderRadius:14,padding:"16px 14px"}}>
           <p style={{fontFamily:serif,fontSize:32,color:T.black,margin:0}}>{counts["sample_have"]||0}</p>
@@ -1801,6 +1857,7 @@ function CollectionTab({ onOpenFrag, statuses:userStatuses, reactions, onReactio
           </div>
         ))}
       </div>
+      <TasteProfile userStatuses={userStatuses} reactions={reactions} fragrances={FR}/>
       <div style={{display:"flex",gap:6,overflowX:"auto",paddingBottom:4,marginBottom:14}}>{filters.map(f=>(
         <button key={f.key} onClick={()=>setActiveFilter(f.key)} style={{fontFamily:sans,fontSize:10,padding:"5px 12px",borderRadius:20,whiteSpace:"nowrap",border:`1px solid ${activeFilter===f.key?T.black:T.rule}`,background:activeFilter===f.key?T.black:T.white,color:activeFilter===f.key?T.white:T.mid,cursor:"pointer",display:"flex",alignItems:"center",gap:5}}>
           {f.iconName&&<Icon name={f.iconName} size={11} color={activeFilter===f.key?T.white:T.mid}/>}
@@ -1817,7 +1874,7 @@ function CollectionTab({ onOpenFrag, statuses:userStatuses, reactions, onReactio
         {filtered.map(f=><FragCard key={f.id} frag={f} onClick={onOpenFrag} userStatus={userStatuses[f.id]} reaction={reactions[f.id]} onReaction={v=>onReaction(f.id,v)} onOpenFrag={onOpenFrag}/>)}
         {filtered.length===0&&<div style={{gridColumn:"1 / -1",textAlign:"center",padding:"48px 0",color:T.faint}}><p style={{fontSize:28,marginBottom:8}}>○</p><p style={{fontSize:13,marginBottom:16}}>Nothing found</p></div>}
       </div>
-      <div style={{marginTop:20}}><button onClick={onSuggest} style={{width:"100%",padding:"13px 0",borderRadius:12,border:`1px solid ${T.rule}`,background:T.white,color:T.mid,fontSize:12,fontFamily:sans,cursor:"pointer"}}>+ Missing a fragrance? Suggest it →</button></div>
+      <div style={{marginTop:20}}><button onClick={onSuggest} style={{width:"100%",padding:"13px 0",borderRadius:12,border:`1px solid ${T.rule}`,background:T.white,color:T.mid,fontSize:12,fontFamily:sans,cursor:"pointer"}}>+ Missing a fragrance? Suggest it</button></div>
     </div>
   );
 }
@@ -1825,10 +1882,10 @@ function CollectionTab({ onOpenFrag, statuses:userStatuses, reactions, onReactio
 // ─── JOURNAL ──────────────────────────────────────────────────────────────────
 function JournalTab({ entries }) {
   const SEED = [
-    {id:-1, fragId:1, fragName:"Aventus", house:"Creed", family:"Chypre Fruity", prompt:"Client meeting — wanted something that felt authoritative.", text:"The smoky birch felt right for the room. Dry-down was masterful. Long day, held all the way through.", where:"Own bottle", date:"Today", publishedAsReview:false, reviewRating:null, shared:false},
-    {id:-2, fragId:3, fragName:"Oud Wood", house:"Tom Ford", family:"Woody Oriental", prompt:"Cold evening, wanted something with weight.", text:"The papyrus note is mesmerising in the cold. Long dry-down, incredible projection in the first hour.", where:"Sample — fragrance split", date:"3 days ago", publishedAsReview:true, reviewRating:5, shared:false},
+    {id:-1, fragId:1, fragName:"Aventus", house:"Creed", family:"Chypre Fruity", prompt:"Client meeting, wanted something that felt authoritative.", text:"The smoky birch felt right for the room. Dry-down was masterful. Long day, held all the way through.", where:"Own bottle", date:"Today", publishedAsReview:false, reviewRating:null, shared:false},
+    {id:-2, fragId:3, fragName:"Oud Wood", house:"Tom Ford", family:"Woody Oriental", prompt:"Cold evening, wanted something with weight.", text:"The papyrus note is mesmerising in the cold. Long dry-down, incredible projection in the first hour.", where:"Sample, fragrance split", date:"3 days ago", publishedAsReview:true, reviewRating:5, shared:false},
     {id:-3, fragId:4, fragName:"Baccarat Rouge 540", house:"Maison Francis Kurkdjian", family:"Floral Woody Musk", prompt:"Curious. Had heard about it for years.", text:"The saffron-amberwood accord is unlike anything I own. Need a decant.", where:"Saks Fifth Avenue counter", date:"1 week ago", publishedAsReview:false, reviewRating:null, shared:false},
-    {id:-4, fragId:5, fragName:"Santal 33", house:"Le Labo", family:"Woody", prompt:"Blind buy on a whim — regretted it immediately, then didn't.", text:"Smokier than I expected. Needs more skin time. The more I wear it the more I understand it.", where:"Blind buy — Decantery", date:"2 weeks ago", publishedAsReview:false, reviewRating:null, shared:false},
+    {id:-4, fragId:5, fragName:"Santal 33", house:"Le Labo", family:"Woody", prompt:"Blind buy on a whim, regretted it immediately, then didn't.", text:"Smokier than I expected. Needs more skin time. The more I wear it the more I understand it.", where:"Blind buy, Decantery", date:"2 weeks ago", publishedAsReview:false, reviewRating:null, shared:false},
   ];
 
   const all = [...(entries||[]), ...SEED].sort((a,b)=> a.id > 0 && b.id < 0 ? -1 : 1);
@@ -1846,8 +1903,8 @@ function JournalTab({ entries }) {
     <div>
       <div className="mos-pagehead">
         <p style={{fontFamily:sans,fontSize:9,textTransform:"uppercase",letterSpacing:"0.18em",color:T.mid,margin:"0 0 4px"}}>Personal record</p>
-        <h2 style={{fontFamily:serif,fontSize:32,color:T.black,letterSpacing:-0.8,margin:0,fontWeight:400}}>Scent Journal</h2>
-        <p style={{fontFamily:sans,fontSize:13,color:T.mid,margin:"6px 0 0"}}>What you reach for, and why. A record that becomes a mirror.</p>
+        <h2 style={{fontFamily:serif,fontSize:"clamp(32px, 3.2vw, 50px)",color:T.black,letterSpacing:-0.8,margin:0,fontWeight:400}}>Scent Journal</h2>
+        <p style={{fontFamily:sans,fontSize:"clamp(13px, 1.1vw, 17px)",color:T.mid,margin:"6px 0 0"}}>What you reach for, and why. A record that becomes a mirror.</p>
       </div>
 
       <div style={{background:T.lift,border:`1px solid ${T.rule}`,borderRadius:16,padding:18,marginBottom:16}}>
@@ -1865,7 +1922,7 @@ function JournalTab({ entries }) {
         <p style={{fontFamily:serif,fontSize:14,color:T.mid,fontStyle:"italic",margin:0,lineHeight:1.6}}>{MONTHLY_PROMPT}</p>
       </div>
 
-      <Lbl mb={14}>Your entries — {all.length}</Lbl>
+      <Lbl mb={14}>Your entries ({all.length})</Lbl>
       <div style={{position:"relative"}}>
         <div style={{position:"absolute",left:9,top:10,bottom:24,width:1,background:T.rule}}/>
         {all.map((e,i)=>(
@@ -1935,8 +1992,8 @@ function LayeringTab() {
   return (
     <div>
       <div className="mos-pagehead">
-        <h2 style={{fontFamily:serif,fontSize:32,color:T.black,letterSpacing:-0.8,margin:0,fontWeight:400}}>Layering</h2>
-        <p style={{fontFamily:sans,fontSize:13,color:T.mid,margin:"6px 0 0"}}>Track what works together — and why.</p>
+        <h2 style={{fontFamily:serif,fontSize:"clamp(32px, 3.2vw, 50px)",color:T.black,letterSpacing:-0.8,margin:0,fontWeight:400}}>Layering</h2>
+        <p style={{fontFamily:sans,fontSize:"clamp(13px, 1.1vw, 17px)",color:T.mid,margin:"6px 0 0"}}>Track what works together, and why.</p>
       </div>
       <div style={{borderTop:`2px solid ${T.black}`,borderBottom:`1px solid ${T.rule}`,padding:"16px 0",marginBottom:24}}>
         <p style={{fontFamily:serif,fontSize:18,color:T.ink,margin:0,lineHeight:1.5,fontStyle:"italic"}}>"The most interesting thing in fragrance isn't a single bottle. It's two bottles, combined."</p>
@@ -2013,7 +2070,7 @@ function LayeringTab() {
                 <div key={fragName} style={{display:"flex",alignItems:"center",gap:8}}>
                   <div style={{display:"flex",alignItems:"center",gap:6}}>
                     {frag ? (
-                      <div style={{width:36,height:44,borderRadius:8,background:`linear-gradient(160deg,${T.lift},${T.press})`,border:`1px solid ${T.rule}`,display:"flex",alignItems:"center",justifyContent:"center"}}>
+                      <div style={{width:36,height:44,borderRadius:8,background:T.lift,border:`1px solid ${T.rule}`,display:"flex",alignItems:"center",justifyContent:"center"}}>
                         <span style={{fontFamily:serif,fontSize:10,color:T.ink,opacity:0.6}}>{frag.name.split(" ").map(w=>w[0]).join("").slice(0,2).toUpperCase()}</span>
                       </div>
                     ) : (
@@ -2039,39 +2096,151 @@ function LayeringTab() {
 // ─── FRAGRANCE EXPOS DATA ─────────────────────────────────────────────────────
 const FRAGRANCE_EXPOS = [
   { name:"Esxence", city:"Milan, Italy", month:"March", description:"The world's premier niche fragrance fair. Over 300 exhibitors from 40+ countries presenting artistic perfumery." },
-  { name:"Fragrance Foundation Awards", city:"New York, USA", month:"June", description:"The fragrance industry's most prestigious awards — the 'Oscars' of perfumery." },
+  { name:"Fragrance Foundation Awards", city:"New York, USA", month:"June", description:"The fragrance industry's most prestigious awards, the 'Oscars' of perfumery." },
   { name:"World Perfumery Congress", city:"Rotating cities", month:"June", description:"Biennial gathering of the fragrance industry's scientists, perfumers, and technologists." },
-  { name:"Beautyworld Middle East", city:"Dubai, UAE", month:"May", description:"Largest beauty trade fair in the Middle East — major fragrance component." },
+  { name:"Beautyworld Middle East", city:"Dubai, UAE", month:"May", description:"Largest beauty trade fair in the Middle East, major fragrance component." },
   { name:"Luxe Pack Monaco", city:"Monte Carlo, Monaco", month:"October", description:"High-end packaging and luxury goods fair with significant fragrance presence." },
   { name:"ScentXplore", city:"Rotating cities", month:"Varies", description:"Community-driven fragrance discovery event. More accessible than trade fairs, focused on enthusiasts." },
   { name:"The Scent Event", city:"Various European cities", month:"Varies", description:"Boutique fragrance events connecting niche houses directly with consumers." },
   { name:"Sniffapalooza", city:"New York, USA", month:"April / Fall", description:"Legendary enthusiast-led fragrance tours through department stores and boutiques in NYC." },
-  { name:"Pitti Fragranze", city:"Florence, Italy", month:"September", description:"Elegant sister event to Esxence — focused on artistic perfumery against Florence's backdrop." },
+  { name:"Pitti Fragranze", city:"Florence, Italy", month:"September", description:"Elegant sister event to Esxence, focused on artistic perfumery against Florence's backdrop." },
   { name:"Beautyworld Japan", city:"Tokyo, Japan", month:"May", description:"Asia's largest beauty and fragrance industry expo with strong niche presence." },
 ];
 
 // ─── LEARN ────────────────────────────────────────────────────────────────────
-function LearnTab() {
+// ─── INGREDIENT GUIDE ─────────────────────────────────────────────────────────
+const INGREDIENTS = {
+  Vetiver: { latin:"Chrysopogon zizanioides", family:"Grasses (Poaceae)", native:"India", part:"Roots, dried", process:"Steam distillation, around 15 to 18 hours", found:"A large share of modern perfumes, from fresh to woody",
+    blurb:"The oil comes from the roots alone. They are dried, then distilled slowly, which is why vetiver smells so earthy and dense.",
+    origins:[{p:"Haiti",n:"The largest source. Earthy, smoky, a little roasted."},{p:"Indonesia (Java)",n:"Darker and smokier."},{p:"Réunion",n:"Rare today. Softer, rosier and prized."},{p:"India",n:"Where the plant comes from. Wild ‘khus’ is balsamic and sweeter."},{p:"Brazil",n:"A newer, smaller source."}],
+    smelled:[{n:"Encre Noire",h:"Lalique",y:2006},{n:"Vétiver",h:"Guerlain",y:1959},{n:"Terre d’Hermès",h:"Hermès",y:2006},{n:"Sycomore",h:"Chanel",y:2008}] },
+  Sandalwood: { latin:"Santalum album", family:"Sandalwood family (Santalaceae)", native:"Southern India", part:"Heartwood of mature trees", process:"Steam distillation of the heartwood", found:"Woody, creamy and oriental perfumes",
+    blurb:"The oil builds up in the heartwood and only develops as the tree matures, which takes decades. That is why true sandalwood is scarce and costly.",
+    origins:[{p:"India (Mysore)",n:"The classic source, now tightly controlled."},{p:"Western Australia",n:"Plantation grown, a main supply today."},{p:"Indonesia",n:"Timor and neighbouring islands."}],
+    smelled:[{n:"Santal 33",h:"Le Labo",y:2011},{n:"Samsara",h:"Guerlain",y:1989},{n:"Bois des Îles",h:"Chanel",y:1926}] },
+  Patchouli: { latin:"Pogostemon cablin", family:"Mint (Lamiaceae)", native:"Tropical Asia", part:"Leaves, dried", process:"Steam distillation of dried leaves", found:"Chypres, orientals and woody perfumes",
+    blurb:"Leaves, not flowers. Patchouli oil deepens with age, and well-aged oil is darker and smoother.",
+    origins:[{p:"Indonesia",n:"Sumatra, Java and Sulawesi supply most of the world’s oil."},{p:"India",n:"Grown and distilled in smaller volumes."},{p:"Madagascar",n:"A smaller source."}],
+    smelled:[{n:"Angel",h:"Mugler",y:1992},{n:"Aromatics Elixir",h:"Clinique",y:1971},{n:"Coco Mademoiselle",h:"Chanel",y:2001}] },
+  Oud: { latin:"Aquilaria species", family:"Thymelaeaceae", native:"Southeast Asia and northeast India", part:"Resin-soaked heartwood", process:"Slow distillation of the resinous wood", found:"Middle Eastern perfumery, now Western niche and designer too",
+    blurb:"Oud is not the wood itself. It forms when a fungus infects the tree and the heartwood fills with dark resin. Wild trees are protected, so much oud now comes from plantations.",
+    origins:[{p:"India (Assam)",n:"A traditional source of fine oud."},{p:"Cambodia and Vietnam",n:"Rare and highly prized."},{p:"Indonesia and Malaysia",n:"Large producers, wild and cultivated."}],
+    smelled:[{n:"Oud Wood",h:"Tom Ford",y:2007},{n:"Oud Ispahan",h:"Dior",y:2012}] },
+  Rose: { latin:"Rosa damascena, Rosa × centifolia", family:"Rose (Rosaceae)", native:"Western and Central Asia", part:"Petals", process:"Steam distillation for rose otto, solvent extraction for absolute", found:"Florals, chypres and orientals",
+    blurb:"Thousands of petals go into a single kilogram of oil, so real rose is among the costliest materials in perfumery.",
+    origins:[{p:"Bulgaria",n:"The Valley of the Roses, known for rose otto."},{p:"Turkey",n:"Isparta, a major source of oil and absolute."},{p:"Grasse, France",n:"Rose de mai (centifolia), picked in May."},{p:"Morocco",n:"Damask and centifolia roses from the Dades valley."}],
+    smelled:[{n:"No. 5",h:"Chanel",y:1921},{n:"Portrait of a Lady",h:"Frédéric Malle",y:2010},{n:"Rose 31",h:"Le Labo",y:2006}] },
+  Jasmine: { latin:"Jasminum grandiflorum, J. sambac", family:"Olive (Oleaceae)", native:"South and Southeast Asia", part:"Flowers, picked by hand", process:"Solvent extraction into an absolute", found:"White florals, chypres and classic feminine perfumes",
+    blurb:"The flowers are too delicate for distillation. They are picked by hand, usually before sunrise when the scent is strongest, and processed quickly.",
+    origins:[{p:"India",n:"A large producer, including sambac."},{p:"Egypt",n:"A major source of grandiflorum absolute."},{p:"Grasse, France",n:"The historic home of jasmine, now in small volumes."}],
+    smelled:[{n:"Joy",h:"Jean Patou",y:1930},{n:"No. 5",h:"Chanel",y:1921},{n:"A la Nuit",h:"Serge Lutens",y:2000}] },
+  Bergamot: { latin:"Citrus bergamia", family:"Citrus (Rutaceae)", native:"Uncertain, likely a hybrid of Asian origin", part:"Peel of the fruit", process:"Cold pressing of the rind", found:"Colognes and the opening of countless perfumes",
+    blurb:"A small citrus with a floral, faintly bitter peel. The oil is pressed from the rind, not distilled, which keeps its freshness.",
+    origins:[{p:"Calabria, Italy",n:"Most perfumery bergamot grows along this coast."},{p:"Ivory Coast",n:"A smaller, newer source."}],
+    smelled:[{n:"Colonia",h:"Acqua di Parma",y:1916},{n:"Eau Sauvage",h:"Dior",y:1966},{n:"Aventus",h:"Creed",y:2010}] },
+  Vanilla: { latin:"Vanilla planifolia", family:"Orchid (Orchidaceae)", native:"Mexico", part:"Seed pods, cured", process:"Pods are picked green, then cured for weeks before extraction", found:"Gourmands, orientals and amber accords",
+    blurb:"Outside Mexico every flower is pollinated by hand, and the pods take months to ripen and weeks to cure. Real vanilla is slow work.",
+    origins:[{p:"Madagascar",n:"The largest source. Rich, creamy and sweet."},{p:"Mexico",n:"Where vanilla began."},{p:"Tahiti",n:"A separate species, more floral and fruity."}],
+    smelled:[{n:"Shalimar",h:"Guerlain",y:1925},{n:"Tobacco Vanille",h:"Tom Ford",y:2007}] },
+};
+function IngredientGuide({ name, onBack, fragrances, onOpenFrag }) {
+  const g = INGREDIENTS[name];
+  if (!g) return null;
+  const lib = (fragrances || []).filter(f => f.notes && f.notes.top.concat(f.notes.mid, f.notes.base).some(n => String(n.n).toLowerCase() === name.toLowerCase())).slice(0, 8);
+  const eyebrow = (num, text) => (
+    <p style={{ fontFamily:sans, fontSize:11, letterSpacing:"0.2em", textTransform:"uppercase", color:T.mid, margin:"0 0 14px" }}><span style={{ color:T.accent, fontWeight:600 }}>{num}</span>&nbsp;&nbsp;{text}</p>
+  );
+  const spec = (label, value) => (
+    <div key={label} style={{ padding:"14px 0", borderBottom:`1px solid ${T.rule}` }}>
+      <p style={{ fontFamily:sans, fontSize:11, letterSpacing:"0.16em", textTransform:"uppercase", color:T.mid, margin:"0 0 4px" }}>{label}</p>
+      <p style={{ fontFamily:serif, fontSize:"clamp(18px, 1.5vw, 22px)", color:T.black, margin:0, lineHeight:1.3 }}>{value}</p>
+    </div>
+  );
+  return (
+    <div>
+      <button onClick={onBack} style={{ fontFamily:sans, fontSize:13, color:T.mid, background:"none", border:"none", padding:0, cursor:"pointer", marginBottom:22 }}>&lsaquo; All ingredients</button>
+      <div className="mos-guide">
+        <div>
+          {eyebrow("01", "The plant")}
+          <h3 style={{ fontFamily:serif, fontSize:"clamp(40px, 5vw, 68px)", letterSpacing:"0.02em", textTransform:"uppercase", fontWeight:500, color:T.black, margin:"0 0 6px", lineHeight:1 }}>{name}</h3>
+          <p style={{ fontFamily:serif, fontStyle:"italic", fontSize:"clamp(16px, 1.4vw, 20px)", color:T.mid, margin:"0 0 26px" }}>{g.latin}</p>
+          <div className="mos-spec">
+            <div style={{ background:T.lift, borderRadius:12, padding:16, display:"flex", alignItems:"center", justifyContent:"center", alignSelf:"start" }}><NoteIllustration name={name} size={140}/></div>
+            <div style={{ borderTop:`1px solid ${T.rule}` }}>
+              {spec("Family", g.family)}
+              {spec("Native to", g.native)}
+              {spec("Part used", g.part)}
+              {spec("Process", g.process)}
+              {spec("Found in", g.found)}
+            </div>
+          </div>
+          <p style={{ fontFamily:sans, fontSize:"clamp(14px, 1.1vw, 16px)", color:T.mid, lineHeight:1.75, margin:"22px 0 0", paddingLeft:14, borderLeft:`2px solid ${T.accent}` }}>{g.blurb}</p>
+        </div>
+        <div>
+          {eyebrow("02", "Origins")}
+          <ol style={{ listStyle:"none", margin:"0 0 40px", padding:0 }}>
+            {g.origins.map((o, i) => (
+              <li key={o.p} style={{ display:"flex", gap:14, padding:"13px 0", borderBottom:`1px solid ${T.rule}` }}>
+                <span style={{ width:24, height:24, borderRadius:"50%", background:T.black, color:T.white, fontFamily:sans, fontSize:12, fontWeight:600, display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0, marginTop:2 }}>{i + 1}</span>
+                <div>
+                  <p style={{ fontFamily:serif, fontSize:"clamp(18px, 1.5vw, 22px)", color:T.black, margin:0 }}>{o.p}</p>
+                  <p style={{ fontFamily:sans, fontSize:13, color:T.mid, margin:"3px 0 0", lineHeight:1.55 }}>{o.n}</p>
+                </div>
+              </li>
+            ))}
+          </ol>
+          {eyebrow("03", "Where have I smelled this?")}
+          <div style={{ borderTop:`1px solid ${T.rule}` }}>
+            {g.smelled.map(s => (
+              <div key={s.n + s.h} style={{ padding:"13px 0", borderBottom:`1px solid ${T.rule}` }}>
+                <p style={{ fontFamily:serif, fontSize:"clamp(18px, 1.5vw, 22px)", color:T.black, margin:0 }}>{s.n}</p>
+                <p style={{ fontFamily:sans, fontSize:13, color:T.mid, margin:"3px 0 0" }}>{s.h} · {s.y}</p>
+              </div>
+            ))}
+          </div>
+          {lib.length > 0 && (
+            <div style={{ marginTop:28 }}>
+              <p style={{ fontFamily:sans, fontSize:11, letterSpacing:"0.16em", textTransform:"uppercase", color:T.mid, margin:"0 0 10px" }}>In the library</p>
+              <div style={{ display:"flex", flexWrap:"wrap", gap:8 }}>
+                {lib.map(f => <button key={f.id} onClick={() => onOpenFrag && onOpenFrag(f.id)} style={{ fontFamily:sans, fontSize:12, padding:"7px 14px", borderRadius:20, border:`1px solid ${T.rule}`, background:T.white, color:T.ink, cursor:"pointer" }}>{f.name}</button>)}
+              </div>
+            </div>
+          )}
+          <p style={{ fontFamily:sans, fontSize:11, color:T.faint, margin:"28px 0 0", lineHeight:1.6 }}>General reference. Sourcing and quality vary by producer and by year.</p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function LearnTab({ fragrances, onOpenFrag }) {
   const [openTerm,setOpenTerm]=useState(null);
   const [openExpo,setOpenExpo]=useState(null);
+  const [openNote,setOpenNote]=useState(null);
+  if (openNote) return <IngredientGuide name={openNote} onBack={()=>setOpenNote(null)} fragrances={fragrances} onOpenFrag={onOpenFrag}/>;
   return (
     <div>
       <div className="mos-pagehead">
         <p style={{fontFamily:sans,fontSize:9,textTransform:"uppercase",letterSpacing:"0.18em",color:T.mid,margin:"0 0 4px"}}>Education</p>
-        <h2 style={{fontFamily:serif,fontSize:32,color:T.black,letterSpacing:-0.8,margin:0,fontWeight:400}}>Learn</h2>
-        <p style={{fontFamily:sans,fontSize:13,color:T.mid,margin:"6px 0 0"}}>From beginner to connoisseur — at your pace.</p>
+        <h2 style={{fontFamily:serif,fontSize:"clamp(32px, 3.2vw, 50px)",color:T.black,letterSpacing:-0.8,margin:0,fontWeight:400}}>Learn</h2>
+        <p style={{fontFamily:sans,fontSize:"clamp(13px, 1.1vw, 17px)",color:T.mid,margin:"6px 0 0"}}>From beginner to connoisseur, at your pace.</p>
       </div>
       <div style={{border:`1px solid ${T.black}`,borderRadius:16,padding:22,marginBottom:24,position:"relative",overflow:"hidden"}}>
         <div style={{position:"absolute",right:-8,top:-18,fontFamily:serif,fontSize:120,color:T.lift,lineHeight:1,userSelect:"none"}}>S</div>
         <Lbl>Term of the Day</Lbl>
         <h3 style={{fontFamily:serif,fontSize:32,color:T.black,margin:"0 0 10px",fontWeight:"normal"}}>Sillage</h3>
-        <p style={{fontFamily:sans,fontSize:13,color:T.mid,lineHeight:1.7,margin:"0 0 14px"}}>The invisible trail a fragrance leaves in the air behind you — from the French word for "wake." High sillage announces your presence before you enter the room.</p>
-        <p style={{fontFamily:sans,fontSize:10,color:T.mid,margin:0}}>Found in → <span style={{color:T.black,cursor:"pointer"}}>Aventus</span>, <span style={{color:T.black,cursor:"pointer"}}>Black Orchid</span></p>
+        <p style={{fontFamily:sans,fontSize:13,color:T.mid,lineHeight:1.7,margin:"0 0 14px"}}>The invisible trail a fragrance leaves in the air behind you, from the French word for "wake." High sillage announces your presence before you enter the room.</p>
+        <p style={{fontFamily:sans,fontSize:10,color:T.mid,margin:0}}>Found in <span style={{color:T.black,cursor:"pointer"}}>Aventus</span>, <span style={{color:T.black,cursor:"pointer"}}>Black Orchid</span></p>
       </div>
-      <Lbl>Note Encyclopedia</Lbl>
-      <p style={{fontFamily:sans,fontSize:12,color:T.mid,lineHeight:1.6,margin:"0 0 14px"}}>Learn to identify every ingredient by sight.</p>
-      <div style={{display:"flex",flexWrap:"wrap",gap:10,marginBottom:24}}>
-        {["Rose","Jasmine","Saffron","Oud","Vanilla","Amber","Bergamot","Patchouli","Vetiver","Incense","Musk","Cardamom"].map(n=><NoteIllustration key={n} name={n} size={72}/>)}
+      <Lbl>Ingredient guide</Lbl>
+      <p style={{fontFamily:sans,fontSize:13,color:T.mid,lineHeight:1.6,margin:"0 0 14px"}}>Where each ingredient comes from, how it is made, and where you have smelled it. Tap one marked Guide.</p>
+      <div style={{display:"flex",flexWrap:"wrap",gap:14,marginBottom:28}}>
+        {["Rose","Jasmine","Saffron","Oud","Vanilla","Amber","Bergamot","Patchouli","Vetiver","Sandalwood","Incense","Musk","Cardamom"].map(n=>{const has=!!INGREDIENTS[n];return (
+          <button key={n} onClick={()=>has&&setOpenNote(n)} style={{background:"none",border:"none",padding:0,cursor:has?"pointer":"default",textAlign:"center",opacity:has?1:0.5,fontFamily:sans}}>
+            <NoteIllustration name={n} size={84}/>
+            {has&&<span style={{display:"block",fontSize:10,letterSpacing:"0.14em",textTransform:"uppercase",color:T.accent,marginTop:4}}>Guide</span>}
+          </button>
+        );})}
       </div>
       <Lbl>Glossary</Lbl>
       <div style={{background:T.white,border:`1px solid ${T.rule}`,borderRadius:14,overflow:"hidden",marginBottom:24}}>
@@ -2086,16 +2255,16 @@ function LearnTab() {
         ))}
       </div>
       <Lbl>Learning Paths</Lbl>
-      {[{icon:"△",name:"The Fragrance Pyramid",sub:"How scents evolve on skin over time",progress:0},{icon:"◈",name:"The 7 Fragrance Families",sub:"From florals to orientals — the full map",progress:33},{icon:"◇",name:"Niche vs. Designer",sub:"What separates a $50 from a $500 bottle",progress:0},{icon:"◎",name:"The Art of Sampling",sub:"How to get the most from a 2ml vial",progress:0}].map(p=>(
+      {[{icon:"△",name:"The Fragrance Pyramid",sub:"How scents evolve on skin over time",progress:0},{icon:"◈",name:"The 7 Fragrance Families",sub:"From florals to orientals, the full map",progress:33},{icon:"◇",name:"Niche vs. Designer",sub:"What separates a $50 from a $500 bottle",progress:0},{icon:"◎",name:"The Art of Sampling",sub:"How to get the most from a 2ml vial",progress:0}].map(p=>(
         <div key={p.name} style={{background:T.white,border:`1px solid ${T.rule}`,borderRadius:12,padding:14,display:"flex",alignItems:"center",gap:12,cursor:"pointer",marginBottom:8}}>
           <div style={{width:40,height:40,borderRadius:10,background:T.lift,border:`1px solid ${T.rule}`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:16,color:T.mid,flexShrink:0}}>{p.icon}</div>
           <div style={{flex:1}}><p style={{fontFamily:sans,fontSize:13,fontWeight:500,color:T.ink,margin:0}}>{p.name}</p><p style={{fontFamily:sans,fontSize:11,color:T.mid,margin:"2px 0 0"}}>{p.sub}</p>{p.progress>0&&<div style={{marginTop:8,height:2,background:T.press,borderRadius:2,overflow:"hidden"}}><div style={{height:"100%",width:`${p.progress}%`,background:T.black,borderRadius:2}}/></div>}</div>
-          <span style={{fontFamily:sans,fontSize:11,color:T.mid}}>{p.progress>0?`${p.progress}%`:"Start →"}</span>
+          <span style={{fontFamily:sans,fontSize:11,color:T.mid}}>{p.progress>0?`${p.progress}%`:"Start"}</span>
         </div>
       ))}
       <div style={{borderTop:`2px solid ${T.black}`,marginTop:28,paddingTop:22}}>
         <Lbl>Fragrance Expos & Events</Lbl>
-        <p style={{fontFamily:sans,fontSize:13,color:T.mid,lineHeight:1.65,margin:"0 0 18px"}}>Every major fragrance exhibition worldwide — from trade fairs to community events.</p>
+        <p style={{fontFamily:sans,fontSize:13,color:T.mid,lineHeight:1.65,margin:"0 0 18px"}}>Every major fragrance exhibition worldwide, from trade fairs to community events.</p>
         <div style={{background:T.white,border:`1px solid ${T.rule}`,borderRadius:14,overflow:"hidden"}}>
           {FRAGRANCE_EXPOS.map((expo,i)=>(
             <div key={expo.name} style={{borderBottom:i<FRAGRANCE_EXPOS.length-1?`1px solid ${T.lift}`:"none"}}>
@@ -2122,11 +2291,11 @@ function LearnTab() {
 
       <div style={{borderTop:`2px solid ${T.black}`,marginTop:28,paddingTop:22}}>
         <Lbl>Who Owns Your Fragrance House?</Lbl>
-        <p style={{fontFamily:sans,fontSize:13,color:T.mid,lineHeight:1.7,margin:"0 0 18px"}}>The fragrance industry has consolidated significantly over the past two decades. A handful of large conglomerates now own many of the houses that built their reputations as independent creative enterprises. This matters because ownership changes often bring pressure to reduce costs — which can mean reformulated ingredients, discontinued lines, or a shift in creative direction.</p>
+        <p style={{fontFamily:sans,fontSize:13,color:T.mid,lineHeight:1.7,margin:"0 0 18px"}}>The fragrance industry has consolidated significantly over the past two decades. A handful of large conglomerates now own many of the houses that built their reputations as independent creative enterprises. This matters because ownership changes often bring pressure to reduce costs, which can mean reformulated ingredients, discontinued lines, or a shift in creative direction.</p>
         <div style={{background:T.white,border:`1px solid ${T.rule}`,borderRadius:14,overflow:"hidden",marginBottom:16}}>
           {[
             { label:"Independent", color:T.good, text:"The house is privately owned, founder-led, or operated without conglomerate backing. Creative decisions are made by people with a direct stake in the house's identity." },
-            { label:"Conglomerate name in red", color:T.bad, text:"The house has been acquired by a larger group — most commonly LVMH, Estée Lauder Companies, Puig, or Interparfums. This doesn't mean the quality has changed, but it's worth knowing when it happened and who holds the reins." },
+            { label:"Conglomerate name in red", color:T.bad, text:"The house has been acquired by a larger group, most commonly LVMH, Estée Lauder Companies, Puig, or Interparfums. This doesn't mean the quality has changed, but it's worth knowing when it happened and who holds the reins." },
           ].map((item, i, arr) => (
             <div key={item.label} style={{padding:"16px 18px",borderBottom:i<arr.length-1?`1px solid ${T.lift}`:"none"}}>
               <div style={{marginBottom:8}}>
@@ -2139,7 +2308,7 @@ function LearnTab() {
         <div style={{background:T.lift,border:`1px solid ${T.rule}`,borderRadius:12,padding:16,marginBottom:16}}>
           <div style={{display:"flex",alignItems:"flex-start",gap:8}}>
             <Icon name="tip" size={14} color={T.mid}/>
-            <p style={{fontFamily:sans,fontSize:12,color:T.mid,lineHeight:1.65,margin:0}}>Ownership is one signal, not a verdict. Some conglomerate-owned houses have maintained exceptional quality. Others have drifted. The acquisition date is often the more telling data point — a house acquired recently may not yet show the effects, while one acquired a decade ago has a longer track record to judge.</p>
+            <p style={{fontFamily:sans,fontSize:12,color:T.mid,lineHeight:1.65,margin:0}}>Ownership is one signal, not a verdict. Some conglomerate-owned houses have maintained exceptional quality. Others have drifted. The acquisition date is often the more telling data point, a house acquired recently may not yet show the effects, while one acquired a decade ago has a longer track record to judge.</p>
           </div>
         </div>
         <p style={{fontFamily:sans,fontSize:11,color:T.faint,margin:0,lineHeight:1.6}}>Ownership data is maintained by the Memoir on Skin community and updated when changes occur. If you notice an error, use the Suggest feature to flag it.</p>
@@ -2181,7 +2350,7 @@ function UserBadges({ user, size = "normal" }) {
 
   if (user.isFounder) {
     badges.push(
-      <span key="founder" title="Founding Member — first 1,000" style={{
+      <span key="founder" title="Founding Member, first 1,000" style={{
         display: "inline-flex", alignItems: "center", gap: isSmall ? 3 : 4,
         padding: isSmall ? "2px 6px" : "3px 8px",
         borderRadius: 20,
@@ -2352,7 +2521,6 @@ function WaitlistScreen({ onJoin }) {
 
   return (
     <div style={{ minHeight:"100svh", position:"relative", display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", padding:"64px 28px 40px", boxSizing:"border-box", fontFamily:sans }}>
-      <div className="mos-blobs" aria-hidden="true"><i/><i/><i/><i/></div>
       <div style={{ position:"absolute", top:16, right:16, zIndex:2 }}><ThemeToggle/></div>
       <div style={{ position:"relative", zIndex:1, width:"100%", maxWidth:400 }}>
         <div style={{ marginBottom:44 }}>
@@ -2375,7 +2543,7 @@ function WaitlistScreen({ onJoin }) {
               <input value={email} onChange={e => { setEmail(e.target.value); setError(""); }} placeholder="Email address" type="email" style={inp} onKeyDown={e => e.key==="Enter" && handleSubmit()}/>
             </div>
             {error && <p style={{ fontFamily:sans, fontSize:12, color:T.bad, margin:"0 0 12px" }}>{error}</p>}
-            <button onClick={handleSubmit} disabled={loading} style={{ width:"100%", padding:"16px 0", borderRadius:14, background:loading?T.faint:T.cta, border:"none", color:ON_ACCENT, fontSize:14, fontFamily:sans, fontWeight:600, cursor:loading?"not-allowed":"pointer", transition:"all 0.2s", boxShadow:loading?"none":"0 8px 24px rgba(201,32,107,0.28)" }}>
+            <button onClick={handleSubmit} disabled={loading} style={{ width:"100%", padding:"16px 0", borderRadius:14, background:loading?T.faint:T.black, border:"none", color:T.white, fontSize:14, fontFamily:sans, fontWeight:600, cursor:loading?"not-allowed":"pointer", transition:"all 0.2s", boxShadow:loading?"none":"0 8px 24px rgba(201,32,107,0.28)" }}>
               {loading ? "Joining…" : "Request early access"}
             </button>
             <div style={{ display:"flex", alignItems:"center", gap:12, margin:"24px 0" }}>
@@ -2389,18 +2557,18 @@ function WaitlistScreen({ onJoin }) {
           </>
         ) : (
           <div style={{ textAlign:"center" }}>
-            <div style={{ width:64, height:64, borderRadius:"50%", background:T.cta, display:"flex", alignItems:"center", justifyContent:"center", margin:"0 auto 24px" }}>
-              <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke={ON_ACCENT} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+            <div style={{ width:64, height:64, borderRadius:"50%", background:T.black, display:"flex", alignItems:"center", justifyContent:"center", margin:"0 auto 24px" }}>
+              <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke={T.white} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
             </div>
             <h2 style={{ fontFamily:serif, fontSize:30, color:T.black, margin:"0 0 12px", fontWeight:400 }}>You're on the list.</h2>
             <p style={{ fontFamily:sans, fontSize:14, color:T.mid, lineHeight:1.7, margin:"0 0 32px" }}>
-              We'll reach out to <span style={{ color:T.black, fontWeight:500 }}>{email}</span> when your early access opens. We're releasing in small cohorts — expect to hear from us soon.
+              We'll reach out to <span style={{ color:T.black, fontWeight:500 }}>{email}</span> when your early access opens. We're releasing in small cohorts, expect to hear from us soon.
             </p>
             <div style={{ background:T.glass, backdropFilter:"blur(12px)", WebkitBackdropFilter:"blur(12px)", borderRadius:14, border:`1px solid ${T.rule}`, padding:"16px 20px", marginBottom:32, textAlign:"left" }}>
               <p style={{ fontFamily:sans, fontSize:10, fontWeight:600, color:T.accent, textTransform:"uppercase", letterSpacing:"0.14em", margin:"0 0 6px" }}>While you wait</p>
               <p style={{ fontFamily:sans, fontSize:13, color:T.mid, lineHeight:1.65, margin:0 }}>Start thinking about which fragrances you own, which you've tried, and which you've been meaning to sample. You'll be able to log everything the moment you get in.</p>
             </div>
-            <button onClick={onJoin} style={{ width:"100%", padding:"15px 0", borderRadius:14, background:T.glass, backdropFilter:"blur(12px)", WebkitBackdropFilter:"blur(12px)", border:`1px solid ${T.rule}`, color:T.black, fontSize:14, fontFamily:sans, fontWeight:500, cursor:"pointer" }}>I already have access — sign in</button>
+            <button onClick={onJoin} style={{ width:"100%", padding:"15px 0", borderRadius:14, background:T.glass, backdropFilter:"blur(12px)", WebkitBackdropFilter:"blur(12px)", border:`1px solid ${T.rule}`, color:T.black, fontSize:14, fontFamily:sans, fontWeight:500, cursor:"pointer" }}>I already have access, sign in</button>
           </div>
         )}
       </div>
@@ -2413,7 +2581,7 @@ function LoadingScreen() {
   return (
     <div style={{ minHeight:"100svh", display:"flex", alignItems:"center", justifyContent:"center", fontFamily:sans }}>
       <div role="status" aria-label="Loading" style={{ textAlign:"center" }}>
-        <div className="mos-spin" style={{ display:"inline-block" }}><LogoMark size={56} weight={2.8}/></div>
+        <div className="mos-spin" style={{ width:34, height:34, borderRadius:"50%", border:`2px solid ${T.rule}`, borderTopColor:T.black, margin:"0 auto", animationDuration:"0.9s" }}/>
         <div style={{ marginTop:18 }}><Wordmark size={22}/></div>
       </div>
     </div>
@@ -2567,7 +2735,7 @@ function LoginScreen({ onWaitlist }) {
 
         {error && <p style={{ fontFamily:sans, fontSize:12, color:T.bad, margin:"0 0 12px" }}>{error}</p>}
 
-        <button onClick={handleSubmit} disabled={loading} style={{ width:"100%", padding:"15px 0", borderRadius:12, background:loading?T.faint:T.cta, border:"none", color:ON_ACCENT, fontSize:14, fontFamily:sans, fontWeight:600, cursor:loading?"not-allowed":"pointer", transition:"background 0.2s", marginBottom:20 }}>
+        <button onClick={handleSubmit} disabled={loading} style={{ width:"100%", padding:"15px 0", borderRadius:12, background:loading?T.faint:T.black, border:"none", color:T.white, fontSize:14, fontFamily:sans, fontWeight:600, cursor:loading?"not-allowed":"pointer", transition:"background 0.2s", marginBottom:20 }}>
           {loading ? (mode==="signup" ? "Creating account…" : "Signing in…") : (mode==="signup" ? "Create account" : "Sign in")}
         </button>
 
@@ -2646,7 +2814,7 @@ function OnboardingScreen({ onComplete }) {
         </div>
         <p style={{ fontFamily:sans, fontSize:9, color:T.mid, textTransform:"uppercase", letterSpacing:"0.14em", margin:"0 0 10px" }}>One last step</p>
         <h2 style={{ fontFamily:serif, fontSize:24, color:T.black, margin:"0 0 6px", fontWeight:"normal" }}>Set up your profile</h2>
-        <p style={{ fontFamily:sans, fontSize:13, color:T.mid, lineHeight:1.65, margin:"0 0 28px" }}>Your username is how the community will know you. Choose carefully — it's how your reviews and layering combos are credited.</p>
+        <p style={{ fontFamily:sans, fontSize:13, color:T.mid, lineHeight:1.65, margin:"0 0 28px" }}>Your username is how the community will know you. Choose carefully, it's how your reviews and layering combos are credited.</p>
         <div style={{ display:"flex", flexDirection:"column", gap:10, marginBottom:14 }}>
           <div>
             <input value={username} onChange={e => { setUsername(e.target.value.replace(/[^a-zA-Z0-9_]/g, "")); setError(""); }} placeholder="Username (e.g. scenthunter_uk)" style={inp} maxLength={20}/>
@@ -2655,7 +2823,7 @@ function OnboardingScreen({ onComplete }) {
           <CountryPicker value={country} onChange={setCountry}/>
         </div>
         {error && <p style={{ fontFamily:sans, fontSize:12, color:T.bad, margin:"0 0 12px" }}>{error}</p>}
-        <button onClick={handleDone} disabled={loading} style={{ width:"100%", padding:"15px 0", borderRadius:12, background:loading?T.faint:T.cta, border:"none", color:ON_ACCENT, fontSize:14, fontFamily:sans, fontWeight:600, cursor:loading?"not-allowed":"pointer", marginBottom:12 }}>
+        <button onClick={handleDone} disabled={loading} style={{ width:"100%", padding:"15px 0", borderRadius:12, background:loading?T.faint:T.black, border:"none", color:T.white, fontSize:14, fontFamily:sans, fontWeight:600, cursor:loading?"not-allowed":"pointer", marginBottom:12 }}>
           {loading ? "Saving…" : "Complete setup"}
         </button>
         <p style={{ fontFamily:sans, fontSize:11, color:T.faint, textAlign:"center", margin:0 }}>You can update this anytime from your profile.</p>
@@ -2669,14 +2837,14 @@ const SILLAGE_ACCOUNT = {
   username: "memoir", name: "Memoir on Skin",
   country: "—", isFounder: false, memberNumber: 0, isTopContributor: false,
   isSillageOfficial: true,
-  bio: "The Memoir on Skin team. New houses, seasonal picks, and things worth your time. Not a brand account — just people who care about this.",
+  bio: "The Memoir on Skin team. New houses, seasonal picks, and things worth your time. Not a brand account, just people who care about this.",
   followers: 0, following: 0,
   statuses: {}, reactions: {},
   reviews: [],
   layers: [],
   posts: [
     { date:"3 days ago", text:"Just added the full Imaginary Authors catalogue. Josh Meyer has been building something quietly remarkable in Portland since 2011. Start with Slow Explosions or The Cobra & The Canary." },
-    { date:"1 week ago", text:"A note on reformulations: we flag acquisition dates because they matter. Not every acquisition changes a house — but you deserve to know. Independent until proven otherwise." },
+    { date:"1 week ago", text:"A note on reformulations: we flag acquisition dates because they matter. Not every acquisition changes a house, but you deserve to know. Independent until proven otherwise." },
     { date:"2 weeks ago", text:"Sampling is the only honest way to buy fragrance. A bottle is a commitment. A sample is a conversation. We'll always say this." },
   ],
 };
@@ -2690,7 +2858,7 @@ const MOCK_MEMBERS = [
     statuses: { 1:"bottle_owned", 2:"bottle_owned", 3:"sample_have", 4:"tried_skin" },
     reactions: { 1:"love", 2:"love", 3:"like" },
     reviews: [
-      { fragId:1, fragName:"Aventus", house:"Creed", rating:5, text:"Give it 20 minutes past the opening — the smoky birch dry-down is masterful. Batch variation is real but worth the hunt.", date:"2 days ago" },
+      { fragId:1, fragName:"Aventus", house:"Creed", rating:5, text:"Give it 20 minutes past the opening, the smoky birch dry-down is masterful. Batch variation is real but worth the hunt.", date:"2 days ago" },
       { fragId:2, fragName:"Black Orchid", house:"Tom Ford", rating:5, text:"Divisive for a reason. On the right skin it's untouchable. Evening only.", date:"3 weeks ago" },
     ],
     layers: [
@@ -2758,10 +2926,10 @@ function ProfileModal({ username, onClose, currentUser, userStatuses, onOpenFrag
   const publicLayers = (member.layers || []).filter(l => l.isPublic);
 
   return (
-    <div onClick={onClose} style={{ position:"fixed", inset:0, zIndex:60, background:"rgba(10,10,10,0.5)", backdropFilter:"blur(12px)", display:"flex", flexDirection:"column", justifyContent:"flex-end", alignItems:"center" }}>
-      <div onClick={e => e.stopPropagation()} style={{ background:T.white, borderRadius:"24px 24px 0 0", border:`1px solid ${T.rule}`, borderBottom:"none", width:"100%", maxWidth:460, maxHeight:"92vh", overflowY:"auto" }}>
+    <div className="mos-sheet-wrap" onClick={onClose} style={{ position:"fixed", inset:0, zIndex:60, background:"rgba(10,10,10,0.5)", backdropFilter:"blur(12px)", display:"flex", flexDirection:"column", justifyContent:"flex-end", alignItems:"center" }}>
+      <div className="mos-sheet" onClick={e => e.stopPropagation()} style={{ background:T.white, borderRadius:"24px 24px 0 0", border:`1px solid ${T.rule}`, borderBottom:"none", width:"100%", maxWidth:460, maxHeight:"92vh", overflowY:"auto" }}>
 
-        <div style={{ position:"sticky", top:0, background:T.white, zIndex:2, borderBottom:`1px solid ${T.rule}`, padding:"20px 24px 0" }}>
+        <div className="mos-pad" style={{ position:"sticky", top:0, background:T.white, zIndex:2, borderBottom:`1px solid ${T.rule}`, padding:"20px 24px 0" }}>
           <div style={{ display:"flex", alignItems:"flex-start", justifyContent:"space-between", marginBottom:18 }}>
             <div style={{ display:"flex", alignItems:"center", gap:14 }}>
               <div style={{ width:54, height:54, borderRadius:"50%", background:isSillage?T.black:T.black, display:"flex", alignItems:"center", justifyContent:"center", fontSize:isSillage?15:18, fontWeight:600, color:T.white, fontFamily:isSillage?serif:sans, flexShrink:0, position:"relative" }}>
@@ -2841,7 +3009,7 @@ function ProfileModal({ username, onClose, currentUser, userStatuses, onOpenFrag
             </div>
           )}
 
-          <div style={{ display:"flex", gap:0, overflowX:"auto" }}>
+          <div className="mos-dtabs" style={{ display:"flex", gap:0, overflowX:"auto" }}>
             {(isSillage ? ["posts","reviews"] : isSelf ? ["reviews","layering","collection","following"] : ["reviews","layering","collection","in common"]).map(t => (
               (t === "in common" && (isSelf || commonFrags.length === 0)) ? null : (
                 <button key={t} onClick={() => setTab(t)} style={{ marginRight:16, paddingBottom:12, fontSize:10, textTransform:"uppercase", letterSpacing:"0.08em", color:tab===t?T.black:T.faint, background:"none", border:"none", borderBottom:tab===t?`2px solid ${T.black}`:"2px solid transparent", marginBottom:-1, cursor:"pointer", whiteSpace:"nowrap", fontFamily:sans }}>
@@ -2852,7 +3020,7 @@ function ProfileModal({ username, onClose, currentUser, userStatuses, onOpenFrag
           </div>
         </div>
 
-        <div style={{ padding:"20px 24px 40px" }}>
+        <div className="mos-pad" style={{ padding:"20px 24px 40px" }}>
 
           {tab === "posts" && isSillage && (
             <div>
@@ -3188,20 +3356,19 @@ export default function SillageApp() {
   return (
     <div style={{ minHeight:"100svh", background:"transparent", fontFamily:sans, position:"relative" }}>
       <header style={{ position:"sticky", top:0, zIndex:40, background:T.glass, backdropFilter:"blur(16px)", WebkitBackdropFilter:"blur(16px)" }}>
-        <div style={{ height:3, background:T.trail }}/>
         <div className="mos-wrap">
-          <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", padding:"12px 0 10px", gap:10 }}>
-            <Logo size={19}/>
+          <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", padding:"14px 0 12px", gap:10 }}>
+            <Logo fluid/>
             <div style={{ display:"flex", alignItems:"center", gap:8 }}>
-              <button onClick={() => setShowSuggest(true)} style={{ fontFamily:sans, fontSize:11, fontWeight:500, height:32, padding:"0 12px", borderRadius:20, border:`1px solid ${T.rule}`, background:T.white, color:T.mid, cursor:"pointer", whiteSpace:"nowrap" }}>+ Suggest</button>
-              <ThemeToggle/>
+              <button onClick={() => setShowSuggest(true)} style={{ fontFamily:sans, fontSize:"var(--ctl-fs)", fontWeight:500, height:"var(--ctl)", padding:"0 16px", borderRadius:20, border:`1px solid ${T.rule}`, background:T.white, color:T.mid, cursor:"pointer", whiteSpace:"nowrap" }}>+ Suggest</button>
+              <ThemeToggle size="var(--ctl)"/>
               <button
                 onClick={() => currentUser && openProfile(currentUser.username)}
                 title={currentUser ? "@" + currentUser.username : ""}
                 aria-label="Your profile"
-                style={{ width:34, height:34, borderRadius:"50%", padding:2, background:T.trail, border:"none", cursor:"pointer", flexShrink:0 }}
+                style={{ width:"var(--ctl)", height:"var(--ctl)", borderRadius:"50%", padding:0, background:T.black, border:"none", cursor:"pointer", flexShrink:0 }}
               >
-                <span style={{ display:"flex", alignItems:"center", justifyContent:"center", width:"100%", height:"100%", borderRadius:"50%", background:T.black, border:`2px solid ${T.bg}`, boxSizing:"border-box", fontSize:10, fontWeight:600, color:T.white, fontFamily:sans }}>{userInitials}</span>
+                <span style={{ display:"flex", alignItems:"center", justifyContent:"center", width:"100%", height:"100%", borderRadius:"50%", background:T.black, boxSizing:"border-box", fontSize:"var(--ctl-fs)", fontWeight:600, color:T.white, fontFamily:sans }}>{userInitials}</span>
               </button>
             </div>
           </div>
@@ -3209,9 +3376,9 @@ export default function SillageApp() {
             {NAV.map(({ tab }) => {
               const on = activeTab === tab;
               return (
-                <button key={tab} onClick={() => setActiveTab(tab)} aria-current={on ? "page" : undefined} style={{ position:"relative", paddingBottom:11, paddingTop:2, fontSize:10, fontWeight:on?600:500, textTransform:"uppercase", letterSpacing:"0.1em", color:on?T.black:T.mid, background:"none", border:"none", cursor:"pointer", whiteSpace:"nowrap", fontFamily:sans }}>
+                <button key={tab} onClick={() => setActiveTab(tab)} aria-current={on ? "page" : undefined} style={{ position:"relative", paddingBottom:15, paddingTop:4, fontSize:"var(--nav-fs)", fontWeight:on?600:500, textTransform:"uppercase", letterSpacing:"0.1em", color:on?T.black:T.mid, background:"none", border:"none", cursor:"pointer", whiteSpace:"nowrap", fontFamily:sans }}>
                   {tab}
-                  {on && <span style={{ position:"absolute", left:0, right:0, bottom:-1, height:2, borderRadius:2, background:T.trail }}/>}
+                  {on && <span style={{ position:"absolute", left:0, right:0, bottom:-1, height:2, background:T.black }}/>}
                 </button>
               );
             })}
@@ -3225,7 +3392,7 @@ export default function SillageApp() {
         {activeTab==="Collection" && <CollectionTab fragrances={fragrances} onOpenFrag={openFrag} statuses={userStatuses} reactions={reactions} onReaction={onReaction} onSuggest={() => setShowSuggest(true)}/>}
         {activeTab==="Layering"   && <div className="mos-prose"><LayeringTab/></div>}
         {activeTab==="Journal"    && <div className="mos-prose"><JournalTab entries={journalEntries}/></div>}
-        {activeTab==="Learn"      && <div className="mos-prose"><LearnTab/></div>}
+        {activeTab==="Learn"      && <div className="mos-prose"><LearnTab fragrances={fragrances} onOpenFrag={openFrag}/></div>}
         <FooterLinks/>
       </main>
 
@@ -3234,7 +3401,7 @@ export default function SillageApp() {
           const on = activeTab === tab;
           return (
             <button key={tab} onClick={() => setActiveTab(tab)} aria-current={on ? "page" : undefined} style={{ flex:1, position:"relative", display:"flex", flexDirection:"column", alignItems:"center", gap:3, padding:"7px 0 1px", background:"none", border:"none", cursor:"pointer", fontFamily:sans, fontSize:10, fontWeight:on?600:500, color:on?T.accent:T.mid }}>
-              {on && <span style={{ position:"absolute", top:-9, width:26, height:3, borderRadius:3, background:T.trail }}/>}
+              {on && <span style={{ position:"absolute", top:-9, width:26, height:2, background:T.black }}/>}
               <Icon name={icon} size={22} color={on?T.accent:T.mid}/>
               <span>{tab}</span>
             </button>
