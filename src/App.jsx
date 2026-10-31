@@ -110,9 +110,12 @@ body { overflow-x:clip; }
 .mos-in:focus { border-color:var(--ink-strong); }
 @media (min-width:760px) { .mos-in { font-size:14px; } }
 .mos-country-sel{display:block}.mos-country-chips{display:none !important}@media(min-width:900px){.mos-country-sel{display:none}.mos-country-chips{display:flex !important}}
+.mos-brandgrid { display:grid; grid-template-columns:repeat(2,1fr); gap:20px 14px; }
+@media (min-width:600px){ .mos-brandgrid { grid-template-columns:repeat(auto-fill,minmax(180px,1fr)); gap:26px 18px; } }
 .mos-country-sel { display:block; }
 .mos-country-chips { display:none !important; }
 @media (min-width:900px){ .mos-country-sel { display:none !important; } .mos-country-chips { display:flex !important; } }
+@media (max-width:520px){ .mos-portrait span, .mos-portrait img { width:84px !important; height:84px !important; font-size:28px !important; } }
 .mos-samples { display:grid; grid-template-columns:repeat(auto-fit,minmax(230px,1fr)); gap:10px; }
 .mos-cover { transition:transform .18s ease, box-shadow .18s ease; }
 .mos-cover:hover { transform:translateY(-3px); }
@@ -1060,6 +1063,38 @@ const GLOSSARY = [
   {term:"Oud",      def:"Agarwood resin from infected Aquilaria trees. One of the rarest materials in perfumery."},
   {term:"Accord",   def:"A blend of notes that creates a unified impression, like a chord in music."},
   {term:"Fougère",  def:"From the French for 'fern.' Classic structure of lavender, coumarin, and oakmoss."},
+  {term:"Top Notes", def:"The first impression. Bright, light molecules like citrus that fade within the first half hour."},
+  {term:"Heart Notes", def:"Also called middle notes. The core of the fragrance, which emerges as the top notes fade and lasts a few hours."},
+  {term:"Base Notes", def:"The foundation. Heavy materials like woods, resins and musks that anchor the scent and linger for hours."},
+  {term:"Longevity", def:"How long a fragrance lasts on skin before it disappears."},
+  {term:"Projection", def:"How far a fragrance radiates from the skin in the first hours. Sillage is the trail it leaves as you move."},
+  {term:"Eau de Parfum", def:"A concentration of roughly 15 to 20 percent fragrance oil. Longer lasting and richer than eau de toilette."},
+  {term:"Eau de Toilette", def:"A lighter concentration, roughly 5 to 15 percent oil. Brighter and shorter lived than eau de parfum."},
+  {term:"Extrait de Parfum", def:"The most concentrated form, often 20 to 40 percent oil. Sits close to the skin and lasts the longest."},
+  {term:"Parfum", def:"In practice another word for extrait: the strongest concentration a house sells."},
+  {term:"Cologne", def:"Originally a light citrus water from Cologne, Germany. Today it often means a fresh, low concentration scent."},
+  {term:"Niche", def:"Houses that focus on fragrance itself rather than fashion, usually small and with a distinctive point of view."},
+  {term:"Flanker", def:"A new version of an existing fragrance, sharing its name but changing the formula or mood."},
+  {term:"Reformulation", def:"A change to a fragrance's recipe, often because an ingredient is restricted, scarce or too costly."},
+  {term:"Batch Code", def:"A code printed on a bottle that tells you when it was made. Useful for checking age and authenticity."},
+  {term:"Decant", def:"A small amount of fragrance poured from a full bottle into a travel atomizer, so you can try before you commit."},
+  {term:"Blind Buy", def:"Buying a full bottle without having smelled it first."},
+  {term:"Gourmand", def:"A fragrance built on edible notes such as vanilla, caramel, chocolate or coffee."},
+  {term:"Aldehydes", def:"Synthetic molecules that add a sparkling, soapy, champagne-like lift. Chanel No. 5 made them famous."},
+  {term:"Musk", def:"Once taken from deer, now almost always synthetic. A soft, skin-like warmth used as a base."},
+  {term:"Ambergris", def:"A waxy substance produced by sperm whales and found floating at sea. Smells salty, sweet and animalic. Now mostly recreated in the lab."},
+  {term:"Labdanum", def:"A sticky resin from the rock rose. Warm, leathery and amber-like."},
+  {term:"Absolute", def:"A highly concentrated aromatic extracted from flowers with solvents, such as jasmine absolute."},
+  {term:"Essential Oil", def:"An aromatic oil obtained by steam distillation or pressing of plants."},
+  {term:"Maceration", def:"The resting period after blending, where the fragrance matures before filtering and bottling."},
+  {term:"Perfumer", def:"The person who composes the formula. Also called a nose."},
+  {term:"Skin Scent", def:"A quiet fragrance that stays close and smells like a cleaner, softer version of your own skin."},
+  {term:"Signature Scent", def:"The one fragrance a person wears so often that people link it to them."},
+  {term:"Layering", def:"Wearing two or more fragrances together to make something new."},
+  {term:"Olfactory Fatigue", def:"When your nose stops registering a smell after prolonged exposure. Smell coffee beans between samples to reset."},
+  {term:"Anosmia", def:"The loss of the sense of smell, whether temporary or lasting."},
+  {term:"Orientale", def:"A family of warm, rich fragrances built on amber, spices and resins. Now often called amber."},
+  {term:"Aquatic", def:"Fresh, marine or watery fragrances that suggest sea air, rain or cool water."},
 ];
 
 // ─── HELPERS ──────────────────────────────────────────────────────────────────
@@ -1314,13 +1349,13 @@ function BrandModal({ brand, onClose, onOpenFrag }) {
   return (
     <div className="mos-sheet-wrap" onClick={onClose} style={{ position:"fixed", inset:0, zIndex:48, background:T.scrim, backdropFilter:"blur(16px)", display:"flex", flexDirection:"column", justifyContent:"flex-end", alignItems:"center" }}>
       <div className="mos-sheet" onClick={e => e.stopPropagation()} style={{ background:T.white, borderRadius:"24px 24px 0 0", border:`1px solid ${T.rule}`, borderBottom:"none", width:"100%", maxWidth:460, maxHeight:"93vh", overflowY:"auto" }}>
-        <div className="mos-pad" style={{ position:"relative", padding:"26px 24px 22px", borderBottom:`1px solid ${T.rule}`, background:T.lift }}>
+        <div className="mos-pad" style={{ position:"relative", padding:"34px 24px 30px", borderBottom:`1px solid ${T.rule}`, background:T.lift }}>
           <button className="mos-close" onClick={onClose} aria-label="Close" style={{ position:"absolute", top:16, right:16, width:34, height:34, borderRadius:"50%", border:`1px solid ${T.rule}`, background:T.white, cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", fontSize:14, color:T.mid, zIndex:2 }}>✕</button>
           <p style={{ fontFamily:sans, fontSize:10, fontWeight:600, textTransform:"uppercase", letterSpacing:"0.18em", color:T.accent, margin:"0 0 8px" }}>Brand</p>
-          <h2 style={{ fontFamily:serif, fontSize:"clamp(30px, 3.4vw, 50px)", color:T.black, margin:"0 0 6px", letterSpacing:-0.6, fontWeight:400, lineHeight:1.1, paddingRight:44 }}>{house === undefined ? (brand.name || "Loading") : (h.name || brand.name || "Brand")}</h2>
+          <h2 style={{ fontFamily:serif, fontSize:"clamp(36px, 4.4vw, 64px)", color:T.black, margin:"0 0 10px", letterSpacing:-1, fontWeight:400, lineHeight:1.05, paddingRight:44 }}>{house === undefined ? (brand.name || "Loading") : (h.name || brand.name || "Brand")}</h2>
           {house && (
             <>
-              <p style={{ fontFamily:sans, fontSize:13, color:T.mid, margin:0 }}>{[h.country, brandOriginLabel(h), h.price_tier].filter(Boolean).join(" · ")}</p>
+              <p style={{ fontFamily:sans, fontSize:"clamp(14px, 1.1vw, 17px)", color:T.mid, margin:0 }}>{[h.country, brandOriginLabel(h), h.price_tier].filter(Boolean).join(" · ")}</p>
               <div style={{ margin:"6px 0 0" }}>{own && <OwnershipBadge ownership={own} size="normal"/>}</div>
               {site && <a href={site} target="_blank" rel="noopener noreferrer" style={{ display:"inline-flex", alignItems:"center", gap:6, margin:"12px 0 0", padding:"6px 14px", minHeight:34, boxSizing:"border-box", borderRadius:20, border:`1px solid ${T.rule}`, background:T.white, fontFamily:sans, fontSize:13, color:T.ink, textDecoration:"none" }}>Brand website<ExtArrow size={11}/></a>}
             </>
@@ -1332,38 +1367,41 @@ function BrandModal({ brand, onClose, onOpenFrag }) {
           {house && (
             <>
               {facts.length > 0 && (
-                <div style={{ border:`1px solid ${T.rule}`, borderRadius:14, overflow:"hidden", marginBottom:28 }}>
-                  {facts.map((f, i) => (
-                    <div key={f[0]} style={{ display:"flex", justifyContent:"space-between", gap:16, padding:"13px 16px", borderBottom:i < facts.length - 1 ? `1px solid ${T.lift}` : "none" }}>
-                      <span style={{ fontFamily:sans, fontSize:13, color:T.mid }}>{f[0]}</span>
-                      <span style={{ fontFamily:sans, fontSize:13, color:T.black, textAlign:"right" }}>{f[1]}</span>
+                <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit, minmax(150px, 1fr))", gap:"22px 28px", paddingBottom:30, marginBottom:30, borderBottom:`1px solid ${T.rule}` }}>
+                  {facts.map(f => (
+                    <div key={f[0]}>
+                      <p style={{ fontFamily:sans, fontSize:10, fontWeight:600, textTransform:"uppercase", letterSpacing:"0.16em", color:T.mid, margin:"0 0 6px" }}>{f[0]}</p>
+                      <p style={{ fontFamily:serif, fontSize:"clamp(20px, 1.8vw, 26px)", color:T.black, margin:0, lineHeight:1.2, letterSpacing:-0.3 }}>{f[1]}</p>
                     </div>
                   ))}
                 </div>
               )}
               {lines.length > 0 && (
-                <div style={{ marginBottom:28 }}>
-                  <Lbl>Lines</Lbl>
-                  <div style={{ display:"flex", flexWrap:"wrap", gap:8 }}>{lines.map(l => <span key={l} style={{ fontFamily:sans, fontSize:12, padding:"5px 12px", borderRadius:16, background:T.lift, border:`1px solid ${T.rule}`, color:T.ink }}>{l}</span>)}</div>
+                <div style={{ marginBottom:30 }}>
+                  <h3 style={{ fontFamily:serif, fontSize:"clamp(26px, 2.3vw, 38px)", fontWeight:400, letterSpacing:-0.6, color:T.black, margin:"0 0 16px", lineHeight:1.1 }}>Lines</h3>
+                  <div style={{ display:"flex", flexWrap:"wrap", gap:10 }}>{lines.map(l => <span key={l} style={{ fontFamily:sans, fontSize:14, padding:"0 18px", minHeight:40, display:"inline-flex", alignItems:"center", borderRadius:20, background:T.white, border:`1px solid ${T.rule}`, color:T.ink }}>{l}</span>)}</div>
                 </div>
               )}
-              <Lbl>Fragrances{total ? `, ${total}` : ""}</Lbl>
-              {frags.length === 0 && <p style={{ fontFamily:sans, fontSize:13, color:T.mid, margin:"0 0 24px" }}>No fragrances from this house are listed yet.</p>}
-              <div className="mos-samples" style={{ marginBottom:14 }}>
-                {frags.map(f => (
-                  <button key={f.id} onClick={() => onOpenFrag(f.id)} style={{ display:"flex", alignItems:"center", gap:12, textAlign:"left", cursor:"pointer", border:`1px solid ${T.rule}`, borderRadius:12, padding:"12px 14px", background:T.white, fontFamily:sans }}>
-                    <Mono name={f.name} size={42}/>
-                    <span style={{ minWidth:0 }}>
-                      <span style={{ display:"block", fontFamily:serif, fontSize:15, color:T.black, lineHeight:1.2 }}>{f.name}</span>
-                      <span style={{ display:"block", fontSize:11, color:T.mid, margin:"3px 0 0" }}>{[f.year, f.concentration, f.line].filter(Boolean).join(" · ")}</span>
-                    </span>
-                  </button>
-                ))}
+              <h3 style={{ fontFamily:serif, fontSize:"clamp(26px, 2.3vw, 38px)", fontWeight:400, letterSpacing:-0.6, color:T.black, margin:"0 0 16px", lineHeight:1.1 }}>{"Fragrances"}{total ? <span style={{ fontFamily:sans, fontSize:15, color:T.mid, letterSpacing:0, marginLeft:10 }}>{total}</span> : null}</h3>
+                            {frags.length === 0 && <p style={{ fontFamily:sans, fontSize:13, color:T.mid, margin:"0 0 24px" }}>No fragrances from this house are listed yet.</p>}
+              <div className="mos-brandgrid" style={{ marginBottom:20 }}>
+                {frags.map(f => {
+                  const ini = f.name.split(" ").map(w => w[0]).join("").slice(0, 2).toUpperCase();
+                  return (
+                    <button key={f.id} onClick={() => onOpenFrag(f.id)} aria-label={`${f.name} by ${f.house}`} style={{ padding:0, border:"none", background:"none", cursor:"pointer", textAlign:"left", fontFamily:sans }}>
+                      <span style={{ display:"block", position:"relative", width:"100%", aspectRatio:"0.8", borderRadius:12, overflow:"hidden", background:T.white, border:`1px solid ${T.rule}` }}>
+                        {f.image ? <img src={f.image} alt="" loading="lazy" style={{ position:"absolute", inset:0, width:"100%", height:"100%", objectFit:"contain", padding:"8%" }}/> : <span style={{ position:"absolute", inset:0, display:"flex", alignItems:"center", justifyContent:"center", fontFamily:serif, fontSize:46, letterSpacing:-1, color:T.faint }}>{ini}</span>}
+                      </span>
+                      <span style={{ display:"-webkit-box", WebkitLineClamp:2, WebkitBoxOrient:"vertical", overflow:"hidden", marginTop:10, fontFamily:serif, fontSize:17, lineHeight:1.2, letterSpacing:-0.2, color:T.black }}>{f.name}</span>
+                      <span style={{ display:"block", marginTop:3, fontSize:12, color:T.mid }}>{[f.year, f.concentration].filter(Boolean).join(" · ")}</span>
+                    </button>
+                  );
+                })}
               </div>
               {frags.length < total && <div style={{ textAlign:"center", margin:"6px 0 28px" }}><button onClick={more} disabled={busy} style={{ fontFamily:sans, fontSize:14, minHeight:46, padding:"0 28px", borderRadius:23, border:`1px solid ${T.rule}`, background:T.white, color:T.ink, cursor:"pointer", opacity:busy?0.6:1 }}>{busy ? "Loading" : `Show more (${total - frags.length} left)`}</button></div>}
               {stores.length > 0 && (
-                <div style={{ marginTop:20 }}>
-                  <Lbl>Where to smell it in person</Lbl>
+                <div style={{ marginTop:44 }}>
+                  <h3 style={{ fontFamily:serif, fontSize:"clamp(26px, 2.3vw, 38px)", fontWeight:400, letterSpacing:-0.6, color:T.black, margin:"0 0 16px", lineHeight:1.1 }}>Where to smell it in person</h3>
                   <div className="mos-samples">
                     {stores.map(s => { const w = safeUrl(s.website); return (
                       <div key={s.id} style={{ border:`1px solid ${T.rule}`, borderRadius:12, padding:"14px 16px", background:T.white }}>
@@ -1395,6 +1433,191 @@ const PERFUMERS = {
   "Frank Voelkl": { bio: "Frank Voelkl is a German perfumer at Firmenich known for a restrained, materials-focused approach. Santal 33 was created for Le Labo's New York-specific city exclusive before being added to the permanent line. The papyrus and cardamom accord he built around the sandalwood has become one of the most recognised in contemporary perfumery, and one of the most debated.", nationality: "German", active: "1990s – present" },
   "Josh Meyer": { bio: "Josh Meyer is a self-taught perfumer and founder of Imaginary Authors based in Portland, Oregon. Every fragrance in the line is named after a fictional book and accompanied by a back-cover blurb. His approach is literary and instinctive, materials chosen for narrative resonance rather than technical convention. He built the brand entirely independently and continues to run it without outside investment.", nationality: "American", active: "2011 – present" },
 };
+
+
+// ─── PERFUMERS: directory + full-page perfumer card ──────────────────────────
+function splitPerfumers(s) {
+  return String(s || "").split(/\s*(?:,|&|\/|;|\sand\s|\swith\s)\s*/i).map(x => x.trim()).filter(x => x.length > 2 && !/^(unknown|n\/a|na|various|none|anonymous)$/i.test(x));
+}
+async function loadPerfumers() {
+  const r = await supabase.rpc("perfumers_list");
+  if (!r.error && r.data) return r.data;
+  return Object.keys(PERFUMERS).map(n => ({ name: n, frag_count: null, house_count: null }));
+}
+function PerfumerPortrait({ name, photo, size = 150 }) {
+  const ini = String(name).split(/\s+/).map(w => w[0]).join("").slice(0, 2).toUpperCase();
+  const hue = hueFor(name);
+  return photo
+    ? <img src={photo} alt={name} style={{ width:size, height:size, borderRadius:"50%", objectFit:"cover", flexShrink:0 }}/>
+    : <span style={{ width:size, height:size, borderRadius:"50%", flexShrink:0, background:`var(--tint-${hue})`, color:`var(--${hue})`, display:"flex", alignItems:"center", justifyContent:"center", fontFamily:serif, fontSize:size*0.34, letterSpacing:-1 }}>{ini}</span>;
+}
+function lastWord(n) { const w = String(n).trim().split(/\s+/); return w[w.length - 1] || n; }
+
+function PerfumersDirectory({ onOpenPerfumer }) {
+  const [rows, setRows] = useState(null);
+  const [q, setQ] = useState("");
+  const [sort, setSort] = useState("az");
+  useEffect(() => {
+    let off = false;
+    loadPerfumers().then(d => { if (!off) setRows(d); }).catch(() => { if (!off) setRows([]); });
+    return () => { off = true; };
+  }, []);
+  const needle = q.trim().toLowerCase();
+  const pool = (rows || []).filter(r => Number(r.frag_count) >= 3).sort((a, b) => a.name.localeCompare(b.name));
+  const spot = pool.length ? pool[Math.floor((Date.now() - new Date().getTimezoneOffset() * 60000) / 86400000) % pool.length] : null;
+  let list = (rows || []).filter(r => !needle || String(r.name).toLowerCase().includes(needle));
+  list = [...list].sort(sort === "most" ? (a, b) => (Number(b.frag_count) || 0) - (Number(a.frag_count) || 0) || a.name.localeCompare(b.name) : (a, b) => lastWord(a.name).localeCompare(lastWord(b.name)) || a.name.localeCompare(b.name));
+  const groups = {};
+  if (sort === "az") list.forEach(r => { const L = (lastWord(r.name)[0] || "#").toUpperCase(); const k = /[A-Z]/.test(L) ? L : "#"; (groups[k] = groups[k] || []).push(r); });
+  const keys = sort === "az" ? Object.keys(groups).sort((a, b) => a === "#" ? 1 : b === "#" ? -1 : a.localeCompare(b)) : ["all"];
+  if (sort !== "az") groups.all = list.slice(0, 200);
+  const chip = (on, label, fn) => (
+    <button key={label} onClick={fn} aria-pressed={on} style={{ fontFamily:sans, fontSize:14, fontWeight:on?600:500, padding:"0 20px", minHeight:42, borderRadius:22, whiteSpace:"nowrap", border:`1px solid ${on?T.black:T.rule}`, background:on?T.black:T.white, color:on?T.white:T.ink, cursor:"pointer", flexShrink:0 }}>{label}</button>
+  );
+  const card = r => (
+    <button key={r.name} onClick={() => onOpenPerfumer(r.name)} style={{ textAlign:"left", cursor:"pointer", border:`1px solid ${T.rule}`, borderRadius:12, padding:"14px 16px", background:T.white, fontFamily:sans }}>
+      <span style={{ display:"block", fontFamily:serif, fontSize:17, color:T.black, lineHeight:1.25 }}>{r.name}</span>
+      {r.frag_count != null && <span style={{ display:"block", fontSize:12, color:T.mid, margin:"4px 0 0" }}>{r.frag_count} {Number(r.frag_count) === 1 ? "fragrance" : "fragrances"}{r.house_count != null ? ` · ${r.house_count} ${Number(r.house_count) === 1 ? "house" : "houses"}` : ""}</span>}
+    </button>
+  );
+  return (
+    <div>
+      <div style={{ position:"relative", marginBottom:10, maxWidth:760 }}>
+        <span style={{ position:"absolute", left:14, top:"50%", transform:"translateY(-50%)", pointerEvents:"none" }}><Icon name="search" size={15} color={T.faint}/></span>
+        <input value={q} onChange={e => setQ(e.target.value)} placeholder="Search perfumers by name" style={{ width:"100%", background:T.white, border:`1.5px solid ${q?T.accent:T.rule}`, borderRadius:14, padding:"14px 16px 14px 44px", fontSize:14, color:T.black, outline:"none", boxSizing:"border-box", fontFamily:serif }}/>
+      </div>
+      <div style={{ display:"flex", gap:8, overflowX:"auto", padding:"6px 0 12px" }}>
+        {chip(sort === "az", "A to Z", () => setSort("az"))}
+        {chip(sort === "most", "Most fragrances", () => setSort("most"))}
+      </div>
+      {rows === null && <p style={{ fontFamily:sans, fontSize:13, color:T.mid }}>Loading</p>}
+      {spot && !needle && (
+        <button onClick={() => onOpenPerfumer(spot.name)} style={{ display:"flex", alignItems:"center", justifyContent:"space-between", gap:20, width:"100%", textAlign:"left", cursor:"pointer", background:T.lift, border:`1px solid ${T.rule}`, borderRadius:18, padding:"22px 22px", margin:"4px 0 22px", fontFamily:sans }}>
+          <span style={{ minWidth:0 }}>
+            <span style={{ display:"block", fontSize:10, fontWeight:600, letterSpacing:"0.18em", textTransform:"uppercase", color:T.accent, marginBottom:10 }}>Perfumer spotlight</span>
+            <span style={{ display:"block", fontFamily:serif, fontSize:"clamp(32px, 4.4vw, 60px)", letterSpacing:-1, lineHeight:1, color:T.black }}>{spot.name}</span>
+            <span style={{ display:"block", fontSize:13, color:T.mid, margin:"12px 0 0" }}>{spot.frag_count} fragrances{spot.house_count != null ? ` across ${spot.house_count} ${Number(spot.house_count) === 1 ? "house" : "houses"}` : ""} &rsaquo;</span>
+          </span>
+          <PerfumerPortrait name={spot.name} photo={PERFUMERS[spot.name] && PERFUMERS[spot.name].photo} size={110}/>
+        </button>
+      )}
+      {rows !== null && <p style={{ fontFamily:sans, fontSize:12, color:T.mid, margin:"0 0 6px" }}>{list.length} {list.length === 1 ? "perfumer" : "perfumers"}{sort === "most" && list.length > 200 ? ", showing the top 200" : ""}</p>}
+      {keys.map(k => (
+        <section key={k} style={{ borderTop:`1px solid ${T.rule}`, padding:"18px 0 8px" }}>
+          {k !== "all" && <h3 style={{ fontFamily:serif, fontSize:26, fontWeight:400, color:T.black, margin:"0 0 12px" }}>{k}</h3>}
+          <div className="mos-samples">{(groups[k] || []).map(card)}</div>
+        </section>
+      ))}
+      {rows !== null && list.length === 0 && <p style={{ fontFamily:sans, fontSize:14, color:T.mid, margin:"20px 0" }}>No perfumers match that search. Run 08_perfumers.sql if the list is empty.</p>}
+    </div>
+  );
+}
+
+function PerfumerPage({ name, onClose, onOpenFrag, onOpenBrand }) {
+  const PAGE = 24;
+  const info = PERFUMERS[name];
+  const [frags, setFrags] = useState(null);
+  const [total, setTotal] = useState(0);
+  const [houses, setHouses] = useState([]);
+  const [busy, setBusy] = useState(false);
+  const pat = "%" + String(name).replace(/[%_]/g, " ") + "%";
+  const exact = f => splitPerfumers(f.perfumer).some(n => n.toLowerCase() === String(name).toLowerCase());
+  useEffect(() => {
+    let off = false;
+    setFrags(null); setTotal(0); setHouses([]);
+    (async () => {
+      try {
+        const r = await fetchFragRows(sel => supabase.from("fragrances").select(sel, { count: "exact" }).ilike("perfumer", pat).order("year", { ascending: false, nullsFirst: false }).order("slug", { ascending: true }).range(0, PAGE - 1));
+        if (off) return;
+        if (r.error || !r.data) { setFrags([]); return; }
+        const m = r.data.map(mapFrag).filter(exact);
+        if (fragSink.fn) fragSink.fn(m);
+        setFrags(m); setTotal(r.count != null ? r.count : m.length);
+        const h = await supabase.from("fragrances").select("perfumer, house:houses ( name, slug )").ilike("perfumer", pat).limit(2000);
+        if (!off && !h.error && h.data) {
+          const seen = new Map();
+          h.data.filter(exact).forEach(x => { if (x.house && x.house.slug && !seen.has(x.house.slug)) seen.set(x.house.slug, x.house.name); });
+          setHouses([...seen].map(([slug, n]) => ({ slug, name: n })).sort((a, b) => a.name.localeCompare(b.name)));
+        }
+      } catch (e) { if (!off) setFrags([]); }
+    })();
+    return () => { off = true; };
+  }, [name]);
+  async function more() {
+    setBusy(true);
+    try {
+      const from = (frags || []).length;
+      const r = await fetchFragRows(sel => supabase.from("fragrances").select(sel).ilike("perfumer", pat).order("year", { ascending: false, nullsFirst: false }).order("slug", { ascending: true }).range(from, from + PAGE - 1));
+      if (!r.error && r.data) { const m = r.data.map(mapFrag).filter(exact); if (fragSink.fn) fragSink.fn(m); setFrags(p => [...(p || []), ...m]); }
+    } catch (e) {}
+    setBusy(false);
+  }
+  const list = frags || [];
+  const years = list.map(f => Number(f.year)).filter(y => y > 0);
+  const facts = [
+    ["Fragrances", total || (frags ? list.length : "")],
+    ["Houses", houses.length || ""],
+    ["Nationality", info && info.nationality],
+    ["Active", info && info.active],
+    ["Latest release", years.length ? Math.max(...years) : ""],
+  ].filter(f => f[1] !== "" && f[1] != null);
+  const h2 = { fontFamily:serif, fontSize:"clamp(26px, 2.3vw, 38px)", fontWeight:400, letterSpacing:-0.6, color:T.black, margin:"0 0 16px", lineHeight:1.1 };
+  return (
+    <div className="mos-sheet-wrap" onClick={onClose} style={{ position:"fixed", inset:0, zIndex:48, background:T.scrim, backdropFilter:"blur(16px)", display:"flex", flexDirection:"column", justifyContent:"flex-end", alignItems:"center" }}>
+      <div className="mos-sheet" onClick={e => e.stopPropagation()} style={{ background:T.white, borderRadius:"24px 24px 0 0", border:`1px solid ${T.rule}`, borderBottom:"none", width:"100%", maxWidth:460, maxHeight:"93vh", overflowY:"auto" }}>
+        <div className="mos-pad" style={{ position:"relative", padding:"26px 24px 22px", borderBottom:`1px solid ${T.rule}`, background:T.lift }}>
+          <button className="mos-close" onClick={onClose} aria-label="Close" style={{ position:"absolute", top:16, right:16, width:34, height:34, borderRadius:"50%", border:`1px solid ${T.rule}`, background:T.white, cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", fontSize:14, color:T.mid, zIndex:2 }}>✕</button>
+          <p style={{ fontFamily:sans, fontSize:10, fontWeight:600, textTransform:"uppercase", letterSpacing:"0.18em", color:T.accent, margin:"0 0 14px" }}>Perfumer</p>
+          <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", gap:20, paddingRight:44 }}>
+            <h2 style={{ fontFamily:serif, fontSize:"clamp(40px, 6vw, 84px)", color:T.black, margin:0, letterSpacing:-1.5, fontWeight:400, lineHeight:0.98, minWidth:0, overflowWrap:"anywhere" }}>{name}</h2>
+            <span className="mos-portrait"><PerfumerPortrait name={name} photo={info && info.photo} size={150}/></span>
+          </div>
+          {info && info.nationality && <p style={{ fontFamily:sans, fontSize:"clamp(14px, 1.1vw, 17px)", color:T.mid, margin:"16px 0 0" }}>{[info.nationality, info.active].filter(Boolean).join(" · ")}</p>}
+        </div>
+        <div className="mos-pad" style={{ padding:"24px 24px 64px" }}>
+          {info && info.bio && <p style={{ fontFamily:sans, fontSize:"clamp(14px, 1.1vw, 17px)", color:T.mid, lineHeight:1.75, margin:"0 0 30px", maxWidth:760 }}>{info.bio}</p>}
+          {!(info && info.bio) && <p style={{ fontFamily:sans, fontSize:14, color:T.faint, lineHeight:1.7, margin:"0 0 30px", maxWidth:620 }}>No biography on file for this perfumer yet. If you know their work well, use Suggest to contribute.</p>}
+          {facts.length > 0 && (
+            <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit, minmax(150px, 1fr))", gap:"22px 28px", paddingBottom:30, marginBottom:30, borderBottom:`1px solid ${T.rule}` }}>
+              {facts.map(f => (
+                <div key={f[0]}>
+                  <p style={{ fontFamily:sans, fontSize:10, fontWeight:600, textTransform:"uppercase", letterSpacing:"0.16em", color:T.mid, margin:"0 0 6px" }}>{f[0]}</p>
+                  <p style={{ fontFamily:serif, fontSize:"clamp(20px, 1.8vw, 26px)", color:T.black, margin:0, lineHeight:1.2, letterSpacing:-0.3 }}>{f[1]}</p>
+                </div>
+              ))}
+            </div>
+          )}
+          {houses.length > 0 && (
+            <div style={{ marginBottom:34 }}>
+              <h3 style={h2}>Houses worked with</h3>
+              <div style={{ display:"flex", flexWrap:"wrap", gap:10 }}>
+                {houses.map(h => <button key={h.slug} onClick={() => onOpenBrand({ slug: h.slug, name: h.name })} style={{ fontFamily:sans, fontSize:14, padding:"0 18px", minHeight:40, borderRadius:20, background:T.white, border:`1px solid ${T.rule}`, color:T.ink, cursor:"pointer" }}>{h.name}</button>)}
+              </div>
+            </div>
+          )}
+          <h3 style={h2}>Fragrances{total ? <span style={{ fontFamily:sans, fontSize:15, color:T.mid, letterSpacing:0, marginLeft:10 }}>{total}</span> : null}</h3>
+          {frags === null && <p style={{ fontFamily:sans, fontSize:13, color:T.mid }}>Loading</p>}
+          {frags !== null && list.length === 0 && <p style={{ fontFamily:sans, fontSize:14, color:T.mid }}>No fragrances by this perfumer are in the library yet.</p>}
+          <div className="mos-brandgrid" style={{ marginBottom:20 }}>
+            {list.map(f => {
+              const ini = f.name.split(" ").map(w => w[0]).join("").slice(0, 2).toUpperCase();
+              return (
+                <button key={f.id} onClick={() => onOpenFrag(f.id)} aria-label={`${f.name} by ${f.house}`} style={{ padding:0, border:"none", background:"none", cursor:"pointer", textAlign:"left", fontFamily:sans }}>
+                  <span style={{ display:"block", position:"relative", width:"100%", aspectRatio:"0.8", borderRadius:12, overflow:"hidden", background:T.white, border:`1px solid ${T.rule}` }}>
+                    {f.image ? <img src={f.image} alt="" loading="lazy" style={{ position:"absolute", inset:0, width:"100%", height:"100%", objectFit:"contain", padding:"8%" }}/> : <span style={{ position:"absolute", inset:0, display:"flex", alignItems:"center", justifyContent:"center", fontFamily:serif, fontSize:46, letterSpacing:-1, color:T.faint }}>{ini}</span>}
+                  </span>
+                  <span style={{ display:"-webkit-box", WebkitLineClamp:2, WebkitBoxOrient:"vertical", overflow:"hidden", marginTop:10, fontFamily:serif, fontSize:17, lineHeight:1.2, letterSpacing:-0.2, color:T.black }}>{f.name}</span>
+                  <span style={{ display:"block", marginTop:3, fontSize:12, color:T.mid, whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis" }}>{[f.house, f.year].filter(Boolean).join(" · ")}</span>
+                </button>
+              );
+            })}
+          </div>
+          {list.length < total && <div style={{ textAlign:"center", margin:"6px 0 28px" }}><button onClick={more} disabled={busy} style={{ fontFamily:sans, fontSize:14, minHeight:46, padding:"0 28px", borderRadius:23, border:`1px solid ${T.rule}`, background:T.white, color:T.ink, cursor:"pointer", opacity:busy?0.6:1 }}>{busy ? "Loading" : `Show more (${total - list.length} left)`}</button></div>}
+        </div>
+      </div>
+    </div>
+  );
+}
 
 function PerfumerModal({ name, onClose }) {
   const info = PERFUMERS[name];
@@ -1637,7 +1860,7 @@ function NotesPyramid({ notes }) {
   );
 }
 
-function DetailModal({ frag, onClose, userStatus, setUserStatus, privateNote, setPrivateNote, reaction, setReaction, onOpenFrag, onOpenProfile, onAddJournalEntry, currentUser, onOpenBrand }) {
+function DetailModal({ frag, onClose, userStatus, setUserStatus, privateNote, setPrivateNote, reaction, setReaction, onOpenFrag, onOpenProfile, onAddJournalEntry, currentUser, onOpenBrand, onOpenPerfumer }) {
   const [tab,setTab]=useState("overview");
   const [showPerfumer, setShowPerfumer]=useState(false);
   const [replyText,setReplyText]=useState("");
@@ -1685,14 +1908,19 @@ function DetailModal({ frag, onClose, userStatus, setUserStatus, privateNote, se
               {safeUrl(frag.website)&&(
                 <a href={safeUrl(frag.website)} target="_blank" rel="noopener noreferrer" style={{display:"inline-flex",alignItems:"center",gap:6,margin:"8px 0 0",padding:"6px 12px",minHeight:32,boxSizing:"border-box",borderRadius:20,border:`1px solid ${T.rule}`,background:T.white,fontFamily:sans,fontSize:12,color:T.ink,textDecoration:"none"}}>Brand website<ExtArrow size={11}/></a>
               )}
-              {frag.perfumer && String(frag.perfumer).toLowerCase() !== "unknown" && (
-                <p onClick={()=>setShowPerfumer(true)} style={{fontFamily:sans,fontSize:12,color:T.mid,margin:"5px 0 10px",cursor:"pointer",display:"inline-flex",alignItems:"center",gap:4}}>
+              {splitPerfumers(frag.perfumer).length>0 && (
+                <p style={{fontFamily:sans,fontSize:12,color:T.mid,margin:"5px 0 10px",display:"flex",alignItems:"center",flexWrap:"wrap",gap:"2px 6px"}}>
                   <span style={{color:T.faint,fontSize:10}}>by</span>
-                  <span style={{color:T.black,borderBottom:`1px solid ${T.rule}`}}>{frag.perfumer}</span>
+                  {splitPerfumers(frag.perfumer).map((n,i,arr)=>(
+                    <span key={n} style={{display:"inline-flex",alignItems:"center",gap:6}}>
+                      <button onClick={()=>onOpenPerfumer?onOpenPerfumer(n):setShowPerfumer(n)} style={{font:"inherit",color:T.black,background:"none",border:"none",borderBottom:`1px solid ${T.rule}`,padding:0,cursor:"pointer",minHeight:24}}>{n}</button>
+                      {i<arr.length-1&&<span style={{color:T.faint}}>&amp;</span>}
+                    </span>
+                  ))}
                 </p>
               )}
-              {(!frag.perfumer || String(frag.perfumer).toLowerCase()==="unknown") && <div style={{marginBottom:10}}/>}
-              {showPerfumer && <PerfumerModal name={frag.perfumer} onClose={()=>setShowPerfumer(false)}/>}
+              {splitPerfumers(frag.perfumer).length===0 && <div style={{marginBottom:10}}/>}
+              {showPerfumer && typeof showPerfumer==="string" && <PerfumerModal name={showPerfumer} onClose={()=>setShowPerfumer(false)}/>}
             </div>
             <div style={{width:80,height:104,borderRadius:14,background:frag.image?T.white:(accA||"#C9206B"),border:`1px solid ${T.rule}`,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,marginTop:34,overflow:"hidden",position:"relative"}}>
               {frag.image
@@ -2029,7 +2257,7 @@ function buildShelves(list) {
   return shelves.slice(0, 9);
 }
 
-function DiscoverTab({ onOpenFrag, onOpenBrand, userStatuses, reactions, onReaction, onSuggest, fragrances, serverShelves, onSearch }) {
+function DiscoverTab({ onOpenFrag, onOpenBrand, onOpenPerfumer, userStatuses, reactions, onReaction, onSuggest, fragrances, serverShelves, onSearch }) {
   const [mode,setMode]=useState("browse");
   const [messages,setMessages]=useState([{role:"ai",text:"Tell me what you're in the mood for: a memory, a mood, an aesthetic. I'll find your next fragrance."}]);
   const [input,setInput]=useState("");
@@ -2078,7 +2306,7 @@ function DiscoverTab({ onOpenFrag, onOpenBrand, userStatuses, reactions, onReact
   function send(text){const msg=text||input;if(!msg.trim())return;setMessages(m=>[...m,{role:"user",text:msg}]);setInput("");setTyping(true);setTimeout(()=>{const r=getResp(msg);const frag=FRAGRANCES.find(f=>f.id===r.fragId);setTyping(false);setMessages(m=>[...m,{role:"ai",text:r.text,frag}]);},1300);}
 
   const modeBtn=(key,label)=>(
-    <button key={key} role="tab" aria-selected={mode===key} onClick={()=>setMode(key)} style={{position:"relative",padding:"0 2px 13px",marginRight:30,background:"none",border:"none",cursor:"pointer",fontFamily:sans,fontSize:15,fontWeight:600,color:mode===key?T.black:T.mid}}>
+    <button key={key} role="tab" aria-selected={mode===key} onClick={()=>setMode(key)} style={{position:"relative",padding:"0 2px 13px",marginRight:24,background:"none",border:"none",cursor:"pointer",fontFamily:sans,fontSize:15,fontWeight:600,color:mode===key?T.black:T.mid}}>
       {label}
       {mode===key&&<span style={{position:"absolute",left:0,right:0,bottom:-1,height:2,background:T.black}}/>}
     </button>
@@ -2088,12 +2316,13 @@ function DiscoverTab({ onOpenFrag, onOpenBrand, userStatuses, reactions, onReact
     <div>
       <div style={{marginBottom:20}}>
         <p style={{fontFamily:sans,fontSize:10,fontWeight:600,textTransform:"uppercase",letterSpacing:"0.18em",color:T.accent,margin:"0 0 6px"}}>Discover</p>
-        <h2 style={{fontFamily:serif,fontSize:"clamp(32px, 3.2vw, 50px)",color:T.black,letterSpacing:-0.8,margin:0,fontWeight:400}}>{mode==="browse"?"Find your scent":mode==="brands"?"Brands":"The Nose"}</h2>
-        <p style={{fontFamily:sans,fontSize:"clamp(13px, 1.1vw, 17px)",color:T.mid,margin:"6px 0 0"}}>{mode==="browse"?"Search by name, or browse by category.":mode==="brands"?"Every house in the library, with who owns it and what it makes.":"Describe a memory, a mood or a place."}</p>
+        <h2 style={{fontFamily:serif,fontSize:"clamp(32px, 3.2vw, 50px)",color:T.black,letterSpacing:-0.8,margin:0,fontWeight:400}}>{mode==="browse"?"Find your scent":mode==="brands"?"Brands":mode==="perfumers"?"Perfumers":"The Nose"}</h2>
+        <p style={{fontFamily:sans,fontSize:"clamp(13px, 1.1vw, 17px)",color:T.mid,margin:"6px 0 0"}}>{mode==="browse"?"Search by name, or browse by category.":mode==="brands"?"Every house in the library, with who owns it and what it makes.":mode==="perfumers"?"The noses behind the bottles. Find a perfumer, then everything they have made.":"Describe a memory, a mood or a place."}</p>
       </div>
-      <div role="tablist" aria-label="Discover" style={{display:"flex",borderBottom:`1px solid ${T.rule}`,marginBottom:22}}>
+      <div role="tablist" aria-label="Discover" style={{display:"flex",overflowX:"auto",whiteSpace:"nowrap",borderBottom:`1px solid ${T.rule}`,marginBottom:22}}>
         {modeBtn("browse","Browse")}
         {modeBtn("brands","Brands")}
+        {modeBtn("perfumers","Perfumers")}
         {modeBtn("nose","Nose")}
       </div>
 
@@ -2151,6 +2380,7 @@ function DiscoverTab({ onOpenFrag, onOpenBrand, userStatuses, reactions, onReact
       )}
 
       {mode==="brands"&&<BrandsDirectory onOpenBrand={onOpenBrand}/>}
+      {mode==="perfumers"&&<PerfumersDirectory onOpenPerfumer={onOpenPerfumer}/>}
 
       {mode==="nose"&&(
         <div style={{maxWidth:760}}>
@@ -2738,8 +2968,9 @@ function LearnTab({ fragrances, onOpenFrag, onOpenBrand }) {
   const [openTerm,setOpenTerm]=useState(null);
   const [openExpo,setOpenExpo]=useState(null);
   const [openNote,setOpenNote]=useState(null);
-  const [tab,setTab]=useState("glossary");
-  const LEARN_TABS=[["glossary","Glossary"],["ingredients","Ingredient guide"],["stores","Fragrance stores"],["expos","Fragrance expos"],["articles","Articles"]];
+  const [tab,setTab]=useState("ingredients");
+  const todayTerm=GLOSSARY[Math.floor((Date.now()-new Date().getTimezoneOffset()*60000)/86400000)%GLOSSARY.length];
+  const LEARN_TABS=[["ingredients","Ingredient guide"],["stores","Fragrance stores"],["expos","Fragrance expos"],["articles","Articles"]];
   if (openNote) return <IngredientGuide name={openNote} onBack={()=>setOpenNote(null)} fragrances={fragrances} onOpenFrag={onOpenFrag}/>;
   return (
     <div>
@@ -2749,11 +2980,10 @@ function LearnTab({ fragrances, onOpenFrag, onOpenBrand }) {
         <p style={{fontFamily:sans,fontSize:"clamp(13px, 1.1vw, 17px)",color:T.mid,margin:"6px 0 0"}}>From beginner to connoisseur, at your pace.</p>
       </div>
       <div style={{border:`1px solid ${T.black}`,borderRadius:16,padding:22,marginBottom:24,position:"relative",overflow:"hidden"}}>
-        <div style={{position:"absolute",right:-8,top:-18,fontFamily:serif,fontSize:120,color:T.lift,lineHeight:1,userSelect:"none"}}>S</div>
+        <div style={{position:"absolute",right:-8,top:-18,fontFamily:serif,fontSize:120,color:T.lift,lineHeight:1,userSelect:"none"}}>{todayTerm.term[0]}</div>
         <Lbl>Term of the Day</Lbl>
-        <h3 style={{fontFamily:serif,fontSize:32,color:T.black,margin:"0 0 10px",fontWeight:"normal"}}>Sillage</h3>
-        <p style={{fontFamily:sans,fontSize:13,color:T.mid,lineHeight:1.7,margin:"0 0 14px"}}>The invisible trail a fragrance leaves in the air behind you, from the French word for "wake." High sillage announces your presence before you enter the room.</p>
-        <p style={{fontFamily:sans,fontSize:10,color:T.mid,margin:0}}>Found in <span style={{color:T.black,cursor:"pointer"}}>Aventus</span>, <span style={{color:T.black,cursor:"pointer"}}>Black Orchid</span></p>
+        <h3 style={{fontFamily:serif,fontSize:32,color:T.black,margin:"0 0 10px",fontWeight:"normal"}}>{todayTerm.term}</h3>
+        <p style={{fontFamily:sans,fontSize:13,color:T.mid,lineHeight:1.7,margin:0,maxWidth:620}}>{todayTerm.def}</p>
       </div>
       <div role="tablist" style={{display:"flex",gap:4,overflowX:"auto",borderBottom:`1px solid ${T.rule}`,marginBottom:24,WebkitOverflowScrolling:"touch"}}>
         {LEARN_TABS.map(([k,l])=>(
@@ -2771,19 +3001,6 @@ function LearnTab({ fragrances, onOpenFrag, onOpenBrand }) {
             {has&&<span style={{display:"block",fontSize:10,letterSpacing:"0.14em",textTransform:"uppercase",color:T.accent,marginTop:4}}>Guide</span>}
           </button>
         );})}
-      </div>
-      </>}
-      {tab==="glossary"&&<>
-      <Lbl>Glossary</Lbl>
-      <div style={{background:T.white,border:`1px solid ${T.rule}`,borderRadius:14,overflow:"hidden",marginBottom:24}}>
-        {GLOSSARY.map((g,i)=>(
-          <div key={g.term} style={{borderBottom:i<GLOSSARY.length-1?`1px solid ${T.lift}`:"none"}}>
-            <div style={{padding:"16px 18px"}}>
-              <p style={{fontFamily:serif,fontSize:18,color:T.black,margin:"0 0 6px"}}>{g.term}</p>
-              <p style={{fontFamily:sans,fontSize:13,color:T.mid,lineHeight:1.65,margin:0}}>{g.def}</p>
-            </div>
-          </div>
-        ))}
       </div>
       </>}
       {tab==="articles"&&<>
@@ -3791,6 +4008,7 @@ export default function SillageApp() {
   // instead of loading everything. Anything loaded is kept in `fragrances` so it can be opened later.
   const [serverShelves, setServerShelves] = useState(null);
   const [brandRef, setBrandRef] = useState(null);
+  const [perfumerRef, setPerfumerRef] = useState(null);
   function mergeFrags(list) {
     setFragrances(prev => {
       const map = new Map(prev.filter(p => typeof p.id === "string").map(p => [p.id, p]));
@@ -3870,7 +4088,8 @@ export default function SillageApp() {
   const NAV = [{ tab:"Discover", icon:"compass" }, { tab:"Collection", icon:"bottle" }, { tab:"Layering", icon:"layers" }, { tab:"Journal", icon:"book" }, { tab:"Learn", icon:"tip" }];
   const modalFrag = fragrances.find(f => f.id === modalFragId);
   function openFrag(id) { setModalFragId(id); }
-  function openBrand(ref) { setModalFragId(null); setProfileUsername(null); setBrandRef(ref); }
+  function openBrand(ref) { setModalFragId(null); setProfileUsername(null); setPerfumerRef(null); setBrandRef(ref); }
+  function openPerfumer(n) { setModalFragId(null); setProfileUsername(null); setBrandRef(null); setPerfumerRef(n); }
   function openProfile(username) { setProfileUsername(username); }
   function onReaction(fragId, val) { setReactions(p => ({ ...p, [fragId]: val })); }
 
@@ -3927,7 +4146,7 @@ export default function SillageApp() {
       </header>
 
       <main className="mos-main mos-wrap" style={{ position:"relative", zIndex:1, paddingTop:28, paddingBottom:64 }}>
-        {activeTab==="Discover"   && <DiscoverTab   onOpenBrand={openBrand} fragrances={fragrances} serverShelves={serverShelves} onSearch={serverShelves ? searchFrags : null} onOpenFrag={openFrag} userStatuses={userStatuses} reactions={reactions} onReaction={onReaction} onSuggest={() => setShowSuggest(true)} currentUser={currentUser}/>}
+        {activeTab==="Discover"   && <DiscoverTab   onOpenBrand={openBrand} onOpenPerfumer={openPerfumer} fragrances={fragrances} serverShelves={serverShelves} onSearch={serverShelves ? searchFrags : null} onOpenFrag={openFrag} userStatuses={userStatuses} reactions={reactions} onReaction={onReaction} onSuggest={() => setShowSuggest(true)} currentUser={currentUser}/>}
         {activeTab==="Collection" && <CollectionTab fragrances={fragrances} onOpenFrag={openFrag} statuses={userStatuses} reactions={reactions} onReaction={onReaction} onSuggest={() => setShowSuggest(true)}/>}
         {activeTab==="Layering"   && <div className="mos-prose"><LayeringTab/></div>}
         {activeTab==="Journal"    && <div className="mos-prose"><JournalTab entries={journalEntries}/></div>}
@@ -3960,11 +4179,13 @@ export default function SillageApp() {
           setReaction={v => onReaction(modalFrag.id, v)}
           onOpenFrag={openFrag}
           onOpenBrand={openBrand}
+          onOpenPerfumer={openPerfumer}
           onOpenProfile={openProfile}
           onAddJournalEntry={addJournalEntry}
           currentUser={currentUser}
         />
       )}
+      {perfumerRef && <PerfumerPage name={perfumerRef} onClose={() => setPerfumerRef(null)} onOpenFrag={openFrag} onOpenBrand={openBrand}/>}
       {brandRef && <BrandModal brand={brandRef} onClose={() => setBrandRef(null)} onOpenFrag={openFrag}/>}
       {showSuggest && <SuggestModal onClose={() => setShowSuggest(false)} currentUser={currentUser}/>}
       {profileUsername && (
