@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useId, useSyncExternalStore } from "react";
 import { createClient } from "@supabase/supabase-js";
 
 // ─── SUPABASE CLIENT ──────────────────────────────────────────────────────────
@@ -8,12 +8,221 @@ const supabase = createClient(
 );
 
 // ─── PALETTE ──────────────────────────────────────────────────────────────────
+// Every colour is a CSS variable (defined in THEME_CSS just below), so the whole
+// app switches between light and dark by changing one attribute on <html>.
+// T.black = "strong ink" and T.white = "surface": they swap places in dark mode,
+// which is why a T.black button with T.white text works in both themes.
 const T = {
-  black:"#0A0A0A", white:"#FFFFFF", bg:"#F8F8F6", ink:"#1A1A1A",
-  mid:"#888888", faint:"#C8C8C8", rule:"#E4E4E0", lift:"#F2F2EF", press:"#EBEBEA",
+  black:"var(--ink-strong)", white:"var(--surface)", bg:"var(--bg)", ink:"var(--ink)",
+  mid:"var(--mid)", faint:"var(--faint)", rule:"var(--rule)", lift:"var(--lift)", press:"var(--press)",
+  scrim:"var(--scrim)", glass:"var(--glass)",
+  onInkDim:"var(--on-ink-dim)", track:"var(--track)", trackOn:"var(--track-on)",
+  accent:"var(--accent)", accentSoft:"var(--accent-soft)", cta:"var(--cta)", trail:"var(--trail)",
+  good:"var(--good)", bad:"var(--bad)",
 };
-const serif = "Georgia,'Times New Roman',serif";
-const sans  = "'Helvetica Neue',Helvetica,Arial,sans-serif";
+const ACCENT_FILL = "#C9206B";   // solid brand pink — always carries white text
+const ON_ACCENT   = "#FFFFFF";
+const serif = "'Fraunces Variable',Georgia,'Times New Roman',serif";
+const sans  = "'DM Sans Variable','Helvetica Neue',Helvetica,Arial,sans-serif";
+
+// The six hues from the brand photography. Used for monograms and other small colour moments.
+const HUES = ["tangerine","coral","pink","orchid","violet","teal"];
+function hueFor(text) {
+  let h = 0;
+  for (const c of String(text)) h = (h * 31 + c.charCodeAt(0)) >>> 0;
+  return HUES[h % HUES.length];
+}
+
+// ─── THEME: CSS VARIABLES + LIGHT / DARK ──────────────────────────────────────
+const THEME_CSS = `
+:root, html[data-theme="light"] {
+  color-scheme: light;
+  --bg:#FAF7F5; --surface:#FFFFFF; --lift:#F4EFEC; --press:#EDE6E2; --rule:#E8E0DB;
+  --ink-strong:#17101C; --ink:#2B2231; --mid:#6F657A; --faint:#B3A9BA;
+  --scrim:rgba(250,247,245,0.93); --glass:rgba(250,247,245,0.86);
+  --on-ink-dim:rgba(255,255,255,0.62); --track:rgba(23,16,28,0.10); --track-on:rgba(255,255,255,0.30);
+  --accent:#C9206B; --accent-soft:rgba(201,32,107,0.10);
+  --tangerine:#E85D12; --coral:#E24A3D; --pink:#D42A74; --orchid:#9A3F8E; --violet:#6A3FC4; --teal:#17788F;
+  --tint-tangerine:rgba(232,93,18,0.12); --tint-coral:rgba(226,74,61,0.12); --tint-pink:rgba(212,42,116,0.11);
+  --tint-orchid:rgba(154,63,142,0.12); --tint-violet:rgba(106,63,196,0.11); --tint-teal:rgba(23,120,143,0.12);
+  --good:#2E7D32; --bad:#C0392B;
+  --cta:linear-gradient(100deg,#C94010 0%,#C9206B 52%,#6A3FC4 100%);
+  --trail:linear-gradient(90deg,#F2661C 0%,#F0476A 28%,#E6397F 50%,#8E52D6 78%,#1E9CC4 100%);
+  --glow:radial-gradient(70% 42% at 6% 0%,rgba(242,102,28,0.11),transparent 70%),radial-gradient(55% 40% at 100% 4%,rgba(230,57,127,0.08),transparent 70%),radial-gradient(70% 45% at 100% 100%,rgba(106,63,196,0.10),transparent 70%);
+  --blob-o:0.55;
+}
+html[data-theme="dark"] {
+  color-scheme: dark;
+  --bg:#0F0B14; --surface:#181220; --lift:#211A2B; --press:#2A2236; --rule:#2E2539;
+  --ink-strong:#F6F0F7; --ink:#E6DDEA; --mid:#A99EB5; --faint:#645A70;
+  --scrim:rgba(15,11,20,0.90); --glass:rgba(15,11,20,0.84);
+  --on-ink-dim:rgba(15,11,20,0.62); --track:rgba(255,255,255,0.14); --track-on:rgba(15,11,20,0.28);
+  --accent:#FF5C9D; --accent-soft:rgba(255,92,157,0.14);
+  --tangerine:#FF8040; --coral:#FF6B5E; --pink:#FF5C9D; --orchid:#D07FC4; --violet:#A68BFF; --teal:#4CC3E3;
+  --tint-tangerine:rgba(255,128,64,0.17); --tint-coral:rgba(255,107,94,0.17); --tint-pink:rgba(255,92,157,0.17);
+  --tint-orchid:rgba(208,127,196,0.17); --tint-violet:rgba(166,139,255,0.17); --tint-teal:rgba(76,195,227,0.16);
+  --good:#5BC27C; --bad:#FF7A6B;
+  --glow:radial-gradient(70% 42% at 6% 0%,rgba(242,102,28,0.20),transparent 70%),radial-gradient(55% 40% at 100% 4%,rgba(230,57,127,0.14),transparent 70%),radial-gradient(70% 45% at 100% 100%,rgba(106,63,196,0.22),transparent 70%);
+  --blob-o:0.36;
+}
+html { background:var(--bg); }
+body { background:transparent; color:var(--ink); font-family:${sans}; }
+body::before { content:""; position:fixed; inset:0; z-index:-1; pointer-events:none; background:var(--glow); }
+h1, h2, h3 { font-weight:500; }
+::selection { background:#C9206B; color:#fff; }
+button:focus-visible, [role="button"]:focus-visible { outline:2px solid var(--accent); outline-offset:2px; }
+input:focus-visible, textarea:focus-visible, select:focus-visible { outline:2px solid var(--accent) !important; outline-offset:1px; }
+
+.mos-pagehead { position:relative; padding-bottom:18px; margin-bottom:24px; border-bottom:1px solid var(--rule); }
+.mos-pagehead::after { content:""; position:absolute; left:0; bottom:-2px; width:44px; height:3px; border-radius:3px; background:var(--trail); }
+
+.mos-tabs-top { display:flex; gap:20px; overflow-x:auto; }
+.mos-tabbar { display:none; }
+:root { --cover-w:158px; }
+@media (min-width:640px) { :root { --cover-w:184px; } }
+.mos-cover { transition:transform .18s ease, box-shadow .18s ease; }
+.mos-cover:hover { transform:translateY(-3px); }
+.mos-shelf::-webkit-scrollbar { display:none; }
+@media (max-width:639px) { .mos-band { background:var(--lift); } }
+@media (max-width:639px) {
+  .mos-tabs-top { display:none; }
+  .mos-tabbar { display:flex; }
+  .mos-main { padding-bottom:112px !important; }
+}
+
+.mos-blobs { position:absolute; inset:0; overflow:hidden; pointer-events:none; z-index:0; }
+.mos-blobs i { position:absolute; border-radius:50%; filter:blur(64px); opacity:var(--blob-o); }
+.mos-blobs i:nth-child(1) { width:300px; height:300px; left:-90px; top:-70px; background:#F2661C; }
+.mos-blobs i:nth-child(2) { width:250px; height:250px; right:-80px; top:90px; background:#E6397F; }
+.mos-blobs i:nth-child(3) { width:280px; height:280px; left:-70px; bottom:-90px; background:#8E52D6; }
+.mos-blobs i:nth-child(4) { width:220px; height:220px; right:-50px; bottom:-40px; background:#1E9CC4; }
+
+@keyframes mosSpin { to { transform:rotate(360deg); } }
+.mos-spin { animation:mosSpin 3.2s linear infinite; }
+@media (prefers-reduced-motion:reduce) { .mos-spin { animation:none; } * { transition-duration:0.01ms !important; } }
+`;
+
+const THEME_KEY = "mos-theme";
+const THEME_COLORS = { light:"#FAF7F5", dark:"#0F0B14" };
+function readThemePref() {
+  try { const v = window.localStorage.getItem(THEME_KEY); return v === "light" || v === "dark" ? v : "system"; }
+  catch (e) { return "system"; }
+}
+function systemTheme() {
+  return typeof window !== "undefined" && window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+}
+function resolveTheme(pref) { return pref === "system" ? systemTheme() : pref; }
+function paintTheme(pref) {
+  const r = resolveTheme(pref);
+  document.documentElement.setAttribute("data-theme", r);
+  const m = document.querySelector('meta[name="theme-color"]');
+  if (m) m.setAttribute("content", THEME_COLORS[r]);
+}
+const themeStore = { pref:"system", subs:new Set() };
+function setThemePref(p) {
+  themeStore.pref = p;
+  try { if (p === "system") window.localStorage.removeItem(THEME_KEY); else window.localStorage.setItem(THEME_KEY, p); } catch (e) { /* storage unavailable */ }
+  paintTheme(p);
+  themeStore.subs.forEach(f => f());
+}
+if (typeof document !== "undefined") {
+  if (!document.getElementById("mos-theme-css")) {
+    const s = document.createElement("style");
+    s.id = "mos-theme-css";
+    s.textContent = THEME_CSS;
+    document.head.appendChild(s);
+  }
+  themeStore.pref = readThemePref();
+  paintTheme(themeStore.pref);
+  if (window.matchMedia) {
+    window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => {
+      if (themeStore.pref === "system") { paintTheme("system"); themeStore.subs.forEach(f => f()); }
+    });
+  }
+}
+function useTheme() {
+  const snap = useSyncExternalStore(
+    cb => { themeStore.subs.add(cb); return () => themeStore.subs.delete(cb); },
+    () => themeStore.pref + "|" + resolveTheme(themeStore.pref),
+    () => "system|light"
+  );
+  const [pref, resolved] = snap.split("|");
+  return { pref, resolved, setPref: setThemePref };
+}
+
+// ─── LOGO ─────────────────────────────────────────────────────────────────────
+// A stitched spiral: an embroidered dot, a fingerprint, a memory winding inward.
+const MARK_PATH = "M23.74 21.36C23.84 21.16 24.07 20.95 24.38 20.84C24.70 20.73 25.10 20.72 25.47 20.87C25.84 21.01 26.19 21.31 26.37 21.73C26.56 22.16 26.59 22.70 26.38 23.26C26.18 23.81 25.75 24.37 25.13 24.79C24.51 25.21 23.70 25.48 22.85 25.50C22.01 25.51 21.13 25.27 20.42 24.76C19.71 24.25 19.17 23.48 18.98 22.56C18.78 21.64 18.92 20.59 19.44 19.60C19.96 18.60 20.86 17.69 22 17.06C23.15 16.43 24.54 16.09 25.92 16.17C27.29 16.25 28.65 16.74 29.69 17.61C30.74 18.48 31.47 19.73 31.67 21.14C31.88 22.55 31.57 24.12 30.73 25.55C29.90 26.98 28.54 28.25 26.87 29.10C25.20 29.94 23.22 30.34 21.32 30.17C19.41 30 17.57 29.25 16.19 28.01C14.81 26.78 13.90 25.06 13.68 23.16C13.46 21.25 13.94 19.16 15.09 17.30C16.24 15.44 18.07 13.80 20.26 12.75C22.46 11.70 25.01 11.23 27.45 11.50C29.89 11.76 32.20 12.76 33.92 14.36C35.63 15.96 36.74 18.15 36.97 20.55C37.21 22.95 36.56 25.55 35.09 27.85C33.61 30.15 31.33 32.14 28.61 33.40C25.89 34.67 22.75 35.20 19.78 34.84C16.81 34.48 14.02 33.23 11.97 31.27C9.92 29.31 8.62 26.64 8.38 23.75C8.13 20.85 8.95 17.74 10.74 15.01C12.53 12.27 15.28 9.92 18.52 8.44";
+function LogoMark({ size = 32, weight = 2.8 }) {
+  const id = "mk" + useId().replace(/:/g, "");
+  return (
+    <svg width={size} height={size} viewBox="4 2 40 40" fill="none" style={{ display:"block", flexShrink:0 }} aria-hidden="true">
+      <defs>
+        <linearGradient id={id} gradientUnits="userSpaceOnUse" x1="8" y1="38" x2="41" y2="6">
+          <stop offset="0" stopColor="#F2661C"/>
+          <stop offset="0.3" stopColor="#F0476A"/>
+          <stop offset="0.55" stopColor="#E6397F"/>
+          <stop offset="0.78" stopColor="#8E52D6"/>
+          <stop offset="1" stopColor="#1E9CC4"/>
+        </linearGradient>
+      </defs>
+      <path d={MARK_PATH} stroke={`url(#${id})`} strokeWidth={weight} strokeLinecap="round"/>
+    </svg>
+  );
+}
+function Wordmark({ size = 22 }) {
+  return (
+    <span aria-hidden="true" style={{ fontFamily:serif, fontSize:size, lineHeight:1, letterSpacing:-size * 0.02, color:T.black, fontWeight:500, display:"inline-flex", alignItems:"baseline", gap:size * 0.24, whiteSpace:"nowrap" }}>
+      <span>memoir</span>
+      <span style={{ fontStyle:"italic", fontWeight:400, color:T.accent }}>on skin</span>
+    </span>
+  );
+}
+function Logo({ size = 20, stacked = false, align = "left" }) {
+  if (stacked) {
+    return (
+      <div role="img" aria-label="Memoir on Skin" style={{ display:"flex", flexDirection:"column", alignItems:align === "center" ? "center" : "flex-start", gap:size * 0.55 }}>
+        <LogoMark size={size * 2.8} weight={2.6}/>
+        <Wordmark size={size * 1.6}/>
+      </div>
+    );
+  }
+  return (
+    <div role="img" aria-label="Memoir on Skin" style={{ display:"inline-flex", alignItems:"center", gap:size * 0.42 }}>
+      <LogoMark size={size * 1.5} weight={3}/>
+      <Wordmark size={size}/>
+    </div>
+  );
+}
+
+// ─── THEME CONTROLS ───────────────────────────────────────────────────────────
+function ThemeToggle({ size = 32 }) {
+  const { resolved, setPref } = useTheme();
+  const dark = resolved === "dark";
+  return (
+    <button onClick={() => setPref(dark ? "light" : "dark")} aria-label={dark ? "Switch to light mode" : "Switch to dark mode"} title={dark ? "Light mode" : "Dark mode"}
+      style={{ width:size, height:size, borderRadius:"50%", border:`1px solid ${T.rule}`, background:T.white, display:"flex", alignItems:"center", justifyContent:"center", cursor:"pointer", flexShrink:0, padding:0 }}>
+      <Icon name={dark ? "sun" : "moon"} size={15} color={T.mid}/>
+    </button>
+  );
+}
+function AppearancePicker() {
+  const { pref, setPref } = useTheme();
+  const opts = [["light","Light","sun"], ["dark","Dark","moon"], ["system","Auto","contrast"]];
+  return (
+    <div role="radiogroup" aria-label="Appearance" style={{ display:"flex", gap:4, padding:4, borderRadius:12, background:T.lift, border:`1px solid ${T.rule}` }}>
+      {opts.map(([key, label, icon]) => {
+        const on = pref === key;
+        return (
+          <button key={key} role="radio" aria-checked={on} onClick={() => setPref(key)}
+            style={{ flex:1, display:"flex", alignItems:"center", justifyContent:"center", gap:6, padding:"8px 0", borderRadius:9, border:on ? `1px solid ${T.rule}` : "1px solid transparent", background:on ? T.white : "transparent", color:on ? T.black : T.mid, fontSize:12, fontWeight:on ? 600 : 400, fontFamily:sans, cursor:"pointer", transition:"all 0.15s" }}>
+            <Icon name={icon} size={14} color={on ? T.accent : T.mid}/>{label}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
 
 // ─── SVG ICONS ────────────────────────────────────────────────────────────────
 function Icon({ name, size=18, color=T.mid }) {
@@ -38,6 +247,12 @@ function Icon({ name, size=18, color=T.mid }) {
     search: <svg viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>,
     droplet: <svg viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2.69l5.66 5.66a8 8 0 11-11.31 0z"/></svg>,
     lotion: <svg viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><rect x="8" y="4" width="8" height="16" rx="2"/><path d="M10 4V2h4v2"/><line x1="8" y1="9" x2="16" y2="9"/></svg>,
+    sun: <svg viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="4.5"/><line x1="12" y1="1.5" x2="12" y2="3.5"/><line x1="12" y1="20.5" x2="12" y2="22.5"/><line x1="4.2" y1="4.2" x2="5.6" y2="5.6"/><line x1="18.4" y1="18.4" x2="19.8" y2="19.8"/><line x1="1.5" y1="12" x2="3.5" y2="12"/><line x1="20.5" y1="12" x2="22.5" y2="12"/><line x1="4.2" y1="19.8" x2="5.6" y2="18.4"/><line x1="18.4" y1="5.6" x2="19.8" y2="4.2"/></svg>,
+    moon: <svg viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 12.8A9 9 0 1111.2 3a7 7 0 009.8 9.8z"/></svg>,
+    contrast: <svg viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="9.5"/><path d="M12 2.5a9.5 9.5 0 010 19z" fill={color} stroke="none"/></svg>,
+    compass: <svg viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="9.5"/><polygon points="16.2 7.8 14.1 14.1 7.8 16.2 9.9 9.9 16.2 7.8"/></svg>,
+    layers: <svg viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="9" cy="12" r="6.2"/><circle cx="15" cy="12" r="6.2"/></svg>,
+    book: <svg viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M2.5 4h6a3.5 3.5 0 013.5 3.5V21a2.5 2.5 0 00-2.5-2.5h-7z"/><path d="M21.5 4h-6A3.5 3.5 0 0012 7.5V21a2.5 2.5 0 012.5-2.5h7z"/></svg>,
     spray: <svg viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><rect x="4" y="9" width="10" height="12" rx="2"/><path d="M14 13h2a2 2 0 002-2V9h-4"/><path d="M18 5v2"/><path d="M16 3h4"/><circle cx="18" cy="3" r="0.5" fill={color}/></svg>,
   };
   return <span style={s}>{icons[name] || null}</span>;
@@ -188,10 +403,10 @@ function SeasonHeat({ seasons }) {
   const labels = { spring: "Spring", summer: "Summer", fall: "Fall", winter: "Winter" };
   // Season-specific color palettes for the bars
   const seasonColors = {
-    spring: { filled: (i) => `hsl(${130 + i * 5}, ${55 + i * 3}%, ${65 - i * 4}%)`, empty: "#EEF5EA" },
-    summer: { filled: (i) => `hsl(${38 + i * 2}, ${85 + i * 1}%, ${68 - i * 5}%)`, empty: "#FFF8EC" },
-    fall:   { filled: (i) => `hsl(${22 - i * 2}, ${80 + i * 2}%, ${68 - i * 7}%)`, empty: "#FBF0EA" },
-    winter: { filled: (i) => `hsl(${210 + i * 2}, ${60 + i * 3}%, ${70 - i * 5}%)`, empty: "#EDF3FB" },
+    spring: { filled: (i) => `hsl(${130 + i * 5}, ${55 + i * 3}%, ${65 - i * 4}%)`, empty: T.lift },
+    summer: { filled: (i) => `hsl(${38 + i * 2}, ${85 + i * 1}%, ${68 - i * 5}%)`, empty: T.lift },
+    fall:   { filled: (i) => `hsl(${22 - i * 2}, ${80 + i * 2}%, ${68 - i * 7}%)`, empty: T.lift },
+    winter: { filled: (i) => `hsl(${210 + i * 2}, ${60 + i * 3}%, ${70 - i * 5}%)`, empty: T.lift },
   };
   const max = Math.max(...Object.values(seasons));
   return (
@@ -328,8 +543,8 @@ function StatusBadge({ statusKey }) {
   const st = STATUSES.find(s => s.key === statusKey);
   if (!st) return null;
   const isBottle = st.group === "bottle";
-  const bgColor = isBottle ? T.black : T.white;
-  const borderColor = isBottle ? T.black : T.rule;
+  const bgColor = isBottle ? ACCENT_FILL : T.white;
+  const borderColor = isBottle ? ACCENT_FILL : T.rule;
 
   return (
     <div style={{
@@ -360,7 +575,7 @@ function StatusBadge({ statusKey }) {
         </svg>
       )}
       {st.group === "tried" && <Icon name={st.iconName} size={13} color={T.mid}/>}
-      <span style={{ fontFamily: sans, fontSize: 10, fontWeight: 500, color: isBottle ? T.white : T.mid }}>
+      <span style={{ fontFamily: sans, fontSize: 10, fontWeight: 500, color: isBottle ? ON_ACCENT : T.mid }}>
         {st.label.split("—")[0].trim()}
       </span>
     </div>
@@ -368,6 +583,7 @@ function StatusBadge({ statusKey }) {
 }
 
 // ─── REACTION BAR ─────────────────────────────────────────────────────────────
+const REACTION_FILL = { dislike:"#6A3FC4", like:"#17788F", love:"#C9206B" };
 const REACTIONS = {
   dislike:{ iconName:"thumbsdown", label:"Dislike" },
   like:   { iconName:"thumbsup",   label:"Like"    },
@@ -378,12 +594,12 @@ function ReactionBar({ value, onChange, compact }) {
     <div style={{ display:"flex", gap: compact ? 6 : 8 }}>
       {Object.entries(REACTIONS).map(([key,r]) => {
         const active = value === key;
-        const iconColor = active ? T.white : T.mid;
+        const iconColor = active ? ON_ACCENT : T.mid;
         return (
           <button key={key} onClick={e=>{e.stopPropagation();onChange(active?null:key);}}
-            style={{ display:"flex", alignItems:"center", gap: compact?3:5, padding: compact?"4px 9px":"7px 13px", borderRadius:20, cursor:"pointer", border:`1px solid ${active?T.black:T.rule}`, background:active?T.black:T.white, transition:"all 0.15s" }}>
+            style={{ display:"flex", alignItems:"center", gap: compact?3:5, padding: compact?"4px 9px":"7px 13px", borderRadius:20, cursor:"pointer", border:`1px solid ${active?REACTION_FILL[key]:T.rule}`, background:active?REACTION_FILL[key]:T.white, transition:"all 0.15s" }}>
             <Icon name={r.iconName} size={compact?13:15} color={iconColor}/>
-            {!compact && <span style={{ fontFamily:sans, fontSize:11, fontWeight:500, color:active?T.white:T.mid }}>{r.label}</span>}
+            {!compact && <span style={{ fontFamily:sans, fontSize:11, fontWeight:500, color:active?ON_ACCENT:T.mid }}>{r.label}</span>}
           </button>
         );
       })}
@@ -480,9 +696,9 @@ function PrivateNoteEditor({ note, onSave, frag, onAddJournalEntry }) {
     <div onClick={()=>onChange(!active)} style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"11px 14px",borderRadius:10,border:`1px solid ${active?T.black:T.rule}`,background:active?T.black:T.white,cursor:"pointer",transition:"all 0.15s",marginBottom:8}}>
       <div>
         <p style={{fontFamily:sans,fontSize:12,fontWeight:500,color:active?T.white:T.ink,margin:0}}>{label}</p>
-        {sub&&<p style={{fontFamily:sans,fontSize:10,color:active?"rgba(255,255,255,0.6)":T.faint,margin:"1px 0 0"}}>{sub}</p>}
+        {sub&&<p style={{fontFamily:sans,fontSize:10,color:active?T.onInkDim:T.faint,margin:"1px 0 0"}}>{sub}</p>}
       </div>
-      <div style={{width:32,height:18,borderRadius:9,background:active?"rgba(255,255,255,0.3)":"rgba(0,0,0,0.08)",position:"relative",flexShrink:0}}>
+      <div style={{width:32,height:18,borderRadius:9,background:active?T.trackOn:T.track,position:"relative",flexShrink:0}}>
         <div style={{position:"absolute",top:2,left:active?14:2,width:14,height:14,borderRadius:"50%",background:active?T.white:T.mid,transition:"left 0.15s"}}/>
       </div>
     </div>
@@ -535,14 +751,14 @@ const LEGAL_CONTENT = {
     title: "Terms of Service",
     updated: "Last updated: June 2026",
     sections: [
-      { heading: "Acceptance", body: "By accessing or using sillage. you agree to be bound by these terms. If you do not agree, please do not use the platform." },
-      { heading: "Your account", body: "You are responsible for maintaining the confidentiality of your account credentials. You must notify us immediately at hello@sillage.app if you suspect unauthorised access to your account." },
-      { heading: "Your content", body: "You retain ownership of notes, reviews, and journal entries you create. By publishing a review you grant sillage. a non-exclusive licence to display that content on the platform. Private notes are never shared." },
+      { heading: "Acceptance", body: "By accessing or using Memoir on Skin you agree to be bound by these terms. If you do not agree, please do not use the platform." },
+      { heading: "Your account", body: "You are responsible for maintaining the confidentiality of your account credentials. You must notify us immediately at hello@Memoir on Skinapp if you suspect unauthorised access to your account." },
+      { heading: "Your content", body: "You retain ownership of notes, reviews, and journal entries you create. By publishing a review you grant Memoir on Skin a non-exclusive licence to display that content on the platform. Private notes are never shared." },
       { heading: "Community standards", body: "Reviews and community content must be honest and based on personal experience. Spam, harassment, and fraudulent reviews are grounds for account suspension." },
-      { heading: "Samples and purchases", body: "sillage. facilitates discovery and may link to third-party sample services. We are not responsible for third-party transactions, shipping, or product quality." },
-      { heading: "Limitation of liability", body: "sillage. is provided as-is. We are not liable for any indirect or consequential damages arising from your use of the platform." },
-      { heading: "Changes", body: "We may update these terms from time to time. Continued use of sillage. after changes constitutes acceptance of the revised terms." },
-      { heading: "Contact", body: "Questions about these terms? Write to us at hello@sillage.app." },
+      { heading: "Samples and purchases", body: "Memoir on Skin facilitates discovery and may link to third-party sample services. We are not responsible for third-party transactions, shipping, or product quality." },
+      { heading: "Limitation of liability", body: "Memoir on Skin is provided as-is. We are not liable for any indirect or consequential damages arising from your use of the platform." },
+      { heading: "Changes", body: "We may update these terms from time to time. Continued use of Memoir on Skin after changes constitutes acceptance of the revised terms." },
+      { heading: "Contact", body: "Questions about these terms? Write to us at hello@Memoir on Skinapp." },
     ],
   },
   privacy: {
@@ -550,13 +766,13 @@ const LEGAL_CONTENT = {
     updated: "Last updated: June 2026",
     sections: [
       { heading: "What we collect", body: "We collect your name, email address, username, and country when you register. We collect fragrance interactions — statuses, reactions, journal entries, and reviews — to power your personal experience." },
-      { heading: "What we never do", body: "We do not sell your data. We do not share your personal information with advertisers. Private notes are encrypted and never accessible to the sillage. team." },
-      { heading: "How we use your data", body: "Your data is used to provide the sillage. service, personalise your discovery experience, and improve the platform. Aggregate, anonymised data may be used to identify fragrance trends." },
+      { heading: "What we never do", body: "We do not sell your data. We do not share your personal information with advertisers. Private notes are encrypted and never accessible to the Memoir on Skin team." },
+      { heading: "How we use your data", body: "Your data is used to provide the Memoir on Skin service, personalise your discovery experience, and improve the platform. Aggregate, anonymised data may be used to identify fragrance trends." },
       { heading: "Journal entries and private notes", body: "Private notes and journal entries marked as private are stored securely and are visible only to you. Publishing a journal entry or review makes that content visible to the community." },
       { heading: "Cookies", body: "We use essential cookies to keep you signed in. We do not use advertising or tracking cookies." },
       { heading: "Data retention", body: "You may delete your account at any time. Upon deletion, your personal data is removed within 30 days. Anonymised, published review content may be retained." },
-      { heading: "Your rights", body: "You have the right to access, correct, or delete your personal data. To exercise these rights, contact us at hello@sillage.app." },
-      { heading: "Contact", body: "Privacy questions or requests: hello@sillage.app." },
+      { heading: "Your rights", body: "You have the right to access, correct, or delete your personal data. To exercise these rights, contact us at hello@Memoir on Skinapp." },
+      { heading: "Contact", body: "Privacy questions or requests: hello@Memoir on Skinapp." },
     ],
   },
 };
@@ -565,11 +781,11 @@ function LegalModal({ type, onClose }) {
   const content = LEGAL_CONTENT[type];
   if (!content) return null;
   return (
-    <div onClick={onClose} style={{ position:"fixed", inset:0, zIndex:80, background:"rgba(248,248,246,0.94)", backdropFilter:"blur(16px)", display:"flex", flexDirection:"column", justifyContent:"flex-end", alignItems:"center" }}>
+    <div onClick={onClose} style={{ position:"fixed", inset:0, zIndex:80, background:T.scrim, backdropFilter:"blur(16px)", display:"flex", flexDirection:"column", justifyContent:"flex-end", alignItems:"center" }}>
       <div onClick={e => e.stopPropagation()} style={{ background:T.white, borderRadius:"24px 24px 0 0", border:`1px solid ${T.rule}`, borderBottom:"none", width:"100%", maxWidth:460, maxHeight:"88vh", overflowY:"auto" }}>
         <div style={{ position:"sticky", top:0, background:T.white, borderBottom:`1px solid ${T.rule}`, padding:"20px 24px 16px", display:"flex", alignItems:"flex-start", justifyContent:"space-between" }}>
           <div>
-            <p style={{ fontFamily:sans, fontSize:9, textTransform:"uppercase", letterSpacing:"0.12em", color:T.mid, margin:"0 0 3px" }}>sillage.</p>
+            <p style={{ fontFamily:sans, fontSize:9, textTransform:"uppercase", letterSpacing:"0.12em", color:T.mid, margin:"0 0 3px" }}>Memoir on Skin</p>
             <h2 style={{ fontFamily:serif, fontSize:22, color:T.black, margin:0 }}>{content.title}</h2>
             <p style={{ fontFamily:sans, fontSize:11, color:T.faint, margin:"3px 0 0" }}>{content.updated}</p>
           </div>
@@ -591,11 +807,11 @@ function LegalModal({ type, onClose }) {
 // ─── FOOTER LINKS ─────────────────────────────────────────────────────────────
 function FooterLinks({ dark = false }) {
   const [legal, setLegal] = useState(null);
-  const col = dark ? "rgba(255,255,255,0.25)" : T.faint;
-  const colHov = dark ? "rgba(255,255,255,0.55)" : T.mid;
-  const sep = dark ? "rgba(255,255,255,0.12)" : T.rule;
+  const col = T.mid;
+  const colHov = T.black;
+  const sep = T.rule;
   const links = [
-    { label:"Contact", action:() => window.open("mailto:hello@sillage.app") },
+    { label:"Contact", action:() => window.open("mailto:hello@memoironskin.com") },
     { label:"Terms of Service", action:() => setLegal("terms") },
     { label:"Privacy Policy", action:() => setLegal("privacy") },
   ];
@@ -628,7 +844,7 @@ function SuggestModal({ onClose }) {
   function set(k,v){setForm(f=>({...f,[k]:v}));}
   function handleImage(e){const file=e.target.files[0];if(file){setImageFile(file);const reader=new FileReader();reader.onload=ev=>setImagePreview(ev.target.result);reader.readAsDataURL(file);}}
   return (
-    <div onClick={onClose} style={{ position:"fixed", inset:0, zIndex:60, background:"rgba(248,248,246,0.92)", backdropFilter:"blur(16px)", display:"flex", flexDirection:"column", justifyContent:"flex-end", alignItems:"center" }}>
+    <div onClick={onClose} style={{ position:"fixed", inset:0, zIndex:60, background:T.scrim, backdropFilter:"blur(16px)", display:"flex", flexDirection:"column", justifyContent:"flex-end", alignItems:"center" }}>
       <div onClick={e=>e.stopPropagation()} style={{ background:T.white, borderRadius:"24px 24px 0 0", border:`1px solid ${T.rule}`, borderBottom:"none", width:"100%", maxWidth:460, maxHeight:"90vh", overflowY:"auto" }}>
         <div style={{ padding:"24px 24px 0" }}>
           <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:6 }}>
@@ -657,7 +873,7 @@ function SuggestModal({ onClose }) {
                   <div style={{ position:"relative", height:120, borderRadius:12, overflow:"hidden", border:`1px solid ${T.rule}` }}>
                     <img src={imagePreview} style={{ width:"100%", height:"100%", objectFit:"cover" }} alt="preview"/>
                     <div style={{ position:"absolute", inset:0, background:"rgba(0,0,0,0.3)", display:"flex", alignItems:"center", justifyContent:"center" }}>
-                      <span style={{ fontFamily:sans, fontSize:11, color:T.white }}>Change image</span>
+                      <span style={{ fontFamily:sans, fontSize:11, color:ON_ACCENT }}>Change image</span>
                     </div>
                   </div>
                 ) : (
@@ -695,7 +911,7 @@ function SuggestModal({ onClose }) {
                 ))}
               </div>
               {form.ownershipStatus==="independent" && (
-                <p style={{ fontFamily:sans, fontSize:11, color:"#2E7D32", lineHeight:1.6, margin:0 }}>The house is privately owned or founder-led with no conglomerate backing.</p>
+                <p style={{ fontFamily:sans, fontSize:11, color:T.good, lineHeight:1.6, margin:0 }}>The house is privately owned or founder-led with no conglomerate backing.</p>
               )}
               {form.ownershipStatus==="conglomerate" && (
                 <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:8 }}>
@@ -715,7 +931,7 @@ function SuggestModal({ onClose }) {
               <p style={{ fontFamily:sans, fontSize:9, textTransform:"uppercase", letterSpacing:"0.12em", color:T.mid, margin:"0 0 6px" }}>Your First Review (optional)</p>
               <textarea value={form.firstReview} onChange={e=>set("firstReview",e.target.value)} placeholder="How does it open? What does the dry-down smell like? Who is this for?" rows={3} style={{...inp,resize:"vertical",lineHeight:1.6}}/>
             </div>
-            <button onClick={()=>{if(form.name&&form.house)setSubmitted(true);}} style={{ width:"100%", padding:"13px 0", borderRadius:10, background:form.name&&form.house?T.black:T.faint, border:"none", color:T.white, fontSize:13, fontFamily:sans, cursor:form.name&&form.house?"pointer":"not-allowed" }}>Submit suggestion</button>
+            <button onClick={()=>{if(form.name&&form.house)setSubmitted(true);}} style={{ width:"100%", padding:"13px 0", borderRadius:10, background:form.name&&form.house?T.cta:T.faint, border:"none", color:ON_ACCENT, fontSize:13, fontFamily:sans, cursor:form.name&&form.house?"pointer":"not-allowed" }}>Submit suggestion</button>
           </div>
         )}
       </div>
@@ -801,10 +1017,11 @@ function Lbl({ children, mb=10 }) {
 }
 function Mono({ name, year, size=52 }) {
   const ini=name.split(" ").map(w=>w[0]).join("").slice(0,2).toUpperCase();
+  const hue=hueFor(name);
   return (
-    <div style={{width:size,height:size,borderRadius:Math.round(size*0.2),background:T.lift,border:`1px solid ${T.rule}`,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",flexShrink:0}}>
-      <span style={{fontFamily:serif,fontSize:size*0.22,color:T.ink,lineHeight:1}}>{ini}</span>
-      {year&&<span style={{fontFamily:sans,fontSize:size*0.14,color:T.faint,marginTop:2,letterSpacing:"0.04em"}}>{year}</span>}
+    <div style={{width:size,height:size,borderRadius:Math.round(size*0.2),background:`var(--tint-${hue})`,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+      <span style={{fontFamily:serif,fontSize:size*0.26,fontWeight:500,color:`var(--${hue})`,lineHeight:1}}>{ini}</span>
+      {year&&<span style={{fontFamily:sans,fontSize:size*0.14,color:`var(--${hue})`,opacity:0.7,marginTop:2,letterSpacing:"0.04em"}}>{year}</span>}
     </div>
   );
 }
@@ -877,7 +1094,7 @@ function PerfumerModal({ name, onClose }) {
           }
           {fragrances.length > 0 && (
             <>
-              <p style={{ fontFamily:sans, fontSize:9, textTransform:"uppercase", letterSpacing:"0.12em", color:T.mid, margin:"0 0 12px" }}>In the sillage. database — {fragrances.length}</p>
+              <p style={{ fontFamily:sans, fontSize:9, textTransform:"uppercase", letterSpacing:"0.12em", color:T.mid, margin:"0 0 12px" }}>In the Memoir on Skin database — {fragrances.length}</p>
               <div style={{ display:"flex", flexDirection:"column", gap:10 }}>
                 {fragrances.map(f => (
                   <div key={f.id} style={{ display:"flex", alignItems:"center", gap:14, padding:"12px 14px", background:T.lift, borderRadius:12, border:`1px solid ${T.rule}` }}>
@@ -906,7 +1123,7 @@ function OwnershipBadge({ ownership, size = "normal", showTooltip = false }) {
   const isIndependent = ownership.status === "independent";
   const isSmall = size === "small";
   const label = isIndependent ? "Independent" : ownership.parent;
-  const color = isIndependent ? "#2E7D32" : "#C0392B";
+  const color = isIndependent ? T.good : T.bad;
   const textStyle = {
     fontFamily: sans,
     fontSize: isSmall ? 9 : 11,
@@ -1015,7 +1232,7 @@ function DetailModal({ frag, onClose, userStatus, setUserStatus, privateNote, se
   }
 
   return (
-    <div onClick={onClose} style={{position:"fixed",inset:0,zIndex:50,background:"rgba(248,248,246,0.9)",backdropFilter:"blur(16px)",display:"flex",flexDirection:"column",justifyContent:"flex-end",alignItems:"center"}}>
+    <div onClick={onClose} style={{position:"fixed",inset:0,zIndex:50,background:T.scrim,backdropFilter:"blur(16px)",display:"flex",flexDirection:"column",justifyContent:"flex-end",alignItems:"center"}}>
       <div onClick={e=>e.stopPropagation()} style={{background:T.white,borderRadius:"24px 24px 0 0",border:`1px solid ${T.rule}`,borderBottom:"none",width:"100%",maxWidth:460,maxHeight:"93vh",overflowY:"auto"}}>
 
         
@@ -1273,7 +1490,7 @@ function TasteProfile({ userStatuses, reactions }) {
             <div style={{ paddingTop:14 }}>
               <p style={{ fontFamily:sans, fontSize:9, textTransform:"uppercase", letterSpacing:"0.1em", color:T.mid, margin:"0 0 12px" }}>What you keep reaching for</p>
               {likeEntries.map(([label, count]) => (
-                <Bar key={label} label={label} count={count} max={likeMax} color={T.black}/>
+                <Bar key={label} label={label} count={count} max={likeMax} color={T.trail}/>
               ))}
             </div>
           )}
@@ -1282,7 +1499,7 @@ function TasteProfile({ userStatuses, reactions }) {
             <div style={{ paddingTop: likeEntries.length > 0 ? 16 : 14, borderTop: likeEntries.length > 0 ? `1px solid ${T.lift}` : "none" }}>
               <p style={{ fontFamily:sans, fontSize:9, textTransform:"uppercase", letterSpacing:"0.1em", color:T.mid, margin:"0 0 12px" }}>Accords that haven't resonated</p>
               {dislikeEntries.map(([label, count]) => (
-                <Bar key={label} label={label} count={count} max={dislikeMax} color="#C0392B"/>
+                <Bar key={label} label={label} count={count} max={dislikeMax} color={T.bad}/>
               ))}
               <p style={{ fontFamily:sans, fontSize:11, color:T.faint, margin:"10px 0 0", lineHeight:1.6 }}>The nose uses this to filter out fragrances that are unlikely to work for you.</p>
             </div>
@@ -1302,16 +1519,100 @@ const CHAT_RESP={
 };
 function getResp(msg){const l=msg.toLowerCase();if(l.includes("library")||l.includes("book")||l.includes("paper")||l.includes("autumn"))return CHAT_RESP.library;if(l.includes("quiet")||l.includes("expensive")||l.includes("luxury"))return CHAT_RESP.quiet;if(l.includes("winter")||l.includes("cold")||l.includes("fire"))return CHAT_RESP.winter;return CHAT_RESP.default;}
 
-function DiscoverTab({ onOpenFrag, userStatuses, reactions, onReaction, onSuggest }) {
+
+// ─── SHELVES: large cover tiles, Fable-style ─────────────────────────────────
+const COVER_BG = {
+  tangerine:"linear-gradient(158deg,#F67A2A 0%,#C94010 100%)",
+  coral:"linear-gradient(158deg,#F4605A 0%,#B8322F 100%)",
+  pink:"linear-gradient(158deg,#EC4A8C 0%,#A8175A 100%)",
+  orchid:"linear-gradient(158deg,#B968AC 0%,#6B2A66 100%)",
+  violet:"linear-gradient(158deg,#9A62E0 0%,#4B2A9A 100%)",
+  teal:"linear-gradient(158deg,#2BB0D6 0%,#0F5C73 100%)",
+};
+const COVER_RINGS = "repeating-radial-gradient(circle at 82% 96%, rgba(255,255,255,0.20) 0 1.5px, transparent 1.5px 13px)";
+function CoverTile({ frag, onClick, userStatus }) {
+  const hue = hueFor(frag.name + "|" + frag.house);
+  const len = frag.name.length;
+  const fs = len > 22 ? 20 : len > 14 ? 24 : 29;
+  const owned = userStatus === "bottle_owned";
+  return (
+    <button onClick={() => onClick(frag.id)} className="mos-cover" aria-label={`${frag.name} by ${frag.house}`}
+      style={{ flex:"0 0 auto", width:"var(--cover-w)", aspectRatio:"0.69", borderRadius:6, border:"none", padding:0, cursor:"pointer", position:"relative", overflow:"hidden", background:COVER_BG[hue], boxShadow:"0 6px 18px rgba(23,16,28,0.16)", textAlign:"left", scrollSnapAlign:"start" }}>
+      <span style={{ position:"absolute", inset:0, background:COVER_RINGS, pointerEvents:"none" }}/>
+      <span style={{ position:"absolute", left:0, right:0, top:0, bottom:0, padding:"16px 14px 14px", display:"flex", flexDirection:"column", justifyContent:"space-between" }}>
+        <span style={{ fontFamily:sans, fontSize:9, fontWeight:600, textTransform:"uppercase", letterSpacing:"0.16em", color:"rgba(255,255,255,0.86)", lineHeight:1.4, paddingRight:22 }}>{frag.house}</span>
+        <span style={{ fontFamily:serif, fontSize:fs, fontWeight:500, letterSpacing:-0.6, lineHeight:1.02, color:"#fff", textShadow:"0 1px 10px rgba(0,0,0,0.18)" }}>{frag.name}</span>
+        <span style={{ fontFamily:sans, fontSize:10, letterSpacing:"0.08em", color:"rgba(255,255,255,0.78)" }}>{[frag.year, frag.family].filter(Boolean).join(" · ")}</span>
+      </span>
+      {userStatus && (
+        <span style={{ position:"absolute", top:10, right:10, width:24, height:24, borderRadius:"50%", background:owned?"#fff":"rgba(255,255,255,0.26)", display:"flex", alignItems:"center", justifyContent:"center", backdropFilter:"blur(6px)" }}>
+          <Icon name={owned?"bottle":"bookmark"} size={13} color={owned?"#C9206B":"#fff"}/>
+        </span>
+      )}
+    </button>
+  );
+}
+function Shelf({ title, blurb, items, onOpenFrag, userStatuses, tinted }) {
+  return (
+    <section className={tinted?"mos-band":""} style={{ margin:"0 -20px", padding:"26px 0 28px" }}>
+      <div style={{ padding:"0 20px", marginBottom:16 }}>
+        <h3 style={{ fontFamily:serif, fontSize:26, fontWeight:400, letterSpacing:-0.6, color:T.black, margin:0, lineHeight:1.1 }}>{title}</h3>
+        <p style={{ fontFamily:sans, fontSize:14, color:T.mid, margin:"6px 0 0", lineHeight:1.5 }}>{blurb}</p>
+      </div>
+      <div className="mos-shelf" style={{ display:"flex", gap:12, overflowX:"auto", padding:"2px 20px 14px", scrollSnapType:"x proximity", scrollPaddingLeft:20, WebkitOverflowScrolling:"touch" }}>
+        {items.map(f => <CoverTile key={f.id} frag={f} onClick={onOpenFrag} userStatus={userStatuses[f.id]}/>)}
+      </div>
+    </section>
+  );
+}
+const ACCORD_BLURBS = {
+  woody:"Dry cedar, sandalwood and vetiver. Grounded and quiet.",
+  fresh:"Clean, bright and airy. Reaches for the window.",
+  floral:"Petals at every stage, from dewy to heady.",
+  sweet:"Vanilla, tonka and sugar. Soft and edible.",
+  smoky:"Incense, tobacco and birch. A room after the fire.",
+  fruity:"Juicy tops that turn ripe on skin.",
+  citrus:"Peel, zest and sun. Over in a flash, back in a flash.",
+  amber:"Resin and warmth that sit close to the skin.",
+  musky:"The scent of skin, only better.",
+  powdery:"Iris and violet. Soft as a cosmetics drawer.",
+  green:"Crushed leaves, stems and rain on grass.",
+  leather:"Supple, dark and a little dangerous.",
+  "warm spicy":"Cardamom, saffron and pepper with heat to spare.",
+  "white floral":"Jasmine, tuberose and gardenia in full bloom.",
+  mossy:"Oakmoss and forest floor.",
+  aromatic:"Lavender, herbs and sage.",
+  oud:"Dark, resinous and deep.",
+  gourmand:"Cocoa, caramel and coffee.",
+};
+function buildShelves(list) {
+  const shelves = [];
+  const add = (key, title, blurb, items, max=12) => { if (items.length >= 2) shelves.push({ key, title, blurb, items: items.slice(0, max) }); };
+  const withYear = list.filter(f => Number(f.year) > 0);
+  add("new", "New to the shelf", "The most recent releases in the library.", [...withYear].sort((a,b)=>b.year-a.year));
+  add("indie", "Independent houses", "Made by houses that answer to no conglomerate.", list.filter(f => f.ownership && f.ownership.status === "independent"));
+  const counts = {};
+  list.forEach(f => (f.accords||[]).slice(0,3).forEach(a => { const k=String(a.n).toLowerCase(); counts[k]=(counts[k]||0)+1; }));
+  Object.entries(counts).filter(([,c])=>c>=3).sort((a,b)=>b[1]-a[1]).slice(0,4).forEach(([k]) => {
+    const label = k.replace(/\b\w/g, c => c.toUpperCase());
+    add("acc-"+k, label, ACCORD_BLURBS[k] || `Fragrances built around ${k}.`, list.filter(f => (f.accords||[]).slice(0,3).some(a => String(a.n).toLowerCase()===k)));
+  });
+  add("classics", "Classics", "Where it started. The older bottles still worth knowing.", [...withYear].filter(f=>f.year<=2010).sort((a,b)=>a.year-b.year));
+  return shelves.slice(0, 7);
+}
+
+function DiscoverTab({ onOpenFrag, userStatuses, reactions, onReaction, onSuggest, fragrances }) {
   const [messages,setMessages]=useState([{role:"ai",text:"Tell me what you're in the mood for — a memory, a mood, an aesthetic. I'll find your next fragrance."}]);
   const [input,setInput]=useState("");
   const [typing,setTyping]=useState(false);
   const [search,setSearch]=useState("");
   const CHIPS=[{label:"Library in autumn",query:"something that smells like a library in autumn"},{label:"Quiet luxury",query:"expensive but quiet, not loud"},{label:"Cold winter nights",query:"cold winter nights by a fire"},{label:"Office fresh",query:"fresh and clean for the office"}];
 
-  const searchResults = search.trim().length > 0 ? FRAGRANCES.filter(f => {
+  const LIST = (fragrances && fragrances.length) ? fragrances : FRAGRANCES;
+  const shelves = buildShelves(LIST);
+  const searchResults = search.trim().length > 0 ? LIST.filter(f => {
     const q = search.toLowerCase();
-    return f.name.toLowerCase().includes(q) || f.house.toLowerCase().includes(q) || f.family.toLowerCase().includes(q) ||
+    return f.name.toLowerCase().includes(q) || f.house.toLowerCase().includes(q) || (f.family||"").toLowerCase().includes(q) ||
       f.notes.top.concat(f.notes.mid, f.notes.base).some(n => n.n.toLowerCase().includes(q)) ||
       f.occasions.some(o => o.toLowerCase().includes(q));
   }) : [];
@@ -1320,9 +1621,9 @@ function DiscoverTab({ onOpenFrag, userStatuses, reactions, onReaction, onSugges
 
   return (
     <div>
-      <div style={{borderBottom:`2px solid ${T.black}`,paddingBottom:14,marginBottom:22}}>
-        <p style={{fontFamily:sans,fontSize:9,textTransform:"uppercase",letterSpacing:"0.18em",color:T.mid,margin:"0 0 4px"}}>Discover</p>
-        <h2 style={{fontFamily:serif,fontSize:30,color:T.black,letterSpacing:-0.5,margin:0}}>Find Your Scent</h2>
+      <div className="mos-pagehead">
+        <p style={{fontFamily:sans,fontSize:10,fontWeight:600,textTransform:"uppercase",letterSpacing:"0.18em",color:T.accent,margin:"0 0 6px"}}>Discover</p>
+        <h2 style={{fontFamily:serif,fontSize:32,color:T.black,letterSpacing:-0.8,margin:0,fontWeight:400}}>Find Your Scent</h2>
         <p style={{fontFamily:sans,fontSize:13,color:T.mid,margin:"6px 0 0"}}>Search by name, or let the Nose guide you.</p>
       </div>
 
@@ -1333,7 +1634,7 @@ function DiscoverTab({ onOpenFrag, userStatuses, reactions, onReaction, onSugges
             value={search}
             onChange={e=>setSearch(e.target.value)}
             placeholder="Search by name, house, note, family…"
-            style={{width:"100%",background:T.white,border:`1.5px solid ${search?T.black:T.rule}`,borderRadius:14,padding:"14px 44px 14px 44px",fontSize:14,color:T.black,outline:"none",boxSizing:"border-box",fontFamily:serif,letterSpacing:"0.01em",transition:"border-color 0.15s,box-shadow 0.15s",boxShadow:search?"0 2px 12px rgba(0,0,0,0.07)":"none"}}
+            style={{width:"100%",background:T.white,border:`1.5px solid ${search?T.accent:T.rule}`,borderRadius:14,padding:"14px 44px 14px 44px",fontSize:14,color:T.black,outline:"none",boxSizing:"border-box",fontFamily:serif,letterSpacing:"0.01em",transition:"border-color 0.15s,box-shadow 0.15s",boxShadow:search?"0 2px 12px rgba(0,0,0,0.07)":"none"}}
           />
           {search&&<button onClick={()=>setSearch("")} style={{position:"absolute",right:14,top:"50%",transform:"translateY(-50%)",background:"none",border:"none",fontSize:14,color:T.mid,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",width:24,height:24}}>✕</button>}
         </div>
@@ -1357,11 +1658,7 @@ function DiscoverTab({ onOpenFrag, userStatuses, reactions, onReaction, onSugges
         )}
       </div>
 
-      {!search&&<div style={{display:"flex",alignItems:"center",gap:12,marginBottom:20}}>
-        <div style={{flex:1,height:1,background:T.rule}}/>
-        <span style={{fontFamily:sans,fontSize:9,textTransform:"uppercase",letterSpacing:"0.14em",color:T.faint}}>or</span>
-        <div style={{flex:1,height:1,background:T.rule}}/>
-      </div>}
+      
 
       {!search&&(
         <>
@@ -1371,7 +1668,7 @@ function DiscoverTab({ onOpenFrag, userStatuses, reactions, onReaction, onSugges
               <span style={{fontFamily:sans,fontSize:10,textTransform:"uppercase",letterSpacing:"0.1em",color:T.mid}}>Ask the Nose</span>
               <span style={{fontFamily:sans,fontSize:10,color:T.faint,marginLeft:"auto"}}>Describe a mood or feeling</span>
             </div>
-            <div style={{padding:16,minHeight:160,maxHeight:210,overflowY:"auto",display:"flex",flexDirection:"column",gap:12}}>
+            {(messages.length>1||typing)&&<div style={{padding:16,minHeight:120,maxHeight:260,overflowY:"auto",display:"flex",flexDirection:"column",gap:12}}>
               {messages.map((m,i)=>(
                 <div key={i} style={{display:"flex",flexDirection:"column",alignItems:m.role==="user"?"flex-end":"flex-start"}}>
                   <div style={{maxWidth:"82%",padding:"10px 14px",borderRadius:16,borderTopRightRadius:m.role==="user"?4:16,borderTopLeftRadius:m.role==="ai"?4:16,background:m.role==="user"?T.black:T.lift,color:m.role==="user"?T.white:T.ink,fontSize:13,lineHeight:1.65,fontFamily:sans}}>{m.text}</div>
@@ -1379,15 +1676,15 @@ function DiscoverTab({ onOpenFrag, userStatuses, reactions, onReaction, onSugges
                 </div>
               ))}
               {typing&&<div style={{display:"flex"}}><div style={{background:T.lift,borderRadius:16,borderTopLeftRadius:4,padding:"12px 14px",display:"flex",gap:4}}>{[0,1,2].map(i=><div key={i} style={{width:5,height:5,borderRadius:"50%",background:T.mid,animation:"bounce 1.2s infinite",animationDelay:`${i*150}ms`}}/>)}</div></div>}
-            </div>
+            </div>}
             <div style={{display:"flex",gap:8,padding:"11px 16px",borderTop:`1px solid ${T.lift}`}}>
-              <input value={input} onChange={e=>setInput(e.target.value)} onKeyDown={e=>e.key==="Enter"&&send()} placeholder="A library in autumn…" style={{flex:1,background:T.lift,border:`1px solid ${T.rule}`,borderRadius:10,padding:"9px 14px",fontSize:13,color:T.black,outline:"none",fontFamily:sans}}/>
+              <input value={input} onChange={e=>setInput(e.target.value)} onKeyDown={e=>e.key==="Enter"&&send()} placeholder="Tell me a memory, a mood, an aesthetic…" style={{flex:1,background:T.lift,border:`1px solid ${T.rule}`,borderRadius:10,padding:"9px 14px",fontSize:13,color:T.black,outline:"none",fontFamily:sans}}/>
               <button onClick={()=>send()} style={{width:38,height:38,borderRadius:10,background:T.black,border:"none",color:T.white,fontSize:16,cursor:"pointer",flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center"}}>↑</button>
             </div>
           </div>
-          <div style={{display:"flex",flexWrap:"wrap",gap:7,marginBottom:28}}>{CHIPS.map(c=><button key={c.label} onClick={()=>send(c.query)} style={{fontFamily:sans,fontSize:11,padding:"6px 13px",borderRadius:20,background:T.white,border:`1px solid ${T.rule}`,color:T.mid,cursor:"pointer"}}>{c.label}</button>)}</div>
-          <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:14}}><div style={{flex:1,height:1,background:T.rule}}/><span style={{fontFamily:sans,fontSize:9,textTransform:"uppercase",letterSpacing:"0.14em",color:T.mid}}>Trending</span><div style={{flex:1,height:1,background:T.rule}}/></div>
-          <div style={{display:"flex",flexDirection:"column",gap:10,marginBottom:24}}>{FRAGRANCES.slice(0,3).map(f=><FragCard key={f.id} frag={f} onClick={onOpenFrag} userStatus={userStatuses[f.id]} reaction={reactions[f.id]} onReaction={v=>onReaction(f.id,v)} onOpenFrag={onOpenFrag}/>)}</div>
+          <div className="mos-shelf" style={{display:"flex",gap:7,marginBottom:6,overflowX:"auto",paddingBottom:4}}>{CHIPS.map(c=><button key={c.label} onClick={()=>send(c.query)} style={{fontFamily:sans,fontSize:11,padding:"6px 13px",borderRadius:20,background:T.white,border:`1px solid ${T.rule}`,color:T.mid,cursor:"pointer",whiteSpace:"nowrap",flexShrink:0}}>{c.label}</button>)}</div>
+          {shelves.map((s,i)=><Shelf key={s.key} title={s.title} blurb={s.blurb} items={s.items} onOpenFrag={onOpenFrag} userStatuses={userStatuses} tinted={i%2===0}/>)}
+          <div style={{height:20}}/>
           <button onClick={onSuggest} style={{width:"100%",padding:"13px 0",borderRadius:12,border:`1px solid ${T.rule}`,background:T.white,color:T.mid,fontSize:12,fontFamily:sans,cursor:"pointer"}}>+ Can't find a fragrance? Suggest it →</button>
         </>
       )}
@@ -1417,15 +1714,15 @@ function CollectionTab({ onOpenFrag, statuses:userStatuses, reactions, onReactio
   const filtered=FRAGRANCES.filter(f=>{const rf=["love","like","dislike"];const ms=activeFilter==="all"||(rf.includes(activeFilter)?reactions[f.id]===activeFilter:userStatuses[f.id]===activeFilter);const mq=!search||f.name.toLowerCase().includes(search.toLowerCase())||f.house.toLowerCase().includes(search.toLowerCase())||f.family.toLowerCase().includes(search.toLowerCase())||f.notes.top.concat(f.notes.mid,f.notes.base).some(n=>n.n.toLowerCase().includes(search.toLowerCase()));return ms&&mq;});
   return (
     <div>
-      <div style={{borderBottom:`2px solid ${T.black}`,paddingBottom:14,marginBottom:22}}>
-        <h2 style={{fontFamily:serif,fontSize:30,color:T.black,letterSpacing:-0.5,margin:0}}>My Collection</h2>
+      <div className="mos-pagehead">
+        <h2 style={{fontFamily:serif,fontSize:32,color:T.black,letterSpacing:-0.8,margin:0,fontWeight:400}}>My Collection</h2>
         <p style={{fontFamily:sans,fontSize:13,color:T.mid,margin:"6px 0 0"}}>Bottles, samples, and everything in between.</p>
       </div>
       <TasteProfile userStatuses={userStatuses} reactions={reactions}/>
       <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:6}}>
-        <div style={{background:T.black,borderRadius:14,padding:"16px 14px"}}>
-          <p style={{fontFamily:serif,fontSize:32,color:T.white,margin:0}}>{counts["bottle_owned"]||0}</p>
-          <div style={{display:"flex",alignItems:"center",gap:5,marginTop:5}}><Icon name="bottle" size={13} color="#888"/><p style={{fontFamily:sans,fontSize:9,textTransform:"uppercase",letterSpacing:"0.1em",color:"#888",margin:0}}>Bottles owned</p></div>
+        <div style={{background:T.cta,borderRadius:14,padding:"16px 14px"}}>
+          <p style={{fontFamily:serif,fontSize:32,color:ON_ACCENT,margin:0}}>{counts["bottle_owned"]||0}</p>
+          <div style={{display:"flex",alignItems:"center",gap:5,marginTop:5}}><Icon name="bottle" size={13} color="rgba(255,255,255,0.8)"/><p style={{fontFamily:sans,fontSize:9,textTransform:"uppercase",letterSpacing:"0.1em",color:"rgba(255,255,255,0.8)",margin:0}}>Bottles owned</p></div>
         </div>
         <div style={{background:T.white,border:`1px solid ${T.rule}`,borderRadius:14,padding:"16px 14px"}}>
           <p style={{fontFamily:serif,fontSize:32,color:T.black,margin:0}}>{counts["sample_have"]||0}</p>
@@ -1497,9 +1794,9 @@ function JournalTab({ entries }) {
 
   return (
     <div>
-      <div style={{borderBottom:`2px solid ${T.black}`,paddingBottom:14,marginBottom:22}}>
+      <div className="mos-pagehead">
         <p style={{fontFamily:sans,fontSize:9,textTransform:"uppercase",letterSpacing:"0.18em",color:T.mid,margin:"0 0 4px"}}>Personal record</p>
-        <h2 style={{fontFamily:serif,fontSize:30,color:T.black,letterSpacing:-0.5,margin:0}}>Scent Journal</h2>
+        <h2 style={{fontFamily:serif,fontSize:32,color:T.black,letterSpacing:-0.8,margin:0,fontWeight:400}}>Scent Journal</h2>
         <p style={{fontFamily:sans,fontSize:13,color:T.mid,margin:"6px 0 0"}}>What you reach for, and why. A record that becomes a mirror.</p>
       </div>
 
@@ -1587,8 +1884,8 @@ function LayeringTab() {
 
   return (
     <div>
-      <div style={{borderBottom:`2px solid ${T.black}`,paddingBottom:14,marginBottom:22}}>
-        <h2 style={{fontFamily:serif,fontSize:30,color:T.black,letterSpacing:-0.5,margin:0}}>Layering</h2>
+      <div className="mos-pagehead">
+        <h2 style={{fontFamily:serif,fontSize:32,color:T.black,letterSpacing:-0.8,margin:0,fontWeight:400}}>Layering</h2>
         <p style={{fontFamily:sans,fontSize:13,color:T.mid,margin:"6px 0 0"}}>Track what works together — and why.</p>
       </div>
       <div style={{borderTop:`2px solid ${T.black}`,borderBottom:`1px solid ${T.rule}`,padding:"16px 0",marginBottom:24}}>
@@ -1709,9 +2006,9 @@ function LearnTab() {
   const [openExpo,setOpenExpo]=useState(null);
   return (
     <div>
-      <div style={{borderBottom:`2px solid ${T.black}`,paddingBottom:14,marginBottom:22}}>
+      <div className="mos-pagehead">
         <p style={{fontFamily:sans,fontSize:9,textTransform:"uppercase",letterSpacing:"0.18em",color:T.mid,margin:"0 0 4px"}}>Education</p>
-        <h2 style={{fontFamily:serif,fontSize:30,color:T.black,letterSpacing:-0.5,margin:0}}>Learn</h2>
+        <h2 style={{fontFamily:serif,fontSize:32,color:T.black,letterSpacing:-0.8,margin:0,fontWeight:400}}>Learn</h2>
         <p style={{fontFamily:sans,fontSize:13,color:T.mid,margin:"6px 0 0"}}>From beginner to connoisseur — at your pace.</p>
       </div>
       <div style={{border:`1px solid ${T.black}`,borderRadius:16,padding:22,marginBottom:24,position:"relative",overflow:"hidden"}}>
@@ -1778,8 +2075,8 @@ function LearnTab() {
         <p style={{fontFamily:sans,fontSize:13,color:T.mid,lineHeight:1.7,margin:"0 0 18px"}}>The fragrance industry has consolidated significantly over the past two decades. A handful of large conglomerates now own many of the houses that built their reputations as independent creative enterprises. This matters because ownership changes often bring pressure to reduce costs — which can mean reformulated ingredients, discontinued lines, or a shift in creative direction.</p>
         <div style={{background:T.white,border:`1px solid ${T.rule}`,borderRadius:14,overflow:"hidden",marginBottom:16}}>
           {[
-            { label:"Independent", color:"#2E7D32", text:"The house is privately owned, founder-led, or operated without conglomerate backing. Creative decisions are made by people with a direct stake in the house's identity." },
-            { label:"Conglomerate name in red", color:"#C0392B", text:"The house has been acquired by a larger group — most commonly LVMH, Estée Lauder Companies, Puig, or Interparfums. This doesn't mean the quality has changed, but it's worth knowing when it happened and who holds the reins." },
+            { label:"Independent", color:T.good, text:"The house is privately owned, founder-led, or operated without conglomerate backing. Creative decisions are made by people with a direct stake in the house's identity." },
+            { label:"Conglomerate name in red", color:T.bad, text:"The house has been acquired by a larger group — most commonly LVMH, Estée Lauder Companies, Puig, or Interparfums. This doesn't mean the quality has changed, but it's worth knowing when it happened and who holds the reins." },
           ].map((item, i, arr) => (
             <div key={item.label} style={{padding:"16px 18px",borderBottom:i<arr.length-1?`1px solid ${T.lift}`:"none"}}>
               <div style={{marginBottom:8}}>
@@ -1795,7 +2092,7 @@ function LearnTab() {
             <p style={{fontFamily:sans,fontSize:12,color:T.mid,lineHeight:1.65,margin:0}}>Ownership is one signal, not a verdict. Some conglomerate-owned houses have maintained exceptional quality. Others have drifted. The acquisition date is often the more telling data point — a house acquired recently may not yet show the effects, while one acquired a decade ago has a longer track record to judge.</p>
           </div>
         </div>
-        <p style={{fontFamily:sans,fontSize:11,color:T.faint,margin:0,lineHeight:1.6}}>Ownership data is maintained by the sillage. community and updated when changes occur. If you notice an error, use the Suggest feature to flag it.</p>
+        <p style={{fontFamily:sans,fontSize:11,color:T.faint,margin:0,lineHeight:1.6}}>Ownership data is maintained by the Memoir on Skin community and updated when changes occur. If you notice an error, use the Suggest feature to flag it.</p>
       </div>
     </div>
   );
@@ -1998,30 +2295,28 @@ function WaitlistScreen({ onJoin }) {
   }
 
   const inp = {
-    width: "100%", background: "rgba(255,255,255,0.07)",
-    border: "1px solid rgba(255,255,255,0.18)", borderRadius: 12,
-    padding: "14px 16px", fontSize: 15, color: T.white, outline: "none",
+    width: "100%", background: T.white, border: `1px solid ${T.rule}`, borderRadius: 14,
+    padding: "15px 16px", fontSize: 15, color: T.ink, outline: "none",
     fontFamily: sans, boxSizing: "border-box", WebkitAppearance: "none",
   };
 
   return (
-    <div style={{ minHeight:"100svh", background:T.black, display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", padding:"40px 28px", boxSizing:"border-box", fontFamily:sans }}>
-      <div style={{ width:"100%", maxWidth:400 }}>
-        <div style={{ marginBottom:48 }}>
-          <h1 style={{ fontFamily:serif, fontSize:38, color:T.white, margin:"0 0 6px", letterSpacing:-1, lineHeight:1.1 }}>
-            sillage<span style={{ color:"rgba(255,255,255,0.3)" }}>.</span>
-          </h1>
-          <p style={{ fontFamily:sans, fontSize:9, color:"rgba(255,255,255,0.4)", textTransform:"uppercase", letterSpacing:"0.18em", margin:0 }}>Fragrance Journal</p>
+    <div style={{ minHeight:"100svh", position:"relative", display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", padding:"64px 28px 40px", boxSizing:"border-box", fontFamily:sans }}>
+      <div className="mos-blobs" aria-hidden="true"><i/><i/><i/><i/></div>
+      <div style={{ position:"absolute", top:16, right:16, zIndex:2 }}><ThemeToggle/></div>
+      <div style={{ position:"relative", zIndex:1, width:"100%", maxWidth:400 }}>
+        <div style={{ marginBottom:44 }}>
+          <Logo stacked size={20}/>
         </div>
 
         {!submitted ? (
           <>
-            <div style={{ marginBottom:36 }}>
-              <p style={{ fontFamily:sans, fontSize:9, color:"rgba(255,255,255,0.4)", textTransform:"uppercase", letterSpacing:"0.16em", margin:"0 0 12px" }}>Early access</p>
-              <h2 style={{ fontFamily:serif, fontSize:26, color:T.white, margin:"0 0 14px", letterSpacing:-0.5, lineHeight:1.25, fontWeight:"normal" }}>
+            <div style={{ marginBottom:32 }}>
+              <p style={{ fontFamily:sans, fontSize:10, fontWeight:600, color:T.accent, textTransform:"uppercase", letterSpacing:"0.18em", margin:"0 0 12px" }}>Early access</p>
+              <h2 style={{ fontFamily:serif, fontSize:28, color:T.black, margin:"0 0 14px", letterSpacing:-0.6, lineHeight:1.2, fontWeight:400 }}>
                 The fragrance journal built for people who take scent seriously.
               </h2>
-              <p style={{ fontFamily:sans, fontSize:14, color:"rgba(255,255,255,0.5)", lineHeight:1.7, margin:0 }}>
+              <p style={{ fontFamily:sans, fontSize:14, color:T.mid, lineHeight:1.7, margin:0 }}>
                 Track your collection. Layer with intention. Discover what you didn't know you were looking for. We're letting in members one cohort at a time.
               </p>
             </div>
@@ -2029,33 +2324,33 @@ function WaitlistScreen({ onJoin }) {
               <input value={name} onChange={e => { setName(e.target.value); setError(""); }} placeholder="Your name" style={inp} onKeyDown={e => e.key==="Enter" && handleSubmit()}/>
               <input value={email} onChange={e => { setEmail(e.target.value); setError(""); }} placeholder="Email address" type="email" style={inp} onKeyDown={e => e.key==="Enter" && handleSubmit()}/>
             </div>
-            {error && <p style={{ fontFamily:sans, fontSize:12, color:"#FF6B6B", margin:"0 0 12px" }}>{error}</p>}
-            <button onClick={handleSubmit} disabled={loading} style={{ width:"100%", padding:"15px 0", borderRadius:12, background:loading?"rgba(255,255,255,0.15)":T.white, border:"none", color:loading?"rgba(255,255,255,0.5)":T.black, fontSize:14, fontFamily:sans, fontWeight:600, cursor:loading?"not-allowed":"pointer", transition:"all 0.2s" }}>
+            {error && <p style={{ fontFamily:sans, fontSize:12, color:T.bad, margin:"0 0 12px" }}>{error}</p>}
+            <button onClick={handleSubmit} disabled={loading} style={{ width:"100%", padding:"16px 0", borderRadius:14, background:loading?T.faint:T.cta, border:"none", color:ON_ACCENT, fontSize:14, fontFamily:sans, fontWeight:600, cursor:loading?"not-allowed":"pointer", transition:"all 0.2s", boxShadow:loading?"none":"0 8px 24px rgba(201,32,107,0.28)" }}>
               {loading ? "Joining…" : "Request early access"}
             </button>
             <div style={{ display:"flex", alignItems:"center", gap:12, margin:"24px 0" }}>
-              <div style={{ flex:1, height:1, background:"rgba(255,255,255,0.1)" }}/>
-              <span style={{ fontFamily:sans, fontSize:10, color:"rgba(255,255,255,0.3)" }}>Already have access?</span>
-              <div style={{ flex:1, height:1, background:"rgba(255,255,255,0.1)" }}/>
+              <div style={{ flex:1, height:1, background:T.rule }}/>
+              <span style={{ fontFamily:sans, fontSize:11, color:T.mid }}>Already have access?</span>
+              <div style={{ flex:1, height:1, background:T.rule }}/>
             </div>
-            <button onClick={onJoin} style={{ width:"100%", padding:"14px 0", borderRadius:12, background:"transparent", border:"1px solid rgba(255,255,255,0.18)", color:"rgba(255,255,255,0.7)", fontSize:14, fontFamily:sans, cursor:"pointer" }}>Sign in</button>
-            <p style={{ fontFamily:sans, fontSize:11, color:"rgba(255,255,255,0.2)", margin:"32px 0 0", lineHeight:1.6 }}>No spam. No sharing. Just a notification when your spot opens up.</p>
-            <FooterLinks dark={true}/>
+            <button onClick={onJoin} style={{ width:"100%", padding:"15px 0", borderRadius:14, background:T.glass, backdropFilter:"blur(12px)", WebkitBackdropFilter:"blur(12px)", border:`1px solid ${T.rule}`, color:T.black, fontSize:14, fontFamily:sans, fontWeight:500, cursor:"pointer" }}>Sign in</button>
+            <p style={{ fontFamily:sans, fontSize:11, color:T.mid, margin:"28px 0 0", lineHeight:1.6 }}>No spam. No sharing. Just a notification when your spot opens up.</p>
+            <FooterLinks/>
           </>
         ) : (
           <div style={{ textAlign:"center" }}>
-            <div style={{ width:64, height:64, borderRadius:"50%", border:"1px solid rgba(255,255,255,0.2)", display:"flex", alignItems:"center", justifyContent:"center", margin:"0 auto 24px" }}>
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+            <div style={{ width:64, height:64, borderRadius:"50%", background:T.cta, display:"flex", alignItems:"center", justifyContent:"center", margin:"0 auto 24px" }}>
+              <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke={ON_ACCENT} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
             </div>
-            <h2 style={{ fontFamily:serif, fontSize:28, color:T.white, margin:"0 0 12px", fontWeight:"normal" }}>You're on the list.</h2>
-            <p style={{ fontFamily:sans, fontSize:14, color:"rgba(255,255,255,0.5)", lineHeight:1.7, margin:"0 0 32px" }}>
-              We'll reach out to <span style={{ color:"rgba(255,255,255,0.8)" }}>{email}</span> when your early access opens. We're releasing in small cohorts — expect to hear from us soon.
+            <h2 style={{ fontFamily:serif, fontSize:30, color:T.black, margin:"0 0 12px", fontWeight:400 }}>You're on the list.</h2>
+            <p style={{ fontFamily:sans, fontSize:14, color:T.mid, lineHeight:1.7, margin:"0 0 32px" }}>
+              We'll reach out to <span style={{ color:T.black, fontWeight:500 }}>{email}</span> when your early access opens. We're releasing in small cohorts — expect to hear from us soon.
             </p>
-            <div style={{ background:"rgba(255,255,255,0.05)", borderRadius:12, border:"1px solid rgba(255,255,255,0.1)", padding:"16px 20px", marginBottom:32, textAlign:"left" }}>
-              <p style={{ fontFamily:sans, fontSize:11, color:"rgba(255,255,255,0.4)", textTransform:"uppercase", letterSpacing:"0.12em", margin:"0 0 6px" }}>While you wait</p>
-              <p style={{ fontFamily:sans, fontSize:13, color:"rgba(255,255,255,0.6)", lineHeight:1.65, margin:0 }}>Start thinking about which fragrances you own, which you've tried, and which you've been meaning to sample. You'll be able to log everything the moment you get in.</p>
+            <div style={{ background:T.glass, backdropFilter:"blur(12px)", WebkitBackdropFilter:"blur(12px)", borderRadius:14, border:`1px solid ${T.rule}`, padding:"16px 20px", marginBottom:32, textAlign:"left" }}>
+              <p style={{ fontFamily:sans, fontSize:10, fontWeight:600, color:T.accent, textTransform:"uppercase", letterSpacing:"0.14em", margin:"0 0 6px" }}>While you wait</p>
+              <p style={{ fontFamily:sans, fontSize:13, color:T.mid, lineHeight:1.65, margin:0 }}>Start thinking about which fragrances you own, which you've tried, and which you've been meaning to sample. You'll be able to log everything the moment you get in.</p>
             </div>
-            <button onClick={onJoin} style={{ width:"100%", padding:"14px 0", borderRadius:12, background:"transparent", border:"1px solid rgba(255,255,255,0.18)", color:"rgba(255,255,255,0.6)", fontSize:13, fontFamily:sans, cursor:"pointer" }}>I already have access — sign in</button>
+            <button onClick={onJoin} style={{ width:"100%", padding:"15px 0", borderRadius:14, background:T.glass, backdropFilter:"blur(12px)", WebkitBackdropFilter:"blur(12px)", border:`1px solid ${T.rule}`, color:T.black, fontSize:14, fontFamily:sans, fontWeight:500, cursor:"pointer" }}>I already have access — sign in</button>
           </div>
         )}
       </div>
@@ -2066,17 +2361,10 @@ function WaitlistScreen({ onJoin }) {
 // ─── LOADING SCREEN ───────────────────────────────────────────────────────────
 function LoadingScreen() {
   return (
-    <div style={{ minHeight:"100svh", background:T.black, display:"flex", alignItems:"center", justifyContent:"center", fontFamily:sans }}>
-      <div style={{ textAlign:"center" }}>
-        <h1 style={{ fontFamily:serif, fontSize:32, color:T.white, margin:"0 0 6px", letterSpacing:-1 }}>
-          sillage<span style={{ color:"rgba(255,255,255,0.3)" }}>.</span>
-        </h1>
-        <div style={{ display:"flex", gap:5, justifyContent:"center", marginTop:14 }}>
-          {[0,1,2].map(i=>(
-            <div key={i} style={{ width:5, height:5, borderRadius:"50%", background:"rgba(255,255,255,0.5)", animation:"sillagePulse 1.2s infinite", animationDelay:`${i*150}ms` }}/>
-          ))}
-        </div>
-        <style>{`@keyframes sillagePulse{0%,60%,100%{opacity:0.3}30%{opacity:1}}`}</style>
+    <div style={{ minHeight:"100svh", display:"flex", alignItems:"center", justifyContent:"center", fontFamily:sans }}>
+      <div role="status" aria-label="Loading" style={{ textAlign:"center" }}>
+        <div className="mos-spin" style={{ display:"inline-block" }}><LogoMark size={56} weight={2.8}/></div>
+        <div style={{ marginTop:18 }}><Wordmark size={22}/></div>
       </div>
     </div>
   );
@@ -2166,9 +2454,9 @@ function LoginScreen({ onWaitlist }) {
 
   if (confirmPending) {
     return (
-      <div style={{ minHeight:"100svh", background:T.bg, display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", padding:"40px 28px", boxSizing:"border-box", fontFamily:sans }}>
+      <div style={{ minHeight:"100svh", background:"transparent", display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", padding:"40px 28px", boxSizing:"border-box", fontFamily:sans }}>
         <div style={{ width:"100%", maxWidth:400, textAlign:"center" }}>
-          <h1 style={{ fontFamily:serif, fontSize:34, color:T.black, margin:"0 0 4px", letterSpacing:-1 }}>sillage<span style={{ color:T.mid }}>.</span></h1>
+          <Logo stacked size={17} align="center"/>
           <div style={{ width:56, height:56, borderRadius:"50%", border:`1px solid ${T.rule}`, display:"flex", alignItems:"center", justifyContent:"center", margin:"32px auto 20px" }}>
             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={T.black} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M4 4h16v16H4z"/><path d="M4 6l8 7 8-7"/></svg>
           </div>
@@ -2183,10 +2471,10 @@ function LoginScreen({ onWaitlist }) {
   }
 
   return (
-    <div style={{ minHeight:"100svh", background:T.bg, display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", padding:"40px 28px", boxSizing:"border-box", fontFamily:sans }}>
+    <div style={{ minHeight:"100svh", background:"transparent", display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", padding:"40px 28px", boxSizing:"border-box", fontFamily:sans }}>
       <div style={{ width:"100%", maxWidth:400 }}>
         <div style={{ textAlign:"center", marginBottom:40 }}>
-          <h1 style={{ fontFamily:serif, fontSize:34, color:T.black, margin:"0 0 4px", letterSpacing:-1 }}>sillage<span style={{ color:T.mid }}>.</span></h1>
+          <Logo stacked size={17} align="center"/>
           <p style={{ fontFamily:sans, fontSize:9, color:T.faint, textTransform:"uppercase", letterSpacing:"0.18em", margin:0 }}>Fragrance Journal</p>
         </div>
 
@@ -2227,9 +2515,9 @@ function LoginScreen({ onWaitlist }) {
           <input value={password} onChange={e => { setPassword(e.target.value); setError(""); }} placeholder="Password" type="password" style={inp} onKeyDown={e => e.key==="Enter" && handleSubmit()}/>
         </div>
 
-        {error && <p style={{ fontFamily:sans, fontSize:12, color:"#CC3333", margin:"0 0 12px" }}>{error}</p>}
+        {error && <p style={{ fontFamily:sans, fontSize:12, color:T.bad, margin:"0 0 12px" }}>{error}</p>}
 
-        <button onClick={handleSubmit} disabled={loading} style={{ width:"100%", padding:"15px 0", borderRadius:12, background:loading?T.faint:T.black, border:"none", color:T.white, fontSize:14, fontFamily:sans, fontWeight:500, cursor:loading?"not-allowed":"pointer", transition:"background 0.2s", marginBottom:20 }}>
+        <button onClick={handleSubmit} disabled={loading} style={{ width:"100%", padding:"15px 0", borderRadius:12, background:loading?T.faint:T.cta, border:"none", color:ON_ACCENT, fontSize:14, fontFamily:sans, fontWeight:600, cursor:loading?"not-allowed":"pointer", transition:"background 0.2s", marginBottom:20 }}>
           {loading ? (mode==="signup" ? "Creating account…" : "Signing in…") : (mode==="signup" ? "Create account" : "Sign in")}
         </button>
 
@@ -2253,7 +2541,7 @@ function LoginScreen({ onWaitlist }) {
             ) : (
               <div style={{ textAlign:"center", padding:"8px 0" }}>
                 <p style={{ fontFamily:sans, fontSize:13, color:T.ink, margin:"0 0 4px", fontWeight:500 }}>Check your inbox</p>
-                <p style={{ fontFamily:sans, fontSize:12, color:T.mid, margin:"0 0 12px", lineHeight:1.6 }}>A reset link has been sent to <strong>{forgotEmail}</strong>. If it doesn't arrive, check your spam folder or write to us at <span style={{ color:T.ink }}>hello@sillage.app</span>.</p>
+                <p style={{ fontFamily:sans, fontSize:12, color:T.mid, margin:"0 0 12px", lineHeight:1.6 }}>A reset link has been sent to <strong>{forgotEmail}</strong>. If it doesn't arrive, check your spam folder or write to us at <span style={{ color:T.ink }}>hello@memoironskin.com</span>.</p>
                 <span onClick={() => { setShowForgot(false); setForgotSent(false); }} style={{ fontFamily:sans, fontSize:12, color:T.mid, cursor:"pointer" }}>Back to sign in</span>
               </div>
             )}
@@ -2300,10 +2588,10 @@ function OnboardingScreen({ onComplete }) {
   };
 
   return (
-    <div style={{ minHeight:"100svh", background:T.bg, display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", padding:"40px 28px", boxSizing:"border-box", fontFamily:sans }}>
+    <div style={{ minHeight:"100svh", background:"transparent", display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", padding:"40px 28px", boxSizing:"border-box", fontFamily:sans }}>
       <div style={{ width:"100%", maxWidth:400 }}>
         <div style={{ textAlign:"center", marginBottom:36 }}>
-          <h1 style={{ fontFamily:serif, fontSize:34, color:T.black, margin:"0 0 4px", letterSpacing:-1 }}>sillage<span style={{ color:T.mid }}>.</span></h1>
+          <Logo stacked size={17} align="center"/>
           <p style={{ fontFamily:sans, fontSize:9, color:T.faint, textTransform:"uppercase", letterSpacing:"0.18em", margin:0 }}>Fragrance Journal</p>
         </div>
         <p style={{ fontFamily:sans, fontSize:9, color:T.mid, textTransform:"uppercase", letterSpacing:"0.14em", margin:"0 0 10px" }}>One last step</p>
@@ -2316,8 +2604,8 @@ function OnboardingScreen({ onComplete }) {
           </div>
           <CountryPicker value={country} onChange={setCountry}/>
         </div>
-        {error && <p style={{ fontFamily:sans, fontSize:12, color:"#CC3333", margin:"0 0 12px" }}>{error}</p>}
-        <button onClick={handleDone} disabled={loading} style={{ width:"100%", padding:"15px 0", borderRadius:12, background:loading?T.faint:T.black, border:"none", color:T.white, fontSize:14, fontFamily:sans, fontWeight:500, cursor:loading?"not-allowed":"pointer", marginBottom:12 }}>
+        {error && <p style={{ fontFamily:sans, fontSize:12, color:T.bad, margin:"0 0 12px" }}>{error}</p>}
+        <button onClick={handleDone} disabled={loading} style={{ width:"100%", padding:"15px 0", borderRadius:12, background:loading?T.faint:T.cta, border:"none", color:ON_ACCENT, fontSize:14, fontFamily:sans, fontWeight:600, cursor:loading?"not-allowed":"pointer", marginBottom:12 }}>
           {loading ? "Saving…" : "Complete setup"}
         </button>
         <p style={{ fontFamily:sans, fontSize:11, color:T.faint, textAlign:"center", margin:0 }}>You can update this anytime from your profile.</p>
@@ -2328,10 +2616,10 @@ function OnboardingScreen({ onComplete }) {
 
 // ─── MOCK COMMUNITY MEMBERS ───────────────────────────────────────────────────
 const SILLAGE_ACCOUNT = {
-  username: "sillage", name: "sillage.",
+  username: "memoir", name: "Memoir on Skin",
   country: "—", isFounder: false, memberNumber: 0, isTopContributor: false,
   isSillageOfficial: true,
-  bio: "The sillage. team. New houses, seasonal picks, and things worth your time. Not a brand account — just people who care about this.",
+  bio: "The Memoir on Skin team. New houses, seasonal picks, and things worth your time. Not a brand account — just people who care about this.",
   followers: 0, following: 0,
   statuses: {}, reactions: {},
   reviews: [],
@@ -2396,7 +2684,7 @@ function ProfileModal({ username, onClose, currentUser, userStatuses, onOpenFrag
   const [tab, setTab] = useState("reviews");
 
   const isSelf = currentUser && currentUser.username === username;
-  const isSillage = username === "sillage";
+  const isSillage = username === "memoir";
 
   const followingList = isSelf && following
     ? [SILLAGE_ACCOUNT, ...MOCK_MEMBERS.filter(m => following.has(m.username))]
@@ -2405,12 +2693,12 @@ function ProfileModal({ username, onClose, currentUser, userStatuses, onOpenFrag
   const member = isSillage
     ? SILLAGE_ACCOUNT
     : isSelf
-      ? { ...currentUser, bio: currentUser.bio || "Your sillage profile.", followers: 1, following: following ? following.size : 1, statuses: userStatuses || {}, reactions: {}, reviews: [], layers: [] }
+      ? { ...currentUser, bio: currentUser.bio || "Your Memoir on Skin profile.", followers: 1, following: following ? following.size : 1, statuses: userStatuses || {}, reactions: {}, reviews: [], layers: [] }
       : MOCK_MEMBERS.find(m => m.username === username);
 
   if (!member) return null;
 
-  const initials = isSillage ? "s." : (member.username || member.name || "?").slice(0, 2).toUpperCase();
+  const initials = isSillage ? "m." : (member.username || member.name || "?").slice(0, 2).toUpperCase();
 
   const myFragIds = new Set(Object.keys(userStatuses || {}).map(Number));
   const theirFragIds = new Set(Object.keys(member.statuses || {}).map(Number));
@@ -2490,9 +2778,16 @@ function ProfileModal({ username, onClose, currentUser, userStatuses, onOpenFrag
               <button style={{ flex:1, padding:"11px 0", borderRadius:12, border:`1px solid ${T.rule}`, background:T.white, color:T.mid, fontSize:13, fontFamily:sans, cursor:"pointer" }}>
                 Edit profile
               </button>
-              <button onClick={onSignOut} style={{ padding:"11px 18px", borderRadius:12, border:`1px solid ${T.rule}`, background:T.white, color:"#C0392B", fontSize:13, fontFamily:sans, cursor:"pointer" }}>
+              <button onClick={onSignOut} style={{ padding:"11px 18px", borderRadius:12, border:`1px solid ${T.rule}`, background:T.white, color:T.bad, fontSize:13, fontFamily:sans, cursor:"pointer" }}>
                 Sign out
               </button>
+            </div>
+          )}
+
+          {isSelf && (
+            <div style={{ marginBottom:18 }}>
+              <Lbl mb={8}>Appearance</Lbl>
+              <AppearancePicker/>
             </div>
           )}
 
@@ -2525,7 +2820,7 @@ function ProfileModal({ username, onClose, currentUser, userStatuses, onOpenFrag
               {followingList.map((m, i) => (
                 <div key={m.username} onClick={() => onOpenProfile && onOpenProfile(m.username)} style={{ display:"flex", alignItems:"center", gap:12, padding:"12px 0", borderBottom: i < followingList.length-1 ? `1px solid ${T.lift}` : "none", cursor:"pointer" }}>
                   <div style={{ width:40, height:40, borderRadius:"50%", background:T.black, display:"flex", alignItems:"center", justifyContent:"center", fontSize:m.isSillageOfficial?13:14, fontWeight:600, color:T.white, fontFamily:m.isSillageOfficial?serif:sans, flexShrink:0 }}>
-                    {m.isSillageOfficial ? "s." : (m.username||m.name||"?").slice(0,2).toUpperCase()}
+                    {m.isSillageOfficial ? "m." : (m.username||m.name||"?").slice(0,2).toUpperCase()}
                   </div>
                   <div style={{ flex:1, minWidth:0 }}>
                     <div style={{ display:"flex", alignItems:"center", gap:6 }}>
@@ -2694,8 +2989,8 @@ export default function SillageApp() {
   const [privateNotes, setPrivateNotes] = useState({});
   const [reactions, setReactions] = useState({ 1:"love", 3:"like" });
   const [journalEntries, setJournalEntries] = useState([]);
-  // following: Set of usernames the current user follows. sillage. is always included.
-  const [following, setFollowing] = useState(new Set(["sillage"]));
+  // following: Set of usernames the current user follows. the official account is always included.
+  const [following, setFollowing] = useState(new Set(["memoir"]));
   const [fragrances, setFragrances] = useState(FRAGRANCES);
   const [fragLoading, setFragLoading] = useState(false);
 
@@ -2810,13 +3105,13 @@ export default function SillageApp() {
   function toggleFollow(username) {
     setFollowing(prev => {
       const next = new Set(prev);
-      if (username === "sillage") return next; // can't unfollow sillage.
+      if (username === "memoir") return next; // can't unfollow the official account
       next.has(username) ? next.delete(username) : next.add(username);
       return next;
     });
   }
 
-  const NAV = [{ tab:"Discover", icon:"◈" }, { tab:"Collection", icon:"◇" }, { tab:"Layering", icon:"◎" }, { tab:"Journal", icon:"▣" }, { tab:"Learn", icon:"△" }];
+  const NAV = [{ tab:"Discover", icon:"compass" }, { tab:"Collection", icon:"bottle" }, { tab:"Layering", icon:"layers" }, { tab:"Journal", icon:"book" }, { tab:"Learn", icon:"tip" }];
   const modalFrag = fragrances.find(f => f.id === modalFragId);
   function openFrag(id) { setModalFragId(id); }
   function openProfile(username) { setProfileUsername(username); }
@@ -2841,43 +3136,61 @@ export default function SillageApp() {
   if (appScreen === "onboarding") return <OnboardingScreen onComplete={handleOnboardingComplete}/>;
 
   return (
-    <div style={{ minHeight:"100svh", background:T.bg, fontFamily:sans }}>
-      <div style={{ width:"100%", position:"sticky", top:0, zIndex:40, background:"rgba(248,248,246,0.97)", backdropFilter:"blur(14px)", borderBottom:`1px solid ${T.rule}` }}>
-        <div style={{ maxWidth:860, margin:"0 auto", padding:"0 24px" }}>
-          <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", paddingTop:14 }}>
-            <div>
-              <h1 style={{ fontFamily:serif, fontSize:21, letterSpacing:-0.5, color:T.black, margin:0 }}>sillage<span style={{ color:T.mid }}>.</span></h1>
-              <p style={{ fontFamily:sans, fontSize:8, color:T.faint, textTransform:"uppercase", letterSpacing:"0.14em", margin:"2px 0 0" }}>Fragrance Journal</p>
-            </div>
+    <div style={{ minHeight:"100svh", background:"transparent", fontFamily:sans, position:"relative" }}>
+      <header style={{ position:"sticky", top:0, zIndex:40, background:T.glass, backdropFilter:"blur(16px)", WebkitBackdropFilter:"blur(16px)" }}>
+        <div style={{ height:3, background:T.trail }}/>
+        <div style={{ maxWidth:640, margin:"0 auto", padding:"0 20px" }}>
+          <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", padding:"12px 0 10px", gap:10 }}>
+            <Logo size={19}/>
             <div style={{ display:"flex", alignItems:"center", gap:8 }}>
-              <button onClick={() => setShowSuggest(true)} style={{ fontFamily:sans, fontSize:10, padding:"6px 12px", borderRadius:20, border:`1px solid ${T.rule}`, background:T.white, color:T.mid, cursor:"pointer", whiteSpace:"nowrap" }}>+ Suggest</button>
+              <button onClick={() => setShowSuggest(true)} style={{ fontFamily:sans, fontSize:11, fontWeight:500, height:32, padding:"0 12px", borderRadius:20, border:`1px solid ${T.rule}`, background:T.white, color:T.mid, cursor:"pointer", whiteSpace:"nowrap" }}>+ Suggest</button>
+              <ThemeToggle/>
               <button
                 onClick={() => currentUser && openProfile(currentUser.username)}
                 title={currentUser ? "@" + currentUser.username : ""}
-                style={{ width:30, height:30, borderRadius:"50%", background:T.black, display:"flex", alignItems:"center", justifyContent:"center", fontSize:11, fontWeight:600, color:T.white, fontFamily:sans, border:"none", cursor:"pointer" }}
+                aria-label="Your profile"
+                style={{ width:34, height:34, borderRadius:"50%", padding:2, background:T.trail, border:"none", cursor:"pointer", flexShrink:0 }}
               >
-                {userInitials}
+                <span style={{ display:"flex", alignItems:"center", justifyContent:"center", width:"100%", height:"100%", borderRadius:"50%", background:T.black, border:`2px solid ${T.bg}`, boxSizing:"border-box", fontSize:10, fontWeight:600, color:T.white, fontFamily:sans }}>{userInitials}</span>
               </button>
             </div>
           </div>
-          <div style={{ display:"flex", marginTop:12, overflowX:"auto" }}>
-            {NAV.map(({ tab }) => (
-              <button key={tab} onClick={() => setActiveTab(tab)} style={{ marginRight:16, paddingBottom:11, fontSize:10, textTransform:"uppercase", letterSpacing:"0.08em", color:activeTab===tab?T.black:T.faint, background:"none", border:"none", borderBottom:activeTab===tab?`2px solid ${T.black}`:"2px solid transparent", marginBottom:-1, cursor:"pointer", whiteSpace:"nowrap", fontFamily:sans }}>{tab}</button>
-            ))}
-          </div>
+          <nav className="mos-tabs-top" aria-label="Main sections">
+            {NAV.map(({ tab }) => {
+              const on = activeTab === tab;
+              return (
+                <button key={tab} onClick={() => setActiveTab(tab)} aria-current={on ? "page" : undefined} style={{ position:"relative", paddingBottom:11, paddingTop:2, fontSize:10, fontWeight:on?600:500, textTransform:"uppercase", letterSpacing:"0.1em", color:on?T.black:T.mid, background:"none", border:"none", cursor:"pointer", whiteSpace:"nowrap", fontFamily:sans }}>
+                  {tab}
+                  {on && <span style={{ position:"absolute", left:0, right:0, bottom:-1, height:2, borderRadius:2, background:T.trail }}/>}
+                </button>
+              );
+            })}
+          </nav>
         </div>
-      </div>
+        <div style={{ height:1, background:T.rule }}/>
+      </header>
 
-      <div style={{ maxWidth:860, margin:"0 auto", padding:"28px 24px 64px", display:"grid", gridTemplateColumns:"minmax(0,1fr)", gap:0 }}>
-        <div style={{ maxWidth:560 }}>
-          {activeTab==="Discover"   && <DiscoverTab   onOpenFrag={openFrag} userStatuses={userStatuses} reactions={reactions} onReaction={onReaction} onSuggest={() => setShowSuggest(true)} currentUser={currentUser}/>}
-          {activeTab==="Collection" && <CollectionTab onOpenFrag={openFrag} statuses={userStatuses} reactions={reactions} onReaction={onReaction} onSuggest={() => setShowSuggest(true)}/>}
-          {activeTab==="Layering"   && <LayeringTab/>}
-          {activeTab==="Journal"    && <JournalTab entries={journalEntries}/>}
-          {activeTab==="Learn"      && <LearnTab/>}
-          <FooterLinks/>
-        </div>
-      </div>
+      <main className="mos-main" style={{ position:"relative", zIndex:1, maxWidth:640, margin:"0 auto", padding:"28px 20px 64px" }}>
+        {activeTab==="Discover"   && <DiscoverTab   fragrances={fragrances} onOpenFrag={openFrag} userStatuses={userStatuses} reactions={reactions} onReaction={onReaction} onSuggest={() => setShowSuggest(true)} currentUser={currentUser}/>}
+        {activeTab==="Collection" && <CollectionTab onOpenFrag={openFrag} statuses={userStatuses} reactions={reactions} onReaction={onReaction} onSuggest={() => setShowSuggest(true)}/>}
+        {activeTab==="Layering"   && <LayeringTab/>}
+        {activeTab==="Journal"    && <JournalTab entries={journalEntries}/>}
+        {activeTab==="Learn"      && <LearnTab/>}
+        <FooterLinks/>
+      </main>
+
+      <nav className="mos-tabbar" aria-label="Main sections" style={{ position:"fixed", left:0, right:0, bottom:0, zIndex:45, background:T.glass, backdropFilter:"blur(18px)", WebkitBackdropFilter:"blur(18px)", borderTop:`1px solid ${T.rule}`, padding:"8px 6px calc(8px + env(safe-area-inset-bottom))" }}>
+        {NAV.map(({ tab, icon }) => {
+          const on = activeTab === tab;
+          return (
+            <button key={tab} onClick={() => setActiveTab(tab)} aria-current={on ? "page" : undefined} style={{ flex:1, position:"relative", display:"flex", flexDirection:"column", alignItems:"center", gap:3, padding:"7px 0 1px", background:"none", border:"none", cursor:"pointer", fontFamily:sans, fontSize:10, fontWeight:on?600:500, color:on?T.accent:T.mid }}>
+              {on && <span style={{ position:"absolute", top:-9, width:26, height:3, borderRadius:3, background:T.trail }}/>}
+              <Icon name={icon} size={22} color={on?T.accent:T.mid}/>
+              <span>{tab}</span>
+            </button>
+          );
+        })}
+      </nav>
 
       {modalFrag && (
         <DetailModal
