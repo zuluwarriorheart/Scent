@@ -1222,7 +1222,105 @@ function FragCard({ frag, onClick, userStatus, reaction, onReaction, onOpenFrag 
 }
 
 // ─── DETAIL MODAL ─────────────────────────────────────────────────────────────
-function DetailModal({ frag, onClose, userStatus, setUserStatus, privateNote, setPrivateNote, reaction, setReaction, onOpenFrag, onOpenProfile, onAddJournalEntry }) {
+// ─── SAMPLE RETAILERS ─────────────────────────────────────────────────────────
+// One place to fix a broken link or add a retailer. Homepages only, never product pages.
+// TODO confirm: every URL below, especially Jovoy Mayfair.
+const SAMPLE_RETAILERS = {
+  US: [
+    { name:"Scent Split",      url:"https://scentsplit.com" },
+    { name:"Ministry of Scent", url:"https://ministryofscent.com" },
+    { name:"ZGO Perfumery",    url:"https://zgoperfumery.com" },
+  ],
+  CA: [
+    { name:"Scent Split",      url:"https://scentsplit.com" },
+  ],
+  EU: [
+    { name:"Jovoy Paris",      url:"https://www.jovoyparis.com" },
+    { name:"Nose Paris",       url:"https://www.nose.fr" },
+  ],
+  UK: [
+    { name:"Jovoy Mayfair",    url:"https://www.jovoyparis.com" },
+    { name:"Bloom Perfumery",  url:"https://www.bloomperfumery.com" },
+  ],
+};
+const REGION_ORDER = ["US", "CA", "EU", "UK"];
+const EU_COUNTRIES = ["AT","BE","BG","HR","CY","CZ","DK","EE","FI","FR","DE","GR","HU","IE","IT","LV","LT","LU","MT","NL","PL","PT","RO","SK","SI","ES","SE","CH","NO","MC"];
+function regionFor(user) {
+  const o = user && String(user.regionOverride || "").toUpperCase();
+  if (o && SAMPLE_RETAILERS[o]) return o;
+  const c = user && String(user.country || "").toUpperCase();
+  if (c === "US" || c === "CA") return c;
+  if (c === "GB" || c === "UK") return "UK";
+  if (EU_COUNTRIES.includes(c)) return "EU";
+  return "US";
+}
+function safeUrl(u) {
+  const s = String(u || "").trim();
+  if (!s) return "";
+  const full = /^https?:\/\//i.test(s) ? s : "https://" + s;
+  try { const p = new URL(full); return /^https?:$/.test(p.protocol) ? p.href : ""; } catch (e) { return ""; }
+}
+function ExtArrow({ size = 12, color = "currentColor" }) {
+  return <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M7 17L17 7"/><path d="M8 7h9v9"/></svg>;
+}
+function SamplesSection({ defaultRegion }) {
+  const [region, setRegion] = useState(defaultRegion);
+  const list = SAMPLE_RETAILERS[region] || [];
+  return (
+    <div>
+      <Lbl>Where to find samples</Lbl>
+      <p style={{ fontFamily:sans, fontSize:13, color:T.mid, lineHeight:1.6, margin:"0 0 14px" }}>Retailers worth browsing for samples. Not every retailer carries every house.</p>
+      <div role="tablist" aria-label="Region" style={{ display:"flex", border:`1px solid ${T.rule}`, borderRadius:10, overflow:"hidden", marginBottom:12 }}>
+        {REGION_ORDER.map((r, i) => {
+          const on = r === region;
+          return (
+            <button key={r} role="tab" aria-selected={on} onClick={() => setRegion(r)}
+              style={{ flex:1, padding:"11px 0", fontFamily:sans, fontSize:13, fontWeight:on?600:500, letterSpacing:"0.06em", border:"none", borderLeft:i?`1px solid ${T.rule}`:"none", background:on?T.black:T.white, color:on?T.white:T.mid, cursor:"pointer" }}>{r}</button>
+          );
+        })}
+      </div>
+      <div style={{ border:`1px solid ${T.rule}`, borderRadius:12, overflow:"hidden" }}>
+        {list.map((r, i) => (
+          <a key={r.name} href={r.url} target="_blank" rel="noopener noreferrer"
+            style={{ display:"flex", alignItems:"center", justifyContent:"space-between", gap:12, padding:"15px 16px", borderTop:i?`1px solid ${T.rule}`:"none", textDecoration:"none", color:T.black, background:T.white, minHeight:48, boxSizing:"border-box" }}>
+            <span style={{ fontFamily:serif, fontSize:17 }}>{r.name}</span>
+            <span style={{ display:"inline-flex", alignItems:"center", gap:6, fontFamily:sans, fontSize:12, color:T.mid }}>Visit<ExtArrow/></span>
+          </a>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function NotesPyramid({ notes }) {
+  return (
+    <div>
+              {[
+                {tier:"top", label:"Top Notes",   time:"0 – 30 min",     notes:notes.top,  desc:"Vivid but fleeting."},
+                {tier:"mid", label:"Heart Notes", time:"30 min – 4 hrs", notes:notes.mid,  desc:"The true character."},
+                {tier:"base",label:"Base Notes",  time:"4+ hours",       notes:notes.base, desc:"The foundation that lingers."},
+              ].map(({tier,label,time,notes:ns,desc},si)=>(
+                <div key={tier} style={{marginBottom:si<2?28:0}}>
+                  <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:14,padding:"10px 14px",borderRadius:10,background:T.lift,border:`1px solid ${T.rule}`}}>
+                    <div style={{width:22,height:22,borderRadius:6,fontSize:10,fontWeight:700,fontFamily:sans,display:"flex",alignItems:"center",justifyContent:"center",background:tier==="top"?"#F2883A":tier==="mid"?"#E2639B":"#8E52D6",color:"#FFFFFF"}}>
+                      {tier==="top"?"T":tier==="mid"?"H":"B"}
+                    </div>
+                    <div style={{flex:1}}>
+                      <span style={{fontFamily:sans,fontSize:12,fontWeight:600,color:T.ink}}>{label}</span>
+                      <span style={{fontFamily:sans,fontSize:11,color:T.mid,marginLeft:8}}>{desc}</span>
+                    </div>
+                    <span style={{fontFamily:sans,fontSize:9,color:T.faint}}>{time}</span>
+                  </div>
+                  <div style={{display:"flex",flexWrap:"wrap",gap:10}}>
+                    {ns.map(note=><NoteIllustration key={note.n} name={note.n} size={72}/>)}
+                  </div>
+                </div>
+              ))}
+            </div>
+  );
+}
+
+function DetailModal({ frag, onClose, userStatus, setUserStatus, privateNote, setPrivateNote, reaction, setReaction, onOpenFrag, onOpenProfile, onAddJournalEntry, currentUser }) {
   const [tab,setTab]=useState("overview");
   const [showPerfumer, setShowPerfumer]=useState(false);
   const [replyText,setReplyText]=useState("");
@@ -1264,6 +1362,9 @@ function DetailModal({ frag, onClose, userStatus, setUserStatus, privateNote, se
               <h2 style={{fontFamily:serif,fontSize:28,color:T.black,margin:"0 0 2px",letterSpacing:-0.5,lineHeight:1.1}}>{frag.name}</h2>
               <p style={{fontFamily:sans,fontSize:13,color:T.mid,margin:"0 0 0",lineHeight:1.4}}>{[frag.year, frag.concentration].filter(Boolean).join(" · ")}</p>
               {frag.ownership && <div style={{margin:"3px 0 0"}}><OwnershipBadge ownership={frag.ownership} size="normal" showTooltip={true}/></div>}
+              {safeUrl(frag.website)&&(
+                <a href={safeUrl(frag.website)} target="_blank" rel="noopener noreferrer" style={{display:"inline-flex",alignItems:"center",gap:6,margin:"8px 0 0",padding:"6px 12px",minHeight:32,boxSizing:"border-box",borderRadius:20,border:`1px solid ${T.rule}`,background:T.white,fontFamily:sans,fontSize:12,color:T.ink,textDecoration:"none"}}>Brand website<ExtArrow size={11}/></a>
+              )}
               {frag.perfumer && String(frag.perfumer).toLowerCase() !== "unknown" && (
                 <p onClick={()=>setShowPerfumer(true)} style={{fontFamily:sans,fontSize:12,color:T.mid,margin:"5px 0 10px",cursor:"pointer",display:"inline-flex",alignItems:"center",gap:4}}>
                   <span style={{color:T.faint,fontSize:10}}>by</span>
@@ -1284,13 +1385,13 @@ function DetailModal({ frag, onClose, userStatus, setUserStatus, privateNote, se
 
         
         <div className="mos-pad mos-dtabs" style={{display:"flex",borderBottom:`1px solid ${T.rule}`,padding:"0 24px",overflowX:"auto"}}>
-          {["overview","notes","pricing","my notes","status","community"].map(t=>(
+          {["overview","my notes","tracker","community"].map(t=>(
             <button key={t} onClick={()=>setTab(t)} style={{marginRight:16,padding:"11px 0",whiteSpace:"nowrap",fontSize:10,textTransform:"uppercase",letterSpacing:"0.08em",color:tab===t?T.black:T.mid,background:"none",border:"none",borderBottom:tab===t?`2px solid ${T.black}`:"2px solid transparent",marginBottom:-1,cursor:"pointer",fontFamily:sans}}>{t}</button>
           ))}
         </div>
 
         
-        {(tab==="overview"||tab==="community"||tab==="pricing")&&stats.length>0&&(
+        {(tab==="overview"||tab==="community")&&stats.length>0&&(
         <div style={{display:"grid",gridTemplateColumns:`repeat(${stats.length},1fr)`,borderBottom:`1px solid ${T.rule}`}}>
           {stats.map((s,i)=>(
             <div key={s.label} style={{padding:"12px 6px",textAlign:"center",borderRight:i<stats.length-1?`1px solid ${T.rule}`:"none"}}>
@@ -1331,49 +1432,18 @@ function DetailModal({ frag, onClose, userStatus, setUserStatus, privateNote, se
                   )}
                 </div>
               </div>
-              <div style={{marginTop:24}}>
-                <HouseStrip currentFrag={frag} onOpenFrag={id=>{onClose();setTimeout(()=>onOpenFrag(id),50);}}/>
+              <div style={{borderTop:`1px solid ${T.rule}`,margin:"28px 0 24px"}}/>
+              <div className="mos-two">
+                <div style={{marginBottom:36}}>
+                  <Lbl mb={14}>Fragrance Notes</Lbl>
+                  <NotesPyramid notes={frag.notes}/>
+                </div>
+                <div>
+                  <SamplesSection defaultRegion={regionFor(currentUser)}/>
+                </div>
               </div>
-            </div>
-          )}
-
-          
-          {tab==="notes"&&(
-            <div>
-              {[
-                {tier:"top", label:"Top Notes",   time:"0 – 30 min",     notes:frag.notes.top,  desc:"Vivid but fleeting."},
-                {tier:"mid", label:"Heart Notes", time:"30 min – 4 hrs", notes:frag.notes.mid,  desc:"The true character."},
-                {tier:"base",label:"Base Notes",  time:"4+ hours",       notes:frag.notes.base, desc:"The foundation that lingers."},
-              ].map(({tier,label,time,notes:ns,desc},si)=>(
-                <div key={tier} style={{marginBottom:si<2?28:0}}>
-                  <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:14,padding:"10px 14px",borderRadius:10,background:T.lift,border:`1px solid ${T.rule}`}}>
-                    <div style={{width:22,height:22,borderRadius:6,fontSize:10,fontWeight:700,fontFamily:sans,display:"flex",alignItems:"center",justifyContent:"center",background:tier==="top"?"#F2883A":tier==="mid"?"#E2639B":"#8E52D6",color:"#FFFFFF"}}>
-                      {tier==="top"?"T":tier==="mid"?"H":"B"}
-                    </div>
-                    <div style={{flex:1}}>
-                      <span style={{fontFamily:sans,fontSize:12,fontWeight:600,color:T.ink}}>{label}</span>
-                      <span style={{fontFamily:sans,fontSize:11,color:T.mid,marginLeft:8}}>{desc}</span>
-                    </div>
-                    <span style={{fontFamily:sans,fontSize:9,color:T.faint}}>{time}</span>
-                  </div>
-                  <div style={{display:"flex",flexWrap:"wrap",gap:10}}>
-                    {ns.map(note=><NoteIllustration key={note.n} name={note.n} size={72}/>)}
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-
-          
-          {tab==="pricing"&&(
-            <div>
-              <p style={{fontFamily:sans,fontSize:13,color:T.mid,lineHeight:1.65,margin:"0 0 16px"}}>Official retail pricing across all available sizes.</p>
-              <PriceTable prices={frag.prices}/>
-              <div style={{background:T.lift,borderRadius:10,padding:12,border:`1px solid ${T.rule}`,marginTop:14}}>
-                <div style={{display:"flex",alignItems:"flex-start",gap:8}}>
-                  <Icon name="tip" size={14} color={T.mid}/>
-                  <p style={{fontFamily:sans,fontSize:11,color:T.mid,lineHeight:1.55,margin:0}}><strong style={{color:T.ink}}>Always try a sample first.</strong> A 2ml sample gives you 2–3 full wears, enough to know the dry-down.</p>
-                </div>
+              <div style={{marginTop:28}}>
+                <HouseStrip currentFrag={frag} onOpenFrag={id=>{onClose();setTimeout(()=>onOpenFrag(id),50);}}/>
               </div>
             </div>
           )}
@@ -1397,9 +1467,9 @@ function DetailModal({ frag, onClose, userStatus, setUserStatus, privateNote, se
           )}
 
           
-          {tab==="status"&&(
+          {tab==="tracker"&&(
             <div>
-              <p style={{fontFamily:sans,fontSize:13,color:T.mid,lineHeight:1.65,margin:"0 0 18px"}}>Track exactly where this fragrance lives in your life.</p>
+              <p style={{fontFamily:sans,fontSize:13,color:T.mid,lineHeight:1.65,margin:"0 0 18px"}}>Where this fragrance sits in your life.</p>
               <StatusSelector value={userStatus} onChange={setUserStatus}/>
             </div>
           )}
@@ -3241,6 +3311,7 @@ export default function SillageApp() {
         name: profile.display_name || profile.username,
         country: profile.country || "",
         bio: profile.bio || "",
+        regionOverride: profile.region_override || "",
         isFounder: profile.member_number != null && profile.member_number <= 1000,
         memberNumber: profile.member_number,
         isTopContributor: !!profile.is_top_contributor,
@@ -3263,16 +3334,16 @@ export default function SillageApp() {
     async function loadFragrances() {
       setFragLoading(true);
       try {
-        const { data, error } = await supabase
-          .from("fragrances")
-          .select(`
+        const FRAG_SELECT = `
             id, slug, url, gender, year, perfumer, story, barcode, concentration,
-            house:houses ( name, slug, country, ownership, brand_origin, price_tier ),
+            house:houses ( name, slug, country, ownership, brand_origin, price_tier, website ),
             notes ( note_name, position ),
             accords ( accord_name, rank )
-          `)
-          .order("slug", { ascending: true })
-          .limit(200);
+          `;
+        const run = sel => supabase.from("fragrances").select(sel).order("slug", { ascending: true }).limit(200);
+        let { data, error } = await run(FRAG_SELECT);
+        // If the houses.website column has not been added yet, load without it.
+        if (error && /website/i.test(error.message || "")) ({ data, error } = await run(FRAG_SELECT.replace(", website", "")));
 
         if (error) { console.error("Supabase error:", error); return; }
 
@@ -3288,6 +3359,7 @@ export default function SillageApp() {
             parent: f.house?.ownership || "",
           },
           brand_origin: f.house?.brand_origin || "",
+          website: f.house?.website || "",
           price_tier: f.house?.price_tier || "",
           year: f.year,
           perfumer: f.perfumer || "",
