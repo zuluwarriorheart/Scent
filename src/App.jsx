@@ -1,4 +1,4 @@
-import { useState, useEffect, useId, useSyncExternalStore } from "react";
+import { useState, useEffect, useId, useRef, useSyncExternalStore } from "react";
 import { createClient } from "@supabase/supabase-js";
 
 // ─── SUPABASE CLIENT ──────────────────────────────────────────────────────────
@@ -2528,21 +2528,14 @@ function CollectionTab({ onOpenFrag, statuses:userStatuses, reactions, onReactio
 
 // ─── JOURNAL ──────────────────────────────────────────────────────────────────
 function JournalTab({ entries }) {
-  const SEED = [
-    {id:-1, fragId:1, fragName:"Aventus", house:"Creed", family:"Chypre Fruity", prompt:"Client meeting, wanted something that felt authoritative.", text:"The smoky birch felt right for the room. Dry-down was masterful. Long day, held all the way through.", where:"Own bottle", date:"Today", publishedAsReview:false, reviewRating:null, shared:false},
-    {id:-2, fragId:3, fragName:"Oud Wood", house:"Tom Ford", family:"Woody Oriental", prompt:"Cold evening, wanted something with weight.", text:"The papyrus note is mesmerising in the cold. Long dry-down, incredible projection in the first hour.", where:"Sample, fragrance split", date:"3 days ago", publishedAsReview:true, reviewRating:5, shared:false},
-    {id:-3, fragId:4, fragName:"Baccarat Rouge 540", house:"Maison Francis Kurkdjian", family:"Floral Woody Musk", prompt:"Curious. Had heard about it for years.", text:"The saffron-amberwood accord is unlike anything I own. Need a decant.", where:"Saks Fifth Avenue counter", date:"1 week ago", publishedAsReview:false, reviewRating:null, shared:false},
-    {id:-4, fragId:5, fragName:"Santal 33", house:"Le Labo", family:"Woody", prompt:"Blind buy on a whim, regretted it immediately, then didn't.", text:"Smokier than I expected. Needs more skin time. The more I wear it the more I understand it.", where:"Blind buy, Decantery", date:"2 weeks ago", publishedAsReview:false, reviewRating:null, shared:false},
-  ];
-
-  const all = [...(entries||[]), ...SEED].sort((a,b)=> a.id > 0 && b.id < 0 ? -1 : 1);
+  const all = [...(entries||[])];
 
   // Derive taste evolution from families
   const families = all.map(e=>e.family).filter(Boolean);
   const familyCount = families.reduce((acc,f)=>{acc[f]=(acc[f]||0)+1;return acc;},{});
   const topFamilies = Object.entries(familyCount).sort((a,b)=>b[1]-a[1]);
-  const dominant = topFamilies[0]?.[0] || "Woody Oriental";
-  const previous = topFamilies.length > 1 ? topFamilies[topFamilies.length-1]?.[0] : "Fresh & Clean";
+  const dominant = topFamilies[0]?.[0] || "";
+  const previous = topFamilies.length > 1 ? topFamilies[topFamilies.length-1]?.[0] : "";
 
   const MONTHLY_PROMPT = "Has anything surprised you about what you've been reaching for lately?";
 
@@ -2554,7 +2547,7 @@ function JournalTab({ entries }) {
         <p style={{fontFamily:sans,fontSize:"clamp(13px, 1.1vw, 17px)",color:T.mid,margin:"6px 0 0"}}>What you reach for, and why. A record that becomes a mirror.</p>
       </div>
 
-      <div style={{background:T.lift,border:`1px solid ${T.rule}`,borderRadius:16,padding:18,marginBottom:16}}>
+      {dominant && previous && <div style={{background:T.lift,border:`1px solid ${T.rule}`,borderRadius:16,padding:18,marginBottom:16}}>
         <Lbl>Taste this year</Lbl>
         <p style={{fontFamily:sans,fontSize:13,color:T.mid,lineHeight:1.7,margin:"0 0 14px"}}>Your sampling is moving from <span style={{color:T.black,fontWeight:500}}>{previous}</span> toward <span style={{color:T.black,fontWeight:500}}>{dominant}</span>.</p>
         <div style={{display:"flex",alignItems:"center",gap:8}}>
@@ -2562,7 +2555,7 @@ function JournalTab({ entries }) {
           <span style={{color:T.faint,fontSize:12}}>→</span>
           <div style={{flex:1,textAlign:"center",padding:"8px 0",borderRadius:8,background:T.black}}><p style={{fontFamily:sans,fontSize:11,color:T.white,margin:0}}>{dominant}</p></div>
         </div>
-      </div>
+      </div>}
 
       <div style={{background:T.white,border:`1px solid ${T.rule}`,borderRadius:12,padding:"13px 16px",marginBottom:22}}>
         <p style={{fontFamily:sans,fontSize:9,textTransform:"uppercase",letterSpacing:"0.1em",color:T.faint,margin:"0 0 4px"}}>This month</p>
@@ -2594,19 +2587,15 @@ function JournalTab({ entries }) {
           </div>
         ))}
       </div>
-      {all.length===SEED.length&&(
-        <p style={{fontFamily:sans,fontSize:11,color:T.faint,textAlign:"center",marginTop:4,lineHeight:1.6}}>Save a note on any fragrance to add your first entry.</p>
+      {all.length===0&&(
+        <p style={{fontFamily:sans,fontSize:11,color:T.faint,textAlign:"center",marginTop:4,lineHeight:1.6}}>Your journal is empty. Save a note on any fragrance and tick "Add to journal" to write your first entry.</p>
       )}
     </div>
   );
 }
 
 // ─── LAYERING — with open/closed lock SVG for public/private ─────────────────
-function LayeringTab() {
-  const [layers,setLayers]=useState([
-    {id:1,name:"The Library",frags:["Oud Wood","Santal 33"],ratio:"60 / 40",layerWith:"fragrance",note:"Spray Oud Wood first, let it settle 2 min, then Santal 33. The papyrus locks with Santal's cedar perfectly.",date:"Nov 3, 2024",rating:5,isPublic:true},
-    {id:2,name:"Winter Evening",frags:["Aventus","Black Orchid"],ratio:"70 / 30",layerWith:"fragrance",note:"Aventus base + a light mist of Black Orchid on the chest. The birch smoke lifts the orchid.",date:"Oct 28, 2024",rating:4,isPublic:false},
-  ]);
+function LayeringTab({ layers, onSaveLayer }) {
   const [open,setOpen]=useState(false);
   const [name,setName]=useState("");const [f1,setF1]=useState("");const [f2,setF2]=useState("");
   const [ratio,setRatio]=useState("50 / 50");const [note,setNote]=useState("");
@@ -2689,11 +2678,12 @@ function LayeringTab() {
 
           <div style={{display:"flex",gap:8}}>
             <button onClick={()=>setOpen(false)} style={{flex:1,padding:"10px 0",borderRadius:8,border:`1px solid ${T.rule}`,background:T.white,color:T.mid,fontSize:12,fontFamily:sans,cursor:"pointer"}}>Cancel</button>
-            <button onClick={()=>{if(f1&&f2&&name){setLayers([{name,frags:[f1,f2],ratio,note,layerWith,isPublic,date:new Date().toLocaleDateString("en-US",{month:"short",day:"numeric",year:"numeric"}),rating:4,id:Date.now()},...layers]);setOpen(false);setName("");setF1("");setF2("");setNote("");}}} style={{flex:2,padding:"10px 0",borderRadius:8,border:"none",background:T.black,color:T.white,fontSize:12,fontFamily:sans,cursor:"pointer"}}>Save combination</button>
+            <button onClick={()=>{if(f1&&f2&&name){onSaveLayer({name,frags:[f1,f2],ratio,note,layerWith,isPublic,date:new Date().toLocaleDateString("en-US",{month:"short",day:"numeric",year:"numeric"}),rating:4});setOpen(false);setName("");setF1("");setF2("");setNote("");}}} style={{flex:2,padding:"10px 0",borderRadius:8,border:"none",background:T.black,color:T.white,fontSize:12,fontFamily:sans,cursor:"pointer"}}>Save combination</button>
           </div>
         </div>
       )}
 
+      {layers.length===0&&<p style={{fontFamily:sans,fontSize:13,color:T.mid,lineHeight:1.6,margin:"4px 0 16px"}}>No combinations logged yet. Log your first one above.</p>}
       {layers.map(l=>(
         <div key={l.id} style={{background:T.white,border:`1px solid ${T.rule}`,borderRadius:14,padding:16,marginBottom:10}}>
           <div style={{display:"flex",alignItems:"flex-start",justifyContent:"space-between",marginBottom:10}}>
@@ -3947,10 +3937,12 @@ export default function SillageApp() {
   const [modalFragId, setModalFragId] = useState(null);
   const [showSuggest, setShowSuggest] = useState(false);
   const [profileUsername, setProfileUsername] = useState(null);
-  const [userStatuses, setUserStatuses] = useState({ 1:"bottle_owned", 2:"sample_wishlist", 3:"sample_have", 4:"tried_skin", 5:"smelled", 6:"bottle_wishlist" });
+  const [userStatuses, setUserStatuses] = useState({});
   const [privateNotes, setPrivateNotes] = useState({});
-  const [reactions, setReactions] = useState({ 1:"love", 3:"like" });
+  const [reactions, setReactions] = useState({});
   const [journalEntries, setJournalEntries] = useState([]);
+  const [layers, setLayers] = useState([]);
+  const [saveIssue, setSaveIssue] = useState("");
   // following: Set of usernames the current user follows. the official account is always included.
   const [following, setFollowing] = useState(new Set(["memoir"]));
   const [fragrances, setFragrances] = useState(FRAGRANCES);
@@ -4075,7 +4067,71 @@ export default function SillageApp() {
     loadFragrances();
   }, []);
 
-  function addJournalEntry(entry) { setJournalEntries(p => [entry, ...p]); }
+  // ─── MEMBER DATA: saved to Supabase so nothing is lost on refresh or a new device ─
+  const uid = currentUser && currentUser.id;
+  const isUuid = s => typeof s === "string" && /^[0-9a-f]{8}-[0-9a-f]{4}-/i.test(s);
+  const issueTimer = useRef(null);
+  function flagSave(err) {
+    console.error("Save failed:", err);
+    setSaveIssue("We could not save that just now. It is on your screen but may not be kept.");
+    clearTimeout(issueTimer.current);
+    issueTimer.current = setTimeout(() => setSaveIssue(""), 7000);
+  }
+  async function saveUserFrag(fragId, patch) {
+    if (!uid || !isUuid(fragId)) return;
+    const { error } = await supabase.from("user_fragrances").upsert({ user_id: uid, fragrance_id: fragId, ...patch, updated_at: new Date().toISOString() }, { onConflict: "user_id,fragrance_id" });
+    if (error) flagSave(error);
+  }
+  useEffect(() => {
+    setUserStatuses({}); setReactions({}); setPrivateNotes({}); setJournalEntries([]); setLayers([]);
+    if (!uid) return;
+    let off = false;
+    (async () => {
+      try {
+        const [uf, je, ly] = await Promise.all([
+          supabase.from("user_fragrances").select("fragrance_id, status, reaction, note").eq("user_id", uid).limit(5000),
+          supabase.from("journal_entries").select("*").eq("user_id", uid).order("created_at", { ascending: false }).limit(2000),
+          supabase.from("layerings").select("*").eq("user_id", uid).order("created_at", { ascending: false }).limit(1000),
+        ]);
+        if (off) return;
+        if (uf.error || je.error || ly.error) { console.error("Could not load your saved data:", uf.error || je.error || ly.error); return; }
+        const st = {}, rx = {}, nt = {};
+        (uf.data || []).forEach(r => { if (r.status) st[r.fragrance_id] = r.status; if (r.reaction) rx[r.fragrance_id] = r.reaction; if (r.note) nt[r.fragrance_id] = r.note; });
+        setUserStatuses(st); setReactions(rx); setPrivateNotes(nt);
+        setJournalEntries((je.data || []).map(r => ({ id: r.id, fragId: r.fragrance_id, fragName: r.frag_name, house: r.house, family: r.family, prompt: r.prompt, text: r.body, where: r.where_text, date: r.entry_date, shared: r.shared, publishedAsReview: r.published_as_review, reviewRating: r.review_rating })));
+        setLayers((ly.data || []).map(r => ({ id: r.id, name: r.name, frags: r.frags || [], ratio: r.ratio, layerWith: r.layer_with, note: r.note, rating: r.rating, isPublic: r.is_public, date: new Date(r.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) })));
+        // Make sure every fragrance in the collection is loaded so the Collection tab can show it.
+        const ids = [...new Set((uf.data || []).filter(r => r.status || r.reaction).map(r => r.fragrance_id))];
+        for (let i = 0; i < ids.length; i += 150) {
+          const chunk = ids.slice(i, i + 150);
+          const { data } = await fetchFragRows(sel => supabase.from("fragrances").select(sel).in("id", chunk));
+          if (off) return;
+          if (data) mergeFrags(data.map(mapFrag));
+        }
+      } catch (e) { console.error("Could not load your saved data:", e); }
+    })();
+    return () => { off = true; };
+  }, [uid]);
+  async function addJournalEntry(entry) {
+    const tempId = entry.id || Date.now();
+    setJournalEntries(p => [{ ...entry, id: tempId }, ...p]);
+    if (!uid) return;
+    const { data, error } = await supabase.from("journal_entries").insert({
+      user_id: uid, fragrance_id: isUuid(entry.fragId) ? entry.fragId : null, frag_name: entry.fragName, house: entry.house, family: entry.family || null,
+      prompt: entry.prompt || null, body: entry.text, where_text: entry.where || null, entry_date: entry.date || null,
+      shared: !!entry.shared, published_as_review: !!entry.publishedAsReview, review_rating: entry.reviewRating || null,
+    }).select("id").single();
+    if (error) { flagSave(error); return; }
+    if (data) setJournalEntries(p => p.map(e => e.id === tempId ? { ...e, id: data.id } : e));
+  }
+  async function saveLayer(l) {
+    const tempId = Date.now();
+    setLayers(p => [{ ...l, id: tempId }, ...p]);
+    if (!uid) return;
+    const { data, error } = await supabase.from("layerings").insert({ user_id: uid, name: l.name, frags: l.frags, ratio: l.ratio, layer_with: l.layerWith, note: l.note || null, rating: l.rating || null, is_public: !!l.isPublic }).select("id").single();
+    if (error) { flagSave(error); return; }
+    if (data) setLayers(p => p.map(x => x.id === tempId ? { ...x, id: data.id } : x));
+  }
   function toggleFollow(username) {
     setFollowing(prev => {
       const next = new Set(prev);
@@ -4091,7 +4147,7 @@ export default function SillageApp() {
   function openBrand(ref) { setModalFragId(null); setProfileUsername(null); setPerfumerRef(null); setBrandRef(ref); }
   function openPerfumer(n) { setModalFragId(null); setProfileUsername(null); setBrandRef(null); setPerfumerRef(n); }
   function openProfile(username) { setProfileUsername(username); }
-  function onReaction(fragId, val) { setReactions(p => ({ ...p, [fragId]: val })); }
+  function onReaction(fragId, val) { setReactions(p => ({ ...p, [fragId]: val })); saveUserFrag(fragId, { reaction: val || null }); }
 
   function handleOnboardingComplete(fields) {
     setCurrentUser(p => ({ ...p, ...fields }));
@@ -4148,7 +4204,7 @@ export default function SillageApp() {
       <main className="mos-main mos-wrap" style={{ position:"relative", zIndex:1, paddingTop:28, paddingBottom:64 }}>
         {activeTab==="Discover"   && <DiscoverTab   onOpenBrand={openBrand} onOpenPerfumer={openPerfumer} fragrances={fragrances} serverShelves={serverShelves} onSearch={serverShelves ? searchFrags : null} onOpenFrag={openFrag} userStatuses={userStatuses} reactions={reactions} onReaction={onReaction} onSuggest={() => setShowSuggest(true)} currentUser={currentUser}/>}
         {activeTab==="Collection" && <CollectionTab fragrances={fragrances} onOpenFrag={openFrag} statuses={userStatuses} reactions={reactions} onReaction={onReaction} onSuggest={() => setShowSuggest(true)}/>}
-        {activeTab==="Layering"   && <div className="mos-prose"><LayeringTab/></div>}
+        {activeTab==="Layering"   && <div className="mos-prose"><LayeringTab layers={layers} onSaveLayer={saveLayer}/></div>}
         {activeTab==="Journal"    && <div className="mos-prose"><JournalTab entries={journalEntries}/></div>}
         {activeTab==="Learn"      && <div className="mos-prose"><LearnTab fragrances={fragrances} onOpenFrag={openFrag} onOpenBrand={openBrand}/></div>}
         <FooterLinks/>
@@ -4172,9 +4228,9 @@ export default function SillageApp() {
           frag={modalFrag}
           onClose={() => setModalFragId(null)}
           userStatus={userStatuses[modalFrag.id]}
-          setUserStatus={s => setUserStatuses(p => ({ ...p, [modalFrag.id]: s }))}
+          setUserStatus={s => { setUserStatuses(p => { const n = { ...p }; if (s) n[modalFrag.id] = s; else delete n[modalFrag.id]; return n; }); saveUserFrag(modalFrag.id, { status: s || null }); }}
           privateNote={privateNotes[modalFrag.id]}
-          setPrivateNote={n => setPrivateNotes(p => ({ ...p, [modalFrag.id]: n }))}
+          setPrivateNote={n => { setPrivateNotes(p => ({ ...p, [modalFrag.id]: n })); saveUserFrag(modalFrag.id, { note: n }); }}
           reaction={reactions[modalFrag.id]}
           setReaction={v => onReaction(modalFrag.id, v)}
           onOpenFrag={openFrag}
@@ -4186,6 +4242,7 @@ export default function SillageApp() {
         />
       )}
       {perfumerRef && <PerfumerPage name={perfumerRef} onClose={() => setPerfumerRef(null)} onOpenFrag={openFrag} onOpenBrand={openBrand}/>}
+      {saveIssue && <div role="status" style={{ position:"fixed", left:16, right:16, bottom:"calc(84px + env(safe-area-inset-bottom))", zIndex:80, maxWidth:520, margin:"0 auto", background:T.black, color:T.white, borderRadius:14, padding:"12px 16px", fontFamily:sans, fontSize:13, lineHeight:1.5 }}>{saveIssue}</div>}
       {brandRef && <BrandModal brand={brandRef} onClose={() => setBrandRef(null)} onOpenFrag={openFrag}/>}
       {showSuggest && <SuggestModal onClose={() => setShowSuggest(false)} currentUser={currentUser}/>}
       {profileUsername && (
