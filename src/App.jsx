@@ -1181,6 +1181,54 @@ function mapFrag(f) {
 }
 // The app registers its catalogue cache here so any component can add fragrances it loads.
 const fragSink = { fn: null };
+
+// ─── EVENT TRACKING ───────────────────────────────────────────────────────────
+// Anonymous usage events for members (views, saves, sample and brand-site clicks, searches).
+// Stored without name, email or IP: only a random per-browser id, the fragrance or house, where in
+// the app it came from, and a coarse region. Sent through the log_event function (20+ members per
+// cut before anything is reported). Never blocks the app: every failure is swallowed.
+const trackState = { region: null, source: null, seen: {}, searchTimer: null };
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+function trackVisitorId() {
+  try {
+    let v = localStorage.getItem("mos_vid");
+    if (!v || !UUID_RE.test(v)) {
+      v = (window.crypto && crypto.randomUUID) ? crypto.randomUUID() : null;
+      if (v) localStorage.setItem("mos_vid", v);
+    }
+    return v;
+  } catch (e) { return null; }
+}
+function trackEvent(type, o = {}) {
+  try {
+    const frag = o.fragrance && UUID_RE.test(String(o.fragrance)) ? String(o.fragrance) : null;
+    if (o.fragrance && !frag) return; // demo data has no real id
+    const key = [type, frag || "", o.houseSlug || "", o.detail || ""].join("|");
+    const now = Date.now();
+    const wait = o.dedupeMs != null ? o.dedupeMs : 3000;
+    if (trackState.seen[key] && now - trackState.seen[key] < wait) return;
+    trackState.seen[key] = now;
+    const p = supabase.rpc("log_event", {
+      p_type: type,
+      p_fragrance: frag,
+      p_house_slug: o.houseSlug || null,
+      p_source: o.source || null,
+      p_detail: o.detail || null,
+      p_region: trackState.region,
+      p_visitor: trackVisitorId(),
+    });
+    if (p && p.then) p.then(() => {}, () => {});
+  } catch (e) {}
+}
+// Searches are logged once typing pauses, and only for 3+ characters.
+function trackSearch(q) {
+  try {
+    const t = String(q || "").trim().toLowerCase().replace(/\s+/g, " ").slice(0, 60);
+    if (trackState.searchTimer) clearTimeout(trackState.searchTimer);
+    if (t.length < 3) return;
+    trackState.searchTimer = setTimeout(() => trackEvent("search", { detail: t, source: "discover", dedupeMs: 300000 }), 1500);
+  } catch (e) {}
+}
 // Other fragrances from the same house, loaded on demand.
 function useHouseSiblings(frag, enabled) {
   const [list, setList] = useState(null);
@@ -1238,7 +1286,7 @@ function SimilarScents({ frag, onOpenFrag }) {
       <p style={{ fontFamily: sans, fontSize: 12, color: T.mid, lineHeight: 1.6, margin: "0 0 12px" }}>Matched on shared notes, with rarer notes counting for more.</p>
       <div style={{ border: `1px solid ${T.rule}`, borderRadius: 16, overflow: "hidden", background: T.lift }}>
         {rows.map((r, i) => (
-          <div key={r.f.id} onClick={() => onOpenFrag(r.f.id)}
+          <div key={r.f.id} onClick={() => onOpenFrag(r.f.id, "similar")}
             style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 14px", cursor: "pointer", borderTop: i ? `1px solid ${T.rule}` : "none", transition: "background 0.15s" }}
             onMouseEnter={e => e.currentTarget.style.background = T.white}
             onMouseLeave={e => e.currentTarget.style.background = "transparent"}>
@@ -1275,7 +1323,7 @@ function HouseStrip({ currentFrag, onOpenFrag, onOpenBrand }) {
       </div>
       <div style={{ display: "flex", gap: 0, overflowX: "auto" }}>
         {siblings.map((f, i) => (
-          <div key={f.id} onClick={() => onOpenFrag(f.id)}
+          <div key={f.id} onClick={() => onOpenFrag(f.id, "house")}
             style={{ flexShrink: 0, width: 160, cursor: "pointer", padding: "14px 16px", borderRight: i < siblings.length - 1 ? `1px solid ${T.rule}` : "none", transition: "background 0.15s" }}
             onMouseEnter={e => e.currentTarget.style.background = T.white}
             onMouseLeave={e => e.currentTarget.style.background = "transparent"}>
@@ -1392,6 +1440,7 @@ function BrandModal({ brand, onClose, onOpenFrag }) {
         if (off) return;
         if (!h) { setHouse(null); return; }
         setHouse(h);
+        trackEvent("brand_view", { houseSlug: h.slug, source: "brand", dedupeMs: 1800000 });
         const r = await fetchFragRows(sel => supabase.from("fragrances").select(sel, { count: "exact" }).eq("house_id", h.id).order("slug", { ascending: true }).range(0, PAGE - 1));
         if (off) return;
         if (!r.error && r.data) { const m = r.data.map(mapFrag); if (fragSink.fn) fragSink.fn(m); setFrags(m); setTotal(r.count != null ? r.count : m.length); }
@@ -1435,7 +1484,7 @@ function BrandModal({ brand, onClose, onOpenFrag }) {
               <p style={{ fontFamily:sans, fontSize:"clamp(14px, 1.1vw, 17px)", color:T.mid, margin:0 }}>{[h.country, brandOriginLabel(h), h.price_tier].filter(Boolean).join(" · ")}</p>
               <div style={{ margin:"6px 0 0" }}>{own && <OwnershipBadge ownership={own} size="large"/>}</div>
               {cleanDiversity(h.diversity) && <p style={{ fontFamily:sans, fontSize:"clamp(14px, 1.1vw, 17px)", color:T.mid, margin:"8px 0 0" }}>Diversity <strong style={{ color:T.tangerine, fontWeight:600 }}>{cleanDiversity(h.diversity)}</strong></p>}
-              {site && <a href={site} target="_blank" rel="noopener noreferrer" style={{ display:"inline-flex", alignItems:"center", gap:6, margin:"12px 0 0", padding:"6px 14px", minHeight:34, boxSizing:"border-box", borderRadius:20, border:`1px solid ${T.rule}`, background:T.white, fontFamily:sans, fontSize:13, color:T.ink, textDecoration:"none" }}>Brand website<ExtArrow size={11}/></a>}
+              {site && <a href={site} target="_blank" rel="noopener noreferrer" onClick={() => trackEvent("brand_site_click", { houseSlug: h.slug, source: "brand" })} style={{ display:"inline-flex", alignItems:"center", gap:6, margin:"12px 0 0", padding:"6px 14px", minHeight:34, boxSizing:"border-box", borderRadius:20, border:`1px solid ${T.rule}`, background:T.white, fontFamily:sans, fontSize:13, color:T.ink, textDecoration:"none" }}>Brand website<ExtArrow size={11}/></a>}
             </>
           )}
         </div>
@@ -1900,7 +1949,7 @@ function safeUrl(u) {
 function ExtArrow({ size = 12, color = "currentColor" }) {
   return <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M7 17L17 7"/><path d="M8 7h9v9"/></svg>;
 }
-function SamplesSection({ defaultRegion }) {
+function SamplesSection({ defaultRegion, onVisit }) {
   const [region, setRegion] = useState(defaultRegion);
   const list = SAMPLE_RETAILERS[region] || [];
   return (
@@ -1918,7 +1967,7 @@ function SamplesSection({ defaultRegion }) {
       </div>
       <div className="mos-samples">
         {list.map((r, i) => (
-          <a key={r.name} href={r.url} target="_blank" rel="noopener noreferrer"
+          <a key={r.name} href={r.url} target="_blank" rel="noopener noreferrer" onClick={() => onVisit && onVisit(r.name, region)}
             style={{ display:"flex", alignItems:"center", justifyContent:"space-between", gap:12, padding:"15px 16px", border:`1px solid ${T.rule}`, borderRadius:12, textDecoration:"none", color:T.black, background:T.white, minHeight:52, boxSizing:"border-box" }}>
             <span style={{ fontFamily:serif, fontSize:17 }}>{r.name}</span>
             <span style={{ display:"inline-flex", alignItems:"center", gap:6, fontFamily:sans, fontSize:12, color:T.mid }}>Visit<ExtArrow/></span>
@@ -2005,7 +2054,7 @@ function DetailModal({ frag, onClose, userStatus, setUserStatus, privateNote, se
                 {frag.neoGourmand && <span style={{fontFamily:sans,fontSize:"clamp(13px, 1vw, 15px)",color:T.mid}}>Style <strong style={{color:T.accent,fontWeight:600}}>Neo gourmand</strong></span>}
               </div>
               {safeUrl(frag.website)&&(
-                <a href={safeUrl(frag.website)} target="_blank" rel="noopener noreferrer" style={{display:"inline-flex",alignItems:"center",gap:6,margin:"14px 0 0",padding:"6px 14px",minHeight:34,boxSizing:"border-box",borderRadius:20,border:`1px solid ${T.rule}`,background:T.white,fontFamily:sans,fontSize:13,color:T.ink,textDecoration:"none"}}>Brand website<ExtArrow size={11}/></a>
+                <a href={safeUrl(frag.website)} target="_blank" rel="noopener noreferrer" onClick={()=>trackEvent("brand_site_click",{fragrance:frag.id,houseSlug:frag.houseSlug,source:"fragrance"})} style={{display:"inline-flex",alignItems:"center",gap:6,margin:"14px 0 0",padding:"6px 14px",minHeight:34,boxSizing:"border-box",borderRadius:20,border:`1px solid ${T.rule}`,background:T.white,fontFamily:sans,fontSize:13,color:T.ink,textDecoration:"none"}}>Brand website<ExtArrow size={11}/></a>
               )}
               {splitPerfumers(frag.perfumer).length>0 && (
                 <p style={{fontFamily:sans,fontSize:"clamp(13px, 1vw, 15px)",color:T.mid,margin:"14px 0 0",display:"flex",alignItems:"center",flexWrap:"wrap",gap:"2px 6px"}}>
@@ -2056,7 +2105,7 @@ function DetailModal({ frag, onClose, userStatus, setUserStatus, privateNote, se
           {tab==="overview"&&(
             <div>
               <div style={{background:T.lift,border:`1px solid ${T.rule}`,borderRadius:16,padding:"22px 18px 20px",marginBottom:32}}>
-                <SamplesSection defaultRegion={regionFor(currentUser)}/>
+                <SamplesSection defaultRegion={regionFor(currentUser)} onVisit={(name, reg) => trackEvent("sample_click", { fragrance: frag.id, source: "fragrance", detail: `${name} (${reg})` })}/>
               </div>
               {(frag.description||frag.story)&&(
                 <div style={{marginBottom:32}}>
@@ -2074,7 +2123,7 @@ function DetailModal({ frag, onClose, userStatus, setUserStatus, privateNote, se
                 <Lbl mb={14}>Fragrance Notes</Lbl>
                 <NotesPyramid notes={frag.notes}/>
               </div>
-              <SimilarScents frag={frag} onOpenFrag={id=>{onClose();setTimeout(()=>onOpenFrag(id),50);}}/>
+              <SimilarScents frag={frag} onOpenFrag={(id,src)=>{onClose();setTimeout(()=>onOpenFrag(id,src),50);}}/>
               {hasSeasons&&(<div style={{marginBottom:36}}><Lbl>Seasons</Lbl><SeasonHeat seasons={frag.seasons}/></div>)}
               {hasOcc&&(
                 <div style={{marginBottom:36}}>
@@ -2085,7 +2134,7 @@ function DetailModal({ frag, onClose, userStatus, setUserStatus, privateNote, se
                 </div>
               )}
               <div style={{marginTop:28}}>
-                <HouseStrip currentFrag={frag} onOpenFrag={id=>{onClose();setTimeout(()=>onOpenFrag(id),50);}} onOpenBrand={onOpenBrand}/>
+                <HouseStrip currentFrag={frag} onOpenFrag={(id,src)=>{onClose();setTimeout(()=>onOpenFrag(id,src),50);}} onOpenBrand={onOpenBrand}/>
               </div>
             </div>
           )}
@@ -4266,6 +4315,7 @@ export default function SillageApp() {
   }
   useEffect(() => { fragSink.fn = mergeFrags; return () => { fragSink.fn = null; }; }, []);
   async function searchFrags(q, group, offset) {
+    if (!offset) trackSearch(q);
     const { data: hits, error } = await supabase.rpc("search_fragrances", { q, grp: group, lim: 24, off: offset });
     if (error) throw error;
     const ids = (hits || []).map(h => h.id);
@@ -4448,7 +4498,14 @@ export default function SillageApp() {
 
   const NAV = [{ tab:"Discover", icon:"compass" }, { tab:"Collection", icon:"bottle" }, { tab:"Layering", icon:"layers" }, { tab:"Journal", icon:"book" }, { tab:"Learn", icon:"tip" }];
   const modalFrag = fragrances.find(f => f.id === modalFragId);
-  function openFrag(id) { setModalFragId(id); }
+  trackState.region = regionFor(currentUser);
+  function openFrag(id, source) {
+    trackState.source = source || (brandRef ? "brand" : perfumerRef ? "perfumer" : profileUsername ? "profile" : String(activeTab || "").toLowerCase());
+    setModalFragId(id);
+  }
+  useEffect(() => {
+    if (modalFragId) trackEvent("fragrance_view", { fragrance: modalFragId, source: trackState.source || "other", dedupeMs: 1800000 });
+  }, [modalFragId]);
   function openBrand(ref) { setModalFragId(null); setProfileUsername(null); setPerfumerRef(null); setBrandRef(ref); }
   function openPerfumer(n) { setModalFragId(null); setProfileUsername(null); setBrandRef(null); setPerfumerRef(n); }
   function openProfile(username) { setProfileUsername(username); }
@@ -4537,7 +4594,7 @@ export default function SillageApp() {
           frag={modalFrag}
           onClose={() => setModalFragId(null)}
           userStatus={userStatuses[modalFrag.id]}
-          setUserStatus={s => { setUserStatuses(p => { const n = { ...p }; if (s) n[modalFrag.id] = s; else delete n[modalFrag.id]; return n; }); saveUserFrag(modalFrag.id, { status: s || null }); }}
+          setUserStatus={s => { setUserStatuses(p => { const n = { ...p }; if (s) n[modalFrag.id] = s; else delete n[modalFrag.id]; return n; }); saveUserFrag(modalFrag.id, { status: s || null }); trackEvent("status_set", { fragrance: modalFrag.id, source: "fragrance", detail: s ? String(s) : "removed" }); }}
           privateNote={privateNotes[modalFrag.id]}
           setPrivateNote={n => { setPrivateNotes(p => ({ ...p, [modalFrag.id]: n })); saveUserFrag(modalFrag.id, { note: n }); }}
           reaction={reactions[modalFrag.id]}
