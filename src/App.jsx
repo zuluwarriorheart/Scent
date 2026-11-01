@@ -1161,7 +1161,7 @@ function mapFrag(f) {
     diversity: cleanDiversity(f.house && f.house.diversity),
     price_tier: f.price_tier || (f.house && f.house.price_tier) || "",
     year: f.year,
-    perfumer: f.perfumer || "",
+    perfumer: titleCaseName(f.perfumer),
     story: f.story || "",
     concentration: f.concentration || "",
     gender: f.gender,
@@ -1457,12 +1457,30 @@ const PERFUMERS = {
 
 
 // ─── PERFUMERS: directory + full-page perfumer card ──────────────────────────
+const NAME_SMALL = new Set(["de","del","della","di","da","du","la","le","van","von","der","den","dos","el","al","bin","ibn"]);
+function titleCaseName(s) {
+  return String(s || "").toLowerCase().replace(/(^|[\s(\-'\u2019\/&,])([a-z\u00e0-\u00ff])([a-z\u00e0-\u00ff]*)/g, (m, pre, a, rest, off) => {
+    const w = a + rest;
+    if (pre !== "" && /\s/.test(pre) && NAME_SMALL.has(w) && off > 0) return pre + w;
+    return pre + a.toUpperCase() + rest;
+  }).replace(/\bMc([a-z])/g, (m, c) => "Mc" + c.toUpperCase());
+}
 function splitPerfumers(s) {
   return String(s || "").split(/\s*(?:,|&|\/|;|\sand\s|\swith\s)\s*/i).map(x => x.trim()).filter(x => x.length > 2 && !/^(unknown|n\/a|na|various|none|anonymous)$/i.test(x));
 }
 async function loadPerfumers() {
   const r = await supabase.rpc("perfumers_list");
-  if (!r.error && r.data) return r.data;
+  if (!r.error && r.data) {
+    // Capitalise names and merge rows that differ only by case ("david apel" + "David Apel")
+    const m = new Map();
+    r.data.forEach(x => {
+      const name = titleCaseName(x.name), k = name.toLowerCase();
+      const o = m.get(k);
+      if (!o) m.set(k, { ...x, name });
+      else { o.frag_count = (Number(o.frag_count) || 0) + (Number(x.frag_count) || 0); o.house_count = Math.max(Number(o.house_count) || 0, Number(x.house_count) || 0); }
+    });
+    return [...m.values()];
+  }
   return Object.keys(PERFUMERS).map(n => ({ name: n, frag_count: null, house_count: null }));
 }
 function PerfumerPortrait({ name, photo, size = 150 }) {
@@ -3354,7 +3372,33 @@ function LoadingScreen() {
 }
 
 // ─── LOGIN / SIGNUP SCREEN — real Supabase Auth (email/password + Google OAuth) ─
+const TURNSTILE_KEY = import.meta.env.VITE_TURNSTILE_SITE_KEY || "";
+function Turnstile({ onToken, resetKey }) {
+  const ref = useRef(null);
+  const idRef = useRef(null);
+  useEffect(() => {
+    if (!TURNSTILE_KEY) return;
+    let off = false;
+    function draw() {
+      if (off || !ref.current || !window.turnstile || idRef.current != null) return;
+      idRef.current = window.turnstile.render(ref.current, { sitekey: TURNSTILE_KEY, callback: t => onToken(t), "expired-callback": () => onToken(""), "error-callback": () => onToken("") });
+    }
+    if (window.turnstile) draw();
+    else {
+      let sc = document.getElementById("cf-turnstile-js");
+      if (!sc) { sc = document.createElement("script"); sc.id = "cf-turnstile-js"; sc.src = "https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit"; sc.async = true; document.head.appendChild(sc); }
+      sc.addEventListener("load", draw);
+    }
+    return () => { off = true; try { if (idRef.current != null && window.turnstile) window.turnstile.remove(idRef.current); } catch (e) {} idRef.current = null; };
+  }, []);
+  useEffect(() => { try { if (idRef.current != null && window.turnstile) { window.turnstile.reset(idRef.current); onToken(""); } } catch (e) {} }, [resetKey]);
+  if (!TURNSTILE_KEY) return null;
+  return <div ref={ref} style={{ display:"flex", justifyContent:"center", margin:"0 0 14px" }}/>;
+}
 function LoginScreen({ onWaitlist }) {
+  const [inviteCode, setInviteCode] = useState("");
+  const [captcha, setCaptcha] = useState("");
+  const [captchaReset, setCaptchaReset] = useState(0);
   const [mode, setMode] = useState("signin");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -3373,7 +3417,9 @@ function LoginScreen({ onWaitlist }) {
 
   async function handleSubmit() {
     setError("");
+    if (TURNSTILE_KEY && !captcha) { setError("Please complete the check below."); return; }
     if (mode === "signup") {
+      if (!inviteCode.trim()) { setError("Please enter your invite code."); return; }
       if (!name.trim()) { setError("Please enter your name."); return; }
       if (!isValidUsername(username)) { setError("Username must be 3–20 characters, letters, numbers, or underscores only."); return; }
       if (!isValidEmail(email)) { setError("Please enter a valid email address."); return; }
@@ -3383,10 +3429,11 @@ function LoginScreen({ onWaitlist }) {
       const { data, error: signUpError } = await supabase.auth.signUp({
         email: email.trim(),
         password,
-        options: { data: { username: username.trim(), display_name: name.trim(), country: country || null } },
+        options: { captchaToken: captcha || undefined, data: { username: username.trim(), display_name: name.trim(), country: country || null, invite_code: inviteCode.trim() } },
       });
       setLoading(false);
-      if (signUpError) { setError(signUpError.message); return; }
+      setCaptchaReset(n => n + 1);
+      if (signUpError) { setError(/database error|invite/i.test(signUpError.message) ? "That invite code isn't valid, or it has already been used." : signUpError.message); return; }
       if (!data.session) {
         // Email confirmation required before a session exists
         setConfirmPending(true);
@@ -3401,8 +3448,10 @@ function LoginScreen({ onWaitlist }) {
       const { error: signInError } = await supabase.auth.signInWithPassword({
         email: email.trim(),
         password,
+        options: { captchaToken: captcha || undefined },
       });
       setLoading(false);
+      setCaptchaReset(n => n + 1);
       if (signInError) { setError(signInError.message); return; }
       // Success — root SillageApp's onAuthStateChange listener takes over routing.
     }
@@ -3424,7 +3473,9 @@ function LoginScreen({ onWaitlist }) {
     setError("");
     const { error: resetError } = await supabase.auth.resetPasswordForEmail(forgotEmail.trim(), {
       redirectTo: window.location.origin,
+      captchaToken: captcha || undefined,
     });
+    setCaptchaReset(n => n + 1);
     if (resetError) { setError(resetError.message); return; }
     setForgotSent(true);
   }
@@ -3486,6 +3537,7 @@ function LoginScreen({ onWaitlist }) {
         <div style={{ display:"flex", flexDirection:"column", gap:10, marginBottom:14 }}>
           {mode === "signup" && (
             <>
+              <input value={inviteCode} onChange={e => { setInviteCode(e.target.value.toUpperCase()); setError(""); }} placeholder="Invite code" style={{ ...inp, letterSpacing:"0.08em" }} autoCapitalize="characters" onKeyDown={e => e.key==="Enter" && handleSubmit()}/>
               <input value={name} onChange={e => { setName(e.target.value); setError(""); }} placeholder="Your name" style={inp} onKeyDown={e => e.key==="Enter" && handleSubmit()}/>
               <div>
                 <input value={username} onChange={e => { setUsername(e.target.value.replace(/[^a-zA-Z0-9_]/g,"")); setError(""); }} placeholder="Username (e.g. scenthunter_uk)" style={inp} maxLength={20} onKeyDown={e => e.key==="Enter" && handleSubmit()}/>
@@ -3498,6 +3550,7 @@ function LoginScreen({ onWaitlist }) {
           <input value={password} onChange={e => { setPassword(e.target.value); setError(""); }} placeholder="Password" type="password" style={inp} onKeyDown={e => e.key==="Enter" && handleSubmit()}/>
         </div>
 
+        <Turnstile onToken={setCaptcha} resetKey={captchaReset + mode}/>
         {error && <p style={{ fontFamily:sans, fontSize:12, color:T.bad, margin:"0 0 12px" }}>{error}</p>}
 
         <button onClick={handleSubmit} disabled={loading} style={{ width:"100%", padding:"15px 0", borderRadius:12, background:loading?T.faint:T.black, border:"none", color:T.white, fontSize:14, fontFamily:sans, fontWeight:600, cursor:loading?"not-allowed":"pointer", transition:"background 0.2s", marginBottom:20 }}>
