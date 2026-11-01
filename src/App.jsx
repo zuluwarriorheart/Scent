@@ -3371,6 +3371,76 @@ function LoadingScreen() {
   );
 }
 
+// ─── INVITE ADMIN (owner only; server checks admin rights) ────────────────────
+function InviteAdmin() {
+  const [rows, setRows] = useState(null);
+  const [note, setNote] = useState("");
+  const [uses, setUses] = useState(1);
+  const [busy, setBusy] = useState(false);
+  const [msg, setMsg] = useState("");
+  const [fresh, setFresh] = useState("");
+  async function load() {
+    const r = await supabase.rpc("admin_list_invites");
+    if (r.error) { setMsg("Not available for this account."); setRows([]); return; }
+    setRows(r.data || []);
+  }
+  useEffect(() => { load(); }, []);
+  async function make() {
+    setBusy(true); setMsg("");
+    const r = await supabase.rpc("admin_create_invite", { p_note: note.trim(), p_max_uses: Math.max(1, Number(uses) || 1) });
+    setBusy(false);
+    if (r.error) { setMsg(r.error.message); return; }
+    setFresh(r.data); setNote(""); load();
+    try { await navigator.clipboard.writeText(r.data); } catch (e) {}
+  }
+  async function toggle(code, active) { await supabase.rpc("admin_set_invite_active", { p_code: code, p_active: active }); load(); }
+  async function share(code) {
+    const text = "Your invite to Memoir on Skin: " + code + "\n" + window.location.origin;
+    try { if (navigator.share) await navigator.share({ text }); else await navigator.clipboard.writeText(text); } catch (e) {}
+  }
+  const inp = { width:"100%", background:T.lift, border:`1px solid ${T.rule}`, borderRadius:12, padding:"13px 16px", fontSize:15, color:T.ink, outline:"none", fontFamily:sans, boxSizing:"border-box" };
+  const btn = { padding:"8px 14px", borderRadius:10, border:`1px solid ${T.rule}`, background:T.white, color:T.ink, fontSize:12, fontFamily:sans, cursor:"pointer" };
+  return (
+    <div style={{ maxWidth:560, margin:"0 auto", padding:"32px 20px 80px", fontFamily:sans, color:T.ink }}>
+      <p style={{ fontSize:10, letterSpacing:"0.14em", textTransform:"uppercase", color:T.mid, margin:"0 0 6px" }}>Owner</p>
+      <h1 style={{ fontFamily:serif, fontSize:32, fontWeight:400, margin:"0 0 20px", color:T.black }}>Invite codes</h1>
+      <div style={{ display:"flex", flexDirection:"column", gap:10, marginBottom:12 }}>
+        <input value={note} onChange={e => setNote(e.target.value)} placeholder="Who is it for? (e.g. Maya, ScentXplore)" style={inp}/>
+        <div style={{ display:"flex", gap:10, alignItems:"center" }}>
+          <span style={{ fontSize:13, color:T.mid, whiteSpace:"nowrap" }}>People who can use it</span>
+          <input value={uses} onChange={e => setUses(e.target.value.replace(/\D/g, ""))} inputMode="numeric" style={{ ...inp, width:90 }}/>
+        </div>
+        <button onClick={make} disabled={busy} style={{ padding:"14px 0", borderRadius:12, background:busy?T.faint:T.black, color:T.white, border:"none", fontSize:14, fontWeight:600, fontFamily:sans, cursor:"pointer" }}>{busy ? "Making…" : "Make a code"}</button>
+      </div>
+      {msg && <p style={{ fontSize:12, color:T.bad, margin:"0 0 12px" }}>{msg}</p>}
+      {fresh && (
+        <div style={{ background:T.lift, border:`1px solid ${T.rule}`, borderRadius:12, padding:16, marginBottom:20, textAlign:"center" }}>
+          <p style={{ fontSize:11, color:T.mid, margin:"0 0 6px" }}>New code (copied)</p>
+          <p style={{ fontFamily:serif, fontSize:30, letterSpacing:"0.1em", margin:"0 0 10px", color:T.black }}>{fresh}</p>
+          <button onClick={() => share(fresh)} style={btn}>Share</button>
+        </div>
+      )}
+      <h2 style={{ fontFamily:serif, fontSize:20, fontWeight:400, margin:"24px 0 10px" }}>All codes</h2>
+      {rows === null && <p style={{ fontSize:13, color:T.mid }}>Loading…</p>}
+      {rows && rows.map(r => (
+        <div key={r.code} style={{ border:`1px solid ${T.rule}`, borderRadius:12, padding:"12px 14px", marginBottom:8, opacity:r.active ? 1 : 0.5 }}>
+          <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", gap:10 }}>
+            <span style={{ fontFamily:"ui-monospace, monospace", fontSize:16, letterSpacing:"0.06em" }}>{r.code}</span>
+            <span style={{ fontSize:12, color:T.mid }}>{r.uses}/{r.max_uses} used</span>
+          </div>
+          {r.note && <p style={{ fontSize:12, color:T.mid, margin:"4px 0 0" }}>{r.note}</p>}
+          {r.redeemed_by && r.redeemed_by.length > 0 && <p style={{ fontSize:12, color:T.ink, margin:"6px 0 0" }}>Joined: {r.redeemed_by.join(", ")}</p>}
+          <div style={{ display:"flex", gap:8, marginTop:10 }}>
+            <button onClick={() => share(r.code)} style={btn}>Share</button>
+            <button onClick={() => toggle(r.code, !r.active)} style={btn}>{r.active ? "Turn off" : "Turn on"}</button>
+          </div>
+        </div>
+      ))}
+      <p style={{ marginTop:24 }}><a href={window.location.pathname} style={{ fontSize:12, color:T.mid }}>Back to the site</a></p>
+    </div>
+  );
+}
+
 // ─── LOGIN / SIGNUP SCREEN — real Supabase Auth (email/password + Google OAuth) ─
 const TURNSTILE_KEY = import.meta.env.VITE_TURNSTILE_SITE_KEY || "";
 function Turnstile({ onToken, resetKey }) {
@@ -4303,6 +4373,8 @@ export default function SillageApp() {
   if (appScreen === "waitlist") return <WaitlistScreen onJoin={() => setAppScreen("login")}/>;
   if (appScreen === "login") return <LoginScreen onWaitlist={() => setAppScreen("waitlist")}/>;
   if (appScreen === "onboarding") return <OnboardingScreen onComplete={handleOnboardingComplete}/>;
+  // Private invite-code page for the owner: add ?admin=invites to the site address (signed in).
+  if (appScreen === "app" && typeof window !== "undefined" && /[?&]admin=invites\b/.test(window.location.search)) return <InviteAdmin/>;
 
   return (
     <div style={{ minHeight:"100svh", background:"transparent", fontFamily:sans, position:"relative" }}>
