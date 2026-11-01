@@ -2398,8 +2398,6 @@ function DiscoverTab({ onOpenFrag, onOpenBrand, onOpenPerfumer, userStatuses, re
           {!isSearching&&(
             <>
               {shelves.map((s,i)=><Shelf key={s.key} title={s.title} blurb={s.blurb} items={s.items} onOpenFrag={onOpenFrag} userStatuses={userStatuses} tinted={i%2===0}/>)}
-              <div style={{height:24}}/>
-              <button onClick={onSuggest} style={{width:"100%",maxWidth:760,padding:"13px 0",borderRadius:12,border:`1px solid ${T.rule}`,background:T.white,color:T.mid,fontSize:12,fontFamily:sans,cursor:"pointer"}}>+ Can't find a fragrance? Suggest it</button>
             </>
           )}
         </>
