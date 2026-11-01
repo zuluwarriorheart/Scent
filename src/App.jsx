@@ -2209,15 +2209,20 @@ function CoverTile({ frag, onClick, userStatus }) {
     </button>
   );
 }
-function Shelf({ title, blurb, items, onOpenFrag, userStatuses, tinted }) {
+function Shelf({ title, blurb, items, onOpenFrag, userStatuses, tinted, groups }) {
+  const [sel, setSel] = useState("All");
+  const names = groups ? Object.keys(groups) : [];
+  const shown = groups && sel !== "All" && groups[sel] ? groups[sel] : items;
+  const chipBtn = (on, label, fn) => (<button key={label} onClick={fn} aria-pressed={on} style={{ fontFamily:sans, fontSize:14, fontWeight:on?600:500, padding:"0 18px", minHeight:40, borderRadius:20, whiteSpace:"nowrap", border:`1px solid ${on?T.black:T.rule}`, background:on?T.black:T.white, color:on?T.white:T.ink, cursor:"pointer", flexShrink:0 }}>{label}</button>);
   return (
     <section className={"mos-bleed" + (tinted ? " mos-band" : "")} style={{ padding:"26px 0 22px" }}>
       <div className="mos-bleed-pad" style={{ marginBottom:16 }}>
         <h3 style={{ fontFamily:serif, fontSize:"clamp(26px, 2.3vw, 38px)", fontWeight:400, letterSpacing:-0.6, color:T.black, margin:0, lineHeight:1.1 }}>{title}</h3>
         <p style={{ fontFamily:sans, fontSize:"clamp(14px, 1.1vw, 17px)", color:T.mid, margin:"6px 0 0", lineHeight:1.5 }}>{blurb}</p>
+        {names.length > 0 && <div style={{ display:"flex", flexWrap:"wrap", gap:8, marginTop:16 }}>{chipBtn(sel === "All", "All", () => setSel("All"))}{names.map(n => chipBtn(sel === n, n, () => setSel(n)))}</div>}
       </div>
       <div className="mos-shelf mos-bleed-pad" style={{ display:"flex", alignItems:"flex-start", gap:14, overflowX:"auto", paddingTop:2, paddingBottom:14, scrollSnapType:"x proximity", WebkitOverflowScrolling:"touch" }}>
-        {items.map(f => <CoverTile key={f.id} frag={f} onClick={onOpenFrag} userStatus={userStatuses[f.id]}/>)}
+        {shown.map(f => <CoverTile key={f.id} frag={f} onClick={onOpenFrag} userStatus={userStatuses[f.id]}/>)}
       </div>
     </section>
   );
@@ -2398,7 +2403,7 @@ function DiscoverTab({ onOpenFrag, onOpenBrand, onOpenPerfumer, userStatuses, re
           )}
           {!isSearching&&(
             <>
-              {shelves.map((s,i)=><Shelf key={s.key} title={s.title} blurb={s.blurb} items={s.items} onOpenFrag={onOpenFrag} userStatuses={userStatuses} tinted={i%2===0}/>)}
+              {shelves.map((s,i)=><Shelf key={s.key} title={s.title} blurb={s.blurb} items={s.items} groups={s.groups} onOpenFrag={onOpenFrag} userStatuses={userStatuses} tinted={i%2===0}/>)}
             </>
           )}
         </>
@@ -4112,8 +4117,11 @@ export default function SillageApp() {
                     if (perHouse[hs] > 4) return;
                     (byCat[c] = byCat[c] || []).push(row);
                   });
-                  const cats = Object.keys(byCat).filter(c => byCat[c].length >= 2).sort((a, b) => byCat[b].length - byCat[a].length).slice(0, 5);
-                  const divShelves = cats.map(c => { const m = byCat[c].slice(0, 12).map(mapFrag); mergeFrags(m); return { key: "div-" + c, title: c + " houses", blurb: "Houses we have marked as " + c + ".", items: m }; });
+                  const cats = Object.keys(byCat).filter(c => byCat[c].length >= 2).sort((a, b) => byCat[b].length - byCat[a].length).slice(0, 6);
+                  const groups = {};
+                  cats.forEach(c => { const m = byCat[c].slice(0, 12).map(mapFrag); mergeFrags(m); groups[c] = m; });
+                  const mixed = []; for (let i = 0; i < 12; i++) cats.forEach(c => { if (groups[c][i]) mixed.push(groups[c][i]); });
+                  const divShelves = cats.length ? [{ key: "diversity", title: "Diversity", blurb: "Houses founded and owned by people the big names often overlook. Pick a group to filter.", items: mixed.slice(0, 18), groups }] : [];
                   if (divShelves.length) {
                     const anchor = shelves.findIndex(x => x.key === "neo") >= 0 ? shelves.findIndex(x => x.key === "neo") : shelves.findIndex(x => x.key === "new");
                     shelves.splice(anchor + 1, 0, ...divShelves);
