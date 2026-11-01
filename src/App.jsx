@@ -3288,12 +3288,15 @@ function WaitlistScreen({ onJoin }) {
 
   const isValidEmail = (v) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v.trim());
 
-  function handleSubmit() {
+  async function handleSubmit() {
     if (!name.trim()) { setError("Please enter your name."); return; }
     if (!isValidEmail(email)) { setError("Please enter a valid email address."); return; }
     setError("");
     setLoading(true);
-    setTimeout(() => { setLoading(false); setSubmitted(true); }, 900);
+    const r = await supabase.rpc("join_waitlist", { p_email: email.trim(), p_name: name.trim() });
+    setLoading(false);
+    if (r.error) { setError("Something went wrong. Please try again in a moment."); return; }
+    setSubmitted(true);
   }
 
   const inp = {
@@ -3379,12 +3382,20 @@ function InviteAdmin() {
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState("");
   const [fresh, setFresh] = useState("");
+  const [wl, setWl] = useState([]);
+  async function loadWl() { const r = await supabase.rpc("admin_list_waitlist"); if (!r.error) setWl(r.data || []); }
+  async function inviteWl(id, email) {
+    const r = await supabase.rpc("admin_invite_waitlist", { p_id: id });
+    if (r.error) { setMsg(r.error.message); return; }
+    setFresh(r.data); loadWl(); load();
+    try { await navigator.clipboard.writeText(r.data); } catch (e) {}
+  }
   async function load() {
     const r = await supabase.rpc("admin_list_invites");
     if (r.error) { setMsg("Not available for this account."); setRows([]); return; }
     setRows(r.data || []);
   }
-  useEffect(() => { load(); }, []);
+  useEffect(() => { load(); loadWl(); }, []);
   async function make() {
     setBusy(true); setMsg("");
     const r = await supabase.rpc("admin_create_invite", { p_note: note.trim(), p_max_uses: Math.max(1, Number(uses) || 1) });
@@ -3420,6 +3431,20 @@ function InviteAdmin() {
           <button onClick={() => share(fresh)} style={btn}>Share</button>
         </div>
       )}
+      <h2 style={{ fontFamily:serif, fontSize:20, fontWeight:400, margin:"24px 0 10px" }}>Beta waitlist ({wl.filter(w => w.status === "waiting").length} waiting)</h2>
+      {wl.length === 0 && <p style={{ fontSize:13, color:T.mid }}>Nobody yet.</p>}
+      {wl.map(w => (
+        <div key={w.id} style={{ border:`1px solid ${T.rule}`, borderRadius:12, padding:"12px 14px", marginBottom:8, opacity:w.status === "waiting" ? 1 : 0.6 }}>
+          <div style={{ display:"flex", justifyContent:"space-between", gap:10 }}>
+            <span style={{ fontSize:14 }}>{w.name}</span>
+            <span style={{ fontSize:12, color:T.mid }}>{w.status === "waiting" ? "Waiting" : "Invited"}</span>
+          </div>
+          <p style={{ fontSize:12, color:T.mid, margin:"3px 0 0", wordBreak:"break-all" }}>{w.email}</p>
+          {w.status === "waiting"
+            ? <button onClick={() => inviteWl(w.id, w.email)} style={{ ...btn, marginTop:10 }}>Let in: make their code</button>
+            : <p style={{ fontSize:12, margin:"8px 0 0" }}>Code: <span style={{ fontFamily:"ui-monospace, monospace" }}>{w.code}</span> <span onClick={() => share(w.code)} style={{ color:T.mid, cursor:"pointer", textDecoration:"underline" }}>Share</span></p>}
+        </div>
+      ))}
       <h2 style={{ fontFamily:serif, fontSize:20, fontWeight:400, margin:"24px 0 10px" }}>All codes</h2>
       {rows === null && <p style={{ fontSize:13, color:T.mid }}>Loading…</p>}
       {rows && rows.map(r => (
