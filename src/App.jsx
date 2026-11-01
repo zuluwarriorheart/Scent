@@ -1375,7 +1375,7 @@ function BrandModal({ brand, onClose, onOpenFrag }) {
           {house && (
             <>
               <p style={{ fontFamily:sans, fontSize:"clamp(14px, 1.1vw, 17px)", color:T.mid, margin:0 }}>{[h.country, brandOriginLabel(h), h.price_tier].filter(Boolean).join(" · ")}</p>
-              <div style={{ margin:"6px 0 0" }}>{own && <OwnershipBadge ownership={own} size="normal"/>}</div>
+              <div style={{ margin:"6px 0 0" }}>{own && <OwnershipBadge ownership={own} size="large"/>}</div>
               {cleanDiversity(h.diversity) && <p style={{ fontFamily:sans, fontSize:"clamp(14px, 1.1vw, 17px)", color:T.mid, margin:"8px 0 0" }}>Diversity <strong style={{ color:T.tangerine, fontWeight:600 }}>{cleanDiversity(h.diversity)}</strong></p>}
               {site && <a href={site} target="_blank" rel="noopener noreferrer" style={{ display:"inline-flex", alignItems:"center", gap:6, margin:"12px 0 0", padding:"6px 14px", minHeight:34, boxSizing:"border-box", borderRadius:20, border:`1px solid ${T.rule}`, background:T.white, fontFamily:sans, fontSize:13, color:T.ink, textDecoration:"none" }}>Brand website<ExtArrow size={11}/></a>}
             </>
@@ -1688,12 +1688,13 @@ function OwnershipBadge({ ownership, size = "normal", showTooltip = false }) {
   if (!ownership) return null;
   const isIndependent = ownership.status === "independent";
   const isSmall = size === "small";
+  const isLarge = size === "large";
   const label = isIndependent ? "Independent" : ownership.parent;
   const color = T.violet;
   const textStyle = {
     fontFamily: sans,
-    fontSize: isSmall ? 9 : 11,
-    fontWeight: 500,
+    fontSize: isLarge ? "clamp(14px, 1.1vw, 17px)" : isSmall ? 9 : 11,
+    fontWeight: isLarge ? 600 : 500,
     color,
     letterSpacing: "0.01em",
     cursor: showTooltip ? "pointer" : "default",
@@ -1922,7 +1923,7 @@ function DetailModal({ frag, onClose, userStatus, setUserStatus, privateNote, se
               <h2 style={{fontFamily:serif,fontSize:"clamp(36px, 4.4vw, 64px)",fontWeight:400,color:T.black,margin:"0 0 10px",letterSpacing:-1,lineHeight:1.05,paddingRight:44}}>{frag.name}</h2>
               <p style={{fontFamily:sans,fontSize:"clamp(14px, 1.1vw, 17px)",color:T.mid,margin:"0 0 0",lineHeight:1.4}}>{[frag.year, frag.concentration].filter(Boolean).join(" · ")}</p>
               <div style={{margin:"10px 0 0",display:"flex",flexDirection:"column",alignItems:"flex-start",gap:8}}>
-                {frag.ownership && <OwnershipBadge ownership={frag.ownership} size="normal" showTooltip={true}/>}
+                {frag.ownership && <OwnershipBadge ownership={frag.ownership} size="large" showTooltip={true}/>}
                 {frag.price_tier && <span style={{fontFamily:sans,fontSize:"clamp(13px, 1vw, 15px)",color:T.mid}}>Price tier <strong style={{color:T.teal,fontWeight:600}}>{frag.price_tier}</strong></span>}
                 {frag.diversity && <span style={{fontFamily:sans,fontSize:"clamp(13px, 1vw, 15px)",color:T.mid}}>Diversity <strong style={{color:T.tangerine,fontWeight:600}}>{frag.diversity}</strong></span>}
                 {frag.neoGourmand && <span style={{fontFamily:sans,fontSize:"clamp(13px, 1vw, 15px)",color:T.mid}}>Style <strong style={{color:T.accent,fontWeight:600}}>Neo gourmand</strong></span>}
@@ -4094,6 +4095,30 @@ export default function SillageApp() {
                 const nm = nr.data.map(mapFrag); mergeFrags(nm);
                 const nix = shelves.findIndex(x => x.key === "new");
                 shelves.splice(nix >= 0 ? nix + 1 : 0, 0, { key: "neo", title: "Neo gourmand", blurb: NEO_BLURB, items: nm });
+              }
+            } catch (e) {}
+            try {
+              const { data: dh } = await supabase.from("houses").select("id, slug, diversity").not("diversity", "is", null).neq("diversity", "");
+              const catOf = d => cleanDiversity(d).replace(/\s*\(.*\)\s*$/, "").trim();
+              const divHouses = (dh || []).filter(h => cleanDiversity(h.diversity));
+              const slugCat = new Map(divHouses.map(h => [h.slug, catOf(h.diversity)]));
+              if (divHouses.length) {
+                const dr = await fetchFragRows(sel => supabase.from("fragrances").select(sel).in("house_id", divHouses.map(h => h.id)).order("slug", { ascending: true }).limit(300));
+                if (!dr.error && dr.data && dr.data.length) {
+                  const perHouse = {}, byCat = {};
+                  dr.data.forEach(row => {
+                    const hs = row.house && row.house.slug; const c = slugCat.get(hs); if (!c) return;
+                    perHouse[hs] = (perHouse[hs] || 0) + 1;
+                    if (perHouse[hs] > 4) return;
+                    (byCat[c] = byCat[c] || []).push(row);
+                  });
+                  const cats = Object.keys(byCat).filter(c => byCat[c].length >= 2).sort((a, b) => byCat[b].length - byCat[a].length).slice(0, 5);
+                  const divShelves = cats.map(c => { const m = byCat[c].slice(0, 12).map(mapFrag); mergeFrags(m); return { key: "div-" + c, title: c + " houses", blurb: "Houses we have marked as " + c + ".", items: m }; });
+                  if (divShelves.length) {
+                    const anchor = shelves.findIndex(x => x.key === "neo") >= 0 ? shelves.findIndex(x => x.key === "neo") : shelves.findIndex(x => x.key === "new");
+                    shelves.splice(anchor + 1, 0, ...divShelves);
+                  }
+                }
               }
             } catch (e) {}
             setServerShelves(shelves);
