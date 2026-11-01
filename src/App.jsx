@@ -19,6 +19,7 @@ const T = {
   onInkDim:"var(--on-ink-dim)", track:"var(--track)", trackOn:"var(--track-on)",
   accent:"var(--accent)", accentSoft:"var(--accent-soft)", cta:"var(--cta)", trail:"var(--trail)",
   good:"var(--good)", bad:"var(--bad)",
+  violet:"var(--violet)", teal:"var(--teal)", tangerine:"var(--tangerine)",
 };
 const ACCENT_FILL = "#C9206B";   // solid brand pink, always carries white text
 const ON_ACCENT   = "#FFFFFF";
@@ -1375,7 +1376,7 @@ function BrandModal({ brand, onClose, onOpenFrag }) {
             <>
               <p style={{ fontFamily:sans, fontSize:"clamp(14px, 1.1vw, 17px)", color:T.mid, margin:0 }}>{[h.country, brandOriginLabel(h), h.price_tier].filter(Boolean).join(" · ")}</p>
               <div style={{ margin:"6px 0 0" }}>{own && <OwnershipBadge ownership={own} size="normal"/>}</div>
-              {cleanDiversity(h.diversity) && <p style={{ fontFamily:sans, fontSize:"clamp(14px, 1.1vw, 17px)", color:T.mid, margin:"8px 0 0" }}>Diversity <strong style={{ color:T.accent, fontWeight:600 }}>{cleanDiversity(h.diversity)}</strong></p>}
+              {cleanDiversity(h.diversity) && <p style={{ fontFamily:sans, fontSize:"clamp(14px, 1.1vw, 17px)", color:T.mid, margin:"8px 0 0" }}>Diversity <strong style={{ color:T.tangerine, fontWeight:600 }}>{cleanDiversity(h.diversity)}</strong></p>}
               {site && <a href={site} target="_blank" rel="noopener noreferrer" style={{ display:"inline-flex", alignItems:"center", gap:6, margin:"12px 0 0", padding:"6px 14px", minHeight:34, boxSizing:"border-box", borderRadius:20, border:`1px solid ${T.rule}`, background:T.white, fontFamily:sans, fontSize:13, color:T.ink, textDecoration:"none" }}>Brand website<ExtArrow size={11}/></a>}
             </>
           )}
@@ -1688,7 +1689,7 @@ function OwnershipBadge({ ownership, size = "normal", showTooltip = false }) {
   const isIndependent = ownership.status === "independent";
   const isSmall = size === "small";
   const label = isIndependent ? "Independent" : ownership.parent;
-  const color = T.accent;
+  const color = T.violet;
   const textStyle = {
     fontFamily: sans,
     fontSize: isSmall ? 9 : 11,
@@ -1922,8 +1923,8 @@ function DetailModal({ frag, onClose, userStatus, setUserStatus, privateNote, se
               <p style={{fontFamily:sans,fontSize:"clamp(14px, 1.1vw, 17px)",color:T.mid,margin:"0 0 0",lineHeight:1.4}}>{[frag.year, frag.concentration].filter(Boolean).join(" · ")}</p>
               <div style={{margin:"10px 0 0",display:"flex",flexDirection:"column",alignItems:"flex-start",gap:8}}>
                 {frag.ownership && <OwnershipBadge ownership={frag.ownership} size="normal" showTooltip={true}/>}
-                {frag.price_tier && <span style={{fontFamily:sans,fontSize:"clamp(13px, 1vw, 15px)",color:T.mid}}>Price tier <strong style={{color:T.accent,fontWeight:600}}>{frag.price_tier}</strong></span>}
-                {frag.diversity && <span style={{fontFamily:sans,fontSize:"clamp(13px, 1vw, 15px)",color:T.mid}}>Diversity <strong style={{color:T.accent,fontWeight:600}}>{frag.diversity}</strong></span>}
+                {frag.price_tier && <span style={{fontFamily:sans,fontSize:"clamp(13px, 1vw, 15px)",color:T.mid}}>Price tier <strong style={{color:T.teal,fontWeight:600}}>{frag.price_tier}</strong></span>}
+                {frag.diversity && <span style={{fontFamily:sans,fontSize:"clamp(13px, 1vw, 15px)",color:T.mid}}>Diversity <strong style={{color:T.tangerine,fontWeight:600}}>{frag.diversity}</strong></span>}
                 {frag.neoGourmand && <span style={{fontFamily:sans,fontSize:"clamp(13px, 1vw, 15px)",color:T.mid}}>Style <strong style={{color:T.accent,fontWeight:600}}>Neo gourmand</strong></span>}
               </div>
               {safeUrl(frag.website)&&(
@@ -3053,8 +3054,8 @@ function LearnTab({ fragrances, onOpenFrag, onOpenBrand }) {
         <p style={{fontFamily:sans,fontSize:13,color:T.mid,lineHeight:1.7,margin:"0 0 18px"}}>The fragrance industry has consolidated significantly over the past two decades. A handful of large conglomerates now own many of the houses that built their reputations as independent creative enterprises. This matters because ownership changes often bring pressure to reduce costs, which can mean reformulated ingredients, discontinued lines, or a shift in creative direction.</p>
         <div style={{background:T.white,border:`1px solid ${T.rule}`,borderRadius:14,overflow:"hidden",marginBottom:16}}>
           {[
-            { label:"Independent", color:T.accent, text:"The house is privately owned, founder-led, or operated without conglomerate backing. Creative decisions are made by people with a direct stake in the house's identity." },
-            { label:"Owned by a group", color:T.accent, text:"The house has been acquired by a larger group, most commonly LVMH, Estée Lauder Companies, Puig, or Interparfums. This doesn't mean the quality has changed, but it's worth knowing when it happened and who holds the reins." },
+            { label:"Independent", color:T.violet, text:"The house is privately owned, founder-led, or operated without conglomerate backing. Creative decisions are made by people with a direct stake in the house's identity." },
+            { label:"Owned by a group", color:T.violet, text:"The house has been acquired by a larger group, most commonly LVMH, Estée Lauder Companies, Puig, or Interparfums. This doesn't mean the quality has changed, but it's worth knowing when it happened and who holds the reins." },
           ].map((item, i, arr) => (
             <div key={item.label} style={{padding:"16px 18px",borderBottom:i<arr.length-1?`1px solid ${T.lift}`:"none"}}>
               <div style={{marginBottom:8}}>
