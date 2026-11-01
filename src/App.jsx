@@ -1015,7 +1015,7 @@ const FRAGRANCES = [
     story:"Tom Ford's debut set the tone for everything that followed, maximalist, dark, unapologetically seductive.",
     prices:[{size:"100ml",price:"$235",perMl:"$2.35"},{size:"50ml",price:"$160",perMl:"$3.20"},{size:"10ml Travel",price:"$55",perMl:"$5.50"},{size:"2ml Sample",price:"$8",perMl:"$4.00",sample:true}],
     notes:{top:[{n:"Black Truffle"},{n:"Ylang-Ylang"},{n:"Bergamot"},{n:"Blackcurrant"}],mid:[{n:"Black Orchid"},{n:"Jasmine"},{n:"Gardenia"},{n:"Lotus"}],base:[{n:"Patchouli"},{n:"Vanilla"},{n:"Sandalwood"},{n:"Incense"}]},
-    accords:[{n:"Floral",v:90},{n:"Dark",v:82},{n:"Oriental",v:75},{n:"Earthy",v:60},{n:"Sweet",v:45}],
+    accords:[{n:"Floral",v:90},{n:"Dark",v:82},{n:"Oriental",v:75},{n:"Earthy",v:60},{n:"Gourmand",v:45}],
     longevity:4.7, sillage:4.5, seasons:{spring:40,summer:25,fall:80,winter:95}, occasions:["Evening","Date Night"], rating:4.3, votes:9241 },
   { id:3, name:"Oud Wood", house:"Tom Ford", year:2007, perfumer:"Pierre Negrin", family:"Woody Oriental", concentration:"Eau de Parfum",
     ownership:{ status:"conglomerate", parent:"Estée Lauder Companies", acquiredYear:2005, note:"Tom Ford Beauty has been under Estée Lauder Companies since 2005. Tom Ford sold the remaining brand to Ermenegildo Zegna in 2023." },
@@ -1031,7 +1031,7 @@ const FRAGRANCES = [
     story:"Created for Baccarat crystal's 250th anniversary, light refracting through crystal, prismatic and pure.",
     prices:[{size:"200ml",price:"$830",perMl:"$4.15"},{size:"70ml",price:"$345",perMl:"$4.93"},{size:"35ml",price:"$215",perMl:"$6.14"},{size:"2ml Sample",price:"$14",perMl:"$7.00",sample:true}],
     notes:{top:[{n:"Saffron"},{n:"Jasmine"}],mid:[{n:"Amberwood"},{n:"Ambergris"}],base:[{n:"Fir Resin"},{n:"Cedar"}]},
-    accords:[{n:"Warm Spicy",v:88},{n:"Amber",v:80},{n:"Woody",v:78},{n:"Floral",v:65},{n:"Sweet",v:62}],
+    accords:[{n:"Warm Spicy",v:88},{n:"Amber",v:80},{n:"Woody",v:78},{n:"Floral",v:65},{n:"Gourmand",v:62}],
     longevity:4.8, sillage:4.6, seasons:{spring:75,summer:65,fall:90,winter:85}, occasions:["Work","Evening","Casual"], rating:4.5, votes:18302 },
   { id:5, name:"Santal 33", house:"Le Labo", year:2011, perfumer:"Frank Voelkl", family:"Woody", concentration:"Eau de Parfum",
     ownership:{ status:"conglomerate", parent:"Estée Lauder Companies", acquiredYear:2014, note:"Acquired by Estée Lauder Companies in 2014. The founders Fabrice Penot and Edouard Roschi stayed on after acquisition." },
@@ -1047,7 +1047,7 @@ const FRAGRANCES = [
     story:"An English gentlemen's club filtered through Ford's unerring sense for luxury.",
     prices:[{size:"100ml",price:"$295",perMl:"$2.95"},{size:"50ml",price:"$195",perMl:"$3.90"},{size:"10ml Travel",price:"$68",perMl:"$6.80"},{size:"2ml Sample",price:"$9",perMl:"$4.50",sample:true}],
     notes:{top:[{n:"Cardamom"},{n:"Tobacco"}],mid:[{n:"Vanilla"},{n:"Cocoa"}],base:[{n:"Tonka Bean"},{n:"Amber"},{n:"Musk"}]},
-    accords:[{n:"Tobacco",v:90},{n:"Sweet",v:82},{n:"Warm Spicy",v:74},{n:"Amber",v:68},{n:"Woody",v:55}],
+    accords:[{n:"Tobacco",v:90},{n:"Gourmand",v:82},{n:"Warm Spicy",v:74},{n:"Amber",v:68},{n:"Woody",v:55}],
     longevity:4.6, sillage:4.2, seasons:{spring:30,summer:15,fall:88,winter:95}, occasions:["Evening","Formal","Date Night"], rating:4.5, votes:12400 },
   { id:7, name:"Violet and Amber", house:"Imaginary Authors", year:2013, perfumer:"Josh Meyer", family:"Floral Woody", concentration:"Eau de Parfum",
     ownership:{ status:"independent", note:"Imaginary Authors is independently owned and operated by perfumer Josh Meyer from Portland, Oregon. Each fragrance is inspired by a fictional book." },
@@ -1126,11 +1126,13 @@ const FRAG_SELECT_DIV = `
   notes ( note_name, position ),
   accords ( accord_name, rank )
 `;
+const FRAG_SELECT_NEO = FRAG_SELECT_DIV.replace("image_credit,", "image_credit, neo_gourmand,");
 const FRAG_SELECT_FULL = FRAG_SELECT_DIV.replace(", website, diversity", ", website");
 const FRAG_SELECT_BASE = FRAG_SELECT_FULL.replace(", ownership, brand_origin, price_tier, line, image_url, image_credit,", ",").replace(", website", "");
 // Runs a query with the full column list, and again without the newer columns if they are not in the database yet.
 async function fetchFragRows(build) {
-  let r = await build(FRAG_SELECT_DIV);
+  let r = await build(FRAG_SELECT_NEO);
+  if (r.error && /neo_gourmand/i.test(r.error.message || "")) r = await build(FRAG_SELECT_DIV);
   if (r.error && /diversity/i.test(r.error.message || "")) r = await build(FRAG_SELECT_FULL);
   if (r.error && /website|line|ownership|brand_origin|price_tier|image_url|image_credit/i.test(r.error.message || "")) r = await build(FRAG_SELECT_BASE);
   return r;
@@ -1162,6 +1164,7 @@ function mapFrag(f) {
     concentration: f.concentration || "",
     gender: f.gender,
     url: f.url || "",
+    neoGourmand: !!f.neo_gourmand,
     image: f.image_url || "",
     imageCredit: f.image_credit || "",
     notes: {
@@ -1169,7 +1172,7 @@ function mapFrag(f) {
       mid: notes.filter(n => n.position === "mid").map(n => ({ n: n.note_name })),
       base: notes.filter(n => n.position === "base").map(n => ({ n: n.note_name })),
     },
-    accords: [...accords].sort((x, y) => x.rank - y.rank).map(x => ({ n: x.accord_name, v: 80 - (x.rank - 1) * 10 })),
+    accords: [...accords].sort((x, y) => x.rank - y.rank).map(x => ({ n: /^sweet$/i.test(String(x.accord_name).trim()) ? "Gourmand" : x.accord_name, v: 80 - (x.rank - 1) * 10 })).filter((a, i, arr) => arr.findIndex(b => String(b.n).toLowerCase() === String(a.n).toLowerCase()) === i),
     longevity: null, sillage: null, seasons: {}, occasions: [], rating: null, votes: 0,
     prices: [],
   };
@@ -1372,7 +1375,7 @@ function BrandModal({ brand, onClose, onOpenFrag }) {
             <>
               <p style={{ fontFamily:sans, fontSize:"clamp(14px, 1.1vw, 17px)", color:T.mid, margin:0 }}>{[h.country, brandOriginLabel(h), h.price_tier].filter(Boolean).join(" · ")}</p>
               <div style={{ margin:"6px 0 0" }}>{own && <OwnershipBadge ownership={own} size="normal"/>}</div>
-              {cleanDiversity(h.diversity) && <p style={{ fontFamily:sans, fontSize:"clamp(14px, 1.1vw, 17px)", color:T.mid, margin:"8px 0 0" }}>Diversity <strong style={{ color:T.black, fontWeight:600 }}>{cleanDiversity(h.diversity)}</strong></p>}
+              {cleanDiversity(h.diversity) && <p style={{ fontFamily:sans, fontSize:"clamp(14px, 1.1vw, 17px)", color:T.mid, margin:"8px 0 0" }}>Diversity <strong style={{ color:T.accent, fontWeight:600 }}>{cleanDiversity(h.diversity)}</strong></p>}
               {site && <a href={site} target="_blank" rel="noopener noreferrer" style={{ display:"inline-flex", alignItems:"center", gap:6, margin:"12px 0 0", padding:"6px 14px", minHeight:34, boxSizing:"border-box", borderRadius:20, border:`1px solid ${T.rule}`, background:T.white, fontFamily:sans, fontSize:13, color:T.ink, textDecoration:"none" }}>Brand website<ExtArrow size={11}/></a>}
             </>
           )}
@@ -1685,7 +1688,7 @@ function OwnershipBadge({ ownership, size = "normal", showTooltip = false }) {
   const isIndependent = ownership.status === "independent";
   const isSmall = size === "small";
   const label = isIndependent ? "Independent" : ownership.parent;
-  const color = isIndependent ? T.good : T.bad;
+  const color = T.accent;
   const textStyle = {
     fontFamily: sans,
     fontSize: isSmall ? 9 : 11,
@@ -1919,8 +1922,9 @@ function DetailModal({ frag, onClose, userStatus, setUserStatus, privateNote, se
               <p style={{fontFamily:sans,fontSize:"clamp(14px, 1.1vw, 17px)",color:T.mid,margin:"0 0 0",lineHeight:1.4}}>{[frag.year, frag.concentration].filter(Boolean).join(" · ")}</p>
               <div style={{margin:"10px 0 0",display:"flex",flexDirection:"column",alignItems:"flex-start",gap:8}}>
                 {frag.ownership && <OwnershipBadge ownership={frag.ownership} size="normal" showTooltip={true}/>}
-                {frag.price_tier && <span style={{fontFamily:sans,fontSize:"clamp(13px, 1vw, 15px)",color:T.mid}}>Price tier <strong style={{color:T.black,fontWeight:600}}>{frag.price_tier}</strong></span>}
-                {frag.diversity && <span style={{fontFamily:sans,fontSize:"clamp(13px, 1vw, 15px)",color:T.mid}}>Diversity <strong style={{color:T.black,fontWeight:600}}>{frag.diversity}</strong></span>}
+                {frag.price_tier && <span style={{fontFamily:sans,fontSize:"clamp(13px, 1vw, 15px)",color:T.mid}}>Price tier <strong style={{color:T.accent,fontWeight:600}}>{frag.price_tier}</strong></span>}
+                {frag.diversity && <span style={{fontFamily:sans,fontSize:"clamp(13px, 1vw, 15px)",color:T.mid}}>Diversity <strong style={{color:T.accent,fontWeight:600}}>{frag.diversity}</strong></span>}
+                {frag.neoGourmand && <span style={{fontFamily:sans,fontSize:"clamp(13px, 1vw, 15px)",color:T.mid}}>Style <strong style={{color:T.accent,fontWeight:600}}>Neo gourmand</strong></span>}
               </div>
               {safeUrl(frag.website)&&(
                 <a href={safeUrl(frag.website)} target="_blank" rel="noopener noreferrer" style={{display:"inline-flex",alignItems:"center",gap:6,margin:"14px 0 0",padding:"6px 14px",minHeight:34,boxSizing:"border-box",borderRadius:20,border:`1px solid ${T.rule}`,background:T.white,fontFamily:sans,fontSize:13,color:T.ink,textDecoration:"none"}}>Brand website<ExtArrow size={11}/></a>
@@ -2220,7 +2224,7 @@ const ACCORD_BLURBS = {
   woody:"Dry cedar, sandalwood and vetiver. Grounded and quiet.",
   fresh:"Clean, bright and airy. Reaches for the window.",
   floral:"Petals at every stage, from dewy to heady.",
-  sweet:"Vanilla, tonka and sugar. Soft and edible.",
+  sweet:"Vanilla, tonka, cocoa and sugar. Soft and edible.",
   smoky:"Incense, tobacco and birch. A room after the fire.",
   fruity:"Juicy tops that turn ripe on skin.",
   citrus:"Peel, zest and sun. Over in a flash, back in a flash.",
@@ -2234,7 +2238,7 @@ const ACCORD_BLURBS = {
   mossy:"Oakmoss and forest floor.",
   aromatic:"Lavender, herbs and sage.",
   oud:"Dark, resinous and deep.",
-  gourmand:"Cocoa, caramel and coffee.",
+  gourmand:"Vanilla, tonka, cocoa, caramel and coffee. Soft and edible.",
 };
 function houseGroups(f) {
   const bo = String(f.brand_origin || "").toLowerCase();
@@ -2258,11 +2262,13 @@ const HOUSE_GROUPS = [
 ];
 // TEMPORARY: show this house under "New to the shelf" so the look can be judged. Set to "" to restore real new releases.
 const PREVIEW_NEW_HOUSE = "jijide";
+const NEO_BLURB = "Gourmand with an edge. Grain, salt, smoke and savory notes alongside the sweet.";
 function buildShelves(list) {
   const shelves = [];
   const add = (key, title, blurb, items, max=12) => { if (items.length >= 2) shelves.push({ key, title, blurb, items: items.slice(0, max) }); };
   const withYear = list.filter(f => Number(f.year) > 0);
   add("new", "New to the shelf", "The most recent releases in the library.", [...withYear].sort((a,b)=>(PREVIEW_NEW_HOUSE && (b.houseSlug===PREVIEW_NEW_HOUSE)-(a.houseSlug===PREVIEW_NEW_HOUSE)) || b.year-a.year));
+  add("neo", "Neo gourmand", NEO_BLURB, list.filter(f => f.neoGourmand), 12);
   add("indie", "Independent houses", "Made by houses that answer to no conglomerate.", list.filter(f => f.ownership && f.ownership.status === "independent"));
   add("niche", "Niche houses", "Small, independent houses where fragrance is the whole point.", list.filter(f => houseGroups(f).includes("niche")));
   add("designer", "Designer houses", "The fashion and heritage names most people meet first.", list.filter(f => houseGroups(f).includes("designer")));
@@ -2335,8 +2341,8 @@ function DiscoverTab({ onOpenFrag, onOpenBrand, onOpenPerfumer, userStatuses, re
     <div>
       <div style={{marginBottom:20}}>
         <p style={{fontFamily:sans,fontSize:10,fontWeight:600,textTransform:"uppercase",letterSpacing:"0.18em",color:T.accent,margin:"0 0 6px"}}>Discover</p>
-        <h2 style={{fontFamily:serif,fontSize:"clamp(32px, 3.2vw, 50px)",color:T.black,letterSpacing:-0.8,margin:0,fontWeight:400}}>{mode==="browse"?"Discover. Wear. Repeat.":mode==="brands"?"Brands":mode==="perfumers"?"Perfumers":"The Nose"}</h2>
-        <p style={{fontFamily:sans,fontSize:"clamp(13px, 1.1vw, 17px)",color:T.mid,margin:"6px 0 0"}}>{mode==="browse"?"Search by name, or browse by category. Sample first, remember always.":mode==="brands"?"Every house in the library, with who owns it and what it makes.":mode==="perfumers"?"The noses behind the bottles. Find a perfumer, then everything they have made.":"Describe a memory, a mood or a place."}</p>
+        <h2 style={{fontFamily:serif,fontSize:"clamp(32px, 3.2vw, 50px)",color:T.black,letterSpacing:-0.8,margin:0,fontWeight:400}}>{mode==="browse"?"Sample. Wear. Repeat.":mode==="brands"?"Brands":mode==="perfumers"?"Perfumers":"The Nose"}</h2>
+        <p style={{fontFamily:sans,fontSize:"clamp(13px, 1.1vw, 17px)",color:T.mid,margin:"6px 0 0"}}>{mode==="browse"?"Search by name, or browse by category.":mode==="brands"?"Every house in the library, with who owns it and what it makes.":mode==="perfumers"?"The noses behind the bottles. Find a perfumer, then everything they have made.":"Describe a memory, a mood or a place."}</p>
       </div>
       <div role="tablist" aria-label="Discover" style={{display:"flex",overflowX:"auto",whiteSpace:"nowrap",borderBottom:`1px solid ${T.rule}`,marginBottom:22}}>
         {modeBtn("browse","Browse")}
@@ -4050,7 +4056,7 @@ export default function SillageApp() {
       "acc-woody": ["Woody", ACCORD_BLURBS.woody || "Fragrances built around woody."],
       "acc-floral": ["Floral", ACCORD_BLURBS.floral || "Fragrances built around floral."],
       "acc-citrus": ["Citrus", ACCORD_BLURBS.citrus || "Fragrances built around citrus."],
-      "acc-sweet": ["Sweet", ACCORD_BLURBS.sweet || "Fragrances built around sweet."],
+      "acc-sweet": ["Gourmand", ACCORD_BLURBS.gourmand],
       classics: ["Classics", "Where it started. The older bottles still worth knowing."],
     };
     async function loadFragrances() {
@@ -4083,6 +4089,14 @@ export default function SillageApp() {
                 }
               } catch (e) {}
             }
+            try {
+              const nr = await fetchFragRows(sel => supabase.from("fragrances").select(sel).eq("neo_gourmand", true).limit(24));
+              if (!nr.error && nr.data && nr.data.length) {
+                const nm = nr.data.map(mapFrag); mergeFrags(nm);
+                const nix = shelves.findIndex(x => x.key === "new");
+                shelves.splice(nix >= 0 ? nix + 1 : 0, 0, { key: "neo", title: "Neo gourmand", blurb: NEO_BLURB, items: nm });
+              }
+            } catch (e) {}
             setServerShelves(shelves);
             return;
           }
