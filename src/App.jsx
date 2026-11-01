@@ -96,7 +96,9 @@ body { overflow-x:clip; }
   .mos-sheet { max-width:none !important; width:100% !important; height:100vh !important; max-height:100vh !important; border-radius:0 !important; border:none !important; }
   .mos-pad { padding-left:max(32px, calc((100% - 1120px) / 2)) !important; padding-right:max(32px, calc((100% - 1120px) / 2)) !important; }
   .mos-dtabs { overflow-x:visible !important; }
-  .mos-dtabs > button { flex:1 1 0 !important; margin-right:0 !important; text-align:center !important; font-size:13px !important; padding-top:18px !important; padding-bottom:18px !important; }
+  .mos-zoom { zoom:1.3; }
+  .mos-dtabs > button { letter-spacing:0.1em !important; }
+  .mos-dtabs > button { flex:1 1 0 !important; margin-right:0 !important; text-align:center !important; font-size:15px !important; padding-top:20px !important; padding-bottom:18px !important; }
   .mos-close { right:max(28px, calc((100% - 1120px) / 2)) !important; }
 }
 .mos-guide { display:grid; grid-template-columns:minmax(0,1fr); gap:44px; }
@@ -1966,6 +1968,7 @@ function DetailModal({ frag, onClose, userStatus, setUserStatus, privateNote, se
         )}
 
         <div className="mos-pad" style={{padding:24}}>
+          <div className="mos-zoom">
           
           {tab==="overview"&&(
             <div>
@@ -2077,6 +2080,7 @@ function DetailModal({ frag, onClose, userStatus, setUserStatus, privateNote, se
               ))}
             </div>
           )}
+          </div>
         </div>
       </div>
     </div>
