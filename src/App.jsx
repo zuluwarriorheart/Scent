@@ -3383,6 +3383,14 @@ function InviteAdmin() {
   const [msg, setMsg] = useState("");
   const [fresh, setFresh] = useState("");
   const [wl, setWl] = useState([]);
+  const [isOpen, setIsOpen] = useState(null);
+  async function loadOpen() { const r = await supabase.rpc("signups_open"); if (!r.error) setIsOpen(!!r.data); }
+  async function setOpen(v) {
+    if (v && !window.confirm("Open sign-ups? Anyone with a valid code can create an account.")) return;
+    const r = await supabase.rpc("admin_set_launch", { p_open: v });
+    if (r.error) { setMsg(r.error.message); return; }
+    loadOpen();
+  }
   async function loadWl() { const r = await supabase.rpc("admin_list_waitlist"); if (!r.error) setWl(r.data || []); }
   async function inviteWl(id, email) {
     const r = await supabase.rpc("admin_invite_waitlist", { p_id: id });
@@ -3395,7 +3403,7 @@ function InviteAdmin() {
     if (r.error) { setMsg("Not available for this account."); setRows([]); return; }
     setRows(r.data || []);
   }
-  useEffect(() => { load(); loadWl(); }, []);
+  useEffect(() => { load(); loadWl(); loadOpen(); }, []);
   async function make() {
     setBusy(true); setMsg("");
     const r = await supabase.rpc("admin_create_invite", { p_note: note.trim(), p_max_uses: Math.max(1, Number(uses) || 1) });
@@ -3415,6 +3423,13 @@ function InviteAdmin() {
     <div style={{ maxWidth:560, margin:"0 auto", padding:"32px 20px 80px", fontFamily:sans, color:T.ink }}>
       <p style={{ fontSize:10, letterSpacing:"0.14em", textTransform:"uppercase", color:T.mid, margin:"0 0 6px" }}>Owner</p>
       <h1 style={{ fontFamily:serif, fontSize:32, fontWeight:400, margin:"0 0 20px", color:T.black }}>Invite codes</h1>
+      <div style={{ border:`1px solid ${T.rule}`, borderRadius:12, padding:"14px 16px", marginBottom:18, display:"flex", alignItems:"center", justifyContent:"space-between", gap:12, background:isOpen ? T.lift : "transparent" }}>
+        <div>
+          <p style={{ fontSize:14, fontWeight:600, margin:0 }}>{isOpen === null ? "Checking…" : isOpen ? "Sign-ups are OPEN" : "Sign-ups are CLOSED"}</p>
+          <p style={{ fontSize:12, color:T.mid, margin:"3px 0 0" }}>{isOpen ? "Codes work. New members can join." : "Codes are saved but nobody can join yet."}</p>
+        </div>
+        {isOpen !== null && <button onClick={() => setOpen(!isOpen)} style={btn}>{isOpen ? "Close" : "Open"}</button>}
+      </div>
       <div style={{ display:"flex", flexDirection:"column", gap:10, marginBottom:12 }}>
         <input value={note} onChange={e => setNote(e.target.value)} placeholder="Who is it for? (e.g. Maya, ScentXplore)" style={inp}/>
         <div style={{ display:"flex", gap:10, alignItems:"center" }}>
@@ -3515,6 +3530,8 @@ function LoginScreen({ onWaitlist }) {
     if (TURNSTILE_KEY && !captcha) { setError("Please complete the check below."); return; }
     if (mode === "signup") {
       if (!inviteCode.trim()) { setError("Please enter your invite code."); return; }
+      const open = await supabase.rpc("signups_open");
+      if (!open.error && open.data === false) { setError("We're not letting new members in yet. Keep your code. We'll email you the day we open."); return; }
       if (!name.trim()) { setError("Please enter your name."); return; }
       if (!isValidUsername(username)) { setError("Username must be 3–20 characters, letters, numbers, or underscores only."); return; }
       if (!isValidEmail(email)) { setError("Please enter a valid email address."); return; }
