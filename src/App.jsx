@@ -3292,10 +3292,10 @@ function WaitlistScreen({ onJoin }) {
             <div style={{ marginBottom:32 }}>
               <p style={{ fontFamily:sans, fontSize:10, fontWeight:600, color:T.accent, textTransform:"uppercase", letterSpacing:"0.18em", margin:"0 0 12px" }}>Early access</p>
               <h2 style={{ fontFamily:serif, fontSize:28, color:T.black, margin:"0 0 14px", letterSpacing:-0.6, lineHeight:1.2, fontWeight:400 }}>
-                Where scent becomes memory.
+                Trust your own nose.
               </h2>
               <p style={{ fontFamily:sans, fontSize:14, color:T.mid, lineHeight:1.7, margin:0 }}>
-                Sample first. Wear what you love. Keep the record. We're letting in members one cohort at a time.
+                We are not here to influence you. Sample first, wear what you love, and keep the record. We're letting in members one cohort at a time.
               </p>
             </div>
             <div style={{ display:"flex", flexDirection:"column", gap:10, marginBottom:14 }}>
