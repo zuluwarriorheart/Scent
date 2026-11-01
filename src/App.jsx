@@ -2006,7 +2006,77 @@ function NotesPyramid({ notes }) {
   );
 }
 
-function DetailModal({ frag, onClose, userStatus, setUserStatus, privateNote, setPrivateNote, reaction, setReaction, onOpenFrag, onOpenProfile, onAddJournalEntry, currentUser, onOpenBrand, onOpenPerfumer }) {
+const WEAR_OCCASIONS = ["everyday","work","date","night out","event","travel","home","workout"];
+const WEAR_WEATHER = ["hot","warm","mild","cool","cold","rainy"];
+function todayISO() { const d = new Date(); return new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 10); }
+function fmtWearDate(iso) {
+  const [y, m, d] = String(iso || "").split("-").map(Number);
+  if (!y) return "";
+  return new Date(y, m - 1, d).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+}
+function WearLog({ frag, wears, onLogWear, onDeleteWear }) {
+  const mine = (wears || []).filter(w => w.fragId === frag.id).sort((a, b) => (a.date < b.date ? 1 : a.date > b.date ? -1 : 0));
+  const [open, setOpen] = useState(false);
+  const [date, setDate] = useState(todayISO());
+  const [occasion, setOccasion] = useState("");
+  const [weather, setWeather] = useState("");
+  const [rating, setRating] = useState(0);
+  const [busy, setBusy] = useState(false);
+  if (!/^[0-9a-f]{8}-[0-9a-f]{4}-/i.test(String(frag.id))) return null;
+  const rated = mine.filter(w => w.rating);
+  const avg = rated.length ? (rated.reduce((n, w) => n + w.rating, 0) / rated.length).toFixed(1) : null;
+  const chip = on => ({ fontFamily: sans, fontSize: 11, padding: "6px 12px", borderRadius: 20, cursor: "pointer", border: `1px solid ${on ? T.black : T.rule}`, background: on ? T.black : T.white, color: on ? T.white : T.mid, textTransform: "capitalize" });
+  async function save() {
+    if (busy) return;
+    setBusy(true);
+    await onLogWear(frag.id, { date: date || todayISO(), occasion: occasion || null, weather: weather || null, rating: rating || null });
+    setBusy(false); setOpen(false); setOccasion(""); setWeather(""); setRating(0); setDate(todayISO());
+  }
+  return (
+    <div style={{ marginTop: 36, paddingTop: 28, borderTop: `1px solid ${T.rule}` }}>
+      <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 12, margin: "0 0 16px" }}>
+        <p style={{ fontFamily: sans, fontSize: 10, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.16em", color: T.mid, margin: 0 }}>Wear log</p>
+        {mine.length > 0 && <span style={{ fontFamily: sans, fontSize: 11, color: T.faint }}>Worn {mine.length} time{mine.length !== 1 ? "s" : ""}{avg ? ` · avg ${avg} ★` : ""}</span>}
+      </div>
+      {!open && <button onClick={() => setOpen(true)} style={{ width: "100%", padding: "13px 0", borderRadius: 12, border: `1px solid ${T.black}`, background: T.black, color: T.white, fontSize: 12, fontFamily: sans, cursor: "pointer" }}>I wore this</button>}
+      {open && (
+        <div style={{ background: T.lift, border: `1px solid ${T.rule}`, borderRadius: 14, padding: 16 }}>
+          <p style={{ fontFamily: sans, fontSize: 10, textTransform: "uppercase", letterSpacing: "0.1em", color: T.faint, margin: "0 0 6px" }}>Date</p>
+          <input type="date" value={date} max={todayISO()} onChange={e => setDate(e.target.value)} style={{ fontFamily: sans, fontSize: 13, color: T.ink, background: T.white, border: `1px solid ${T.rule}`, borderRadius: 8, padding: "8px 10px", marginBottom: 14 }}/>
+          <p style={{ fontFamily: sans, fontSize: 10, textTransform: "uppercase", letterSpacing: "0.1em", color: T.faint, margin: "0 0 6px" }}>Occasion</p>
+          <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 14 }}>{WEAR_OCCASIONS.map(o => <button key={o} onClick={() => setOccasion(occasion === o ? "" : o)} style={chip(occasion === o)}>{o}</button>)}</div>
+          <p style={{ fontFamily: sans, fontSize: 10, textTransform: "uppercase", letterSpacing: "0.1em", color: T.faint, margin: "0 0 6px" }}>Weather</p>
+          <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 14 }}>{WEAR_WEATHER.map(o => <button key={o} onClick={() => setWeather(weather === o ? "" : o)} style={chip(weather === o)}>{o}</button>)}</div>
+          <p style={{ fontFamily: sans, fontSize: 10, textTransform: "uppercase", letterSpacing: "0.1em", color: T.faint, margin: "0 0 6px" }}>How did it wear?</p>
+          <div style={{ display: "flex", gap: 4, marginBottom: 16 }}>{[1, 2, 3, 4, 5].map(n => <button key={n} onClick={() => setRating(rating === n ? 0 : n)} aria-label={`${n} star${n > 1 ? "s" : ""}`} style={{ background: "none", border: "none", cursor: "pointer", fontSize: 24, padding: 2, color: n <= rating ? T.black : T.rule, lineHeight: 1 }}>★</button>)}</div>
+          <div style={{ display: "flex", gap: 8 }}>
+            <button onClick={save} disabled={busy} style={{ flex: 1, padding: "12px 0", borderRadius: 10, border: "none", background: T.black, color: T.white, fontSize: 12, fontFamily: sans, cursor: "pointer", opacity: busy ? 0.6 : 1 }}>Save wear</button>
+            <button onClick={() => setOpen(false)} style={{ padding: "12px 18px", borderRadius: 10, border: `1px solid ${T.rule}`, background: T.white, color: T.mid, fontSize: 12, fontFamily: sans, cursor: "pointer" }}>Cancel</button>
+          </div>
+        </div>
+      )}
+      {mine.length > 0 && (
+        <div style={{ marginTop: 16 }}>
+          {mine.slice(0, 8).map(w => (
+            <div key={w.id} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, padding: "10px 0", borderBottom: `1px solid ${T.lift}` }}>
+              <div style={{ minWidth: 0 }}>
+                <span style={{ fontFamily: sans, fontSize: 13, color: T.ink }}>{fmtWearDate(w.date)}</span>
+                <span style={{ fontFamily: sans, fontSize: 11, color: T.faint, marginLeft: 8, textTransform: "capitalize" }}>{[w.occasion, w.weather].filter(Boolean).join(" · ")}</span>
+              </div>
+              <div style={{ display: "flex", alignItems: "center", gap: 10, flexShrink: 0 }}>
+                {w.rating ? <span style={{ fontFamily: sans, fontSize: 12, color: T.mid }}>{"★".repeat(w.rating)}</span> : null}
+                <button onClick={() => onDeleteWear(w.id)} aria-label="Remove this wear" style={{ background: "none", border: "none", color: T.faint, fontSize: 14, cursor: "pointer", padding: 2 }}>✕</button>
+              </div>
+            </div>
+          ))}
+          {mine.length > 8 && <p style={{ fontFamily: sans, fontSize: 11, color: T.faint, margin: "10px 0 0" }}>And {mine.length - 8} earlier.</p>}
+        </div>
+      )}
+      {mine.length === 0 && !open && <p style={{ fontFamily: sans, fontSize: 11, color: T.faint, margin: "12px 0 0", lineHeight: 1.6 }}>Log each wear. Over time you will see what you reach for, and when.</p>}
+    </div>
+  );
+}
+function DetailModal({ frag, onClose, userStatus, setUserStatus, privateNote, setPrivateNote, reaction, setReaction, onOpenFrag, onOpenProfile, onAddJournalEntry, currentUser, onOpenBrand, onOpenPerfumer, wears, onLogWear, onDeleteWear }) {
   const [tab,setTab]=useState("overview");
   const [showPerfumer, setShowPerfumer]=useState(false);
   const [replyText,setReplyText]=useState("");
@@ -2159,6 +2229,7 @@ function DetailModal({ frag, onClose, userStatus, setUserStatus, privateNote, se
               )}
               <PrivateNoteEditor note={privateNote} onSave={setPrivateNote} frag={frag} onAddJournalEntry={onAddJournalEntry}/>
               </div>
+              <WearLog frag={frag} wears={wears} onLogWear={onLogWear} onDeleteWear={onDeleteWear}/>
             </div>
           )}
 
@@ -2221,7 +2292,7 @@ function DetailModal({ frag, onClose, userStatus, setUserStatus, privateNote, se
 }
 
 // ─── TASTE PROFILE ────────────────────────────────────────────────────────────
-function TasteProfile({ userStatuses, reactions, fragrances }) {
+function TasteProfile({ userStatuses, reactions, fragrances, wears }) {
   const [open, setOpen] = useState(true);
 
   const AFFINITY_STATUSES = new Set(["bottle_owned","bottle_wishlist","sample_have","tried_skin"]);
@@ -2230,8 +2301,20 @@ function TasteProfile({ userStatuses, reactions, fragrances }) {
   // Build accord tallies
   const likeTally   = {};
   const dislikeTally = {};
+  const noteTally = {};
+  const allFrags = (fragrances && fragrances.length) ? fragrances : FRAGRANCES;
+  const wearCount = {}, wearRatings = {}, occTally = {}, wxTally = {};
+  (wears || []).forEach(w => {
+    wearCount[w.fragId] = (wearCount[w.fragId] || 0) + 1;
+    if (w.rating) (wearRatings[w.fragId] = wearRatings[w.fragId] || []).push(w.rating);
+    if (w.occasion) occTally[w.occasion] = (occTally[w.occasion] || 0) + 1;
+    if (w.weather) wxTally[w.weather] = (wxTally[w.weather] || 0) + 1;
+  });
+  const mostWorn = Object.entries(wearCount).map(([id, n]) => ({ f: allFrags.find(x => x.id === id), n, r: wearRatings[id] })).filter(x => x.f).sort((a, b) => b.n - a.n).slice(0, 3);
+  const topOcc = Object.entries(occTally).sort((a, b) => b[1] - a[1])[0];
+  const topWx = Object.entries(wxTally).sort((a, b) => b[1] - a[1])[0];
 
-  ((fragrances && fragrances.length) ? fragrances : FRAGRANCES).forEach(f => {
+  allFrags.forEach(f => {
     const status   = userStatuses[f.id];
     const reaction = reactions[f.id];
     const isLiked    = AFFINITY_STATUSES.has(status) || reaction === "love" || reaction === "like";
@@ -2243,6 +2326,13 @@ function TasteProfile({ userStatuses, reactions, fragrances }) {
     (f.accords || []).forEach(a => {
       target[a.n] = (target[a.n] || 0) + 1;
     });
+    if (!isDisliked && f.notes) {
+      const seen = new Set();
+      [].concat(f.notes.top || [], f.notes.mid || [], f.notes.base || []).forEach(x => {
+        const k = String(x.n || "").trim().toLowerCase();
+        if (k && !seen.has(k)) { seen.add(k); noteTally[k] = (noteTally[k] || 0) + 1; }
+      });
+    }
     // Also tally family as an accord-level signal
     if (f.family) target[f.family] = (target[f.family] || 0) + 1;
   });
@@ -2252,7 +2342,8 @@ function TasteProfile({ userStatuses, reactions, fragrances }) {
   const likeMax    = likeEntries[0]?.[1]    || 1;
   const dislikeMax = dislikeEntries[0]?.[1] || 1;
 
-  if (likeEntries.length === 0 && dislikeEntries.length === 0) return null;
+  const noteEntries = Object.entries(noteTally).filter(([, c]) => c >= 2).sort((a, b) => b[1] - a[1]).slice(0, 10);
+  if (likeEntries.length === 0 && dislikeEntries.length === 0 && mostWorn.length === 0) return null;
 
   const Bar = ({ label, count, max, color }) => (
     <div style={{ marginBottom:10, maxWidth:560 }}>
@@ -2284,6 +2375,28 @@ function TasteProfile({ userStatuses, reactions, fragrances }) {
               {likeEntries.map(([label, count]) => (
                 <Bar key={label} label={label} count={count} max={likeMax} color={accordColor(label)}/>
               ))}
+            </div>
+          )}
+
+          {noteEntries.length > 0 && (
+            <div style={{ paddingTop: 16, marginTop: 4, borderTop: `1px solid ${T.lift}` }}>
+              <p style={{ fontFamily:sans, fontSize:9, textTransform:"uppercase", letterSpacing:"0.1em", color:T.mid, margin:"0 0 10px" }}>Notes you return to</p>
+              <div style={{ display:"flex", flexWrap:"wrap", gap:6 }}>
+                {noteEntries.map(([n, c]) => <span key={n} style={{ fontFamily:sans, fontSize:11, padding:"4px 10px", borderRadius:20, border:`1px solid ${T.rule}`, background:T.lift, color:T.ink, textTransform:"capitalize" }}>{n} <span style={{ color:T.faint }}>{c}</span></span>)}
+              </div>
+            </div>
+          )}
+
+          {mostWorn.length > 0 && (
+            <div style={{ paddingTop: 16, marginTop: 16, borderTop: `1px solid ${T.lift}` }}>
+              <p style={{ fontFamily:sans, fontSize:9, textTransform:"uppercase", letterSpacing:"0.1em", color:T.mid, margin:"0 0 10px" }}>Most worn</p>
+              {mostWorn.map(({ f, n, r }) => (
+                <div key={f.id} style={{ display:"flex", justifyContent:"space-between", alignItems:"baseline", gap:10, marginBottom:8 }}>
+                  <span style={{ fontFamily:sans, fontSize:13, color:T.ink }}>{f.name} <span style={{ fontSize:11, color:T.faint }}>{f.house}</span></span>
+                  <span style={{ fontFamily:sans, fontSize:11, color:T.faint, flexShrink:0 }}>{n}×{r && r.length ? ` · ${(r.reduce((a, b) => a + b, 0) / r.length).toFixed(1)} ★` : ""}</span>
+                </div>
+              ))}
+              {(topOcc || topWx) && <p style={{ fontFamily:sans, fontSize:11, color:T.faint, margin:"6px 0 0", lineHeight:1.6 }}>You wear most when it is {[topWx && topWx[0], topOcc && topOcc[0] && `for ${topOcc[0]}`].filter(Boolean).join(", ")}.</p>}
             </div>
           )}
 
@@ -2633,7 +2746,7 @@ function CollectionMap({ items, onOpenFrag }) {
   );
 }
 
-function CollectionTab({ onOpenFrag, statuses:userStatuses, reactions, onReaction, onSuggest, fragrances }) {
+function CollectionTab({ onOpenFrag, statuses:userStatuses, reactions, onReaction, onSuggest, fragrances, wears }) {
   const FR = (fragrances && fragrances.length) ? fragrances : FRAGRANCES;
   const [activeFilter,setActiveFilter]=useState("all");
   const [search,setSearch]=useState("");
@@ -2660,7 +2773,7 @@ function CollectionTab({ onOpenFrag, statuses:userStatuses, reactions, onReactio
         <p style={{fontFamily:sans,fontSize:"clamp(13px, 1.1vw, 17px)",color:T.mid,margin:"6px 0 0"}}>Bottles, samples, and everything in between.</p>
       </div>
       <CollectionMap items={FR.filter(f=>userStatuses[f.id])} onOpenFrag={onOpenFrag}/>
-      <TasteProfile userStatuses={userStatuses} reactions={reactions} fragrances={FR}/>
+      <TasteProfile userStatuses={userStatuses} reactions={reactions} fragrances={FR} wears={wears}/>
       <div style={{display:"flex",gap:6,overflowX:"auto",paddingBottom:4,marginBottom:14}}>{filters.map(f=>(
         <button key={f.key} onClick={()=>setActiveFilter(f.key)} style={{fontFamily:sans,fontSize:10,padding:"5px 12px",borderRadius:20,whiteSpace:"nowrap",border:`1px solid ${activeFilter===f.key?T.black:T.rule}`,background:activeFilter===f.key?T.black:T.white,color:activeFilter===f.key?T.white:T.mid,cursor:"pointer",display:"flex",alignItems:"center",gap:5}}>
           {f.iconName&&<Icon name={f.iconName} size={13} color={activeFilter===f.key?T.white:T.mid}/>}
@@ -4246,6 +4359,7 @@ export default function SillageApp() {
   const [privateNotes, setPrivateNotes] = useState({});
   const [reactions, setReactions] = useState({});
   const [journalEntries, setJournalEntries] = useState([]);
+  const [wears, setWears] = useState([]);
   const [layers, setLayers] = useState([]);
   const [saveIssue, setSaveIssue] = useState("");
   // following: Set of usernames the current user follows. the official account is always included.
@@ -4438,25 +4552,27 @@ export default function SillageApp() {
     if (error) flagSave(error);
   }
   useEffect(() => {
-    setUserStatuses({}); setReactions({}); setPrivateNotes({}); setJournalEntries([]); setLayers([]);
+    setUserStatuses({}); setReactions({}); setPrivateNotes({}); setJournalEntries([]); setLayers([]); setWears([]);
     if (!uid) return;
     let off = false;
     (async () => {
       try {
-        const [uf, je, ly] = await Promise.all([
+        const [uf, je, ly, wr] = await Promise.all([
           supabase.from("user_fragrances").select("fragrance_id, status, reaction, note").eq("user_id", uid).limit(5000),
           supabase.from("journal_entries").select("*").eq("user_id", uid).order("created_at", { ascending: false }).limit(2000),
           supabase.from("layerings").select("*").eq("user_id", uid).order("created_at", { ascending: false }).limit(1000),
+          supabase.from("wears").select("id, fragrance_id, worn_on, occasion, weather, rating").eq("user_id", uid).order("worn_on", { ascending: false }).limit(5000),
         ]);
         if (off) return;
         if (uf.error || je.error || ly.error) { console.error("Could not load your saved data:", uf.error || je.error || ly.error); return; }
         const st = {}, rx = {}, nt = {};
         (uf.data || []).forEach(r => { if (r.status) st[r.fragrance_id] = r.status; if (r.reaction) rx[r.fragrance_id] = r.reaction; if (r.note) nt[r.fragrance_id] = r.note; });
         setUserStatuses(st); setReactions(rx); setPrivateNotes(nt);
+        if (!wr.error) setWears((wr.data || []).map(r => ({ id: r.id, fragId: r.fragrance_id, date: r.worn_on, occasion: r.occasion, weather: r.weather, rating: r.rating })));
         setJournalEntries((je.data || []).map(r => ({ id: r.id, fragId: r.fragrance_id, fragName: r.frag_name, house: r.house, family: r.family, prompt: r.prompt, text: r.body, where: r.where_text, date: r.entry_date, shared: r.shared, publishedAsReview: r.published_as_review, reviewRating: r.review_rating })));
         setLayers((ly.data || []).map(r => ({ id: r.id, name: r.name, frags: r.frags || [], ratio: r.ratio, layerWith: r.layer_with, note: r.note, rating: r.rating, isPublic: r.is_public, date: new Date(r.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) })));
         // Make sure every fragrance in the collection is loaded so the Collection tab can show it.
-        const ids = [...new Set((uf.data || []).filter(r => r.status || r.reaction).map(r => r.fragrance_id))];
+        const ids = [...new Set((uf.data || []).filter(r => r.status || r.reaction).map(r => r.fragrance_id).concat((wr.data || []).map(r => r.fragrance_id)))];
         for (let i = 0; i < ids.length; i += 150) {
           const chunk = ids.slice(i, i + 150);
           const { data } = await fetchFragRows(sel => supabase.from("fragrances").select(sel).in("id", chunk));
@@ -4478,6 +4594,21 @@ export default function SillageApp() {
     }).select("id").single();
     if (error) { flagSave(error); return; }
     if (data) setJournalEntries(p => p.map(e => e.id === tempId ? { ...e, id: data.id } : e));
+  }
+  async function logWear(fragId, w) {
+    if (!uid || !isUuid(fragId)) return;
+    const tempId = "tmp-" + Date.now();
+    setWears(p => [{ id: tempId, fragId, date: w.date, occasion: w.occasion, weather: w.weather, rating: w.rating }, ...p]);
+    const { data, error } = await supabase.from("wears").insert({ user_id: uid, fragrance_id: fragId, worn_on: w.date, occasion: w.occasion, weather: w.weather, rating: w.rating }).select("id").single();
+    if (error) { setWears(p => p.filter(x => x.id !== tempId)); flagSave(error); return; }
+    setWears(p => p.map(x => x.id === tempId ? { ...x, id: data.id } : x));
+  }
+  async function deleteWear(id) {
+    const prev = wears;
+    setWears(p => p.filter(x => x.id !== id));
+    if (String(id).startsWith("tmp-")) return;
+    const { error } = await supabase.from("wears").delete().eq("id", id).eq("user_id", uid);
+    if (error) { setWears(prev); flagSave(error); }
   }
   async function saveLayer(l) {
     const tempId = Date.now();
@@ -4569,7 +4700,7 @@ export default function SillageApp() {
 
       <main className="mos-main mos-wrap" style={{ position:"relative", zIndex:1, paddingTop:28, paddingBottom:64 }}>
         {activeTab==="Discover"   && <DiscoverTab   onOpenBrand={openBrand} onOpenPerfumer={openPerfumer} fragrances={fragrances} serverShelves={serverShelves} onSearch={serverShelves ? searchFrags : null} onOpenFrag={openFrag} userStatuses={userStatuses} reactions={reactions} onReaction={onReaction} onSuggest={() => setShowSuggest(true)} currentUser={currentUser}/>}
-        {activeTab==="Collection" && <CollectionTab fragrances={fragrances} onOpenFrag={openFrag} statuses={userStatuses} reactions={reactions} onReaction={onReaction} onSuggest={() => setShowSuggest(true)}/>}
+        {activeTab==="Collection" && <CollectionTab fragrances={fragrances} onOpenFrag={openFrag} statuses={userStatuses} reactions={reactions} onReaction={onReaction} onSuggest={() => setShowSuggest(true)} wears={wears}/>}
         {activeTab==="Layering"   && <div className="mos-prose"><LayeringTab layers={layers} onSaveLayer={saveLayer}/></div>}
         {activeTab==="Journal"    && <div className="mos-prose"><JournalTab entries={journalEntries}/></div>}
         {activeTab==="Learn"      && <div className="mos-prose"><LearnTab fragrances={fragrances} onOpenFrag={openFrag} onOpenBrand={openBrand}/></div>}
@@ -4600,6 +4731,9 @@ export default function SillageApp() {
           reaction={reactions[modalFrag.id]}
           setReaction={v => onReaction(modalFrag.id, v)}
           onOpenFrag={openFrag}
+          wears={wears}
+          onLogWear={logWear}
+          onDeleteWear={deleteWear}
           onOpenBrand={openBrand}
           onOpenPerfumer={openPerfumer}
           onOpenProfile={openProfile}
