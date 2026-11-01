@@ -1898,23 +1898,23 @@ function DetailModal({ frag, onClose, userStatus, setUserStatus, privateNote, se
       <div className="mos-sheet" onClick={e=>e.stopPropagation()} style={{background:T.white,borderRadius:"24px 24px 0 0",border:`1px solid ${T.rule}`,borderBottom:"none",width:"100%",maxWidth:460,maxHeight:"93vh",overflowY:"auto"}}>
 
         
-        <div className="mos-pad" style={{position:"relative",padding:"26px 24px 20px",borderBottom:`1px solid ${T.rule}`,overflow:"hidden",background:accA?`${accA}1F`:"transparent"}}>
+        <div className="mos-pad" style={{position:"relative",padding:"34px 24px 30px",borderBottom:`1px solid ${T.rule}`,overflow:"hidden",background:accA?`${accA}1F`:"transparent"}}>
           <button className="mos-close" onClick={onClose} style={{position:"absolute",top:16,right:16,width:30,height:30,borderRadius:"50%",border:`1px solid ${T.rule}`,background:T.white,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",fontSize:13,color:T.mid,zIndex:2}}>✕</button>
-          <div style={{display:"flex",alignItems:"flex-start",gap:16}}>
-            <div style={{flex:1}}>
-              <div style={{marginBottom:8}}><span style={{fontFamily:sans,fontSize:9,textTransform:"uppercase",letterSpacing:"0.12em",color:T.mid}}>{onOpenBrand&&frag.houseSlug?<button onClick={()=>onOpenBrand({slug:frag.houseSlug,name:frag.house})} style={{font:"inherit",letterSpacing:"inherit",textTransform:"inherit",color:T.black,background:"none",border:"none",borderBottom:`1px solid ${T.mid}`,padding:"0 0 1px",cursor:"pointer",minHeight:24}}>{frag.house}</button>:frag.house}{[frag.line, frag.family].filter(Boolean).length?" · "+[frag.line, frag.family].filter(Boolean).join(" · "):""}</span></div>
-              <h2 style={{fontFamily:serif,fontSize:28,color:T.black,margin:"0 0 2px",letterSpacing:-0.5,lineHeight:1.1}}>{frag.name}</h2>
-              <p style={{fontFamily:sans,fontSize:13,color:T.mid,margin:"0 0 0",lineHeight:1.4}}>{[frag.year, frag.concentration].filter(Boolean).join(" · ")}</p>
-              <div style={{margin:"3px 0 0",display:"flex",alignItems:"center",flexWrap:"wrap",gap:"4px 14px"}}>
+          <div style={{display:"flex",alignItems:"center",gap:"clamp(16px, 3vw, 56px)"}}>
+            <div style={{flex:1,minWidth:0}}>
+              <div style={{marginBottom:10}}><span style={{fontFamily:sans,fontSize:"clamp(10px, 0.9vw, 12px)",fontWeight:600,textTransform:"uppercase",letterSpacing:"0.18em",color:T.mid}}>{onOpenBrand&&frag.houseSlug?<button onClick={()=>onOpenBrand({slug:frag.houseSlug,name:frag.house})} style={{font:"inherit",letterSpacing:"inherit",textTransform:"inherit",color:T.black,background:"none",border:"none",borderBottom:`1px solid ${T.mid}`,padding:"0 0 1px",cursor:"pointer",minHeight:24}}>{frag.house}</button>:frag.house}{[frag.line, frag.family].filter(Boolean).length?" · "+[frag.line, frag.family].filter(Boolean).join(" · "):""}</span></div>
+              <h2 style={{fontFamily:serif,fontSize:"clamp(36px, 4.4vw, 64px)",fontWeight:400,color:T.black,margin:"0 0 10px",letterSpacing:-1,lineHeight:1.05,paddingRight:44}}>{frag.name}</h2>
+              <p style={{fontFamily:sans,fontSize:"clamp(14px, 1.1vw, 17px)",color:T.mid,margin:"0 0 0",lineHeight:1.4}}>{[frag.year, frag.concentration].filter(Boolean).join(" · ")}</p>
+              <div style={{margin:"8px 0 0",display:"flex",alignItems:"center",flexWrap:"wrap",gap:"6px 16px"}}>
                 {frag.ownership && <OwnershipBadge ownership={frag.ownership} size="normal" showTooltip={true}/>}
-                {frag.price_tier && <span style={{fontFamily:sans,fontSize:12,color:T.mid}}>Price tier <strong style={{color:T.black,fontWeight:600}}>{frag.price_tier}</strong></span>}
+                {frag.price_tier && <span style={{fontFamily:sans,fontSize:"clamp(13px, 1vw, 15px)",color:T.mid}}>Price tier <strong style={{color:T.black,fontWeight:600}}>{frag.price_tier}</strong></span>}
               </div>
               {safeUrl(frag.website)&&(
-                <a href={safeUrl(frag.website)} target="_blank" rel="noopener noreferrer" style={{display:"inline-flex",alignItems:"center",gap:6,margin:"8px 0 0",padding:"6px 12px",minHeight:32,boxSizing:"border-box",borderRadius:20,border:`1px solid ${T.rule}`,background:T.white,fontFamily:sans,fontSize:12,color:T.ink,textDecoration:"none"}}>Brand website<ExtArrow size={11}/></a>
+                <a href={safeUrl(frag.website)} target="_blank" rel="noopener noreferrer" style={{display:"inline-flex",alignItems:"center",gap:6,margin:"14px 0 0",padding:"6px 14px",minHeight:34,boxSizing:"border-box",borderRadius:20,border:`1px solid ${T.rule}`,background:T.white,fontFamily:sans,fontSize:13,color:T.ink,textDecoration:"none"}}>Brand website<ExtArrow size={11}/></a>
               )}
               {splitPerfumers(frag.perfumer).length>0 && (
-                <p style={{fontFamily:sans,fontSize:12,color:T.mid,margin:"5px 0 10px",display:"flex",alignItems:"center",flexWrap:"wrap",gap:"2px 6px"}}>
-                  <span style={{color:T.faint,fontSize:10}}>by</span>
+                <p style={{fontFamily:sans,fontSize:"clamp(13px, 1vw, 15px)",color:T.mid,margin:"14px 0 0",display:"flex",alignItems:"center",flexWrap:"wrap",gap:"2px 6px"}}>
+                  <span style={{color:T.faint,fontSize:12}}>by</span>
                   {splitPerfumers(frag.perfumer).map((n,i,arr)=>(
                     <span key={n} style={{display:"inline-flex",alignItems:"center",gap:6}}>
                       <button onClick={()=>onOpenPerfumer?onOpenPerfumer(n):setShowPerfumer(n)} style={{font:"inherit",color:T.black,background:"none",border:"none",borderBottom:`1px solid ${T.rule}`,padding:0,cursor:"pointer",minHeight:24}}>{n}</button>
@@ -1923,16 +1923,16 @@ function DetailModal({ frag, onClose, userStatus, setUserStatus, privateNote, se
                   ))}
                 </p>
               )}
-              {splitPerfumers(frag.perfumer).length===0 && <div style={{marginBottom:10}}/>}
+              
               {showPerfumer && typeof showPerfumer==="string" && <PerfumerModal name={showPerfumer} onClose={()=>setShowPerfumer(false)}/>}
             </div>
-            <div style={{width:80,height:104,borderRadius:14,background:frag.image?T.white:(accA||"#C9206B"),border:`1px solid ${T.rule}`,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,marginTop:34,overflow:"hidden",position:"relative"}}>
+            <div style={{width:"clamp(120px, 26vw, 340px)",aspectRatio:"4 / 5",borderRadius:20,background:frag.image?"#fff":(accA||"#C9206B"),border:`1px solid ${T.rule}`,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,overflow:"hidden",position:"relative"}}>
               {frag.image
-                ? <img src={frag.image} alt={frag.name} style={{width:"100%",height:"100%",objectFit:"contain",padding:"8%"}}/>
-                : <span style={{fontFamily:serif,fontSize:30,color:"#fff",opacity:0.92,lineHeight:1}}>{frag.name.split(" ").map(w=>w[0]).join("").slice(0,2).toUpperCase()}</span>}
+                ? <img src={frag.image} alt={frag.name} style={{width:"100%",height:"100%",objectFit:"contain",padding:"6%"}}/>
+                : <span style={{fontFamily:serif,fontSize:"clamp(36px, 6vw, 84px)",color:"#fff",opacity:0.92,lineHeight:1}}>{frag.name.split(" ").map(w=>w[0]).join("").slice(0,2).toUpperCase()}</span>}
             </div>
           </div>
-          <div style={{marginTop:14}}><ReactionBar value={reaction} onChange={setReaction}/></div>
+          <div style={{marginTop:22}}><ReactionBar value={reaction} onChange={setReaction}/></div>
           {frag.image&&frag.imageCredit&&<p style={{fontFamily:sans,fontSize:10,color:T.faint,margin:"10px 0 0"}}>{frag.imageCredit}</p>}
         </div>
 
@@ -1947,9 +1947,9 @@ function DetailModal({ frag, onClose, userStatus, setUserStatus, privateNote, se
         {(tab==="overview"||tab==="community")&&stats.length>0&&(
         <div style={{display:"grid",gridTemplateColumns:`repeat(${stats.length},1fr)`,borderBottom:`1px solid ${T.rule}`}}>
           {stats.map((s,i)=>(
-            <div key={s.label} style={{padding:"12px 6px",textAlign:"center",borderRight:i<stats.length-1?`1px solid ${T.rule}`:"none"}}>
-              <p style={{fontFamily:serif,fontSize:16,color:T.black,margin:0}}>{s.value}</p>
-              <p style={{fontFamily:sans,fontSize:9,color:T.mid,textTransform:"uppercase",letterSpacing:"0.09em",margin:"3px 0 0"}}>{s.label}</p>
+            <div key={s.label} style={{padding:"clamp(16px, 2vw, 26px) 6px",textAlign:"center",borderRight:i<stats.length-1?`1px solid ${T.rule}`:"none"}}>
+              <p style={{fontFamily:serif,fontSize:"clamp(20px, 2.4vw, 34px)",color:T.black,margin:0}}>{s.value}</p>
+              <p style={{fontFamily:sans,fontSize:"clamp(10px, 0.85vw, 12px)",color:T.mid,textTransform:"uppercase",letterSpacing:"0.09em",margin:"3px 0 0"}}>{s.label}</p>
             </div>
           ))}
         </div>
@@ -1964,11 +1964,11 @@ function DetailModal({ frag, onClose, userStatus, setUserStatus, privateNote, se
               </div>
               {(frag.description||frag.story)&&(
                 <div style={{marginBottom:32}}>
-                  {frag.description&&<p style={{fontFamily:sans,fontSize:14,color:T.mid,lineHeight:1.75,margin:"0 0 20px"}}>{frag.description}</p>}
+                  {frag.description&&<p style={{fontFamily:sans,fontSize:"clamp(15px, 1.2vw, 18px)",color:T.mid,lineHeight:1.75,margin:"0 0 20px"}}>{frag.description}</p>}
                   {frag.story&&(
                     <div style={{background:T.lift,borderRadius:12,padding:16,border:`1px solid ${T.rule}`}}>
                       <Lbl>The Story</Lbl>
-                      <p style={{fontFamily:sans,fontSize:13,color:T.mid,lineHeight:1.75,fontStyle:"italic",margin:0}}>{frag.story}</p>
+                      <p style={{fontFamily:sans,fontSize:"clamp(14px, 1.1vw, 17px)",color:T.mid,lineHeight:1.75,fontStyle:"italic",margin:0}}>{frag.story}</p>
                     </div>
                   )}
                 </div>
