@@ -3290,10 +3290,10 @@ function WaitlistScreen({ onJoin }) {
             <div style={{ marginBottom:32 }}>
               <p style={{ fontFamily:sans, fontSize:10, fontWeight:600, color:T.accent, textTransform:"uppercase", letterSpacing:"0.18em", margin:"0 0 12px" }}>Early access</p>
               <h2 style={{ fontFamily:serif, fontSize:28, color:T.black, margin:"0 0 14px", letterSpacing:-0.6, lineHeight:1.2, fontWeight:400 }}>
-                Trust your own nose.
+                Where scent becomes memory.
               </h2>
               <p style={{ fontFamily:sans, fontSize:14, color:T.mid, lineHeight:1.7, margin:0 }}>
-                We are not here to influence you. Sample first, wear what you love, and keep the record. We're letting in members one cohort at a time.
+                We are not here to influence you. Trust your own nose. We're letting in members one cohort at a time.
               </p>
             </div>
             <div style={{ display:"flex", flexDirection:"column", gap:10, marginBottom:14 }}>
@@ -4208,6 +4208,8 @@ export default function SillageApp() {
     ? (currentUser.username || currentUser.name || "?").slice(0, 2).toUpperCase()
     : "?";
 
+  // Preview the sign-up page without logging out: add ?preview=signup to the site address.
+  if (typeof window !== "undefined" && /[?&]preview=signup\b/.test(window.location.search)) return <WaitlistScreen onJoin={() => { window.location.href = window.location.pathname; }}/>;
   if (appScreen === "loading") return <LoadingScreen/>;
   if (appScreen === "waitlist") return <WaitlistScreen onJoin={() => setAppScreen("login")}/>;
   if (appScreen === "login") return <LoginScreen onWaitlist={() => setAppScreen("waitlist")}/>;
