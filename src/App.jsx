@@ -1118,16 +1118,16 @@ function Mono({ name, year, size=52 }) {
 // ─── HOUSE STRIP — always visible below Occasions ────────────────────────────
 // ─── LIVE CATALOGUE HELPERS ───────────────────────────────────────────────────
 const FRAG_SELECT_FULL = `
-  id, slug, url, gender, year, perfumer, story, barcode, concentration, ownership, brand_origin, price_tier, line,
+  id, slug, url, gender, year, perfumer, story, barcode, concentration, ownership, brand_origin, price_tier, line, image_url, image_credit,
   house:houses ( name, slug, country, ownership, brand_origin, price_tier, website ),
   notes ( note_name, position ),
   accords ( accord_name, rank )
 `;
-const FRAG_SELECT_BASE = FRAG_SELECT_FULL.replace(", ownership, brand_origin, price_tier, line,", ",").replace(", website", "");
+const FRAG_SELECT_BASE = FRAG_SELECT_FULL.replace(", ownership, brand_origin, price_tier, line, image_url, image_credit,", ",").replace(", website", "");
 // Runs a query with the full column list, and again without the newer columns if they are not in the database yet.
 async function fetchFragRows(build) {
   let r = await build(FRAG_SELECT_FULL);
-  if (r.error && /website|line|ownership|brand_origin|price_tier/i.test(r.error.message || "")) r = await build(FRAG_SELECT_BASE);
+  if (r.error && /website|line|ownership|brand_origin|price_tier|image_url|image_credit/i.test(r.error.message || "")) r = await build(FRAG_SELECT_BASE);
   return r;
 }
 function mapFrag(f) {
@@ -1151,6 +1151,8 @@ function mapFrag(f) {
     concentration: f.concentration || "",
     gender: f.gender,
     url: f.url || "",
+    image: f.image_url || "",
+    imageCredit: f.image_credit || "",
     notes: {
       top: notes.filter(n => n.position === "top").map(n => ({ n: n.note_name })),
       mid: notes.filter(n => n.position === "mid").map(n => ({ n: n.note_name })),
@@ -1205,8 +1207,10 @@ function HouseStrip({ currentFrag, onOpenFrag, onOpenBrand }) {
             onMouseEnter={e => e.currentTarget.style.background = T.white}
             onMouseLeave={e => e.currentTarget.style.background = "transparent"}>
             <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
-              <div style={{ width: 36, height: 36, borderRadius: 8, background: T.white, border: `1px solid ${T.rule}`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                <span style={{ fontFamily: serif, fontSize: 11, color: T.ink }}>{f.name.split(" ").map(w => w[0]).join("").slice(0, 2).toUpperCase()}</span>
+              <div style={{ width: 36, height: 36, borderRadius: 8, background: T.white, border: `1px solid ${T.rule}`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, overflow: "hidden" }}>
+                {f.image
+                  ? <img src={f.image} alt="" loading="lazy" style={{ width: "100%", height: "100%", objectFit: "contain", padding: 2 }}/>
+                  : <span style={{ fontFamily: serif, fontSize: 11, color: T.ink }}>{f.name.split(" ").map(w => w[0]).join("").slice(0, 2).toUpperCase()}</span>}
               </div>
               <div>
                 <p style={{ fontFamily: serif, fontSize: 13, color: T.black, margin: 0, lineHeight: 1.2 }}>{f.name}</p>
@@ -1717,7 +1721,7 @@ function FragCard({ frag, onClick, userStatus, reaction, onReaction, onOpenFrag,
   return (
     <div style={{background:T.white,borderRadius:16,border:`1px solid ${hov?T.black:T.rule}`,transition:"border-color 0.15s",overflow:"hidden"}}>
       <div onClick={()=>onClick(frag.id)} onMouseEnter={()=>setHov(true)} onMouseLeave={()=>setHov(false)} style={{padding:"14px 16px",display:"flex",alignItems:"center",gap:14,cursor:"pointer"}}>
-        <Mono name={frag.name} year={frag.year} size={52}/>
+        {frag.image ? <div style={{width:52,height:52,borderRadius:10,background:"#fff",border:`1px solid ${T.rule}`,overflow:"hidden",flexShrink:0}}><img src={frag.image} alt="" loading="lazy" style={{width:"100%",height:"100%",objectFit:"contain",padding:3}}/></div> : <Mono name={frag.name} year={frag.year} size={52}/>}
         <div style={{flex:1,minWidth:0}}>
           <div style={{display:"flex",alignItems:"flex-start",justifyContent:"space-between",gap:8}}>
             <div>
@@ -1929,6 +1933,7 @@ function DetailModal({ frag, onClose, userStatus, setUserStatus, privateNote, se
             </div>
           </div>
           <div style={{marginTop:14}}><ReactionBar value={reaction} onChange={setReaction}/></div>
+          {frag.image&&frag.imageCredit&&<p style={{fontFamily:sans,fontSize:10,color:T.faint,margin:"10px 0 0"}}>{frag.imageCredit}</p>}
         </div>
 
         
