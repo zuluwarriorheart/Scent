@@ -4519,6 +4519,38 @@ export default function SillageApp() {
                 }
               }
             } catch (e) {}
+            try {
+              // "Most shared notes": cross-house pairs with the most notes in common. One pair per house so a single house cannot fill the shelf.
+              const { data: sp } = await supabase.from("fragrance_similar").select("fragrance_id, similar_id, shared_count, score").eq("same_house", false).gte("score", 0.5).order("shared_count", { ascending: false }).order("score", { ascending: false }).limit(400);
+              if (sp && sp.length) {
+                const seen = new Set(), pairs = [];
+                for (const r of sp) {
+                  if (seen.has(r.fragrance_id) || seen.has(r.similar_id)) continue;
+                  seen.add(r.fragrance_id); seen.add(r.similar_id); pairs.push(r);
+                  if (pairs.length >= 60) break;
+                }
+                const pids = [...new Set(pairs.flatMap(r => [r.fragrance_id, r.similar_id]))];
+                const pr = await fetchFragRows(sel => supabase.from("fragrances").select(sel).in("id", pids));
+                if (!pr.error && pr.data && pr.data.length) {
+                  const pm = pr.data.map(mapFrag); mergeFrags(pm);
+                  const pby = new Map(pm.map(f => [f.id, f]));
+                  const usedHouse = new Set(), items = [];
+                  for (const r of pairs) {
+                    const a = pby.get(r.fragrance_id), b = pby.get(r.similar_id);
+                    if (!a || !b) continue;
+                    const ha = a.houseSlug || a.house, hb = b.houseSlug || b.house;
+                    if (usedHouse.has(ha) || usedHouse.has(hb)) continue;
+                    usedHouse.add(ha); usedHouse.add(hb); items.push(a, b);
+                    if (items.length >= 12) break;
+                  }
+                  if (items.length >= 4) {
+                    const dix = shelves.findIndex(x => x.key === "diversity");
+                    const aix = dix >= 0 ? dix : (shelves.findIndex(x => x.key === "neo") >= 0 ? shelves.findIndex(x => x.key === "neo") : shelves.findIndex(x => x.key === "new"));
+                    shelves.splice(aix + 1, 0, { key: "shared", title: "Most shared notes", blurb: "Pairs from different houses that share the most notes. Each pair sits side by side. Open one to see what they have in common.", items });
+                  }
+                }
+              }
+            } catch (e) {}
             setServerShelves(shelves);
             return;
           }
