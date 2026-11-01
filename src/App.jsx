@@ -3500,6 +3500,7 @@ function CountryPicker({ value, onChange, style }) {
 
 // ─── WAITLIST SCREEN ──────────────────────────────────────────────────────────
 const loginStart = { mode: "signin" };
+const wantsJoinLink = () => { try { return /[?&](join=1|code=)/.test(window.location.search); } catch (e) { return false; } };
 function WaitlistScreen({ onJoin, onHaveCode }) {
   const [email, setEmail] = useState("");
   const [name, setName] = useState("");
@@ -3728,10 +3729,10 @@ function Turnstile({ onToken, resetKey }) {
   return <div ref={ref} style={{ display:"flex", justifyContent:"center", margin:"0 0 14px" }}/>;
 }
 function LoginScreen({ onWaitlist }) {
-  const [inviteCode, setInviteCode] = useState("");
+  const [inviteCode, setInviteCode] = useState(() => { try { const m = /[?&]code=([A-Za-z0-9_-]{3,40})/.exec(window.location.search); return m ? m[1].toUpperCase() : ""; } catch (e) { return ""; } });
   const [captcha, setCaptcha] = useState("");
   const [captchaReset, setCaptchaReset] = useState(0);
-  const [mode, setMode] = useState(loginStart.mode);
+  const [mode, setMode] = useState(() => (wantsJoinLink() ? "signup" : loginStart.mode));
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
@@ -4690,8 +4691,9 @@ export default function SillageApp() {
     : "?";
 
   // Preview the sign-up page without logging out: add ?preview=signup to the site address.
-  if (typeof window !== "undefined" && /[?&]preview=signup\b/.test(window.location.search)) return <WaitlistScreen onJoin={() => { window.location.href = window.location.pathname; }}/>;
+  if (typeof window !== "undefined" && /[?&]preview=signup\b/.test(window.location.search)) return <WaitlistScreen onJoin={() => { window.location.href = window.location.pathname; }} onHaveCode={() => { window.location.href = window.location.pathname + "?join=1"; }}/>;
   if (appScreen === "loading") return <LoadingScreen/>;
+  if (appScreen === "waitlist" && wantsJoinLink()) return <LoginScreen onWaitlist={() => { window.location.href = window.location.pathname; }}/>;
   if (appScreen === "waitlist") return <WaitlistScreen onJoin={() => { loginStart.mode = "signin"; setAppScreen("login"); }} onHaveCode={() => { loginStart.mode = "signup"; setAppScreen("login"); }}/>;
   if (appScreen === "login") return <LoginScreen onWaitlist={() => setAppScreen("waitlist")}/>;
   if (appScreen === "onboarding") return <OnboardingScreen onComplete={handleOnboardingComplete}/>;
