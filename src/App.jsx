@@ -123,6 +123,7 @@ body { overflow-x:clip; }
 .mos-cover:hover { transform:translateY(-3px); }
 .mos-cover:focus-visible { outline:2px solid var(--accent); outline-offset:4px; border-radius:12px; }
 .mos-shelf::-webkit-scrollbar { display:none; }
+@media (min-width:760px) { .mos-shelf { padding-left:0 !important; padding-right:0 !important; width:min(calc(100vw - 2 * var(--gutter)), calc(var(--page-w) - 2 * var(--gutter))); margin-left:auto; margin-right:auto; scroll-padding-left:0; } }
 .mos-band { background:var(--lift); }
 @media (max-width:639px) {
   .mos-tabs-top { display:none; }
@@ -2334,8 +2335,8 @@ function DiscoverTab({ onOpenFrag, onOpenBrand, onOpenPerfumer, userStatuses, re
     <div>
       <div style={{marginBottom:20}}>
         <p style={{fontFamily:sans,fontSize:10,fontWeight:600,textTransform:"uppercase",letterSpacing:"0.18em",color:T.accent,margin:"0 0 6px"}}>Discover</p>
-        <h2 style={{fontFamily:serif,fontSize:"clamp(32px, 3.2vw, 50px)",color:T.black,letterSpacing:-0.8,margin:0,fontWeight:400}}>{mode==="browse"?"Find your scent":mode==="brands"?"Brands":mode==="perfumers"?"Perfumers":"The Nose"}</h2>
-        <p style={{fontFamily:sans,fontSize:"clamp(13px, 1.1vw, 17px)",color:T.mid,margin:"6px 0 0"}}>{mode==="browse"?"Search by name, or browse by category.":mode==="brands"?"Every house in the library, with who owns it and what it makes.":mode==="perfumers"?"The noses behind the bottles. Find a perfumer, then everything they have made.":"Describe a memory, a mood or a place."}</p>
+        <h2 style={{fontFamily:serif,fontSize:"clamp(32px, 3.2vw, 50px)",color:T.black,letterSpacing:-0.8,margin:0,fontWeight:400}}>{mode==="browse"?"Discover. Wear. Repeat.":mode==="brands"?"Brands":mode==="perfumers"?"Perfumers":"The Nose"}</h2>
+        <p style={{fontFamily:sans,fontSize:"clamp(13px, 1.1vw, 17px)",color:T.mid,margin:"6px 0 0"}}>{mode==="browse"?"Search by name, or browse by category. Sample first, remember always.":mode==="brands"?"Every house in the library, with who owns it and what it makes.":mode==="perfumers"?"The noses behind the bottles. Find a perfumer, then everything they have made.":"Describe a memory, a mood or a place."}</p>
       </div>
       <div role="tablist" aria-label="Discover" style={{display:"flex",overflowX:"auto",whiteSpace:"nowrap",borderBottom:`1px solid ${T.rule}`,marginBottom:22}}>
         {modeBtn("browse","Browse")}
