@@ -3518,6 +3518,7 @@ function LoginScreen({ onWaitlist }) {
           ))}
         </div>
 
+        {mode === "signin" && (<>
         <button onClick={handleGoogle} disabled={loading} style={{ width:"100%", padding:"14px 0", borderRadius:12, background:T.white, border:`1px solid ${T.rule}`, color:T.ink, fontSize:14, fontFamily:sans, cursor:loading?"not-allowed":"pointer", display:"flex", alignItems:"center", justifyContent:"center", gap:10, marginBottom:20, transition:"all 0.15s" }}>
           <svg width="16" height="16" viewBox="0 0 24 24">
             <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
@@ -3533,6 +3534,7 @@ function LoginScreen({ onWaitlist }) {
           <span style={{ fontFamily:sans, fontSize:11, color:T.faint }}>or</span>
           <div style={{ flex:1, height:1, background:T.rule }}/>
         </div>
+        </>)}
 
         <div style={{ display:"flex", flexDirection:"column", gap:10, marginBottom:14 }}>
           {mode === "signup" && (
