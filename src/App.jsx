@@ -1204,6 +1204,63 @@ function useHouseSiblings(frag, enabled) {
   return list;
 }
 
+// Similar scents: precomputed matches by shared notes (fragrance_similar, built by 20_similar_fragrances.sql).
+// Renders nothing if the table is missing, empty, or the fragrance has no matches yet.
+function SimilarScents({ frag, onOpenFrag }) {
+  const [rows, setRows] = useState(null);
+  useEffect(() => {
+    let off = false;
+    setRows(null);
+    (async () => {
+      try {
+        const { data: sim, error } = await supabase.from("fragrance_similar")
+          .select("similar_id, score, shared_count, shared_notes")
+          .eq("fragrance_id", frag.id).order("score", { ascending: false }).limit(8);
+        if (off) return;
+        if (error || !sim || !sim.length) { setRows([]); return; }
+        const ids = sim.map(s => s.similar_id);
+        const { data, error: e2 } = await fetchFragRows(sel => supabase.from("fragrances").select(sel).in("id", ids));
+        if (off) return;
+        if (e2 || !data) { setRows([]); return; }
+        const byId = {};
+        data.map(mapFrag).forEach(m => { byId[m.id] = m; });
+        if (fragSink.fn) fragSink.fn(Object.values(byId));
+        setRows(sim.filter(s => byId[s.similar_id]).map(s => ({ f: byId[s.similar_id], count: s.shared_count, notes: s.shared_notes || [] })));
+      } catch (e) { if (!off) setRows([]); }
+    })();
+    return () => { off = true; };
+  }, [frag.id]);
+  if (!rows || !rows.length) return null;
+  const cap = s => String(s).replace(/\b\w/g, c => c.toUpperCase());
+  return (
+    <div style={{ marginBottom: 36 }}>
+      <Lbl mb={6}>Similar scents</Lbl>
+      <p style={{ fontFamily: sans, fontSize: 12, color: T.mid, lineHeight: 1.6, margin: "0 0 12px" }}>Matched on shared notes, with rarer notes counting for more.</p>
+      <div style={{ border: `1px solid ${T.rule}`, borderRadius: 16, overflow: "hidden", background: T.lift }}>
+        {rows.map((r, i) => (
+          <div key={r.f.id} onClick={() => onOpenFrag(r.f.id)}
+            style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 14px", cursor: "pointer", borderTop: i ? `1px solid ${T.rule}` : "none", transition: "background 0.15s" }}
+            onMouseEnter={e => e.currentTarget.style.background = T.white}
+            onMouseLeave={e => e.currentTarget.style.background = "transparent"}>
+            <div style={{ width: 44, height: 44, borderRadius: 10, background: T.white, border: `1px solid ${T.rule}`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, overflow: "hidden" }}>
+              {r.f.image
+                ? <img src={r.f.image} alt="" loading="lazy" style={{ width: "100%", height: "100%", objectFit: "contain", padding: 3 }}/>
+                : <span style={{ fontFamily: serif, fontSize: 13, color: T.ink }}>{r.f.name.split(" ").map(w => w[0]).join("").slice(0, 2).toUpperCase()}</span>}
+            </div>
+            <div style={{ minWidth: 0, flex: 1 }}>
+              <p style={{ fontFamily: serif, fontSize: 16, color: T.black, margin: 0, lineHeight: 1.2 }}>{r.f.name}</p>
+              <p style={{ fontFamily: sans, fontSize: 11, color: T.mid, margin: "2px 0 0" }}>{r.f.house}</p>
+              <p style={{ fontFamily: sans, fontSize: 12, color: T.ink, margin: "5px 0 0", lineHeight: 1.45 }}>
+                Shares {r.count} note{r.count === 1 ? "" : "s"}: {r.notes.slice(0, 4).map(cap).join(", ")}{r.count > 4 ? ` and ${r.count - 4} more` : ""}
+              </p>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 function HouseStrip({ currentFrag, onOpenFrag, onOpenBrand }) {
   const siblings = useHouseSiblings(currentFrag, true) || [];
   if (!siblings.length) return null;
@@ -2017,6 +2074,7 @@ function DetailModal({ frag, onClose, userStatus, setUserStatus, privateNote, se
                 <Lbl mb={14}>Fragrance Notes</Lbl>
                 <NotesPyramid notes={frag.notes}/>
               </div>
+              <SimilarScents frag={frag} onOpenFrag={id=>{onClose();setTimeout(()=>onOpenFrag(id),50);}}/>
               {hasSeasons&&(<div style={{marginBottom:36}}><Lbl>Seasons</Lbl><SeasonHeat seasons={frag.seasons}/></div>)}
               {hasOcc&&(
                 <div style={{marginBottom:36}}>
