@@ -2382,7 +2382,7 @@ function DiscoverTab({ onOpenFrag, onOpenBrand, onOpenPerfumer, userStatuses, re
                 <p style={{fontFamily:sans,fontSize:13,color:T.mid,margin:"24px 0"}}>Searching</p>
               ) : (
                 <div style={{textAlign:"center",padding:"32px 0",color:T.faint}}>
-                  <p style={{fontFamily:sans,fontSize:13,color:T.mid,margin:"0 0 12px"}}>No results{search?` for "${search}"`:""}</p>
+                  <p style={{fontFamily:sans,fontSize:13,color:T.mid,margin:"0 0 12px"}}>Nothing found{search?` for "${search}"`:""}</p>
                   <button onClick={()=>{setSearch("");setGroup("all");}} style={{fontFamily:sans,fontSize:11,padding:"7px 16px",borderRadius:20,border:`1px solid ${T.rule}`,background:T.white,color:T.mid,cursor:"pointer"}}>Clear</button>
                 </div>
               )}
@@ -2491,7 +2491,7 @@ function CollectionMap({ items, onOpenFrag }) {
           </div>
         </div>
       </div>
-      {empty && <p style={{ fontFamily:sans, fontSize:13, color:T.mid, margin:"10px 0 4px" }}>Mark a fragrance as owned, sampled or wishlisted and it lands here.</p>}
+      {empty && <p style={{ fontFamily:sans, fontSize:13, color:T.mid, margin:"10px 0 4px" }}>Your shelf is empty for now. Add a bottle you own or a sample you're trying.</p>}
     </div>
   );
 }
@@ -2607,7 +2607,7 @@ function JournalTab({ entries }) {
         ))}
       </div>
       {all.length===0&&(
-        <p style={{fontFamily:sans,fontSize:11,color:T.faint,textAlign:"center",marginTop:4,lineHeight:1.6}}>Your journal is empty. Save a note on any fragrance and tick "Add to journal" to write your first entry.</p>
+        <p style={{fontFamily:sans,fontSize:11,color:T.faint,textAlign:"center",marginTop:4,lineHeight:1.6}}>Nothing here yet. Wear something today and write down how it feels. Save a note on any fragrance and tick "Add to journal".</p>
       )}
     </div>
   );
@@ -2908,8 +2908,8 @@ function StoreFinder({ onBack, onOpenBrand }) {
   return (
     <div>
       {onBack && <button onClick={onBack} style={{ fontFamily:sans, fontSize:13, color:T.mid, background:"none", border:"none", padding:0, cursor:"pointer", marginBottom:22 }}>&lsaquo; Back to Learn</button>}
-      <h3 style={{ fontFamily:serif, fontSize:"clamp(30px, 3.4vw, 50px)", fontWeight:400, letterSpacing:-0.6, color:T.black, margin:"0 0 10px" }}>Fragrance stores around the world</h3>
-      <p style={{ fontFamily:sans, fontSize:"clamp(14px, 1.1vw, 16px)", color:T.mid, lineHeight:1.65, margin:"0 0 22px", maxWidth:680 }}>Places to smell before you buy. Listings come from store pages and public guides, so check hours and ranges on the store's own site before you go.</p>
+      <h3 style={{ fontFamily:serif, fontSize:"clamp(30px, 3.4vw, 50px)", fontWeight:400, letterSpacing:-0.6, color:T.black, margin:"0 0 10px" }}>Find where to try it.</h3>
+      <p style={{ fontFamily:sans, fontSize:"clamp(14px, 1.1vw, 16px)", color:T.mid, lineHeight:1.65, margin:"0 0 22px", maxWidth:680 }}>Niche stores and sample sets, worldwide. Listings come from store pages and public guides, so check hours and ranges on the store's own site before you go.</p>
       <input className="mos-in" value={q} onChange={e => setQ(e.target.value)} placeholder="Search by city, country, store or house" style={{ marginBottom:12, maxWidth:560 }}/>
       <select className="mos-in mos-country-sel" aria-label="Country" value={country} onChange={e => setCountry(e.target.value)} style={{ marginBottom:12, maxWidth:560 }}>{countryList.map(c => <option key={c} value={c}>{c === "All" ? "All countries" : c}</option>)}</select>
       <div className="mos-country-chips" style={{ display:"flex", flexWrap:"wrap", gap:8, padding:"2px 0 12px" }}>{countryList.map(c => chip(country === c, c === "All" ? "All" : c, () => setCountry(c)))}</div>
@@ -3014,7 +3014,7 @@ function LearnTab({ fragrances, onOpenFrag, onOpenBrand }) {
       </>}
       {tab==="articles"&&<>
       <Lbl>Learning Paths</Lbl>
-      {[{icon:"△",name:"The Fragrance Pyramid",sub:"How scents evolve on skin over time",progress:0},{icon:"◈",name:"The 7 Fragrance Families",sub:"From florals to orientals, the full map",progress:33},{icon:"◇",name:"Niche vs. Designer",sub:"What separates a $50 from a $500 bottle",progress:0},{icon:"◎",name:"The Art of Sampling",sub:"How to get the most from a 2ml vial",progress:0}].map(p=>(
+      {[{icon:"△",name:"The Fragrance Pyramid",sub:"How scents evolve on skin over time",progress:0},{icon:"◈",name:"The 7 Fragrance Families",sub:"From florals to amber, the full map",progress:33},{icon:"◇",name:"Niche vs. Designer",sub:"What separates a $50 from a $500 bottle",progress:0},{icon:"◎",name:"The Art of Sampling",sub:"How to get the most from a 2ml vial",progress:0}].map(p=>(
         <div key={p.name} style={{background:T.white,border:`1px solid ${T.rule}`,borderRadius:12,padding:14,display:"flex",alignItems:"center",gap:12,cursor:"pointer",marginBottom:8}}>
           <div style={{width:40,height:40,borderRadius:10,background:T.lift,border:`1px solid ${T.rule}`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:16,color:T.mid,flexShrink:0}}>{p.icon}</div>
           <div style={{flex:1}}><p style={{fontFamily:sans,fontSize:13,fontWeight:500,color:T.ink,margin:0}}>{p.name}</p><p style={{fontFamily:sans,fontSize:11,color:T.mid,margin:"2px 0 0"}}>{p.sub}</p>{p.progress>0&&<div style={{marginTop:8,height:2,background:T.press,borderRadius:2,overflow:"hidden"}}><div style={{height:"100%",width:`${p.progress}%`,background:T.black,borderRadius:2}}/></div>}</div>
@@ -3285,10 +3285,10 @@ function WaitlistScreen({ onJoin }) {
             <div style={{ marginBottom:32 }}>
               <p style={{ fontFamily:sans, fontSize:10, fontWeight:600, color:T.accent, textTransform:"uppercase", letterSpacing:"0.18em", margin:"0 0 12px" }}>Early access</p>
               <h2 style={{ fontFamily:serif, fontSize:28, color:T.black, margin:"0 0 14px", letterSpacing:-0.6, lineHeight:1.2, fontWeight:400 }}>
-                The fragrance journal built for people who take scent seriously.
+                Where scent becomes memory.
               </h2>
               <p style={{ fontFamily:sans, fontSize:14, color:T.mid, lineHeight:1.7, margin:0 }}>
-                Track your collection. Layer with intention. Discover what you didn't know you were looking for. We're letting in members one cohort at a time.
+                Sample first. Wear what you love. Keep the record. We're letting in members one cohort at a time.
               </p>
             </div>
             <div style={{ display:"flex", flexDirection:"column", gap:10, marginBottom:14 }}>
@@ -4106,7 +4106,7 @@ export default function SillageApp() {
   const issueTimer = useRef(null);
   function flagSave(err) {
     console.error("Save failed:", err);
-    setSaveIssue("We could not save that just now. It is on your screen but may not be kept.");
+    setSaveIssue("That didn't go through. Try again in a moment. It is on your screen but may not be kept.");
     clearTimeout(issueTimer.current);
     issueTimer.current = setTimeout(() => setSaveIssue(""), 7000);
   }
