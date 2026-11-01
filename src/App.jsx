@@ -3053,8 +3053,8 @@ function LearnTab({ fragrances, onOpenFrag, onOpenBrand }) {
         <p style={{fontFamily:sans,fontSize:13,color:T.mid,lineHeight:1.7,margin:"0 0 18px"}}>The fragrance industry has consolidated significantly over the past two decades. A handful of large conglomerates now own many of the houses that built their reputations as independent creative enterprises. This matters because ownership changes often bring pressure to reduce costs, which can mean reformulated ingredients, discontinued lines, or a shift in creative direction.</p>
         <div style={{background:T.white,border:`1px solid ${T.rule}`,borderRadius:14,overflow:"hidden",marginBottom:16}}>
           {[
-            { label:"Independent", color:T.good, text:"The house is privately owned, founder-led, or operated without conglomerate backing. Creative decisions are made by people with a direct stake in the house's identity." },
-            { label:"Conglomerate name in red", color:T.bad, text:"The house has been acquired by a larger group, most commonly LVMH, Estée Lauder Companies, Puig, or Interparfums. This doesn't mean the quality has changed, but it's worth knowing when it happened and who holds the reins." },
+            { label:"Independent", color:T.accent, text:"The house is privately owned, founder-led, or operated without conglomerate backing. Creative decisions are made by people with a direct stake in the house's identity." },
+            { label:"Owned by a group", color:T.accent, text:"The house has been acquired by a larger group, most commonly LVMH, Estée Lauder Companies, Puig, or Interparfums. This doesn't mean the quality has changed, but it's worth knowing when it happened and who holds the reins." },
           ].map((item, i, arr) => (
             <div key={item.label} style={{padding:"16px 18px",borderBottom:i<arr.length-1?`1px solid ${T.lift}`:"none"}}>
               <div style={{marginBottom:8}}>
