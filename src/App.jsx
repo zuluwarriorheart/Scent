@@ -3499,7 +3499,8 @@ function CountryPicker({ value, onChange, style }) {
 }
 
 // ─── WAITLIST SCREEN ──────────────────────────────────────────────────────────
-function WaitlistScreen({ onJoin }) {
+const loginStart = { mode: "signin" };
+function WaitlistScreen({ onJoin, onHaveCode }) {
   const [email, setEmail] = useState("");
   const [name, setName] = useState("");
   const [submitted, setSubmitted] = useState(false);
@@ -3557,6 +3558,7 @@ function WaitlistScreen({ onJoin }) {
               <span style={{ fontFamily:sans, fontSize:11, color:T.mid }}>Already have access?</span>
               <div style={{ flex:1, height:1, background:T.rule }}/>
             </div>
+            {onHaveCode && <button onClick={onHaveCode} style={{ width:"100%", padding:"15px 0", borderRadius:14, background:T.black, border:"none", color:T.white, fontSize:14, fontFamily:sans, fontWeight:600, cursor:"pointer", marginBottom:10 }}>I have an invite code</button>}
             <button onClick={onJoin} style={{ width:"100%", padding:"15px 0", borderRadius:14, background:T.glass, backdropFilter:"blur(12px)", WebkitBackdropFilter:"blur(12px)", border:`1px solid ${T.rule}`, color:T.black, fontSize:14, fontFamily:sans, fontWeight:500, cursor:"pointer" }}>Sign in</button>
             <p style={{ fontFamily:sans, fontSize:11, color:T.mid, margin:"28px 0 0", lineHeight:1.6 }}>No spam. No sharing. Just a notification when your spot opens up.</p>
             <FooterLinks/>
@@ -3729,7 +3731,7 @@ function LoginScreen({ onWaitlist }) {
   const [inviteCode, setInviteCode] = useState("");
   const [captcha, setCaptcha] = useState("");
   const [captchaReset, setCaptchaReset] = useState(0);
-  const [mode, setMode] = useState("signin");
+  const [mode, setMode] = useState(loginStart.mode);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
@@ -4690,7 +4692,7 @@ export default function SillageApp() {
   // Preview the sign-up page without logging out: add ?preview=signup to the site address.
   if (typeof window !== "undefined" && /[?&]preview=signup\b/.test(window.location.search)) return <WaitlistScreen onJoin={() => { window.location.href = window.location.pathname; }}/>;
   if (appScreen === "loading") return <LoadingScreen/>;
-  if (appScreen === "waitlist") return <WaitlistScreen onJoin={() => setAppScreen("login")}/>;
+  if (appScreen === "waitlist") return <WaitlistScreen onJoin={() => { loginStart.mode = "signin"; setAppScreen("login"); }} onHaveCode={() => { loginStart.mode = "signup"; setAppScreen("login"); }}/>;
   if (appScreen === "login") return <LoginScreen onWaitlist={() => setAppScreen("waitlist")}/>;
   if (appScreen === "onboarding") return <OnboardingScreen onComplete={handleOnboardingComplete}/>;
   // Private invite-code page for the owner: add ?admin=invites to the site address (signed in).
