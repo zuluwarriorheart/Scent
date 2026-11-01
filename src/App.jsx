@@ -1117,18 +1117,25 @@ function Mono({ name, year, size=52 }) {
 
 // ─── HOUSE STRIP — always visible below Occasions ────────────────────────────
 // ─── LIVE CATALOGUE HELPERS ───────────────────────────────────────────────────
-const FRAG_SELECT_FULL = `
+const FRAG_SELECT_DIV = `
   id, slug, url, gender, year, perfumer, story, barcode, concentration, ownership, brand_origin, price_tier, line, image_url, image_credit,
-  house:houses ( name, slug, country, ownership, brand_origin, price_tier, website ),
+  house:houses ( name, slug, country, ownership, brand_origin, price_tier, website, diversity ),
   notes ( note_name, position ),
   accords ( accord_name, rank )
 `;
+const FRAG_SELECT_FULL = FRAG_SELECT_DIV.replace(", website, diversity", ", website");
 const FRAG_SELECT_BASE = FRAG_SELECT_FULL.replace(", ownership, brand_origin, price_tier, line, image_url, image_credit,", ",").replace(", website", "");
 // Runs a query with the full column list, and again without the newer columns if they are not in the database yet.
 async function fetchFragRows(build) {
-  let r = await build(FRAG_SELECT_FULL);
+  let r = await build(FRAG_SELECT_DIV);
+  if (r.error && /diversity/i.test(r.error.message || "")) r = await build(FRAG_SELECT_FULL);
   if (r.error && /website|line|ownership|brand_origin|price_tier|image_url|image_credit/i.test(r.error.message || "")) r = await build(FRAG_SELECT_BASE);
   return r;
+}
+function cleanDiversity(v) {
+  const t = String(v == null ? "" : v).trim();
+  if (!t || /^(false|no|n\/a|none|null)$/i.test(t)) return "";
+  return /^true$/i.test(t) ? "Yes" : t;
 }
 function mapFrag(f) {
   const own = f.ownership || (f.house && f.house.ownership) || "";
@@ -1144,6 +1151,7 @@ function mapFrag(f) {
     line: f.line || "",
     brand_origin: f.brand_origin || (f.house && f.house.brand_origin) || "",
     website: (f.house && f.house.website) || "",
+    diversity: cleanDiversity(f.house && f.house.diversity),
     price_tier: f.price_tier || (f.house && f.house.price_tier) || "",
     year: f.year,
     perfumer: f.perfumer || "",
@@ -1346,7 +1354,7 @@ function BrandModal({ brand, onClose, onOpenFrag }) {
     ["Ownership", h.ownership ? (h.ownership === "Independent" ? "Independent" : `Owned by ${h.ownership}`) : ""],
     ["Brand type", brandOriginLabel(h)],
     ["Price tier", h.price_tier],
-    ["Diversity", h.diversity && String(h.diversity) !== "false" ? (String(h.diversity) === "true" ? "Yes" : String(h.diversity)) : ""],
+    ["Diversity", cleanDiversity(h.diversity)],
   ].filter(f => f[1]);
   const lines = [...new Set(frags.map(f => f.line).filter(Boolean))];
   const mapsUrl = s => "https://www.google.com/maps/search/?api=1&query=" + encodeURIComponent([s.name, s.address].filter(Boolean).join(" "));
@@ -1361,6 +1369,7 @@ function BrandModal({ brand, onClose, onOpenFrag }) {
             <>
               <p style={{ fontFamily:sans, fontSize:"clamp(14px, 1.1vw, 17px)", color:T.mid, margin:0 }}>{[h.country, brandOriginLabel(h), h.price_tier].filter(Boolean).join(" · ")}</p>
               <div style={{ margin:"6px 0 0" }}>{own && <OwnershipBadge ownership={own} size="normal"/>}</div>
+              {cleanDiversity(h.diversity) && <p style={{ fontFamily:sans, fontSize:"clamp(14px, 1.1vw, 17px)", color:T.mid, margin:"8px 0 0" }}>Diversity <strong style={{ color:T.black, fontWeight:600 }}>{cleanDiversity(h.diversity)}</strong></p>}
               {site && <a href={site} target="_blank" rel="noopener noreferrer" style={{ display:"inline-flex", alignItems:"center", gap:6, margin:"12px 0 0", padding:"6px 14px", minHeight:34, boxSizing:"border-box", borderRadius:20, border:`1px solid ${T.rule}`, background:T.white, fontFamily:sans, fontSize:13, color:T.ink, textDecoration:"none" }}>Brand website<ExtArrow size={11}/></a>}
             </>
           )}
@@ -1905,9 +1914,10 @@ function DetailModal({ frag, onClose, userStatus, setUserStatus, privateNote, se
               <div style={{marginBottom:10}}><span style={{fontFamily:sans,fontSize:"clamp(10px, 0.9vw, 12px)",fontWeight:600,textTransform:"uppercase",letterSpacing:"0.18em",color:T.mid}}>{onOpenBrand&&frag.houseSlug?<button onClick={()=>onOpenBrand({slug:frag.houseSlug,name:frag.house})} style={{font:"inherit",letterSpacing:"inherit",textTransform:"inherit",color:T.black,background:"none",border:"none",borderBottom:`1px solid ${T.mid}`,padding:"0 0 1px",cursor:"pointer",minHeight:24}}>{frag.house}</button>:frag.house}{[frag.line, frag.family].filter(Boolean).length?" · "+[frag.line, frag.family].filter(Boolean).join(" · "):""}</span></div>
               <h2 style={{fontFamily:serif,fontSize:"clamp(36px, 4.4vw, 64px)",fontWeight:400,color:T.black,margin:"0 0 10px",letterSpacing:-1,lineHeight:1.05,paddingRight:44}}>{frag.name}</h2>
               <p style={{fontFamily:sans,fontSize:"clamp(14px, 1.1vw, 17px)",color:T.mid,margin:"0 0 0",lineHeight:1.4}}>{[frag.year, frag.concentration].filter(Boolean).join(" · ")}</p>
-              <div style={{margin:"8px 0 0",display:"flex",alignItems:"center",flexWrap:"wrap",gap:"6px 16px"}}>
+              <div style={{margin:"10px 0 0",display:"flex",flexDirection:"column",alignItems:"flex-start",gap:8}}>
                 {frag.ownership && <OwnershipBadge ownership={frag.ownership} size="normal" showTooltip={true}/>}
                 {frag.price_tier && <span style={{fontFamily:sans,fontSize:"clamp(13px, 1vw, 15px)",color:T.mid}}>Price tier <strong style={{color:T.black,fontWeight:600}}>{frag.price_tier}</strong></span>}
+                {frag.diversity && <span style={{fontFamily:sans,fontSize:"clamp(13px, 1vw, 15px)",color:T.mid}}>Diversity <strong style={{color:T.black,fontWeight:600}}>{frag.diversity}</strong></span>}
               </div>
               {safeUrl(frag.website)&&(
                 <a href={safeUrl(frag.website)} target="_blank" rel="noopener noreferrer" style={{display:"inline-flex",alignItems:"center",gap:6,margin:"14px 0 0",padding:"6px 14px",minHeight:34,boxSizing:"border-box",borderRadius:20,border:`1px solid ${T.rule}`,background:T.white,fontFamily:sans,fontSize:13,color:T.ink,textDecoration:"none"}}>Brand website<ExtArrow size={11}/></a>
@@ -1938,7 +1948,7 @@ function DetailModal({ frag, onClose, userStatus, setUserStatus, privateNote, se
 
         
         <div className="mos-pad mos-dtabs" style={{display:"flex",borderBottom:`1px solid ${T.rule}`,padding:"0 24px",overflowX:"auto"}}>
-          {["overview","my notes","tracker","community"].map(t=>(
+          {["overview","tracker","community"].map(t=>(
             <button key={t} onClick={()=>setTab(t)} style={{marginRight:16,padding:"11px 0",whiteSpace:"nowrap",fontSize:10,textTransform:"uppercase",letterSpacing:"0.08em",color:tab===t?T.black:T.mid,background:"none",border:"none",borderBottom:tab===t?`2px solid ${T.black}`:"2px solid transparent",marginBottom:-1,cursor:"pointer",fontFamily:sans}}>{t}</button>
           ))}
         </div>
@@ -1994,8 +2004,12 @@ function DetailModal({ frag, onClose, userStatus, setUserStatus, privateNote, se
           )}
 
           
-          {tab==="my notes"&&(
+          {tab==="tracker"&&(
             <div>
+              <p style={{fontFamily:sans,fontSize:13,color:T.mid,lineHeight:1.65,margin:"0 0 18px"}}>Where this fragrance sits in your life.</p>
+              <StatusSelector value={userStatus} onChange={setUserStatus}/>
+              <div style={{marginTop:36,paddingTop:28,borderTop:`1px solid ${T.rule}`}}>
+                <p style={{fontFamily:sans,fontSize:10,fontWeight:600,textTransform:"uppercase",letterSpacing:"0.16em",color:T.mid,margin:"0 0 16px"}}>My notes</p>
               {privateNote?.text&&(
                 <div style={{background:T.white,border:`1px solid ${T.rule}`,borderRadius:14,padding:16,marginBottom:16}}>
                   <div style={{display:"flex",alignItems:"center",gap:6,marginBottom:10}}>
@@ -2008,14 +2022,7 @@ function DetailModal({ frag, onClose, userStatus, setUserStatus, privateNote, se
                 </div>
               )}
               <PrivateNoteEditor note={privateNote} onSave={setPrivateNote} frag={frag} onAddJournalEntry={onAddJournalEntry}/>
-            </div>
-          )}
-
-          
-          {tab==="tracker"&&(
-            <div>
-              <p style={{fontFamily:sans,fontSize:13,color:T.mid,lineHeight:1.65,margin:"0 0 18px"}}>Where this fragrance sits in your life.</p>
-              <StatusSelector value={userStatus} onChange={setUserStatus}/>
+              </div>
             </div>
           )}
 
@@ -2198,7 +2205,7 @@ function Shelf({ title, blurb, items, onOpenFrag, userStatuses, tinted }) {
         <h3 style={{ fontFamily:serif, fontSize:"clamp(26px, 2.3vw, 38px)", fontWeight:400, letterSpacing:-0.6, color:T.black, margin:0, lineHeight:1.1 }}>{title}</h3>
         <p style={{ fontFamily:sans, fontSize:"clamp(14px, 1.1vw, 17px)", color:T.mid, margin:"6px 0 0", lineHeight:1.5 }}>{blurb}</p>
       </div>
-      <div className="mos-shelf mos-bleed-pad" style={{ display:"flex", gap:14, overflowX:"auto", paddingTop:2, paddingBottom:14, scrollSnapType:"x proximity", WebkitOverflowScrolling:"touch" }}>
+      <div className="mos-shelf mos-bleed-pad" style={{ display:"flex", alignItems:"flex-start", gap:14, overflowX:"auto", paddingTop:2, paddingBottom:14, scrollSnapType:"x proximity", WebkitOverflowScrolling:"touch" }}>
         {items.map(f => <CoverTile key={f.id} frag={f} onClick={onOpenFrag} userStatus={userStatuses[f.id]}/>)}
       </div>
     </section>
@@ -2244,11 +2251,13 @@ const HOUSE_GROUPS = [
   { key:"niche", label:"Niche" },
   { key:"designer", label:"Designer" },
 ];
+// TEMPORARY: show this house under "New to the shelf" so the look can be judged. Set to "" to restore real new releases.
+const PREVIEW_NEW_HOUSE = "jijide";
 function buildShelves(list) {
   const shelves = [];
   const add = (key, title, blurb, items, max=12) => { if (items.length >= 2) shelves.push({ key, title, blurb, items: items.slice(0, max) }); };
   const withYear = list.filter(f => Number(f.year) > 0);
-  add("new", "New to the shelf", "The most recent releases in the library.", [...withYear].sort((a,b)=>b.year-a.year));
+  add("new", "New to the shelf", "The most recent releases in the library.", [...withYear].sort((a,b)=>(PREVIEW_NEW_HOUSE && (b.houseSlug===PREVIEW_NEW_HOUSE)-(a.houseSlug===PREVIEW_NEW_HOUSE)) || b.year-a.year));
   add("indie", "Independent houses", "Made by houses that answer to no conglomerate.", list.filter(f => f.ownership && f.ownership.status === "independent"));
   add("niche", "Niche houses", "Small, independent houses where fragrance is the whole point.", list.filter(f => houseGroups(f).includes("niche")));
   add("designer", "Designer houses", "The fashion and heritage names most people meet first.", list.filter(f => houseGroups(f).includes("designer")));
@@ -4055,6 +4064,20 @@ export default function SillageApp() {
               const items = rows.filter(r => r.shelf === key).sort((x, y) => x.pos - y.pos).map(r => byId.get(r.id)).filter(Boolean);
               return { key, title: SHELF_META[key][0], blurb: SHELF_META[key][1], items };
             }).filter(s => s.items.length >= 2);
+            if (PREVIEW_NEW_HOUSE) {
+              try {
+                const { data: ph } = await supabase.from("houses").select("id, name").eq("slug", PREVIEW_NEW_HOUSE).maybeSingle();
+                if (ph) {
+                  const pr = await fetchFragRows(sel => supabase.from("fragrances").select(sel).eq("house_id", ph.id).not("image_url", "is", null).order("slug", { ascending: true }).limit(15));
+                  if (!pr.error && pr.data && pr.data.length >= 2) {
+                    const pm = pr.data.map(mapFrag); mergeFrags(pm);
+                    const ns = { key: "new", title: "New to the shelf", blurb: "The most recent releases in the library.", items: pm };
+                    const ix = shelves.findIndex(x => x.key === "new");
+                    if (ix >= 0) shelves[ix] = ns; else shelves.unshift(ns);
+                  }
+                }
+              } catch (e) {}
+            }
             setServerShelves(shelves);
             return;
           }
