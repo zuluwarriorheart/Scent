@@ -863,7 +863,7 @@ function FooterLinks({ dark = false }) {
   const colHov = T.black;
   const sep = T.rule;
   const links = [
-    { label:"Contact", action:() => window.open("mailto:hello@memoironskin.com") },
+    { label:"Contact", action:() => window.open("mailto:team@memoironskin.com") },
     { label:"Terms of Service", action:() => setLegal("terms") },
     { label:"Privacy Policy", action:() => setLegal("privacy") },
     { label:"How we earn", action:() => setLegal("affiliate") },
@@ -904,7 +904,7 @@ function SuggestModal({ onClose, currentUser }) {
       setSubmitted(true);
     }catch(e){
       console.error("Suggestion failed:",e);
-      setErr("That did not send. Please try again, or email hello@memoironskin.com.");
+      setErr("That did not send. Please try again, or email team@memoironskin.com.");
     }
     setBusy(false);
   }
@@ -3933,7 +3933,7 @@ function LoginScreen({ onWaitlist }) {
             ) : (
               <div style={{ textAlign:"center", padding:"8px 0" }}>
                 <p style={{ fontFamily:sans, fontSize:13, color:T.ink, margin:"0 0 4px", fontWeight:500 }}>Check your inbox</p>
-                <p style={{ fontFamily:sans, fontSize:12, color:T.mid, margin:"0 0 12px", lineHeight:1.6 }}>A reset link has been sent to <strong>{forgotEmail}</strong>. If it doesn't arrive, check your spam folder or write to us at <span style={{ color:T.ink }}>hello@memoironskin.com</span>.</p>
+                <p style={{ fontFamily:sans, fontSize:12, color:T.mid, margin:"0 0 12px", lineHeight:1.6 }}>A reset link has been sent to <strong>{forgotEmail}</strong>. If it doesn't arrive, check your spam folder or write to us at <span style={{ color:T.ink }}>team@memoironskin.com</span>.</p>
                 <span onClick={() => { setShowForgot(false); setForgotSent(false); }} style={{ fontFamily:sans, fontSize:12, color:T.mid, cursor:"pointer" }}>Back to sign in</span>
               </div>
             )}
