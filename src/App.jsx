@@ -795,7 +795,7 @@ const LEGAL_CONTENT = {
       { heading: "Our library", body: "The Memoir on Skin library, including its text, fragrance and brand data, selection, arrangement and images, is protected by copyright and database rights. It is provided for your personal use only. You may not scrape, crawl, harvest, copy, republish, sell or use it to train or feed any AI or machine learning system, whether by automated means or by hand, without our written permission. We may suspend accounts and take legal action if you do." },
       { heading: "Your content", body: "You retain ownership of notes, reviews, and journal entries you create. By publishing a review you grant Memoir on Skin a non-exclusive licence to display that content on the platform. Private notes are never shared." },
       { heading: "Community standards", body: "Reviews and community content must be honest and based on personal experience. Spam, harassment, and fraudulent reviews are grounds for account suspension." },
-      { heading: "Samples and purchases", body: "Memoir on Skin facilitates discovery and may link to third-party sample services. We are not responsible for third-party transactions, shipping, or product quality." },
+      { heading: "Samples and purchases", body: "Memoir on Skin facilitates discovery and may link to third-party sample services. We are not responsible for third-party transactions, shipping, or product quality. Some links may earn us a commission; see How we earn." },
       { heading: "Limitation of liability", body: "Memoir on Skin is provided as-is. We are not liable for any indirect or consequential damages arising from your use of the platform." },
       { heading: "Changes", body: "We may update these terms from time to time. Continued use of Memoir on Skin after changes constitutes acceptance of the revised terms." },
       { heading: "Contact", body: "Questions about these terms? Write to us at hello@Memoir on Skinapp." },
@@ -813,6 +813,18 @@ const LEGAL_CONTENT = {
       { heading: "Data retention", body: "You may delete your account at any time. Upon deletion, your personal data is removed within 30 days. Anonymised, published review content may be retained." },
       { heading: "Your rights", body: "You have the right to access, correct, or delete your personal data. To exercise these rights, contact us at hello@Memoir on Skinapp." },
       { heading: "Contact", body: "Privacy questions or requests: hello@Memoir on Skinapp." },
+    ],
+  },
+  affiliate: {
+    title: "How we earn",
+    updated: "Last updated: November 2026",
+    sections: [
+      { heading: "Free to use", body: "Memoir on Skin is free to use. We may pay for it in part with affiliate links: if you click a link and buy something, the shop may pay us a small commission. It costs you nothing extra." },
+      { heading: "It never changes what we feature", body: "We are not here to influence you. Houses, fragrances and shelves are chosen by what is in the library and what members save and wear, not by who pays us. We do not take payment to feature a fragrance or a house." },
+      { heading: "How we order Try it links", body: "First the house's own website and its samples or discovery set, where it sells them. Then retailers. Then independent decant sellers, labeled as independent sellers. A link being an affiliate link does not move it up the list." },
+      { heading: "Decants and independent sellers", body: "Decant sellers are separate businesses. They are not affiliated with the houses whose fragrances they sell, and their samples are re-bottled. We say so wherever they appear." },
+      { heading: "What we see when you click", body: "We log that a link was clicked, without your name, email, account or IP address, so we can tell which links are useful. The shop may set its own cookies once you arrive; see its privacy policy." },
+      { heading: "Questions", body: "Write to us at team@memoironskin.com." },
     ],
   },
 };
@@ -854,6 +866,7 @@ function FooterLinks({ dark = false }) {
     { label:"Contact", action:() => window.open("mailto:hello@memoironskin.com") },
     { label:"Terms of Service", action:() => setLegal("terms") },
     { label:"Privacy Policy", action:() => setLegal("privacy") },
+    { label:"How we earn", action:() => setLegal("affiliate") },
   ];
   return (
     <>
@@ -1951,6 +1964,7 @@ function ExtArrow({ size = 12, color = "currentColor" }) {
 }
 function SamplesSection({ defaultRegion, onVisit }) {
   const [region, setRegion] = useState(defaultRegion);
+  const [showEarn, setShowEarn] = useState(false);
   const list = SAMPLE_RETAILERS[region] || [];
   return (
     <div>
@@ -1974,6 +1988,11 @@ function SamplesSection({ defaultRegion, onVisit }) {
           </a>
         ))}
       </div>
+      <p style={{ fontFamily:sans, fontSize:12, color:T.mid, lineHeight:1.6, margin:"12px 0 0" }}>
+        Some of these may be affiliate links. We may earn a commission if you buy through them. It never changes what we feature.{" "}
+        <button onClick={() => setShowEarn(true)} style={{ background:"none", border:"none", padding:0, font:"inherit", color:T.black, textDecoration:"underline", cursor:"pointer" }}>How we earn</button>
+      </p>
+      {showEarn && <LegalModal type="affiliate" onClose={() => setShowEarn(false)}/>}
     </div>
   );
 }
