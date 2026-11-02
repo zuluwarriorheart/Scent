@@ -791,14 +791,14 @@ const LEGAL_CONTENT = {
     updated: "Last updated: June 2026",
     sections: [
       { heading: "Acceptance", body: "By accessing or using Memoir on Skin you agree to be bound by these terms. If you do not agree, please do not use the platform." },
-      { heading: "Your account", body: "You are responsible for maintaining the confidentiality of your account credentials. You must notify us immediately at hello@Memoir on Skinapp if you suspect unauthorised access to your account." },
+      { heading: "Your account", body: "You are responsible for maintaining the confidentiality of your account credentials. You must notify us immediately at team@memoironskin.com if you suspect unauthorised access to your account." },
       { heading: "Our library", body: "The Memoir on Skin library, including its text, fragrance and brand data, selection, arrangement and images, is protected by copyright and database rights. It is provided for your personal use only. You may not scrape, crawl, harvest, copy, republish, sell or use it to train or feed any AI or machine learning system, whether by automated means or by hand, without our written permission. We may suspend accounts and take legal action if you do." },
       { heading: "Your content", body: "You retain ownership of notes, reviews, and journal entries you create. By publishing a review you grant Memoir on Skin a non-exclusive licence to display that content on the platform. Private notes are never shared." },
       { heading: "Community standards", body: "Reviews and community content must be honest and based on personal experience. Spam, harassment, and fraudulent reviews are grounds for account suspension." },
       { heading: "Samples and purchases", body: "Memoir on Skin facilitates discovery and may link to third-party sample services. We are not responsible for third-party transactions, shipping, or product quality. Some links may earn us a commission; see How we earn." },
       { heading: "Limitation of liability", body: "Memoir on Skin is provided as-is. We are not liable for any indirect or consequential damages arising from your use of the platform." },
       { heading: "Changes", body: "We may update these terms from time to time. Continued use of Memoir on Skin after changes constitutes acceptance of the revised terms." },
-      { heading: "Contact", body: "Questions about these terms? Write to us at hello@Memoir on Skinapp." },
+      { heading: "Contact", body: "Questions about these terms? Write to us at team@memoironskin.com." },
     ],
   },
   privacy: {
@@ -811,8 +811,8 @@ const LEGAL_CONTENT = {
       { heading: "Journal entries and private notes", body: "Private notes and journal entries marked as private are stored securely and are visible only to you. Publishing a journal entry or review makes that content visible to the community." },
       { heading: "Cookies", body: "We use essential cookies to keep you signed in. We do not use advertising or tracking cookies." },
       { heading: "Data retention", body: "You may delete your account at any time. Upon deletion, your personal data is removed within 30 days. Anonymised, published review content may be retained." },
-      { heading: "Your rights", body: "You have the right to access, correct, or delete your personal data. To exercise these rights, contact us at hello@Memoir on Skinapp." },
-      { heading: "Contact", body: "Privacy questions or requests: hello@Memoir on Skinapp." },
+      { heading: "Your rights", body: "You have the right to access, correct, or delete your personal data. To exercise these rights, contact us at team@memoironskin.com." },
+      { heading: "Contact", body: "Privacy questions or requests: team@memoironskin.com." },
     ],
   },
   affiliate: {
