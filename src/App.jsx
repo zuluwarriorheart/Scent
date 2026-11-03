@@ -1179,7 +1179,12 @@ async function fetchFragRows(build) {
 function cleanDiversity(v) {
   const t = String(v == null ? "" : v).trim();
   if (!t || /^(false|no|n\/a|none|null)$/i.test(t)) return "";
-  return /^true$/i.test(t) ? "Yes" : t;
+  if (/^true$/i.test(t)) return "Yes";
+  // Show the ethnic background only: drop founder names and gender notes (e.g. "founder Anjali Vandemark", "woman-owned").
+  const NAMEY = /founder|founded|co-founded|perfumer|woman|female/i;
+  const noParen = t.replace(/\s*\(([^)]*)\)/g, (m, inner) => NAMEY.test(inner) ? "" : m);
+  const kept = noParen.split(",").map(s => s.trim()).filter(s => s && !NAMEY.test(s));
+  return kept.join(", ") || t;
 }
 function mapFrag(f) {
   const own = f.ownership || (f.house && f.house.ownership) || "";
