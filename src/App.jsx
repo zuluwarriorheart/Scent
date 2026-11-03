@@ -2166,9 +2166,10 @@ function DetailModal({ frag, onClose, userStatus, setUserStatus, privateNote, se
               <h2 style={{fontFamily:serif,fontSize:"clamp(36px, 4.4vw, 64px)",fontWeight:400,color:T.black,margin:"0 0 10px",letterSpacing:-1,lineHeight:1.05,paddingRight:44}}>{frag.name}</h2>
               <p style={{fontFamily:sans,fontSize:"clamp(14px, 1.1vw, 17px)",color:T.mid,margin:"0 0 0",lineHeight:1.4}}>{[frag.year, frag.concentration].filter(Boolean).join(" · ")}</p>
               <div style={{margin:"10px 0 0",display:"flex",flexDirection:"column",alignItems:"flex-start",gap:8}}>
-                <BrandTypePill type={frag.brand_origin}/>
-                {frag.ownership && <OwnershipBadge ownership={frag.ownership} size="large" showTooltip={true}/>}
+                {brandTypeLabel(frag.brand_origin) && <span style={{fontFamily:sans,fontSize:"clamp(13px, 1vw, 15px)",color:T.mid}}>Brand type <strong style={{color:"var(--coral)",fontWeight:600}}>{brandTypeLabel(frag.brand_origin)}</strong></span>}
+                {frag.ownership && <span style={{display:"inline-flex",alignItems:"baseline",gap:6,fontFamily:sans,fontSize:"clamp(13px, 1vw, 15px)",color:T.mid}}>Ownership <OwnershipBadge ownership={frag.ownership} size="large" showTooltip={true}/></span>}
                 {frag.price_tier && <span style={{fontFamily:sans,fontSize:"clamp(13px, 1vw, 15px)",color:T.mid}}>Price tier <strong style={{color:T.teal,fontWeight:600}}>{frag.price_tier}</strong></span>}
+                {frag.country && <span style={{fontFamily:sans,fontSize:"clamp(13px, 1vw, 15px)",color:T.mid}}>Country <strong style={{color:"var(--pink)",fontWeight:600}}>{frag.country}</strong></span>}
                 {frag.diversity && <span style={{fontFamily:sans,fontSize:"clamp(13px, 1vw, 15px)",color:T.mid}}>Diversity <strong style={{color:T.tangerine,fontWeight:600}}>{frag.diversity}</strong></span>}
                 {frag.neoGourmand && <span style={{fontFamily:sans,fontSize:"clamp(13px, 1vw, 15px)",color:T.mid}}>Style <strong style={{color:T.accent,fontWeight:600}}>Neo gourmand</strong></span>}
               </div>
