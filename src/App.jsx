@@ -92,9 +92,11 @@ body { overflow-x:clip; }
 @media (min-width:1280px) { .mos-grid { grid-template-columns:repeat(3, minmax(0,1fr)); } }
 .mos-two { display:grid; grid-template-columns:minmax(0,1fr); gap:0; }
 @media (min-width:760px) { .mos-two { grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:40px; } }
+.mos-sheet-wrap { justify-content:flex-start !important; align-items:stretch !important; padding:0 !important; background:var(--surface) !important; }
+.mos-sheet { max-width:none !important; width:100% !important; height:100vh !important; height:100dvh !important; max-height:100vh !important; max-height:100dvh !important; border-radius:0 !important; border:none !important; overscroll-behavior:contain; -webkit-overflow-scrolling:touch; }
+button, a, summary, [role="tab"] { touch-action:manipulation; }
+@media (max-width:900px) { input, select, textarea { font-size:16px !important; } }
 @media (min-width:760px) {
-  .mos-sheet-wrap { justify-content:flex-start !important; align-items:stretch !important; padding:0 !important; }
-  .mos-sheet { max-width:none !important; width:100% !important; height:100vh !important; max-height:100vh !important; border-radius:0 !important; border:none !important; }
   .mos-pad { padding-left:max(32px, calc((100% - 1120px) / 2)) !important; padding-right:max(32px, calc((100% - 1120px) / 2)) !important; }
   .mos-dtabs { overflow-x:visible !important; }
   .mos-zoom { zoom:1.3; }
@@ -936,6 +938,7 @@ function SuggestModal({ onClose, currentUser }) {
       <div className="mos-sheet" onClick={e=>e.stopPropagation()} style={{ background:T.white, borderRadius:"24px 24px 0 0", border:`1px solid ${T.rule}`, borderBottom:"none", width:"100%", maxWidth:460, maxHeight:"93vh", overflowY:"auto" }}>
         <div className="mos-pad" style={{ position:"relative", padding:"26px 24px 22px", borderBottom:`1px solid ${T.rule}` }}>
           <button className="mos-close" onClick={onClose} aria-label="Close" style={{ position:"absolute", top:16, right:16, width:34, height:34, borderRadius:"50%", border:`1px solid ${T.rule}`, background:T.white, cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", fontSize:14, color:T.mid }}>✕</button>
+          <BackBtn onBack={onClose}/>
           <p style={{ fontFamily:sans, fontSize:11, fontWeight:600, textTransform:"uppercase", letterSpacing:"0.18em", color:T.accent, margin:"0 0 6px" }}>Community</p>
           <h2 style={{ fontFamily:serif, fontSize:"clamp(30px, 3vw, 46px)", fontWeight:400, letterSpacing:-0.6, color:T.black, margin:0, paddingRight:40 }}>Suggest a fragrance</h2>
           <p style={{ fontFamily:sans, fontSize:"clamp(14px, 1.1vw, 16px)", color:T.mid, lineHeight:1.65, margin:"10px 0 0", maxWidth:640 }}>Can't find it? Tell us what you know. Only the name and house are required, and every extra detail saves us a search. A person reviews each suggestion before it goes in.</p>
@@ -1118,6 +1121,27 @@ const GLOSSARY = [
 // ─── HELPERS ──────────────────────────────────────────────────────────────────
 function Stars({ rating, size=11 }) {
   return <div style={{display:"flex",gap:1}}>{[1,2,3,4,5].map(i=><span key={i} style={{fontSize:size,color:i<=Math.round(rating)?T.black:T.faint}}>★</span>)}</div>;
+}
+function BackBtn({ onBack, label = "Back" }) {
+  return (
+    <button onClick={onBack} aria-label={label === "Back" ? "Go back" : label} style={{ display:"inline-flex", alignItems:"center", gap:4, minHeight:44, padding:"0 14px 0 6px", margin:"-8px 0 10px -6px", background:"none", border:"none", cursor:"pointer", fontFamily:sans, fontSize:15, fontWeight:500, color:T.ink }}>
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>{label}
+    </button>
+  );
+}
+function brandTypeLabel(bo) {
+  const b = String(bo || "").toLowerCase();
+  if (b === "indie" || b === "independent") return "Indie";
+  if (b === "niche") return "Niche";
+  if (b === "designer") return "Designer";
+  if (b === "celebrity") return "Designer · Celebrity";
+  return "";
+}
+function BrandTypePill({ type, size = "normal" }) {
+  const label = brandTypeLabel(type);
+  if (!label) return null;
+  const sm = size === "small";
+  return <span title="Brand type" style={{ display:"inline-flex", alignItems:"center", fontFamily:sans, fontSize:sm?10:12, fontWeight:600, letterSpacing:"0.04em", padding:sm?"2px 9px":"4px 12px", borderRadius:20, background:T.black, color:T.white, whiteSpace:"nowrap" }}>{label}</span>;
 }
 function Lbl({ children, mb=10 }) {
   return <p style={{fontFamily:sans,fontSize:9,textTransform:"uppercase",letterSpacing:"0.12em",color:T.mid,margin:`0 0 ${mb}px`}}>{children}</p>;
@@ -1370,8 +1394,7 @@ function brandGroup(h) {
   return "";
 }
 function brandOriginLabel(h) {
-  const bo = String(h.brand_origin || "");
-  return bo === "Indie" ? "Independent" : bo;
+  return brandTypeLabel(h.brand_origin);
 }
 function ownershipOf(h) {
   const o = h && h.ownership;
@@ -1435,7 +1458,7 @@ function BrandsDirectory({ onOpenBrand }) {
   );
 }
 
-function BrandModal({ brand, onClose, onOpenFrag }) {
+function BrandModal({ brand, onClose, onBack, onOpenFrag }) {
   const PAGE = 24;
   const [house, setHouse] = useState(undefined);
   const [frags, setFrags] = useState([]);
@@ -1490,11 +1513,12 @@ function BrandModal({ brand, onClose, onOpenFrag }) {
       <div className="mos-sheet" onClick={e => e.stopPropagation()} style={{ background:T.white, borderRadius:"24px 24px 0 0", border:`1px solid ${T.rule}`, borderBottom:"none", width:"100%", maxWidth:460, maxHeight:"93vh", overflowY:"auto" }}>
         <div className="mos-pad" style={{ position:"relative", padding:"34px 24px 30px", borderBottom:`1px solid ${T.rule}`, background:T.lift }}>
           <button className="mos-close" onClick={onClose} aria-label="Close" style={{ position:"absolute", top:16, right:16, width:34, height:34, borderRadius:"50%", border:`1px solid ${T.rule}`, background:T.white, cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", fontSize:14, color:T.mid, zIndex:2 }}>✕</button>
+          <BackBtn onBack={onBack||onClose}/>
           <p style={{ fontFamily:sans, fontSize:10, fontWeight:600, textTransform:"uppercase", letterSpacing:"0.18em", color:T.accent, margin:"0 0 8px" }}>Brand</p>
           <h2 style={{ fontFamily:serif, fontSize:"clamp(36px, 4.4vw, 64px)", color:T.black, margin:"0 0 10px", letterSpacing:-1, fontWeight:400, lineHeight:1.05, paddingRight:44 }}>{house === undefined ? (brand.name || "Loading") : (h.name || brand.name || "Brand")}</h2>
           {house && (
             <>
-              <p style={{ fontFamily:sans, fontSize:"clamp(14px, 1.1vw, 17px)", color:T.mid, margin:0 }}>{[h.country, brandOriginLabel(h), h.price_tier].filter(Boolean).join(" · ")}</p>
+              <div style={{ display:"flex", alignItems:"center", flexWrap:"wrap", gap:"6px 12px" }}><BrandTypePill type={h.brand_origin}/><span style={{ fontFamily:sans, fontSize:"clamp(14px, 1.1vw, 17px)", color:T.mid }}>{[h.country, h.price_tier].filter(Boolean).join(" · ")}</span></div>
               <div style={{ margin:"6px 0 0" }}>{own && <OwnershipBadge ownership={own} size="large"/>}</div>
               {cleanDiversity(h.diversity) && <p style={{ fontFamily:sans, fontSize:"clamp(14px, 1.1vw, 17px)", color:T.mid, margin:"8px 0 0" }}>Diversity <strong style={{ color:T.tangerine, fontWeight:600 }}>{cleanDiversity(h.diversity)}</strong></p>}
               {site && <a href={site} target="_blank" rel="noopener noreferrer" onClick={() => trackEvent("brand_site_click", { houseSlug: h.slug, source: "brand" })} style={{ display:"inline-flex", alignItems:"center", gap:6, margin:"12px 0 0", padding:"6px 14px", minHeight:34, boxSizing:"border-box", borderRadius:20, border:`1px solid ${T.rule}`, background:T.white, fontFamily:sans, fontSize:13, color:T.ink, textDecoration:"none" }}>Brand website<ExtArrow size={11}/></a>}
@@ -1671,7 +1695,7 @@ function PerfumersDirectory({ onOpenPerfumer }) {
   );
 }
 
-function PerfumerPage({ name, onClose, onOpenFrag, onOpenBrand }) {
+function PerfumerPage({ name, onClose, onBack, onOpenFrag, onOpenBrand }) {
   const PAGE = 24;
   const info = PERFUMERS[name];
   const [frags, setFrags] = useState(null);
@@ -1725,6 +1749,7 @@ function PerfumerPage({ name, onClose, onOpenFrag, onOpenBrand }) {
       <div className="mos-sheet" onClick={e => e.stopPropagation()} style={{ background:T.white, borderRadius:"24px 24px 0 0", border:`1px solid ${T.rule}`, borderBottom:"none", width:"100%", maxWidth:460, maxHeight:"93vh", overflowY:"auto" }}>
         <div className="mos-pad" style={{ position:"relative", padding:"26px 24px 22px", borderBottom:`1px solid ${T.rule}`, background:T.lift }}>
           <button className="mos-close" onClick={onClose} aria-label="Close" style={{ position:"absolute", top:16, right:16, width:34, height:34, borderRadius:"50%", border:`1px solid ${T.rule}`, background:T.white, cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", fontSize:14, color:T.mid, zIndex:2 }}>✕</button>
+          <BackBtn onBack={onBack||onClose}/>
           <p style={{ fontFamily:sans, fontSize:10, fontWeight:600, textTransform:"uppercase", letterSpacing:"0.18em", color:T.accent, margin:"0 0 14px" }}>Perfumer</p>
           <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", gap:20, paddingRight:44 }}>
             <h2 style={{ fontFamily:serif, fontSize:"clamp(40px, 6vw, 84px)", color:T.black, margin:0, letterSpacing:-1.5, fontWeight:400, lineHeight:0.98, minWidth:0, overflowWrap:"anywhere" }}>{name}</h2>
@@ -1882,7 +1907,10 @@ function FragCard({ frag, onClick, userStatus, reaction, onReaction, onOpenFrag,
             <div>
               <div style={{fontFamily:serif,fontSize:15,color:T.black,margin:0,lineHeight:1.2}}>{frag.name}</div>
               <div onClick={onOpenBrand&&frag.houseSlug?e=>{e.stopPropagation();onOpenBrand({slug:frag.houseSlug,name:frag.house});}:undefined} style={{fontFamily:sans,fontSize:11,color:T.mid,margin:0,lineHeight:1.4,cursor:onOpenBrand&&frag.houseSlug?"pointer":"inherit",textDecoration:onOpenBrand&&frag.houseSlug?"underline":"none",textDecorationColor:T.rule,textUnderlineOffset:3,display:"inline-block"}}>{frag.house}</div>
-              {frag.ownership && <div style={{fontFamily:sans,fontSize:11,margin:0,lineHeight:1.4}}><OwnershipBadge ownership={frag.ownership} size="small"/></div>}
+              <div style={{display:"flex",alignItems:"center",flexWrap:"wrap",gap:"4px 8px",marginTop:3}}>
+                <BrandTypePill type={frag.brand_origin} size="small"/>
+                {frag.ownership && <span style={{fontFamily:sans,fontSize:11,lineHeight:1.4}}><OwnershipBadge ownership={frag.ownership} size="small"/></span>}
+              </div>
             </div>
             {userStatus && <StatusBadge statusKey={userStatus}/>}
           </div>
@@ -2095,7 +2123,7 @@ function WearLog({ frag, wears, onLogWear, onDeleteWear }) {
     </div>
   );
 }
-function DetailModal({ frag, onClose, userStatus, setUserStatus, privateNote, setPrivateNote, reaction, setReaction, onOpenFrag, onOpenProfile, onAddJournalEntry, currentUser, onOpenBrand, onOpenPerfumer, wears, onLogWear, onDeleteWear }) {
+function DetailModal({ frag, onClose, userStatus, setUserStatus, privateNote, setPrivateNote, reaction, setReaction, onOpenFrag, onOpenProfile, onAddJournalEntry, currentUser, onOpenBrand, onOpenPerfumer, wears, onLogWear, onDeleteWear, onBack }) {
   const [tab,setTab]=useState("overview");
   const [showPerfumer, setShowPerfumer]=useState(false);
   const [replyText,setReplyText]=useState("");
@@ -2131,12 +2159,14 @@ function DetailModal({ frag, onClose, userStatus, setUserStatus, privateNote, se
         
         <div className="mos-pad" style={{position:"relative",padding:"34px 24px 30px",borderBottom:`1px solid ${T.rule}`,overflow:"hidden",background:accA?`${accA}1F`:"transparent"}}>
           <button className="mos-close" onClick={onClose} style={{position:"absolute",top:16,right:16,width:30,height:30,borderRadius:"50%",border:`1px solid ${T.rule}`,background:T.white,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",fontSize:13,color:T.mid,zIndex:2}}>✕</button>
+          <BackBtn onBack={onBack||onClose}/>
           <div style={{display:"flex",alignItems:"center",gap:"clamp(16px, 3vw, 56px)"}}>
             <div style={{flex:1,minWidth:0}}>
               <div style={{marginBottom:10}}><span style={{fontFamily:sans,fontSize:"clamp(10px, 0.9vw, 12px)",fontWeight:600,textTransform:"uppercase",letterSpacing:"0.18em",color:T.mid}}>{onOpenBrand&&frag.houseSlug?<button onClick={()=>onOpenBrand({slug:frag.houseSlug,name:frag.house})} style={{font:"inherit",letterSpacing:"inherit",textTransform:"inherit",color:T.black,background:"none",border:"none",borderBottom:`1px solid ${T.mid}`,padding:"0 0 1px",cursor:"pointer",minHeight:24}}>{frag.house}</button>:frag.house}{[frag.line, frag.family].filter(Boolean).length?" · "+[frag.line, frag.family].filter(Boolean).join(" · "):""}</span></div>
               <h2 style={{fontFamily:serif,fontSize:"clamp(36px, 4.4vw, 64px)",fontWeight:400,color:T.black,margin:"0 0 10px",letterSpacing:-1,lineHeight:1.05,paddingRight:44}}>{frag.name}</h2>
               <p style={{fontFamily:sans,fontSize:"clamp(14px, 1.1vw, 17px)",color:T.mid,margin:"0 0 0",lineHeight:1.4}}>{[frag.year, frag.concentration].filter(Boolean).join(" · ")}</p>
               <div style={{margin:"10px 0 0",display:"flex",flexDirection:"column",alignItems:"flex-start",gap:8}}>
+                <BrandTypePill type={frag.brand_origin}/>
                 {frag.ownership && <OwnershipBadge ownership={frag.ownership} size="large" showTooltip={true}/>}
                 {frag.price_tier && <span style={{fontFamily:sans,fontSize:"clamp(13px, 1vw, 15px)",color:T.mid}}>Price tier <strong style={{color:T.teal,fontWeight:600}}>{frag.price_tier}</strong></span>}
                 {frag.diversity && <span style={{fontFamily:sans,fontSize:"clamp(13px, 1vw, 15px)",color:T.mid}}>Diversity <strong style={{color:T.tangerine,fontWeight:600}}>{frag.diversity}</strong></span>}
@@ -2212,7 +2242,7 @@ function DetailModal({ frag, onClose, userStatus, setUserStatus, privateNote, se
                 <Lbl mb={14}>Fragrance Notes</Lbl>
                 <NotesPyramid notes={frag.notes}/>
               </div>
-              <SimilarScents frag={frag} onOpenFrag={(id,src)=>{onClose();setTimeout(()=>onOpenFrag(id,src),50);}}/>
+              <SimilarScents frag={frag} onOpenFrag={onOpenFrag}/>
               {hasSeasons&&(<div style={{marginBottom:36}}><Lbl>Seasons</Lbl><SeasonHeat seasons={frag.seasons}/></div>)}
               {hasOcc&&(
                 <div style={{marginBottom:36}}>
@@ -2223,7 +2253,7 @@ function DetailModal({ frag, onClose, userStatus, setUserStatus, privateNote, se
                 </div>
               )}
               <div style={{marginTop:28}}>
-                <HouseStrip currentFrag={frag} onOpenFrag={(id,src)=>{onClose();setTimeout(()=>onOpenFrag(id,src),50);}} onOpenBrand={onOpenBrand}/>
+                <HouseStrip currentFrag={frag} onOpenFrag={onOpenFrag} onOpenBrand={onOpenBrand}/>
               </div>
             </div>
           )}
@@ -3083,7 +3113,7 @@ function IngredientGuide({ name, onBack, fragrances, onOpenFrag }) {
   );
   return (
     <div>
-      <button onClick={onBack} style={{ fontFamily:sans, fontSize:13, color:T.mid, background:"none", border:"none", padding:0, cursor:"pointer", marginBottom:22 }}>&lsaquo; All ingredients</button>
+      <BackBtn onBack={onBack} label="Back to Learn"/>
       <div className="mos-guide">
         <div>
           {eyebrow("01", "The plant")}
@@ -4072,7 +4102,7 @@ const MOCK_MEMBERS = [
 ];
 
 // ─── PROFILE MODAL ────────────────────────────────────────────────────────────
-function ProfileModal({ username, onClose, currentUser, userStatuses, onOpenFrag, isFollowing, onToggleFollow, following, onOpenProfile, onSignOut }) {
+function ProfileModal({ username, onClose, onBack, currentUser, userStatuses, onOpenFrag, isFollowing, onToggleFollow, following, onOpenProfile, onSignOut }) {
   const [tab, setTab] = useState("reviews");
 
   const isSelf = currentUser && currentUser.username === username;
@@ -4104,6 +4134,7 @@ function ProfileModal({ username, onClose, currentUser, userStatuses, onOpenFrag
       <div className="mos-sheet" onClick={e => e.stopPropagation()} style={{ background:T.white, borderRadius:"24px 24px 0 0", border:`1px solid ${T.rule}`, borderBottom:"none", width:"100%", maxWidth:460, maxHeight:"92vh", overflowY:"auto" }}>
 
         <div className="mos-pad" style={{ position:"sticky", top:0, background:T.white, zIndex:2, borderBottom:`1px solid ${T.rule}`, padding:"20px 24px 0" }}>
+          <BackBtn onBack={onBack||onClose}/>
           <div style={{ display:"flex", alignItems:"flex-start", justifyContent:"space-between", marginBottom:18 }}>
             <div style={{ display:"flex", alignItems:"center", gap:14 }}>
               <div style={{ width:54, height:54, borderRadius:"50%", background:isSillage?T.black:T.black, display:"flex", alignItems:"center", justifyContent:"center", fontSize:isSillage?15:18, fontWeight:600, color:T.white, fontFamily:isSillage?serif:sans, flexShrink:0, position:"relative" }}>
@@ -4248,7 +4279,7 @@ function ProfileModal({ username, onClose, currentUser, userStatuses, onOpenFrag
                       </div>
                     </div>
                     <p style={{ fontFamily:sans, fontSize:13, color:T.mid, lineHeight:1.7, margin:"0 0 10px", fontStyle:"italic" }}>"{r.text}"</p>
-                    <button onClick={() => { onClose(); setTimeout(() => onOpenFrag && onOpenFrag(r.fragId), 50); }} style={{ fontFamily:sans, fontSize:11, color:T.mid, background:"none", border:"none", padding:0, cursor:"pointer" }}>
+                    <button onClick={() => { onOpenFrag && onOpenFrag(r.fragId); }} style={{ fontFamily:sans, fontSize:11, color:T.mid, background:"none", border:"none", padding:0, cursor:"pointer" }}>
                       View fragrance →
                     </button>
                   </div>
@@ -4298,7 +4329,7 @@ function ProfileModal({ username, onClose, currentUser, userStatuses, onOpenFrag
                   const st = STATUSES.find(s => s.key === member.statuses[f.id]);
                   const isShared = commonIds.includes(f.id);
                   return (
-                    <div key={f.id} onClick={() => { onClose(); setTimeout(() => onOpenFrag && onOpenFrag(f.id), 50); }} style={{ display:"flex", alignItems:"center", gap:12, padding:"12px 0", borderBottom:`1px solid ${T.rule}`, cursor:"pointer" }}>
+                    <div key={f.id} onClick={() => { onOpenFrag && onOpenFrag(f.id); }} style={{ display:"flex", alignItems:"center", gap:12, padding:"12px 0", borderBottom:`1px solid ${T.rule}`, cursor:"pointer" }}>
                       <div style={{ width:38, height:38, borderRadius:9, background:T.lift, border:`1px solid ${T.rule}`, display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0 }}>
                         <span style={{ fontFamily:serif, fontSize:10, color:T.ink }}>{f.name.split(" ").map(w=>w[0]).join("").slice(0,2).toUpperCase()}</span>
                       </div>
@@ -4343,7 +4374,7 @@ function ProfileModal({ username, onClose, currentUser, userStatuses, onOpenFrag
                     const myReaction = (userStatuses || {})[f.id];
                     const theirReaction = (member.reactions || {})[f.id];
                     return (
-                      <div key={f.id} onClick={() => { onClose(); setTimeout(() => onOpenFrag && onOpenFrag(f.id), 50); }} style={{ display:"flex", alignItems:"center", gap:12, padding:"12px 0", borderBottom:`1px solid ${T.rule}`, cursor:"pointer" }}>
+                      <div key={f.id} onClick={() => { onOpenFrag && onOpenFrag(f.id); }} style={{ display:"flex", alignItems:"center", gap:12, padding:"12px 0", borderBottom:`1px solid ${T.rule}`, cursor:"pointer" }}>
                         <div style={{ width:38, height:38, borderRadius:9, background:T.lift, border:`1px solid ${T.rule}`, display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0 }}>
                           <span style={{ fontFamily:serif, fontSize:10, color:T.ink }}>{f.name.split(" ").map(w=>w[0]).join("").slice(0,2).toUpperCase()}</span>
                         </div>
@@ -4684,16 +4715,58 @@ export default function SillageApp() {
   const NAV = [{ tab:"Discover", icon:"compass" }, { tab:"Collection", icon:"bottle" }, { tab:"Layering", icon:"layers" }, { tab:"Journal", icon:"book" }, { tab:"Learn", icon:"tip" }];
   const modalFrag = fragrances.find(f => f.id === modalFragId);
   trackState.region = regionFor(currentUser);
+  // ─── Page navigation: one page at a time, with a real back button and browser/Android back support ───
+  const viewStack = useRef([]);
+  const ignorePops = useRef(0);
+  const histOk = useRef(true);
+  function snapshot() {
+    if (modalFragId) return { t: "frag", id: modalFragId };
+    if (perfumerRef) return { t: "perfumer", name: perfumerRef };
+    if (brandRef) return { t: "brand", ref: brandRef };
+    if (profileUsername) return { t: "profile", username: profileUsername };
+    return null;
+  }
+  function applyView(v) {
+    setModalFragId(v && v.t === "frag" ? v.id : null);
+    setPerfumerRef(v && v.t === "perfumer" ? v.name : null);
+    setBrandRef(v && v.t === "brand" ? v.ref : null);
+    setProfileUsername(v && v.t === "profile" ? v.username : null);
+  }
+  function goto(v) {
+    const cur = snapshot();
+    if (cur && cur.t === v.t && JSON.stringify(cur) === JSON.stringify(v)) return;
+    viewStack.current.push(cur);
+    try { window.history.pushState({ mos: 1 }, ""); } catch (e) { histOk.current = false; }
+    applyView(v);
+  }
+  function closeAll() {
+    const n = viewStack.current.length;
+    viewStack.current = [];
+    applyView(null);
+    if (n > 0 && histOk.current) { ignorePops.current += 1; try { window.history.go(-n); } catch (e) {} }
+  }
+  function goBack() {
+    if (viewStack.current.length > 0 && histOk.current) { try { window.history.back(); return; } catch (e) {} }
+    applyView(viewStack.current.pop() || null);
+  }
+  useEffect(() => {
+    function onPop() {
+      if (ignorePops.current > 0) { ignorePops.current -= 1; return; }
+      if (viewStack.current.length > 0) applyView(viewStack.current.pop());
+    }
+    window.addEventListener("popstate", onPop);
+    return () => window.removeEventListener("popstate", onPop);
+  }, []);
   function openFrag(id, source) {
     trackState.source = source || (brandRef ? "brand" : perfumerRef ? "perfumer" : profileUsername ? "profile" : String(activeTab || "").toLowerCase());
-    setModalFragId(id);
+    goto({ t: "frag", id });
   }
   useEffect(() => {
     if (modalFragId) trackEvent("fragrance_view", { fragrance: modalFragId, source: trackState.source || "other", dedupeMs: 1800000 });
   }, [modalFragId]);
-  function openBrand(ref) { setModalFragId(null); setProfileUsername(null); setPerfumerRef(null); setBrandRef(ref); }
-  function openPerfumer(n) { setModalFragId(null); setProfileUsername(null); setBrandRef(null); setPerfumerRef(n); }
-  function openProfile(username) { setProfileUsername(username); }
+  function openBrand(ref) { goto({ t: "brand", ref }); }
+  function openPerfumer(n) { goto({ t: "perfumer", name: n }); }
+  function openProfile(username) { goto({ t: "profile", username }); }
   function onReaction(fragId, val) { setReactions(p => ({ ...p, [fragId]: val })); saveUserFrag(fragId, { reaction: val || null }); }
 
   function handleOnboardingComplete(fields) {
@@ -4778,7 +4851,8 @@ export default function SillageApp() {
       {modalFrag && (
         <DetailModal
           frag={modalFrag}
-          onClose={() => setModalFragId(null)}
+          onClose={closeAll}
+          onBack={goBack}
           userStatus={userStatuses[modalFrag.id]}
           setUserStatus={s => { setUserStatuses(p => { const n = { ...p }; if (s) n[modalFrag.id] = s; else delete n[modalFrag.id]; return n; }); saveUserFrag(modalFrag.id, { status: s || null }); trackEvent("status_set", { fragrance: modalFrag.id, source: "fragrance", detail: s ? String(s) : "removed" }); }}
           privateNote={privateNotes[modalFrag.id]}
@@ -4796,21 +4870,22 @@ export default function SillageApp() {
           currentUser={currentUser}
         />
       )}
-      {perfumerRef && <PerfumerPage name={perfumerRef} onClose={() => setPerfumerRef(null)} onOpenFrag={openFrag} onOpenBrand={openBrand}/>}
+      {perfumerRef && <PerfumerPage name={perfumerRef} onClose={closeAll} onBack={goBack} onOpenFrag={openFrag} onOpenBrand={openBrand}/>}
       {saveIssue && <div role="status" style={{ position:"fixed", left:16, right:16, bottom:"calc(84px + env(safe-area-inset-bottom))", zIndex:80, maxWidth:520, margin:"0 auto", background:T.black, color:T.white, borderRadius:14, padding:"12px 16px", fontFamily:sans, fontSize:13, lineHeight:1.5 }}>{saveIssue}</div>}
-      {brandRef && <BrandModal brand={brandRef} onClose={() => setBrandRef(null)} onOpenFrag={openFrag}/>}
+      {brandRef && <BrandModal brand={brandRef} onClose={closeAll} onBack={goBack} onOpenFrag={openFrag}/>}
       {showSuggest && <SuggestModal onClose={() => setShowSuggest(false)} currentUser={currentUser}/>}
       {profileUsername && (
         <ProfileModal
           username={profileUsername}
-          onClose={() => setProfileUsername(null)}
+          onClose={closeAll}
+          onBack={goBack}
           currentUser={currentUser}
           userStatuses={userStatuses}
-          onOpenFrag={id => { setProfileUsername(null); setTimeout(() => openFrag(id), 50); }}
+          onOpenFrag={id => openFrag(id)}
           isFollowing={following.has(profileUsername)}
           onToggleFollow={toggleFollow}
           following={following}
-          onOpenProfile={username => { setProfileUsername(null); setTimeout(() => setProfileUsername(username), 50); }}
+          onOpenProfile={username => openProfile(username)}
           onSignOut={handleSignOut}
         />
       )}
