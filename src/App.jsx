@@ -1184,8 +1184,10 @@ function cleanDiversity(v) {
   const NAMEY = /founder|founded|co-founded|perfumer|woman|female/i;
   const noParen = t.replace(/\s*\(([^)]*)\)/g, (m, inner) => NAMEY.test(inner) ? "" : m);
   const kept = noParen.split(",").map(s => s.trim()).filter(s => s && !NAMEY.test(s));
-  return kept.join(", ") || t;
+  return kept.join(", ") || (isWomanOwned(t) ? "" : t);
 }
+// Woman-owned is its own diversity category (separate from ethnic background).
+function isWomanOwned(v) { return /woman|women|female/i.test(String(v == null ? "" : v)); }
 function mapFrag(f) {
   const own = f.ownership || (f.house && f.house.ownership) || "";
   const notes = f.notes || [];
@@ -1201,6 +1203,7 @@ function mapFrag(f) {
     brand_origin: f.brand_origin || (f.house && f.house.brand_origin) || "",
     website: (f.house && f.house.website) || "",
     diversity: cleanDiversity(f.house && f.house.diversity),
+    womanOwned: isWomanOwned(f.house && f.house.diversity),
     price_tier: f.price_tier || (f.house && f.house.price_tier) || "",
     year: f.year,
     perfumer: titleCaseName(f.perfumer),
@@ -1510,6 +1513,7 @@ function BrandModal({ brand, onClose, onBack, onOpenFrag }) {
     ["Brand type", brandOriginLabel(h)],
     ["Price tier", h.price_tier],
     ["Diversity", cleanDiversity(h.diversity)],
+    ["Woman-owned", isWomanOwned(h.diversity) ? "Yes" : ""],
   ].filter(f => f[1]);
   const lines = [...new Set(frags.map(f => f.line).filter(Boolean))];
   const mapsUrl = s => "https://www.google.com/maps/search/?api=1&query=" + encodeURIComponent([s.name, s.address].filter(Boolean).join(" "));
@@ -1526,6 +1530,7 @@ function BrandModal({ brand, onClose, onBack, onOpenFrag }) {
               <div style={{ display:"flex", alignItems:"center", flexWrap:"wrap", gap:"6px 12px" }}><BrandTypePill type={h.brand_origin}/><span style={{ fontFamily:sans, fontSize:"clamp(14px, 1.1vw, 17px)", color:T.mid }}>{[h.country, h.price_tier].filter(Boolean).join(" · ")}</span></div>
               <div style={{ margin:"6px 0 0" }}>{own && <OwnershipBadge ownership={own} size="large"/>}</div>
               {cleanDiversity(h.diversity) && <p style={{ fontFamily:sans, fontSize:"clamp(14px, 1.1vw, 17px)", color:T.mid, margin:"8px 0 0" }}>Diversity <strong style={{ color:T.tangerine, fontWeight:600 }}>{cleanDiversity(h.diversity)}</strong></p>}
+              {isWomanOwned(h.diversity) && <p style={{ fontFamily:sans, fontSize:"clamp(14px, 1.1vw, 17px)", color:T.mid, margin:"8px 0 0" }}><strong style={{ color:"var(--orchid)", fontWeight:600 }}>Woman-owned</strong></p>}
               {site && <a href={site} target="_blank" rel="noopener noreferrer" onClick={() => trackEvent("brand_site_click", { houseSlug: h.slug, source: "brand" })} style={{ display:"inline-flex", alignItems:"center", gap:6, margin:"12px 0 0", padding:"6px 14px", minHeight:34, boxSizing:"border-box", borderRadius:20, border:`1px solid ${T.rule}`, background:T.white, fontFamily:sans, fontSize:13, color:T.ink, textDecoration:"none" }}>Brand website<ExtArrow size={11}/></a>}
             </>
           )}
@@ -2176,6 +2181,7 @@ function DetailModal({ frag, onClose, userStatus, setUserStatus, privateNote, se
                 {frag.price_tier && <span style={{fontFamily:sans,fontSize:"clamp(13px, 1vw, 15px)",color:T.mid}}>Price tier <strong style={{color:T.teal,fontWeight:600}}>{frag.price_tier}</strong></span>}
                 {frag.country && <span style={{fontFamily:sans,fontSize:"clamp(13px, 1vw, 15px)",color:T.mid}}>Country <strong style={{color:"var(--pink)",fontWeight:600}}>{frag.country}</strong></span>}
                 {frag.diversity && <span style={{fontFamily:sans,fontSize:"clamp(13px, 1vw, 15px)",color:T.mid}}>Diversity <strong style={{color:T.tangerine,fontWeight:600}}>{frag.diversity}</strong></span>}
+                {frag.womanOwned && <span style={{fontFamily:sans,fontSize:"clamp(13px, 1vw, 15px)",color:T.mid}}><strong style={{color:"var(--orchid)",fontWeight:600}}>Woman-owned</strong></span>}
                 {frag.neoGourmand && <span style={{fontFamily:sans,fontSize:"clamp(13px, 1vw, 15px)",color:T.mid}}>Style <strong style={{color:T.accent,fontWeight:600}}>Neo gourmand</strong></span>}
               </div>
               {safeUrl(frag.website)&&(
@@ -4554,19 +4560,20 @@ export default function SillageApp() {
             try {
               const { data: dh } = await supabase.from("houses").select("id, slug, diversity").not("diversity", "is", null).neq("diversity", "");
               const catOf = d => cleanDiversity(d).replace(/\s*\(.*\)\s*$/, "").trim();
-              const divHouses = (dh || []).filter(h => cleanDiversity(h.diversity));
-              const slugCat = new Map(divHouses.map(h => [h.slug, catOf(h.diversity)]));
+              const divHouses = (dh || []).filter(h => cleanDiversity(h.diversity) || isWomanOwned(h.diversity));
+              const slugCat = new Map(divHouses.map(h => [h.slug, [cleanDiversity(h.diversity) ? catOf(h.diversity) : "", isWomanOwned(h.diversity) ? "Woman-owned" : ""].filter(Boolean)]));
               if (divHouses.length) {
                 const dr = await fetchFragRows(sel => supabase.from("fragrances").select(sel).in("house_id", divHouses.map(h => h.id)).order("slug", { ascending: true }).limit(300));
                 if (!dr.error && dr.data && dr.data.length) {
                   const perHouse = {}, byCat = {};
                   dr.data.forEach(row => {
-                    const hs = row.house && row.house.slug; const c = slugCat.get(hs); if (!c) return;
+                    const hs = row.house && row.house.slug; const cs = slugCat.get(hs); if (!cs || !cs.length) return;
                     perHouse[hs] = (perHouse[hs] || 0) + 1;
                     if (perHouse[hs] > 4) return;
-                    (byCat[c] = byCat[c] || []).push(row);
+                    cs.forEach(c => { (byCat[c] = byCat[c] || []).push(row); });
                   });
-                  const cats = Object.keys(byCat).filter(c => byCat[c].length >= 2).sort((a, b) => byCat[b].length - byCat[a].length).slice(0, 6);
+                  const cats = Object.keys(byCat).filter(c => c !== "Woman-owned" && byCat[c].length >= 2).sort((a, b) => byCat[b].length - byCat[a].length).slice(0, 6);
+                  if (byCat["Woman-owned"] && byCat["Woman-owned"].length >= 2) cats.push("Woman-owned");
                   const groups = {};
                   cats.forEach(c => { const m = byCat[c].slice(0, 12).map(mapFrag); mergeFrags(m); groups[c] = m; });
                   const mixed = []; for (let i = 0; i < 12; i++) cats.forEach(c => { if (groups[c][i]) mixed.push(groups[c][i]); });
