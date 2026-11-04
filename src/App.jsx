@@ -2467,7 +2467,7 @@ function JournalInsights({ entries, userStatuses, reactions, fragrances, wears, 
   const rMax = Math.max(1, ...[1,2,3,4,5].map(r => ratings[r] || 0));
   const topOcc = Object.entries(occ).sort((a, b) => b[1] - a[1])[0], topWx = Object.entries(wx).sort((a, b) => b[1] - a[1])[0];
 
-  const years = [...new Set([nowY, nowY - 1, ...(entries || []).map(e => { const t = new Date(e.date); return isNaN(t) ? null : t.getFullYear(); }).filter(Boolean), ...(wears || []).map(w => { const t = new Date(w.date); return isNaN(t) ? null : t.getFullYear(); }).filter(Boolean)])].sort((a, b) => b - a).slice(0, 3);
+  const years = [...new Set([nowY, ...(entries || []).map(e => { const t = new Date(e.date); return isNaN(t) ? null : t.getFullYear(); }).filter(Boolean), ...(wears || []).map(w => { const t = new Date(w.date); return isNaN(t) ? null : t.getFullYear(); }).filter(Boolean)])].filter(y => y >= 2026).sort((a, b) => b - a).slice(0, 3);
   const pill = (on, label, fn) => <button key={label} onClick={fn} style={{ fontFamily:sans, fontSize:13, fontWeight:on ? 600 : 500, padding:"0 16px", minHeight:38, borderRadius:20, border:`1px solid ${on ? T.black : T.rule}`, background:on ? T.black : T.white, color:on ? T.white : T.ink, cursor:"pointer", flexShrink:0 }}>{label}</button>;
 
   let off = 0; const R = 54, C = 2 * Math.PI * R;
