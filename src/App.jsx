@@ -2382,6 +2382,24 @@ function TasteProfile({ userStatuses, reactions, fragrances, wears }) {
   const topOcc = Object.entries(occTally).sort((a, b) => b[1] - a[1])[0];
   const topWx = Object.entries(wxTally).sort((a, b) => b[1] - a[1])[0];
 
+  const lovedNoteTally = {}; let lovedCount = 0;
+  allFrags.forEach(f => {
+    if (reactions[f.id] !== "love") return;
+    lovedCount++;
+    const seen = new Set();
+    [].concat((f.notes && f.notes.top) || [], (f.notes && f.notes.mid) || [], (f.notes && f.notes.base) || []).forEach(x => {
+      const k = String(x.n || "").trim().toLowerCase();
+      if (k && !seen.has(k)) { seen.add(k); lovedNoteTally[k] = (lovedNoteTally[k] || 0) + 1; }
+    });
+  });
+  const lovedNotes = lovedCount >= 2 ? Object.entries(lovedNoteTally).filter(([, c]) => c >= 2).sort((a, b) => b[1] - a[1]).slice(0, 8) : [];
+  const perfTally = {};
+  (wears || []).forEach(w => {
+    const f = allFrags.find(x => x.id === w.fragId);
+    String((f && f.perfumer) || "").split(/\s*(?:&|\/|,|\band\b)\s*/i).map(x => x.trim()).filter(Boolean).forEach(n => { perfTally[n] = (perfTally[n] || 0) + 1; });
+  });
+  const topPerfumers = Object.entries(perfTally).sort((a, b) => b[1] - a[1]).slice(0, 3);
+
   allFrags.forEach(f => {
     const status   = userStatuses[f.id];
     const reaction = reactions[f.id];
@@ -2452,6 +2470,28 @@ function TasteProfile({ userStatuses, reactions, fragrances, wears }) {
               <div style={{ display:"flex", flexWrap:"wrap", gap:6 }}>
                 {noteEntries.map(([n, c]) => <span key={n} style={{ fontFamily:sans, fontSize:11, padding:"4px 10px", borderRadius:20, border:`1px solid ${T.rule}`, background:T.lift, color:T.ink, textTransform:"capitalize" }}>{n} <span style={{ color:T.faint }}>{c}</span></span>)}
               </div>
+            </div>
+          )}
+
+          {lovedNotes.length > 0 && (
+            <div style={{ paddingTop: 16, marginTop: 16, borderTop: `1px solid ${T.lift}` }}>
+              <p style={{ fontFamily:sans, fontSize:9, textTransform:"uppercase", letterSpacing:"0.1em", color:T.mid, margin:"0 0 10px" }}>Most loved notes</p>
+              <div style={{ display:"flex", flexWrap:"wrap", gap:6 }}>
+                {lovedNotes.map(([n, c]) => <span key={n} style={{ fontFamily:sans, fontSize:11, padding:"4px 10px", borderRadius:20, border:`1px solid ${T.rule}`, background:T.lift, color:T.ink, textTransform:"capitalize" }}>{n} <span style={{ color:T.faint }}>{c}</span></span>)}
+              </div>
+              <p style={{ fontFamily:sans, fontSize:11, color:T.faint, margin:"8px 0 0" }}>Across the {lovedCount} fragrances you love.</p>
+            </div>
+          )}
+
+          {topPerfumers.length > 0 && (
+            <div style={{ paddingTop: 16, marginTop: 16, borderTop: `1px solid ${T.lift}` }}>
+              <p style={{ fontFamily:sans, fontSize:9, textTransform:"uppercase", letterSpacing:"0.1em", color:T.mid, margin:"0 0 10px" }}>Most worn perfumer</p>
+              {topPerfumers.map(([n, c]) => (
+                <div key={n} style={{ display:"flex", justifyContent:"space-between", alignItems:"baseline", gap:10, marginBottom:8 }}>
+                  <span style={{ fontFamily:sans, fontSize:13, color:T.ink }}>{n}</span>
+                  <span style={{ fontFamily:sans, fontSize:11, color:T.faint, flexShrink:0 }}>{c} wear{c !== 1 ? "s" : ""}</span>
+                </div>
+              ))}
             </div>
           )}
 
@@ -2874,6 +2914,16 @@ function JournalTab({ entries, userStatuses, reactions, fragrances, wears, onOpe
   const dominant = topFamilies[0]?.[0] || "";
   const previous = topFamilies.length > 1 ? topFamilies[topFamilies.length-1]?.[0] : "";
 
+  // Journal streak: consecutive local days with at least one entry; current streak counts if the last entry was today or yesterday
+  
+  const dayNum = d => { const t = new Date(d); return isNaN(t) ? null : Math.round(new Date(t.getFullYear(), t.getMonth(), t.getDate()).getTime() / 86400000); };
+  const days = [...new Set(all.map(e => dayNum(e.date)).filter(x => x !== null))].sort((a, b) => a - b);
+  let longest = 0, run = 0, prev = null;
+  days.forEach(d => { run = (prev !== null && d === prev + 1) ? run + 1 : 1; longest = Math.max(longest, run); prev = d; });
+  const todayN = dayNum(new Date()); let current = 0;
+  if (days.length && (days[days.length-1] === todayN || days[days.length-1] === todayN - 1)) { current = 1; for (let i = days.length - 2; i >= 0 && days[i] === days[i+1] - 1; i--) current++; }
+  const streak = { current, longest, total: all.length };
+
   const MONTHLY_PROMPT = "Has anything surprised you about what you've been reaching for lately?";
 
   return (
@@ -2884,6 +2934,13 @@ function JournalTab({ entries, userStatuses, reactions, fragrances, wears, onOpe
         <p style={{fontFamily:sans,fontSize:"clamp(13px, 1.1vw, 17px)",color:T.mid,margin:"6px 0 0"}}>What you reach for, and why. A record that becomes a mirror.</p>
       </div>
 
+      {streak.total > 0 && <div style={{display:"flex",gap:10,marginBottom:16}}>
+        {[["Current streak",streak.current+(streak.current===1?" day":" days")],["Longest streak",streak.longest+(streak.longest===1?" day":" days")],["Entries",String(streak.total)]].map(([l,v])=>(
+          <div key={l} style={{flex:1,background:T.white,border:`1px solid ${T.rule}`,borderRadius:12,padding:"12px 14px"}}>
+            <p style={{fontFamily:sans,fontSize:9,textTransform:"uppercase",letterSpacing:"0.1em",color:T.faint,margin:"0 0 4px"}}>{l}</p>
+            <p style={{fontFamily:serif,fontSize:20,color:T.black,margin:0}}>{v}</p>
+          </div>))}
+      </div>}
       <TasteProfile userStatuses={userStatuses||{}} reactions={reactions||{}} fragrances={FR} wears={wears}/>
       <CollectionMap items={FR.filter(f=>(userStatuses||{})[f.id])} onOpenFrag={onOpenFrag}/>
 
