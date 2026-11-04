@@ -2360,176 +2360,170 @@ function DetailModal({ frag, onClose, userStatus, setUserStatus, privateNote, se
 }
 
 // ─── TASTE PROFILE ────────────────────────────────────────────────────────────
-function TasteProfile({ userStatuses, reactions, fragrances, wears }) {
-  const [open, setOpen] = useState(true);
-
-  const AFFINITY_STATUSES = new Set(["bottle_owned","bottle_wishlist","sample_have","tried_skin"]);
-  const DISLIKE_STATUSES  = new Set(["tried_not_for_me"]);
-
-  // Build accord tallies
-  const likeTally   = {};
-  const dislikeTally = {};
-  const noteTally = {};
-  const allFrags = (fragrances && fragrances.length) ? fragrances : FRAGRANCES;
-  const wearCount = {}, wearRatings = {}, occTally = {}, wxTally = {};
-  (wears || []).forEach(w => {
-    wearCount[w.fragId] = (wearCount[w.fragId] || 0) + 1;
-    if (w.rating) (wearRatings[w.fragId] = wearRatings[w.fragId] || []).push(w.rating);
-    if (w.occasion) occTally[w.occasion] = (occTally[w.occasion] || 0) + 1;
-    if (w.weather) wxTally[w.weather] = (wxTally[w.weather] || 0) + 1;
-  });
-  const mostWorn = Object.entries(wearCount).map(([id, n]) => ({ f: allFrags.find(x => x.id === id), n, r: wearRatings[id] })).filter(x => x.f).sort((a, b) => b.n - a.n).slice(0, 3);
-  const topOcc = Object.entries(occTally).sort((a, b) => b[1] - a[1])[0];
-  const topWx = Object.entries(wxTally).sort((a, b) => b[1] - a[1])[0];
-
-  const lovedNoteTally = {}; let lovedCount = 0;
-  allFrags.forEach(f => {
-    if (reactions[f.id] !== "love") return;
-    lovedCount++;
-    const seen = new Set();
-    [].concat((f.notes && f.notes.top) || [], (f.notes && f.notes.mid) || [], (f.notes && f.notes.base) || []).forEach(x => {
-      const k = String(x.n || "").trim().toLowerCase();
-      if (k && !seen.has(k)) { seen.add(k); lovedNoteTally[k] = (lovedNoteTally[k] || 0) + 1; }
-    });
-  });
-  const lovedNotes = lovedCount >= 2 ? Object.entries(lovedNoteTally).filter(([, c]) => c >= 2).sort((a, b) => b[1] - a[1]).slice(0, 8) : [];
-  const perfTally = {};
-  (wears || []).forEach(w => {
-    const f = allFrags.find(x => x.id === w.fragId);
-    String((f && f.perfumer) || "").split(/\s*(?:&|\/|,|\band\b)\s*/i).map(x => x.trim()).filter(Boolean).forEach(n => { perfTally[n] = (perfTally[n] || 0) + 1; });
-  });
-  const topPerfumers = Object.entries(perfTally).sort((a, b) => b[1] - a[1]).slice(0, 3);
-
-  allFrags.forEach(f => {
-    const status   = userStatuses[f.id];
-    const reaction = reactions[f.id];
-    const isLiked    = AFFINITY_STATUSES.has(status) || reaction === "love" || reaction === "like";
-    const isDisliked = DISLIKE_STATUSES.has(status)  || reaction === "dislike";
-
-    if (!isLiked && !isDisliked) return;
-    const target = isDisliked ? dislikeTally : likeTally;
-
-    (f.accords || []).forEach(a => {
-      target[a.n] = (target[a.n] || 0) + 1;
-    });
-    if (!isDisliked && f.notes) {
-      const seen = new Set();
-      [].concat(f.notes.top || [], f.notes.mid || [], f.notes.base || []).forEach(x => {
-        const k = String(x.n || "").trim().toLowerCase();
-        if (k && !seen.has(k)) { seen.add(k); noteTally[k] = (noteTally[k] || 0) + 1; }
-      });
-    }
-    // Also tally family as an accord-level signal
-    if (f.family) target[f.family] = (target[f.family] || 0) + 1;
-  });
-
-  const likeEntries    = Object.entries(likeTally).sort((a,b) => b[1]-a[1]).slice(0,7);
-  const dislikeEntries = Object.entries(dislikeTally).sort((a,b) => b[1]-a[1]).slice(0,5);
-  const likeMax    = likeEntries[0]?.[1]    || 1;
-  const dislikeMax = dislikeEntries[0]?.[1] || 1;
-
-  const noteEntries = Object.entries(noteTally).filter(([, c]) => c >= 2).sort((a, b) => b[1] - a[1]).slice(0, 10);
-  if (likeEntries.length === 0 && dislikeEntries.length === 0 && mostWorn.length === 0) return null;
-
-  const Bar = ({ label, count, max, color }) => (
-    <div style={{ marginBottom:10, maxWidth:560 }}>
-      <div style={{ display:"flex", justifyContent:"space-between", alignItems:"baseline", marginBottom:4 }}>
-        <span style={{ fontFamily:sans, fontSize:12, color:T.ink, textTransform:"capitalize" }}>{label}</span>
-        <span style={{ fontFamily:sans, fontSize:10, color:T.faint }}>{count}</span>
-      </div>
-      <div style={{ height:5, background:T.lift, borderRadius:3, overflow:"hidden" }}>
-        <div style={{ height:"100%", width:`${Math.round((count/max)*100)}%`, background:color, borderRadius:3, transition:"width 0.6s ease" }}/>
-      </div>
+// ─── JOURNAL INSIGHTS (taste profile, streak calendar, stats) ─────────────────
+function dayNumOf(d) { const t = new Date(d); return isNaN(t) ? null : Math.round(new Date(t.getFullYear(), t.getMonth(), t.getDate()).getTime() / 86400000); }
+function computeStreak(entries) {
+  const days = [...new Set((entries || []).map(e => dayNumOf(e.date)).filter(x => x !== null))].sort((a, b) => a - b);
+  let longest = 0, run = 0, prev = null, longestEnd = null;
+  days.forEach(d => { run = (prev !== null && d === prev + 1) ? run + 1 : 1; if (run > longest) { longest = run; longestEnd = d; } prev = d; });
+  const todayN = dayNumOf(new Date()); let current = 0;
+  if (days.length && (days[days.length - 1] === todayN || days[days.length - 1] === todayN - 1)) { current = 1; for (let i = days.length - 2; i >= 0 && days[i] === days[i + 1] - 1; i--) current++; }
+  return { days, daySet: new Set(days), current, longest, longestStart: longestEnd === null ? null : longestEnd - longest + 1, longestEnd, total: (entries || []).length };
+}
+function avgWearRating(wears) {
+  const r = (wears || []).map(w => w.rating).filter(Boolean);
+  return r.length ? r.reduce((a, b) => a + b, 0) / r.length : null;
+}
+function InsightCard({ label, headline, sub, hint, children }) {
+  return (
+    <div style={{ background:T.white, border:`1px solid ${T.rule}`, borderRadius:20, padding:"18px 18px 16px", marginBottom:14 }}>
+      <p style={{ fontFamily:sans, fontSize:13, color:T.ink, margin:0 }}>{label}</p>
+      <p style={{ fontFamily:serif, fontSize:"clamp(30px, 8vw, 40px)", lineHeight:1.1, letterSpacing:-0.8, color:"var(--accent)", margin:"4px 0 2px" }}>{typeof headline === "string" ? headline.charAt(0).toUpperCase() + headline.slice(1) : headline}</p>
+      <p style={{ fontFamily:sans, fontSize:12, color:T.mid, margin:"0 0 14px" }}>{sub}</p>
+      {children}
+      {hint && <div style={{ marginTop:14, background:T.lift, borderRadius:12, padding:"12px 14px" }}>
+        <p style={{ fontFamily:sans, fontSize:12, color:"var(--accent)", margin:"0 0 4px", fontWeight:600 }}>✦ How to get started</p>
+        <p style={{ fontFamily:sans, fontSize:13, color:T.mid, lineHeight:1.6, margin:0 }}>{hint}</p>
+      </div>}
     </div>
   );
-
+}
+function StreakCalendar({ entries, yearSel }) {
+  const st = computeStreak(entries);
+  const now = new Date();
+  const year = yearSel === "all" ? now.getFullYear() : yearSel;
+  const lastEntry = st.days.length ? new Date(st.days[st.days.length - 1] * 86400000 + 43200000) : null;
+  const [month, setMonth] = useState(year === now.getFullYear() ? now.getMonth() : 11);
+  useEffect(() => { setMonth(year === now.getFullYear() ? now.getMonth() : 11); }, [year]);
+  const MN = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+  const first = new Date(year, month, 1), dim = new Date(year, month + 1, 0).getDate();
+  const cells = []; for (let i = 0; i < first.getDay(); i++) cells.push(null); for (let d = 1; d <= dim; d++) cells.push(d);
+  const inYear = !!st.longest && st.longestEnd !== null && (yearSel === "all" || new Date(st.longestEnd * 86400000 + 43200000).getFullYear() === year);
+  const fmt = n => new Date(n * 86400000 + 43200000).toLocaleDateString("en-US", { month:"long", day:"numeric" });
   return (
-    <div style={{ background:T.white, border:`1px solid ${T.rule}`, borderRadius:16, marginBottom:20, overflow:"hidden" }}>
-      <div onClick={() => setOpen(o => !o)} style={{ display:"flex", alignItems:"center", justifyContent:"space-between", padding:"14px 16px", cursor:"pointer" }}>
-        <div>
-          <p style={{ fontFamily:sans, fontSize:9, textTransform:"uppercase", letterSpacing:"0.12em", color:T.faint, margin:"0 0 2px" }}>Based on what you own and love</p>
-          <p style={{ fontFamily:serif, fontSize:16, color:T.black, margin:0 }}>Your taste profile</p>
-        </div>
-        <span style={{ fontFamily:sans, fontSize:12, color:T.faint, transition:"transform 0.2s", display:"inline-block", transform:open?"rotate(180deg)":"rotate(0deg)" }}>▾</span>
+    <InsightCard label="Best journal streak" headline={String(st.longest)} sub={`${st.longest === 1 ? "day" : "days"} ${yearSel === "all" ? "all time" : "in " + year}${st.current > 0 ? ` · current streak ${st.current}` : ""}`}
+      hint={st.total === 0 ? "Write a journal entry on a fragrance page and your days light up here. Log on consecutive days to build a streak." : null}>
+      <div style={{ display:"flex", gap:8, overflowX:"auto", paddingBottom:6, marginBottom:10 }}>
+        {MN.map((m, i) => <button key={m} onClick={() => setMonth(i)} style={{ fontFamily:sans, fontSize:13, fontWeight:month === i ? 600 : 500, padding:"8px 16px", borderRadius:20, border:"none", background:month === i ? "var(--accent)" : T.lift, color:month === i ? "#fff" : T.mid, cursor:"pointer", flexShrink:0 }}>{m}</button>)}
+      </div>
+      <div style={{ display:"grid", gridTemplateColumns:"repeat(7, 1fr)", gap:5 }}>
+        {["S","M","T","W","T","F","S"].map((d, i) => <span key={i} style={{ fontFamily:sans, fontSize:11, color:T.faint, textAlign:"center", padding:"2px 0 4px" }}>{d}</span>)}
+        {cells.map((d, i) => {
+          if (d === null) return <span key={i}/>;
+          const n = Math.round(new Date(year, month, d).getTime() / 86400000);
+          const logged = st.daySet.has(n);
+          const best = logged && st.longest > 1 && st.longestStart !== null && n >= st.longestStart && n <= st.longestEnd;
+          return <span key={i} style={{ aspectRatio:"1", borderRadius:8, display:"flex", alignItems:"flex-start", padding:"4px 6px", fontFamily:sans, fontSize:11, color:logged ? "#fff" : T.faint, background:logged ? (best ? "var(--accent)" : "color-mix(in srgb, var(--accent) 55%, transparent)") : T.lift, boxSizing:"border-box" }}>{d}</span>;
+        })}
+      </div>
+      <div style={{ display:"flex", gap:16, flexWrap:"wrap", marginTop:12, fontFamily:sans, fontSize:11, color:T.mid }}>
+        <span><i style={{ display:"inline-block", width:10, height:10, borderRadius:3, background:"var(--accent)", marginRight:6 }}/>Best streak</span>
+        <span><i style={{ display:"inline-block", width:10, height:10, borderRadius:3, background:"color-mix(in srgb, var(--accent) 55%, transparent)", marginRight:6 }}/>Day logged</span>
+        <span><i style={{ display:"inline-block", width:10, height:10, borderRadius:3, background:T.lift, border:`1px solid ${T.rule}`, marginRight:6 }}/>No entry</span>
+      </div>
+      {inYear && st.longest > 1 && <p style={{ fontFamily:sans, fontSize:13, color:T.mid, lineHeight:1.6, margin:"14px 0 0", background:T.lift, borderRadius:12, padding:"12px 14px" }}><span style={{ color:"var(--accent)", fontWeight:600 }}>✦ Insight</span><br/>Your longest streak began on <b style={{ color:T.black, fontWeight:500 }}>{fmt(st.longestStart)}</b> and lasted <b style={{ color:T.black, fontWeight:500 }}>{st.longest} days</b>.</p>}
+    </InsightCard>
+  );
+}
+function JournalInsights({ entries, userStatuses, reactions, fragrances, wears, onOpenFrag }) {
+  const FR = (fragrances && fragrances.length) ? fragrances : FRAGRANCES;
+  const nowY = new Date().getFullYear();
+  const [yearSel, setYearSel] = useState("all");
+  const inSel = d => { if (yearSel === "all") return true; const t = new Date(d); return !isNaN(t) && t.getFullYear() === yearSel; };
+  const E = (entries || []).filter(e => inSel(e.date));
+  const W = (wears || []).filter(w => inSel(w.date));
+  const when = yearSel === "all" ? "all time" : "in " + yearSel;
+
+  // accords across what you own, have sampled or love (not dated, so not year-filtered)
+  const LIKE = new Set(["bottle_owned","bottle_wishlist","sample_have","tried_skin"]);
+  const accTally = {}, loveNotes = {}; let loved = 0;
+  FR.forEach(f => {
+    const st = userStatuses[f.id], rx = reactions[f.id];
+    if (!(LIKE.has(st) || rx === "love" || rx === "like")) return;
+    (f.accords || []).forEach(a => { accTally[a.n] = (accTally[a.n] || 0) + 1; });
+  });
+  FR.forEach(f => {
+    if (reactions[f.id] !== "love") return; loved++;
+    const seen = new Set();
+    [].concat((f.notes && f.notes.top) || [], (f.notes && f.notes.mid) || [], (f.notes && f.notes.base) || []).forEach(x => { const k = String(x.n || "").trim().toLowerCase(); if (k && !seen.has(k)) { seen.add(k); loveNotes[k] = (loveNotes[k] || 0) + 1; } });
+  });
+  const accs = Object.entries(accTally).sort((a, b) => b[1] - a[1]).slice(0, 5);
+  const accTotal = accs.reduce((s, [, c]) => s + c, 0) || 1;
+  const notes = loved >= 2 ? Object.entries(loveNotes).filter(([, c]) => c >= 2).sort((a, b) => b[1] - a[1]).slice(0, 8) : [];
+
+  // wears
+  const byFrag = {}, ratings = {}, perf = {}, occ = {}, wx = {};
+  W.forEach(w => {
+    byFrag[w.fragId] = (byFrag[w.fragId] || 0) + 1;
+    if (w.occasion) occ[w.occasion] = (occ[w.occasion] || 0) + 1;
+    if (w.weather) wx[w.weather] = (wx[w.weather] || 0) + 1;
+    const f = FR.find(x => x.id === w.fragId);
+    String((f && f.perfumer) || "").split(/\s*(?:&|\/|,|\band\b)\s*/i).map(x => x.trim()).filter(Boolean).forEach(n => { perf[n] = (perf[n] || 0) + 1; });
+    if (w.rating) ratings[w.rating] = (ratings[w.rating] || 0) + 1;
+  });
+  const worn = Object.entries(byFrag).map(([id, n]) => ({ f: FR.find(x => x.id === id), n })).filter(x => x.f).sort((a, b) => b.n - a.n).slice(0, 3);
+  const perfs = Object.entries(perf).sort((a, b) => b[1] - a[1]).slice(0, 3);
+  const avg = avgWearRating(W);
+  const rMax = Math.max(1, ...[1,2,3,4,5].map(r => ratings[r] || 0));
+  const topOcc = Object.entries(occ).sort((a, b) => b[1] - a[1])[0], topWx = Object.entries(wx).sort((a, b) => b[1] - a[1])[0];
+
+  const years = [...new Set([nowY, nowY - 1, ...(entries || []).map(e => { const t = new Date(e.date); return isNaN(t) ? null : t.getFullYear(); }).filter(Boolean), ...(wears || []).map(w => { const t = new Date(w.date); return isNaN(t) ? null : t.getFullYear(); }).filter(Boolean)])].sort((a, b) => b - a).slice(0, 3);
+  const pill = (on, label, fn) => <button key={label} onClick={fn} style={{ fontFamily:sans, fontSize:13, fontWeight:on ? 600 : 500, padding:"0 16px", minHeight:38, borderRadius:20, border:`1px solid ${on ? T.black : T.rule}`, background:on ? T.black : T.white, color:on ? T.white : T.ink, cursor:"pointer", flexShrink:0 }}>{label}</button>;
+
+  let off = 0; const R = 54, C = 2 * Math.PI * R;
+  return (
+    <div>
+      <div style={{ display:"flex", gap:8, overflowX:"auto", marginBottom:14 }}>
+        {pill(yearSel === "all", "All-time", () => setYearSel("all"))}
+        {years.map(y => pill(yearSel === y, String(y), () => setYearSel(y)))}
       </div>
 
-      {open && (
-        <div style={{ padding:"0 16px 16px", borderTop:`1px solid ${T.lift}` }}>
-          {likeEntries.length > 0 && (
-            <div style={{ paddingTop:14 }}>
-              <p style={{ fontFamily:sans, fontSize:9, textTransform:"uppercase", letterSpacing:"0.1em", color:T.mid, margin:"0 0 12px" }}>What you keep reaching for</p>
-              {likeEntries.map(([label, count]) => (
-                <Bar key={label} label={label} count={count} max={likeMax} color={accordColor(label)}/>
-              ))}
-            </div>
-          )}
+      <StreakCalendar entries={E} yearSel={yearSel}/>
 
-          {noteEntries.length > 0 && (
-            <div style={{ paddingTop: 16, marginTop: 4, borderTop: `1px solid ${T.lift}` }}>
-              <p style={{ fontFamily:sans, fontSize:9, textTransform:"uppercase", letterSpacing:"0.1em", color:T.mid, margin:"0 0 10px" }}>Notes you return to</p>
-              <div style={{ display:"flex", flexWrap:"wrap", gap:6 }}>
-                {noteEntries.map(([n, c]) => <span key={n} style={{ fontFamily:sans, fontSize:11, padding:"4px 10px", borderRadius:20, border:`1px solid ${T.rule}`, background:T.lift, color:T.ink, textTransform:"capitalize" }}>{n} <span style={{ color:T.faint }}>{c}</span></span>)}
-              </div>
-            </div>
-          )}
+      <InsightCard label="Top accord" headline={accs[0] ? accs[0][0] : "None yet"} sub="across what you own, sample and love"
+        hint={accs.length === 0 ? "Add fragrances to your collection or mark a few as Love, and your accord mix appears here." : null}>
+        {accs.length > 0 && <div style={{ display:"flex", alignItems:"center", gap:18 }}>
+          <svg viewBox="0 0 140 140" width="150" height="150" style={{ flexShrink:0 }}>
+            <g transform="rotate(-90 70 70)">
+              {accs.map(([l, c]) => { const len = (c / accTotal) * C; const el = <circle key={l} cx="70" cy="70" r={R} fill="none" stroke={accordColor(l)} strokeWidth="18" strokeDasharray={`${Math.max(0, len - 2)} ${C}`} strokeDashoffset={-off}/>; off += len; return el; })}
+            </g>
+          </svg>
+          <div style={{ flex:1, minWidth:0 }}>
+            {accs.map(([l, c]) => <div key={l} style={{ display:"flex", alignItems:"center", gap:8, marginBottom:8 }}><i style={{ width:10, height:10, borderRadius:3, background:accordColor(l), flexShrink:0 }}/><span style={{ fontFamily:sans, fontSize:13, color:T.ink, textTransform:"capitalize", flex:1 }}>{l}</span><span style={{ fontFamily:sans, fontSize:11, color:T.faint }}>{c}</span></div>)}
+          </div>
+        </div>}
+      </InsightCard>
 
-          {lovedNotes.length > 0 && (
-            <div style={{ paddingTop: 16, marginTop: 16, borderTop: `1px solid ${T.lift}` }}>
-              <p style={{ fontFamily:sans, fontSize:9, textTransform:"uppercase", letterSpacing:"0.1em", color:T.mid, margin:"0 0 10px" }}>Most loved notes</p>
-              <div style={{ display:"flex", flexWrap:"wrap", gap:6 }}>
-                {lovedNotes.map(([n, c]) => <span key={n} style={{ fontFamily:sans, fontSize:11, padding:"4px 10px", borderRadius:20, border:`1px solid ${T.rule}`, background:T.lift, color:T.ink, textTransform:"capitalize" }}>{n} <span style={{ color:T.faint }}>{c}</span></span>)}
-              </div>
-              <p style={{ fontFamily:sans, fontSize:11, color:T.faint, margin:"8px 0 0" }}>Across the {lovedCount} fragrances you love.</p>
-            </div>
-          )}
+      <InsightCard label="Most loved notes" headline={notes[0] ? notes[0][0] : "None yet"} sub={notes[0] ? `across the ${loved} fragrances you love` : "from the fragrances you love"}
+        hint={notes.length === 0 ? "Mark 2 or more fragrances as Love, and we'll highlight the notes they share." : null}>
+        {notes.length > 0 && <div style={{ display:"flex", flexWrap:"wrap", gap:6 }}>
+          {notes.map(([n, c]) => <span key={n} style={{ fontFamily:sans, fontSize:12, padding:"5px 12px", borderRadius:20, border:`1px solid ${T.rule}`, background:T.lift, color:T.ink, textTransform:"capitalize" }}>{n} <span style={{ color:T.faint }}>{c}</span></span>)}
+        </div>}
+      </InsightCard>
 
-          {topPerfumers.length > 0 && (
-            <div style={{ paddingTop: 16, marginTop: 16, borderTop: `1px solid ${T.lift}` }}>
-              <p style={{ fontFamily:sans, fontSize:9, textTransform:"uppercase", letterSpacing:"0.1em", color:T.mid, margin:"0 0 10px" }}>Most worn perfumer</p>
-              {topPerfumers.map(([n, c]) => (
-                <div key={n} style={{ display:"flex", justifyContent:"space-between", alignItems:"baseline", gap:10, marginBottom:8 }}>
-                  <span style={{ fontFamily:sans, fontSize:13, color:T.ink }}>{n}</span>
-                  <span style={{ fontFamily:sans, fontSize:11, color:T.faint, flexShrink:0 }}>{c} wear{c !== 1 ? "s" : ""}</span>
-                </div>
-              ))}
-            </div>
-          )}
+      <InsightCard label="Most worn perfumer" headline={perfs[0] ? perfs[0][0] : "None yet"} sub={perfs[0] ? `${perfs[0][1]} wear${perfs[0][1] !== 1 ? "s" : ""} ${when}` : when}
+        hint={perfs.length === 0 ? "Log a wear on a fragrance's Tracker tab, and your most worn perfumer shows here." : null}>
+        {perfs.length > 1 && perfs.slice(1).map(([n, c]) => <div key={n} style={{ display:"flex", justifyContent:"space-between", marginBottom:6 }}><span style={{ fontFamily:sans, fontSize:13, color:T.ink }}>{n}</span><span style={{ fontFamily:sans, fontSize:11, color:T.faint }}>{c} wear{c !== 1 ? "s" : ""}</span></div>)}
+      </InsightCard>
 
-          {mostWorn.length > 0 && (
-            <div style={{ paddingTop: 16, marginTop: 16, borderTop: `1px solid ${T.lift}` }}>
-              <p style={{ fontFamily:sans, fontSize:9, textTransform:"uppercase", letterSpacing:"0.1em", color:T.mid, margin:"0 0 10px" }}>Most worn</p>
-              {mostWorn.map(({ f, n, r }) => (
-                <div key={f.id} style={{ display:"flex", justifyContent:"space-between", alignItems:"baseline", gap:10, marginBottom:8 }}>
-                  <span style={{ fontFamily:sans, fontSize:13, color:T.ink }}>{f.name} <span style={{ fontSize:11, color:T.faint }}>{f.house}</span></span>
-                  <span style={{ fontFamily:sans, fontSize:11, color:T.faint, flexShrink:0 }}>{n}×{r && r.length ? ` · ${(r.reduce((a, b) => a + b, 0) / r.length).toFixed(1)} ★` : ""}</span>
-                </div>
-              ))}
-              {(topOcc || topWx) && <p style={{ fontFamily:sans, fontSize:11, color:T.faint, margin:"6px 0 0", lineHeight:1.6 }}>You wear most when it is {[topWx && topWx[0], topOcc && topOcc[0] && `for ${topOcc[0]}`].filter(Boolean).join(", ")}.</p>}
-            </div>
-          )}
-
-          {dislikeEntries.length > 0 && (
-            <div style={{ paddingTop: likeEntries.length > 0 ? 16 : 14, borderTop: likeEntries.length > 0 ? `1px solid ${T.lift}` : "none" }}>
-              <p style={{ fontFamily:sans, fontSize:9, textTransform:"uppercase", letterSpacing:"0.1em", color:T.mid, margin:"0 0 12px" }}>Accords that haven't resonated</p>
-              {dislikeEntries.map(([label, count]) => (
-                <Bar key={label} label={label} count={count} max={dislikeMax} color={T.bad}/>
-              ))}
-              <p style={{ fontFamily:sans, fontSize:11, color:T.faint, margin:"10px 0 0", lineHeight:1.6 }}>The nose uses this to filter out fragrances that are unlikely to work for you.</p>
-            </div>
-          )}
-        </div>
-      )}
+      <InsightCard label="Average wear rating" headline={avg ? avg.toFixed(1) : "None yet"} sub={avg ? `stars ${when}` : when}
+        hint={!avg ? "Rate your wears in the wear log and your rating spread appears here." : null}>
+        {avg && <div>
+          <div style={{ display:"flex", alignItems:"flex-end", gap:10, height:110 }}>
+            {[1,2,3,4,5].map(r => <div key={r} style={{ flex:1, display:"flex", flexDirection:"column", justifyContent:"flex-end", height:"100%" }}><div style={{ height:`${((ratings[r] || 0) / rMax) * 100}%`, minHeight:ratings[r] ? 6 : 0, background:"var(--accent)", borderRadius:8 }}/></div>)}
+          </div>
+          <div style={{ display:"flex", gap:10, marginTop:6 }}>{[1,2,3,4,5].map(r => <span key={r} style={{ flex:1, textAlign:"center", fontFamily:sans, fontSize:11, color:T.faint }}>{r}★</span>)}</div>
+        </div>}
+        {worn.length > 0 && <div style={{ marginTop:16, paddingTop:14, borderTop:`1px solid ${T.lift}` }}>
+          <p style={{ fontFamily:sans, fontSize:9, textTransform:"uppercase", letterSpacing:"0.1em", color:T.mid, margin:"0 0 10px" }}>Most worn</p>
+          {worn.map(({ f, n }) => <div key={f.id} onClick={() => onOpenFrag && onOpenFrag(f.id)} style={{ display:"flex", justifyContent:"space-between", gap:10, marginBottom:8, cursor:"pointer" }}><span style={{ fontFamily:sans, fontSize:13, color:T.ink }}>{f.name} <span style={{ fontSize:11, color:T.faint }}>{f.house}</span></span><span style={{ fontFamily:sans, fontSize:11, color:T.faint, flexShrink:0 }}>{n}×</span></div>)}
+          {(topOcc || topWx) && <p style={{ fontFamily:sans, fontSize:11, color:T.faint, margin:"6px 0 0", lineHeight:1.6 }}>You wear most when it is {[topWx && topWx[0], topOcc && topOcc[0] && `for ${topOcc[0]}`].filter(Boolean).join(" ")}.</p>}
+        </div>}
+      </InsightCard>
     </div>
   );
 }
 
-// ─── DISCOVER ─────────────────────────────────────────────────────────────────
-const CHAT_RESP={
-  library:{text:"A library in autumn, paper, ink, a whisper of smoke. Oud Wood by Tom Ford is uncannily bookish.",fragId:3},
-  quiet:{text:"Quiet luxury that announces itself only when someone leans close. Baccarat Rouge 540 is the archetype.",fragId:4},
-  winter:{text:"Cold weather makes fragrances bloom differently. Black Orchid is built for exactly this.",fragId:2},
-  default:{text:"Based on what you're describing, I'd start with Aventus. The pineapple opening fades to something smoky and quietly powerful.",fragId:1},
-};
 function getResp(msg){const l=msg.toLowerCase();if(l.includes("library")||l.includes("book")||l.includes("paper")||l.includes("autumn"))return CHAT_RESP.library;if(l.includes("quiet")||l.includes("expensive")||l.includes("luxury"))return CHAT_RESP.quiet;if(l.includes("winter")||l.includes("cold")||l.includes("fire"))return CHAT_RESP.winter;return CHAT_RESP.default;}
 
 
@@ -2914,16 +2908,6 @@ function JournalTab({ entries, userStatuses, reactions, fragrances, wears, onOpe
   const dominant = topFamilies[0]?.[0] || "";
   const previous = topFamilies.length > 1 ? topFamilies[topFamilies.length-1]?.[0] : "";
 
-  // Journal streak: consecutive local days with at least one entry; current streak counts if the last entry was today or yesterday
-  
-  const dayNum = d => { const t = new Date(d); return isNaN(t) ? null : Math.round(new Date(t.getFullYear(), t.getMonth(), t.getDate()).getTime() / 86400000); };
-  const days = [...new Set(all.map(e => dayNum(e.date)).filter(x => x !== null))].sort((a, b) => a - b);
-  let longest = 0, run = 0, prev = null;
-  days.forEach(d => { run = (prev !== null && d === prev + 1) ? run + 1 : 1; longest = Math.max(longest, run); prev = d; });
-  const todayN = dayNum(new Date()); let current = 0;
-  if (days.length && (days[days.length-1] === todayN || days[days.length-1] === todayN - 1)) { current = 1; for (let i = days.length - 2; i >= 0 && days[i] === days[i+1] - 1; i--) current++; }
-  const streak = { current, longest, total: all.length };
-
   const MONTHLY_PROMPT = "Has anything surprised you about what you've been reaching for lately?";
 
   return (
@@ -2934,14 +2918,7 @@ function JournalTab({ entries, userStatuses, reactions, fragrances, wears, onOpe
         <p style={{fontFamily:sans,fontSize:"clamp(13px, 1.1vw, 17px)",color:T.mid,margin:"6px 0 0"}}>What you reach for, and why. A record that becomes a mirror.</p>
       </div>
 
-      {streak.total > 0 && <div style={{display:"flex",gap:10,marginBottom:16}}>
-        {[["Current streak",streak.current+(streak.current===1?" day":" days")],["Longest streak",streak.longest+(streak.longest===1?" day":" days")],["Entries",String(streak.total)]].map(([l,v])=>(
-          <div key={l} style={{flex:1,background:T.white,border:`1px solid ${T.rule}`,borderRadius:12,padding:"12px 14px"}}>
-            <p style={{fontFamily:sans,fontSize:9,textTransform:"uppercase",letterSpacing:"0.1em",color:T.faint,margin:"0 0 4px"}}>{l}</p>
-            <p style={{fontFamily:serif,fontSize:20,color:T.black,margin:0}}>{v}</p>
-          </div>))}
-      </div>}
-      <TasteProfile userStatuses={userStatuses||{}} reactions={reactions||{}} fragrances={FR} wears={wears}/>
+      <JournalInsights entries={all} userStatuses={userStatuses||{}} reactions={reactions||{}} fragrances={FR} wears={wears} onOpenFrag={onOpenFrag}/>
       <CollectionMap items={FR.filter(f=>(userStatuses||{})[f.id])} onOpenFrag={onOpenFrag}/>
 
       {dominant && previous && <div style={{background:T.lift,border:`1px solid ${T.rule}`,borderRadius:16,padding:18,marginBottom:16}}>
@@ -4181,7 +4158,7 @@ const MOCK_MEMBERS = [
 ];
 
 // ─── PROFILE MODAL ────────────────────────────────────────────────────────────
-function ProfileModal({ username, onClose, onBack, currentUser, userStatuses, onOpenFrag, isFollowing, onToggleFollow, following, onOpenProfile, onSignOut }) {
+function ProfileModal({ username, onClose, onBack, currentUser, userStatuses, onOpenFrag, isFollowing, onToggleFollow, following, onOpenProfile, onSignOut, myStats }) {
   const [tab, setTab] = useState("reviews");
 
   const isSelf = currentUser && currentUser.username === username;
@@ -4254,6 +4231,17 @@ function ProfileModal({ username, onClose, onBack, currentUser, userStatuses, on
               </div>
             ))}
           </div>
+
+          {isSelf && myStats && (
+            <div style={{ display:"flex", gap:8, marginBottom:16 }}>
+              {[["Fragrances", String(myStats.fragrances), ""], ["Best streak", String(myStats.bestStreak), myStats.bestStreak === 1 ? "day" : "days"], ["Avg wear rating", myStats.avgRating ? myStats.avgRating.toFixed(1) : "–", myStats.avgRating ? "stars" : ""]].map(([l, v, u]) => (
+                <div key={l} style={{ flex:1, background:T.lift, border:`1px solid ${T.rule}`, borderRadius:14, padding:"12px 8px", textAlign:"center" }}>
+                  <p style={{ fontFamily:sans, fontSize:10, color:T.mid, margin:"0 0 4px" }}>{l}</p>
+                  <p style={{ fontFamily:serif, fontSize:24, lineHeight:1, color:"var(--accent)", margin:0 }}>{v}</p>
+                  <p style={{ fontFamily:sans, fontSize:10, color:T.faint, margin:"3px 0 0", minHeight:12 }}>{u}</p>
+                </div>))}
+            </div>
+          )}
 
           {!isSelf && (
             <div style={{ display:"flex", gap:8, marginBottom:18 }}>
@@ -4967,6 +4955,7 @@ export default function SillageApp() {
           following={following}
           onOpenProfile={username => openProfile(username)}
           onSignOut={handleSignOut}
+          myStats={{ fragrances:Object.keys(userStatuses||{}).length, bestStreak:computeStreak(journalEntries).longest, avgRating:avgWearRating(wears), entries:journalEntries.length }}
         />
       )}
     </div>
