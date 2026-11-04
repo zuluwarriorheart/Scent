@@ -2814,7 +2814,7 @@ function CollectionMap({ items, onOpenFrag }) {
   );
 }
 
-function CollectionTab({ onOpenFrag, statuses:userStatuses, reactions, onReaction, onSuggest, fragrances, wears }) {
+function CollectionTab({ onOpenFrag, statuses:userStatuses, reactions, onReaction, onSuggest, fragrances, wears, onOpenJournal }) {
   const FR = (fragrances && fragrances.length) ? fragrances : FRAGRANCES;
   const [activeFilter,setActiveFilter]=useState("all");
   const [search,setSearch]=useState("");
@@ -2840,8 +2840,7 @@ function CollectionTab({ onOpenFrag, statuses:userStatuses, reactions, onReactio
         <h2 style={{fontFamily:serif,fontSize:"clamp(32px, 3.2vw, 50px)",color:T.black,letterSpacing:-0.8,margin:0,fontWeight:400}}>My collection</h2>
         <p style={{fontFamily:sans,fontSize:"clamp(13px, 1.1vw, 17px)",color:T.mid,margin:"6px 0 0"}}>Bottles, samples, and everything in between.</p>
       </div>
-      <CollectionMap items={FR.filter(f=>userStatuses[f.id])} onOpenFrag={onOpenFrag}/>
-      <TasteProfile userStatuses={userStatuses} reactions={reactions} fragrances={FR} wears={wears}/>
+      {onOpenJournal&&<button onClick={onOpenJournal} style={{display:"block",background:"none",border:"none",padding:0,margin:"0 0 14px",fontFamily:sans,fontSize:12,color:T.mid,cursor:"pointer",textDecoration:"underline",textDecorationColor:T.rule,textUnderlineOffset:3}}>See your taste profile in Journal →</button>}
       <div style={{display:"flex",gap:6,overflowX:"auto",paddingBottom:4,marginBottom:14}}>{filters.map(f=>(
         <button key={f.key} onClick={()=>setActiveFilter(f.key)} style={{fontFamily:sans,fontSize:10,padding:"5px 12px",borderRadius:20,whiteSpace:"nowrap",border:`1px solid ${activeFilter===f.key?T.black:T.rule}`,background:activeFilter===f.key?T.black:T.white,color:activeFilter===f.key?T.white:T.mid,cursor:"pointer",display:"flex",alignItems:"center",gap:5}}>
           {f.iconName&&<Icon name={f.iconName} size={13} color={activeFilter===f.key?T.white:T.mid}/>}
@@ -2864,7 +2863,8 @@ function CollectionTab({ onOpenFrag, statuses:userStatuses, reactions, onReactio
 }
 
 // ─── JOURNAL ──────────────────────────────────────────────────────────────────
-function JournalTab({ entries }) {
+function JournalTab({ entries, userStatuses, reactions, fragrances, wears, onOpenFrag }) {
+  const FR = (fragrances && fragrances.length) ? fragrances : FRAGRANCES;
   const all = [...(entries||[])];
 
   // Derive taste evolution from families
@@ -2883,6 +2883,9 @@ function JournalTab({ entries }) {
         <h2 style={{fontFamily:serif,fontSize:"clamp(32px, 3.2vw, 50px)",color:T.black,letterSpacing:-0.8,margin:0,fontWeight:400}}>Scent Journal</h2>
         <p style={{fontFamily:sans,fontSize:"clamp(13px, 1.1vw, 17px)",color:T.mid,margin:"6px 0 0"}}>What you reach for, and why. A record that becomes a mirror.</p>
       </div>
+
+      <TasteProfile userStatuses={userStatuses||{}} reactions={reactions||{}} fragrances={FR} wears={wears}/>
+      <CollectionMap items={FR.filter(f=>(userStatuses||{})[f.id])} onOpenFrag={onOpenFrag}/>
 
       {dominant && previous && <div style={{background:T.lift,border:`1px solid ${T.rule}`,borderRadius:16,padding:18,marginBottom:16}}>
         <Lbl>Taste this year</Lbl>
@@ -4848,9 +4851,9 @@ export default function SillageApp() {
 
       <main className="mos-main mos-wrap" style={{ position:"relative", zIndex:1, paddingTop:28, paddingBottom:64 }}>
         {activeTab==="Discover"   && <DiscoverTab   onOpenBrand={openBrand} onOpenPerfumer={openPerfumer} fragrances={fragrances} serverShelves={serverShelves} onSearch={serverShelves ? searchFrags : null} onOpenFrag={openFrag} userStatuses={userStatuses} reactions={reactions} onReaction={onReaction} onSuggest={() => setShowSuggest(true)} currentUser={currentUser}/>}
-        {activeTab==="Collection" && <CollectionTab fragrances={fragrances} onOpenFrag={openFrag} statuses={userStatuses} reactions={reactions} onReaction={onReaction} onSuggest={() => setShowSuggest(true)} wears={wears}/>}
+        {activeTab==="Collection" && <CollectionTab fragrances={fragrances} onOpenFrag={openFrag} statuses={userStatuses} reactions={reactions} onReaction={onReaction} onSuggest={() => setShowSuggest(true)} wears={wears} onOpenJournal={() => setActiveTab("Journal")}/>}
         {activeTab==="Layering"   && <div className="mos-prose"><LayeringTab layers={layers} onSaveLayer={saveLayer}/></div>}
-        {activeTab==="Journal"    && <div className="mos-prose"><JournalTab entries={journalEntries}/></div>}
+        {activeTab==="Journal"    && <div className="mos-prose"><JournalTab entries={journalEntries} userStatuses={userStatuses} reactions={reactions} fragrances={fragrances} wears={wears} onOpenFrag={openFrag}/></div>}
         {activeTab==="Learn"      && <div className="mos-prose"><LearnTab fragrances={fragrances} onOpenFrag={openFrag} onOpenBrand={openBrand}/></div>}
         <FooterLinks/>
       </main>
