@@ -78,9 +78,9 @@ input:focus-visible, textarea:focus-visible, select:focus-visible { outline:2px 
 
 .mos-tabs-top { display:flex; gap:var(--nav-gap); overflow-x:auto; }
 .mos-tabbar { display:none; }
-:root { --page-w:1240px; --gutter:20px; --cover-w:156px; --logo-fs:23px; --ctl:34px; --ctl-fs:12px; --nav-fs:12px; --nav-gap:26px; }
-@media (min-width:640px) { :root { --gutter:28px; --cover-w:184px; --logo-fs:28px; --ctl:38px; --ctl-fs:13px; --nav-fs:13px; --nav-gap:32px; } }
-@media (min-width:1100px) { :root { --gutter:40px; --cover-w:206px; --logo-fs:34px; --ctl:42px; --ctl-fs:14px; --nav-fs:14px; --nav-gap:40px; } }
+:root { --page-w:1240px; --gutter:20px; --cover-w:156px; --thumb-w:128px; --logo-fs:23px; --ctl:34px; --ctl-fs:12px; --nav-fs:12px; --nav-gap:26px; }
+@media (min-width:640px) { :root { --gutter:28px; --cover-w:184px; --thumb-w:184px; --logo-fs:28px; --ctl:38px; --ctl-fs:13px; --nav-fs:13px; --nav-gap:32px; } }
+@media (min-width:1100px) { :root { --gutter:40px; --cover-w:206px; --thumb-w:206px; --logo-fs:34px; --ctl:42px; --ctl-fs:14px; --nav-fs:14px; --nav-gap:40px; } }
 body { overflow-x:clip; }
 .mos-wrap { width:100%; max-width:var(--page-w); margin-left:auto; margin-right:auto; padding-left:var(--gutter); padding-right:var(--gutter); }
 .mos-bleed { margin-left:calc(50% - 50vw); margin-right:calc(50% - 50vw); }
@@ -1146,6 +1146,17 @@ function BrandTypePill({ type, size = "normal" }) {
 function Lbl({ children, mb=10 }) {
   return <p style={{fontFamily:sans,fontSize:9,textTransform:"uppercase",letterSpacing:"0.12em",color:T.mid,margin:`0 0 ${mb}px`}}>{children}</p>;
 }
+function Thumb({ frag, w="var(--thumb-w)" }) {
+  const ini = frag.name.split(" ").map(x => x[0]).join("").slice(0, 2).toUpperCase();
+  const hue = hueFor(frag.name);
+  return (
+    <span style={{ display:"block", position:"relative", width:w, aspectRatio:"0.8", flexShrink:0, borderRadius:12, overflow:"hidden", background:frag.image?T.white:`var(--tint-${hue})`, border:`1px solid ${T.rule}` }}>
+      {frag.image
+        ? <img src={frag.image} alt="" loading="lazy" style={{ position:"absolute", inset:0, width:"100%", height:"100%", objectFit:"contain", padding:"8%" }}/>
+        : <span style={{ position:"absolute", inset:0, display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", fontFamily:serif, fontSize:40, fontWeight:400, letterSpacing:-1, color:`var(--${hue})` }}>{ini}{frag.year&&<span style={{ fontFamily:sans, fontSize:12, letterSpacing:"0.04em", opacity:0.7, marginTop:4 }}>{frag.year}</span>}</span>}
+    </span>
+  );
+}
 function Mono({ name, year, size=52 }) {
   const ini=name.split(" ").map(w=>w[0]).join("").slice(0,2).toUpperCase();
   const hue=hueFor(name);
@@ -1373,11 +1384,7 @@ function HouseStrip({ currentFrag, onOpenFrag, onOpenBrand }) {
             onMouseEnter={e => e.currentTarget.style.background = T.white}
             onMouseLeave={e => e.currentTarget.style.background = "transparent"}>
             <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
-              <div style={{ width: 36, height: 36, borderRadius: 8, background: T.white, border: `1px solid ${T.rule}`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, overflow: "hidden" }}>
-                {f.image
-                  ? <img src={f.image} alt="" loading="lazy" style={{ width: "100%", height: "100%", objectFit: "contain", padding: 2 }}/>
-                  : <span style={{ fontFamily: serif, fontSize: 11, color: T.ink }}>{f.name.split(" ").map(w => w[0]).join("").slice(0, 2).toUpperCase()}</span>}
-              </div>
+              <Thumb frag={f} w={72}/>
               <div>
                 <p style={{ fontFamily: serif, fontSize: 13, color: T.black, margin: 0, lineHeight: 1.2 }}>{f.name}</p>
                 <p style={{ fontFamily: sans, fontSize: 10, color: T.mid, margin: "1px 0 0" }}>{f.year}</p>
@@ -1837,7 +1844,7 @@ function PerfumerModal({ name, onClose }) {
               <div style={{ display:"flex", flexDirection:"column", gap:10 }}>
                 {fragrances.map(f => (
                   <div key={f.id} style={{ display:"flex", alignItems:"center", gap:14, padding:"12px 14px", background:T.lift, borderRadius:12, border:`1px solid ${T.rule}` }}>
-                    <Mono name={f.name} year={f.year} size={44}/>
+                    <Thumb frag={f} w={72}/>
                     <div style={{ flex:1, minWidth:0 }}>
                       <p style={{ fontFamily:serif, fontSize:14, color:T.black, margin:0 }}>{f.name}</p>
                       <p style={{ fontFamily:sans, fontSize:11, color:T.mid, margin:"2px 0 0" }}>{f.house} · {f.year}</p>
@@ -1910,8 +1917,8 @@ function FragCard({ frag, onClick, userStatus, reaction, onReaction, onOpenFrag,
   const siblings=sibList||[];
   return (
     <div style={{background:T.white,borderRadius:16,border:`1px solid ${hov?T.black:T.rule}`,transition:"border-color 0.15s",overflow:"hidden"}}>
-      <div onClick={()=>onClick(frag.id)} onMouseEnter={()=>setHov(true)} onMouseLeave={()=>setHov(false)} style={{padding:"14px 16px",display:"flex",alignItems:"center",gap:14,cursor:"pointer"}}>
-        {frag.image ? <div style={{width:52,height:52,borderRadius:10,background:"#fff",border:`1px solid ${T.rule}`,overflow:"hidden",flexShrink:0}}><img src={frag.image} alt="" loading="lazy" style={{width:"100%",height:"100%",objectFit:"contain",padding:3}}/></div> : <Mono name={frag.name} year={frag.year} size={52}/>}
+      <div onClick={()=>onClick(frag.id)} onMouseEnter={()=>setHov(true)} onMouseLeave={()=>setHov(false)} style={{padding:"14px 16px",display:"flex",alignItems:"center",gap:16,cursor:"pointer"}}>
+        <Thumb frag={frag}/>
         <div style={{flex:1,minWidth:0}}>
           <div style={{display:"flex",alignItems:"flex-start",justifyContent:"space-between",gap:8}}>
             <div>
