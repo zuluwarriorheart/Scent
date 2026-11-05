@@ -1168,7 +1168,9 @@ function Thumb({ frag, w="var(--thumb-w)" }) {
 }
 function ReviewCard({ hueKey, who, whoLabel, badges, date, rating, text, fragName, house, image, helpful, replyCount, onWho, onFrag, onReply, children }) {
   const [liked, setLiked] = useState(false);
-  const hue = hueFor(fragName || hueKey || who || "x");
+  const RH = ["violet","teal","orchid","pink"]; // cool brand colours only: orange and coral tints read as brown on dark
+  let hh = 0; for (const c of String(fragName || hueKey || who || "x")) hh = (hh * 31 + c.charCodeAt(0)) >>> 0;
+  const hue = RH[hh % RH.length];
   const initial = String(whoLabel || who || "?").replace(/^@/, "")[0].toUpperCase();
   return (
     <div style={{ padding:"18px 0", borderBottom:`1px solid ${T.rule}` }}>
