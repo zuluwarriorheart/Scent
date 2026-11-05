@@ -3076,12 +3076,53 @@ function JournalTab({ entries, userStatuses, reactions, fragrances, wears, onOpe
 }
 
 // ─── LAYERING — with open/closed lock SVG for public/private ─────────────────
-function LayeringTab({ layers, onSaveLayer }) {
+function FragPicker({ value, onPick, onSearch, placeholder }) {
+  const [q, setQ] = useState(value || "");
+  const [res, setRes] = useState([]);
+  const [open, setOpen] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const picked = useRef(!!value);
+  useEffect(() => {
+    if (picked.current) return;
+    const t = q.trim();
+    if (t.length < 2 || !onSearch) { setRes([]); return; }
+    let off = false; setBusy(true);
+    const h = setTimeout(async () => {
+      try { const r = await onSearch(t, "all", 0); if (!off) { setRes((r.items || []).slice(0, 8)); setOpen(true); } } catch (e) { if (!off) setRes([]); }
+      if (!off) setBusy(false);
+    }, 250);
+    return () => { off = true; clearTimeout(h); };
+  }, [q]);
+  return (
+    <div style={{ position:"relative" }}>
+      <input value={q} onChange={e => { picked.current = false; setQ(e.target.value); onPick(""); setOpen(true); }} onFocus={() => res.length && setOpen(true)} placeholder={placeholder || "Type a name or house…"} autoComplete="off" style={{ ...FIELD, borderColor:value ? "var(--accent)" : T.rule }}/>
+      {value && <span aria-hidden="true" style={{ position:"absolute", right:14, top:"50%", transform:"translateY(-50%)", color:"var(--accent)", fontSize:18 }}>✓</span>}
+      {open && !value && q.trim().length >= 2 && (
+        <div style={{ position:"absolute", left:0, right:0, top:"calc(100% + 6px)", zIndex:20, background:T.white, border:`1px solid ${T.rule}`, borderRadius:14, boxShadow:"0 12px 28px rgba(0,0,0,0.4)", maxHeight:300, overflowY:"auto" }}>
+          {res.length === 0 && <p style={{ fontFamily:sans, fontSize:14, color:T.faint, margin:0, padding:"14px 16px" }}>{busy ? "Searching…" : "No match. Keep typing."}</p>}
+          {res.map(f => (
+            <button key={f.id} onClick={() => { picked.current = true; setQ(f.name + " · " + f.house); setOpen(false); onPick(f.name + " · " + f.house); }}
+              style={{ display:"flex", alignItems:"center", gap:12, width:"100%", textAlign:"left", background:"none", border:"none", borderBottom:`1px solid ${T.lift}`, padding:"10px 14px", cursor:"pointer", fontFamily:sans }}>
+              <Thumb frag={f} w={34}/>
+              <span style={{ minWidth:0 }}>
+                <span style={{ display:"block", fontFamily:serif, fontSize:16, color:T.black }}>{f.name}</span>
+                <span style={{ display:"block", fontSize:12, color:T.mid }}>{f.house}</span>
+              </span>
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+function LayeringTab({ layers, onSaveLayer, onSearch }) {
   const [open,setOpen]=useState(false);
   const [name,setName]=useState("");const [f1,setF1]=useState("");const [f2,setF2]=useState("");
-  const [ratio,setRatio]=useState("50 / 50");const [note,setNote]=useState("");
+  const [note,setNote]=useState("");const [brand2,setBrand2]=useState("");const [prod2,setProd2]=useState("");
   const [layerWith,setLayerWith]=useState("fragrance");const [isPublic,setIsPublic]=useState(false);
   const inp={...FIELD};
+  const second = layerWith==="fragrance" ? f2 : [brand2.trim(), prod2.trim()].filter(Boolean).join(" ");
+  const ready = !!(f1 && name.trim() && (layerWith==="fragrance" ? f2 : brand2.trim() && prod2.trim()));
 
   const BASE_LAYERS=[
     {id:"unscented_lotion",name:"Unscented Lotion",type:"lotion",iconName:"lotion"},
@@ -3130,16 +3171,16 @@ function LayeringTab({ layers, onSaveLayer }) {
             ))}
           </div>
           <div style={{display:"grid",gridTemplateColumns:"1fr",gap:12,marginBottom:16}}>
-            <div><Lbl>First fragrance</Lbl><select value={f1} onChange={e=>setF1(e.target.value)} style={{...inp,appearance:"none"}}><option value="">Select…</option>{FRAGRANCES.map(f=><option key={f.id} value={f.name}>{f.name}</option>)}</select></div>
-            <div><Lbl>{layerWith==="fragrance"?"Second":"Base layer"}</Lbl>
-              {layerWith==="fragrance" ? (
-                <select value={f2} onChange={e=>setF2(e.target.value)} style={{...inp,appearance:"none"}}><option value="">Select…</option>{FRAGRANCES.map(f=><option key={f.id} value={f.name}>{f.name}</option>)}</select>
-              ) : (
-                <select value={f2} onChange={e=>setF2(e.target.value)} style={{...inp,appearance:"none"}}><option value="">Select…</option>{BASE_LAYERS.map(b=><option key={b.id} value={b.name}>{b.name}</option>)}</select>
-              )}
-            </div>
+            <div><Lbl>First fragrance</Lbl><FragPicker key={"a"+open} value={f1} onPick={setF1} onSearch={onSearch}/></div>
+            {layerWith==="fragrance" ? (
+              <div><Lbl>Second fragrance</Lbl><FragPicker key={"b"+open} value={f2} onPick={setF2} onSearch={onSearch}/></div>
+            ) : (
+              <div style={{display:"grid",gridTemplateColumns:"1fr",gap:12}}>
+                <div><Lbl>{layerWith==="lotion"?"Lotion brand":"Body oil brand"}</Lbl><input value={brand2} onChange={e=>setBrand2(e.target.value)} placeholder="e.g. Vaseline" style={inp}/></div>
+                <div><Lbl>{layerWith==="lotion"?"Lotion name":"Body oil name"}</Lbl><input value={prod2} onChange={e=>setProd2(e.target.value)} placeholder={layerWith==="lotion"?"e.g. Cocoa Radiant":"e.g. Dry Oil"} style={inp}/></div>
+              </div>
+            )}
           </div>
-          <div style={{marginBottom:16}}><Lbl>Ratio</Lbl><select value={ratio} onChange={e=>setRatio(e.target.value)} style={{...inp,appearance:"none"}}>{["50 / 50","60 / 40","70 / 30","80 / 20","30 / 70","40 / 60"].map(r=><option key={r}>{r}</option>)}</select></div>
           <div style={{marginBottom:16}}><Lbl>Notes</Lbl><textarea value={note} onChange={e=>setNote(e.target.value)} placeholder="How to apply, what it smells like…" rows={3} style={{...inp,resize:"vertical",lineHeight:1.6,padding:"12px 14px"}}/></div>
 
           
@@ -3151,7 +3192,7 @@ function LayeringTab({ layers, onSaveLayer }) {
 
           <div style={{display:"flex",gap:8}}>
             <button onClick={()=>setOpen(false)} style={ghostBtn}>Cancel</button>
-            <button onClick={()=>{if(f1&&f2&&name){onSaveLayer({name,frags:[f1,f2],ratio,note,layerWith,isPublic,date:new Date().toLocaleDateString("en-US",{month:"short",day:"numeric",year:"numeric"}),rating:4});setOpen(false);setName("");setF1("");setF2("");setNote("");}}} style={{...ctaBtn(!!(f1&&f2&&name)),flex:1,width:"auto"}}>Save combination</button>
+            <button onClick={()=>{if(ready){onSaveLayer({name,frags:[f1,second],ratio:"",note,layerWith,isPublic,date:new Date().toLocaleDateString("en-US",{month:"short",day:"numeric",year:"numeric"}),rating:4});setOpen(false);setName("");setF1("");setF2("");setBrand2("");setProd2("");setNote("");}}} style={{...ctaBtn(ready),flex:1,width:"auto"}}>Save combination</button>
           </div>
         </div>
       )}
@@ -3194,7 +3235,7 @@ function LayeringTab({ layers, onSaveLayer }) {
                 </div>
               );
             })}
-            <span style={{fontFamily:sans,fontSize:10,color:T.mid,marginLeft:"auto"}}>{l.ratio}</span>
+            {l.ratio&&<span style={{fontFamily:sans,fontSize:10,color:T.mid,marginLeft:"auto"}}>{l.ratio}</span>}
           </div>
           <p style={{fontFamily:sans,fontSize:12,color:T.mid,lineHeight:1.65,fontStyle:"italic",margin:0}}>"{l.note}"</p>
         </div>
@@ -4982,7 +5023,7 @@ export default function SillageApp() {
       <main className="mos-main mos-wrap" style={{ position:"relative", zIndex:1, paddingTop:28, paddingBottom:64 }}>
         {activeTab==="Discover"   && <DiscoverTab   onOpenBrand={openBrand} onOpenPerfumer={openPerfumer} fragrances={fragrances} serverShelves={serverShelves} onSearch={serverShelves ? searchFrags : null} onOpenFrag={openFrag} userStatuses={userStatuses} reactions={reactions} onReaction={onReaction} onSuggest={() => setShowSuggest(true)} currentUser={currentUser}/>}
         {activeTab==="Collection" && <CollectionTab fragrances={fragrances} onOpenFrag={openFrag} statuses={userStatuses} reactions={reactions} onReaction={onReaction} onSuggest={() => setShowSuggest(true)} wears={wears} onOpenJournal={() => setActiveTab("Journal")}/>}
-        {activeTab==="Layering"   && <div className="mos-prose"><LayeringTab layers={layers} onSaveLayer={saveLayer}/></div>}
+        {activeTab==="Layering"   && <div className="mos-prose"><LayeringTab layers={layers} onSaveLayer={saveLayer} onSearch={searchFrags}/></div>}
         {activeTab==="Journal"    && <div className="mos-prose"><JournalTab entries={journalEntries} userStatuses={userStatuses} reactions={reactions} fragrances={fragrances} wears={wears} onOpenFrag={openFrag}/></div>}
         {activeTab==="Learn"      && <div className="mos-prose"><LearnTab fragrances={fragrances} onOpenFrag={openFrag} onOpenBrand={openBrand}/></div>}
         <FooterLinks/>
