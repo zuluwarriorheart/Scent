@@ -1166,6 +1166,50 @@ function Thumb({ frag, w="var(--thumb-w)" }) {
     </span>
   );
 }
+function ReviewCard({ hueKey, who, whoLabel, badges, date, rating, text, fragName, house, image, helpful, replyCount, onWho, onFrag, onReply, children }) {
+  const [liked, setLiked] = useState(false);
+  const hue = hueFor(fragName || hueKey || who || "x");
+  const initial = String(whoLabel || who || "?").replace(/^@/, "")[0].toUpperCase();
+  return (
+    <div style={{ padding:"18px 0", borderBottom:`1px solid ${T.rule}` }}>
+      <div style={{ display:"flex", alignItems:"center", gap:12 }}>
+        <div style={{ width:46, height:46, borderRadius:"50%", background:`var(--tint-${hue})`, color:`var(--${hue})`, display:"flex", alignItems:"center", justifyContent:"center", fontFamily:serif, fontSize:20, flexShrink:0 }}>{initial}</div>
+        <div style={{ minWidth:0, flex:1 }}>
+          <div style={{ display:"flex", alignItems:"baseline", gap:8, flexWrap:"wrap" }}>
+            <span onClick={onWho} style={{ fontFamily:serif, fontSize:18, color:T.black, cursor:onWho?"pointer":"default" }}>{whoLabel || who}</span>
+            {badges}
+            <span style={{ fontFamily:sans, fontSize:12, color:T.faint }}>{date}</span>
+          </div>
+          {fragName && <p style={{ fontFamily:sans, fontSize:13, color:T.mid, margin:"2px 0 0", whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis" }}>Reviewed <span onClick={onFrag} style={{ color:T.violet, cursor:onFrag?"pointer":"default" }}>{fragName}</span></p>}
+        </div>
+      </div>
+      <div style={{ marginTop:14, background:`var(--tint-${hue})`, borderRadius:18, padding:"18px 18px 16px" }}>
+        <div style={{ display:"flex", gap:3 }}>{[1,2,3,4,5].map(n => <span key={n} style={{ fontSize:22, lineHeight:1, color:n <= Math.round(rating) ? `var(--${hue})` : T.faint }}>{n <= Math.round(rating) ? "★" : "☆"}</span>)}</div>
+        {text && <p style={{ fontFamily:sans, fontSize:15, color:T.ink, lineHeight:1.65, margin:"14px 0 0" }}>{text}</p>}
+        {fragName && (
+          <div style={{ display:"flex", alignItems:"flex-end", justifyContent:"space-between", gap:12, marginTop:text?18:34 }}>
+            <div style={{ minWidth:0 }}>
+              <p onClick={onFrag} style={{ fontFamily:serif, fontSize:22, lineHeight:1.15, color:T.black, margin:0, cursor:onFrag?"pointer":"default" }}>{fragName}</p>
+              {house && <p style={{ fontFamily:sans, fontSize:13, color:T.mid, margin:"4px 0 0" }}>By {house}</p>}
+            </div>
+            <Thumb frag={{ name:fragName, image }} w={64}/>
+          </div>
+        )}
+      </div>
+      <div style={{ display:"flex", alignItems:"center", gap:20, marginTop:12 }}>
+        <button onClick={() => setLiked(l => !l)} aria-pressed={liked} aria-label="Helpful" style={{ display:"flex", alignItems:"center", gap:6, background:"none", border:"none", cursor:"pointer", padding:0, fontFamily:sans, fontSize:14, color:liked?"var(--accent)":T.mid }}>
+          <svg width="22" height="22" viewBox="0 0 24 24" fill={liked?"currentColor":"none"} stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1-1.1a5.5 5.5 0 0 0-7.8 7.8l1 1.1L12 21l7.8-7.5 1-1.1a5.5 5.5 0 0 0 0-7.8z"/></svg>
+          {(helpful || 0) + (liked ? 1 : 0)}
+        </button>
+        <button onClick={onReply} aria-label="Reply" style={{ display:"flex", alignItems:"center", gap:6, background:"none", border:"none", cursor:onReply?"pointer":"default", padding:0, fontFamily:sans, fontSize:14, color:T.mid }}>
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12z"/></svg>
+          {replyCount || 0}
+        </button>
+      </div>
+      {children}
+    </div>
+  );
+}
 function Mono({ name, year, size=52 }) {
   const ini=name.split(" ").map(w=>w[0]).join("").slice(0,2).toUpperCase();
   const hue=hueFor(name);
@@ -2154,6 +2198,7 @@ function DetailModal({ frag, onClose, userStatus, setUserStatus, privateNote, se
   const [showPerfumer, setShowPerfumer]=useState(false);
   const [replyText,setReplyText]=useState("");
   const [replyTo,setReplyTo]=useState(null);
+  const [revSort,setRevSort]=useState("recent");
   const [replies,setReplies]=useState({});
   const REVIEWS=[
     {id:0,username:"scentcollector_jw",name:"James W.",rating:5,text:"Give it 20 minutes past the opening, the smoky birch dry-down is masterful.",date:"2 days ago",helpful:34,user:{isFounder:true,memberNumber:12,isTopContributor:true,country:"GB"}},
@@ -2319,45 +2364,34 @@ function DetailModal({ frag, onClose, userStatus, setUserStatus, privateNote, se
                   <span style={{fontFamily:sans,fontSize:14,color:T.mid}}> / 5</span>
                   <div style={{display:"flex",alignItems:"center",gap:8,marginTop:5}}><Stars rating={frag.rating} size={12}/><span style={{fontFamily:sans,fontSize:11,color:T.mid}}>{frag.votes.toLocaleString()} ratings</span></div>
                 </div>
-                <button style={{padding:"9px 16px",borderRadius:10,background:T.black,border:"none",color:T.white,fontSize:12,fontFamily:sans,cursor:"pointer"}}>Write Review</button>
+                <button style={{...ctaBtn(true),width:"auto",padding:"0 20px",minHeight:44,fontSize:14}}>Write Review</button>
               </div>
-              {REVIEWS.map((r,ri)=>(
-                <div key={r.id} style={{border:`1px solid ${T.rule}`,borderRadius:12,padding:16,marginBottom:10,background:T.white}}>
-                  <div style={{display:"flex",alignItems:"flex-start",justifyContent:"space-between",marginBottom:10}}>
-                    <div style={{display:"flex",alignItems:"center",gap:8}}>
-                      <div style={{width:28,height:28,borderRadius:"50%",background:T.lift,border:`1px solid ${T.rule}`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:11,fontWeight:500,color:T.mid,fontFamily:sans,flexShrink:0}}>{r.name[0].toUpperCase()}</div>
-                      <div>
-                        <div style={{display:"flex",alignItems:"center",gap:5,flexWrap:"wrap"}}>
-                          <span onClick={() => onOpenProfile && onOpenProfile(r.username)} style={{fontFamily:sans,fontSize:12,color:T.ink,fontWeight:500,cursor:"pointer"}}>@{r.username}</span>
-                          <UserBadges user={r.user} size="small"/>
-                        </div>
-                        <span style={{fontFamily:sans,fontSize:10,color:T.faint}}>{r.date}</span>
-                      </div>
-                    </div>
-                    <Stars rating={r.rating} size={10}/>
-                  </div>
-                  <p style={{fontFamily:sans,fontSize:13,color:T.mid,lineHeight:1.65,margin:"0 0 10px"}}>{r.text}</p>
-                  <div style={{display:"flex",alignItems:"center",gap:12}}>
-                    <span style={{display:"flex",alignItems:"center",gap:4,fontFamily:sans,fontSize:11,color:T.faint,cursor:"pointer"}}><Icon name="thumbsup" size={12} color={T.faint}/> Helpful ({r.helpful})</span>
-                    <button onClick={()=>setReplyTo(replyTo===r.id?null:r.id)} style={{fontFamily:sans,fontSize:11,color:T.mid,background:"none",border:"none",cursor:"pointer",padding:0}}>Reply</button>
-                  </div>
+              <div style={{marginBottom:6}}>
+                <select value={revSort} onChange={e=>setRevSort(e.target.value)} aria-label="Sort reviews" style={{...FIELD,width:"auto",minHeight:42,borderRadius:21,padding:"0 16px",fontSize:14}}>
+                  <option value="recent">Recently added</option>
+                  <option value="helpful">Most helpful</option>
+                </select>
+              </div>
+              {(revSort==="helpful"?[...REVIEWS].sort((x,y)=>y.helpful-x.helpful):REVIEWS).map(r=>(
+                <ReviewCard key={r.id} who={r.username} whoLabel={"@"+r.username} badges={<UserBadges user={r.user} size="small"/>} date={r.date} rating={r.rating} text={r.text}
+                  hueKey={frag.name} helpful={r.helpful} replyCount={(replies[r.id]||[]).length}
+                  onWho={()=>onOpenProfile&&onOpenProfile(r.username)} onReply={()=>setReplyTo(replyTo===r.id?null:r.id)}>
                   {(replies[r.id]||[]).map((rep,i)=>(
-                    <div key={i} style={{marginTop:10,paddingTop:10,paddingLeft:14,borderTop:`1px solid ${T.lift}`,borderLeft:`2px solid ${T.rule}`,marginLeft:8}}>
+                    <div key={i} style={{marginTop:12,paddingLeft:14,borderLeft:`2px solid ${T.rule}`,marginLeft:8}}>
                       <div style={{display:"flex",alignItems:"center",gap:6,marginBottom:4}}>
-                        <div style={{width:20,height:20,borderRadius:"50%",background:T.black,display:"flex",alignItems:"center",justifyContent:"center",fontSize:9,color:T.white,fontFamily:sans}}>Y</div>
-                        <span style={{fontFamily:sans,fontSize:11,color:T.mid}}>{rep.user}</span>
-                        <span style={{fontFamily:sans,fontSize:10,color:T.faint,marginLeft:"auto"}}>{rep.date}</span>
+                        <span style={{fontFamily:sans,fontSize:13,color:T.ink,fontWeight:500}}>{rep.user}</span>
+                        <span style={{fontFamily:sans,fontSize:11,color:T.faint,marginLeft:"auto"}}>{rep.date}</span>
                       </div>
-                      <p style={{fontFamily:sans,fontSize:12,color:T.mid,lineHeight:1.6,margin:0}}>{rep.text}</p>
+                      <p style={{fontFamily:sans,fontSize:14,color:T.mid,lineHeight:1.6,margin:0}}>{rep.text}</p>
                     </div>
                   ))}
                   {replyTo===r.id&&(
-                    <div style={{marginTop:10,paddingTop:10,borderTop:`1px solid ${T.lift}`,display:"flex",gap:8}}>
-                      <input value={replyText} onChange={e=>setReplyText(e.target.value)} placeholder="Add a reply…" onKeyDown={e=>e.key==="Enter"&&submitReply(r.id)} style={{flex:1,background:T.lift,border:`1px solid ${T.rule}`,borderRadius:8,padding:"8px 12px",fontSize:12,color:T.ink,outline:"none",fontFamily:sans}}/>
-                      <button onClick={()=>submitReply(r.id)} style={{padding:"8px 14px",borderRadius:8,background:T.black,border:"none",color:T.white,fontSize:11,fontFamily:sans,cursor:"pointer"}}>Post</button>
+                    <div style={{marginTop:12,display:"flex",gap:8}}>
+                      <input value={replyText} onChange={e=>setReplyText(e.target.value)} placeholder="Add a reply…" onKeyDown={e=>e.key==="Enter"&&submitReply(r.id)} style={{...FIELD,flex:1,width:"auto"}}/>
+                      <button onClick={()=>submitReply(r.id)} style={{...ctaBtn(true),width:"auto",padding:"0 20px"}}>Post</button>
                     </div>
                   )}
-                </div>
+                </ReviewCard>
               ))}
             </div>
           )}
@@ -4397,22 +4431,8 @@ function ProfileModal({ username, onClose, onBack, currentUser, userStatuses, on
                 </div>
               ) : (
                 (member.reviews || []).map((r, i) => (
-                  <div key={i} style={{ marginBottom:12, padding:16, background:T.lift, borderRadius:14, border:`1px solid ${T.rule}` }}>
-                    <div style={{ display:"flex", alignItems:"flex-start", justifyContent:"space-between", marginBottom:10 }}>
-                      <div>
-                        <p style={{ fontFamily:serif, fontSize:15, color:T.black, margin:"0 0 2px" }}>{r.fragName}</p>
-                        <p style={{ fontFamily:sans, fontSize:11, color:T.mid, margin:0 }}>{r.house}</p>
-                      </div>
-                      <div style={{ display:"flex", flexDirection:"column", alignItems:"flex-end", gap:4 }}>
-                        <div style={{ display:"flex", gap:1 }}>{[1,2,3,4,5].map(s => <span key={s} style={{ fontSize:10, color:s<=r.rating?T.black:T.faint }}>★</span>)}</div>
-                        <span style={{ fontFamily:sans, fontSize:10, color:T.faint }}>{r.date}</span>
-                      </div>
-                    </div>
-                    <p style={{ fontFamily:sans, fontSize:13, color:T.mid, lineHeight:1.7, margin:"0 0 10px", fontStyle:"italic" }}>"{r.text}"</p>
-                    <button onClick={() => { onOpenFrag && onOpenFrag(r.fragId); }} style={{ fontFamily:sans, fontSize:11, color:T.mid, background:"none", border:"none", padding:0, cursor:"pointer" }}>
-                      View fragrance →
-                    </button>
-                  </div>
+                  <ReviewCard key={i} who={member.username} whoLabel={member.name} date={r.date} rating={r.rating} text={r.text}
+                    fragName={r.fragName} house={r.house} helpful={0} replyCount={0} onFrag={() => { onOpenFrag && onOpenFrag(r.fragId); }}/>
                 ))
               )}
             </div>
