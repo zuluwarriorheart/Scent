@@ -88,6 +88,9 @@ body { overflow-x:clip; }
 .mos-shelf { scroll-padding-left:max(var(--gutter), calc((100vw - var(--page-w)) / 2 + var(--gutter))); }
 .mos-prose { max-width:1040px; }
 .mos-grid { display:grid; grid-template-columns:1fr; gap:10px; }
+.mos-tiles { display:grid; grid-template-columns:repeat(2, minmax(0,1fr)); gap:20px 14px; }
+@media (min-width:640px) { .mos-tiles { grid-template-columns:repeat(3, minmax(0,1fr)); } }
+@media (min-width:1100px) { .mos-tiles { grid-template-columns:repeat(5, minmax(0,1fr)); } }
 @media (min-width:900px) { .mos-grid { grid-template-columns:repeat(2, minmax(0,1fr)); gap:12px; } }
 @media (min-width:1280px) { .mos-grid { grid-template-columns:repeat(3, minmax(0,1fr)); } }
 .mos-two { display:grid; grid-template-columns:minmax(0,1fr); gap:0; }
@@ -2848,10 +2851,61 @@ function CollectionMap({ items, onOpenFrag }) {
   );
 }
 
+function useShelfCols() {
+  const calc = () => (typeof window === "undefined" ? 3 : window.innerWidth >= 1100 ? 6 : window.innerWidth >= 640 ? 5 : 3);
+  const [n, setN] = useState(calc);
+  useEffect(() => { const f = () => setN(calc()); window.addEventListener("resize", f); return () => window.removeEventListener("resize", f); }, []);
+  return n;
+}
+function ViewIcon({ kind, color }) {
+  const p = { width:18, height:18, viewBox:"0 0 24 24", fill:"none", stroke:color, strokeWidth:1.8, strokeLinecap:"round", strokeLinejoin:"round" };
+  if (kind === "grid") return <svg {...p}><rect x="4" y="4" width="7" height="7" rx="1.5"/><rect x="13" y="4" width="7" height="7" rx="1.5"/><rect x="4" y="13" width="7" height="7" rx="1.5"/><rect x="13" y="13" width="7" height="7" rx="1.5"/></svg>;
+  if (kind === "shelf") return <svg {...p}><path d="M4 20h16"/><rect x="5" y="6" width="3.5" height="11" rx="0.8"/><rect x="10.2" y="4" width="3.5" height="13" rx="0.8"/><rect x="15.4" y="7" width="3.5" height="10" rx="0.8"/></svg>;
+  return <svg {...p}><path d="M4 6h16M4 12h16M4 18h16"/></svg>;
+}
+function GridTile({ frag, onClick, userStatus, reaction }) {
+  const owned = userStatus === "bottle_owned";
+  return (
+    <button onClick={() => onClick(frag.id)} aria-label={`${frag.name} by ${frag.house}`} style={{ padding:0, border:"none", background:"none", cursor:"pointer", textAlign:"left", fontFamily:sans, minWidth:0 }}>
+      <span style={{ display:"block", position:"relative" }}>
+        <Thumb frag={frag} w="100%"/>
+        {userStatus && <span style={{ position:"absolute", top:8, right:8, width:28, height:28, borderRadius:"50%", background:owned?ACCENT_FILL:T.lift, display:"flex", alignItems:"center", justifyContent:"center" }}><Icon name={owned?"bottle":"bookmark"} size={14} color={owned?ON_ACCENT:T.mid}/></span>}
+        {reaction && <span style={{ position:"absolute", left:8, bottom:8, borderRadius:20, background:"rgba(0,0,0,0.72)", color:"#fff", fontSize:12, padding:"3px 9px" }}>{reaction === "love" ? "♥ Love" : reaction === "like" ? "Like" : "Dislike"}</span>}
+      </span>
+      <span style={{ display:"-webkit-box", WebkitLineClamp:2, WebkitBoxOrient:"vertical", overflow:"hidden", marginTop:10, fontFamily:serif, fontSize:18, lineHeight:1.2, letterSpacing:-0.2, color:T.black }}>{frag.name}</span>
+      <span style={{ display:"block", marginTop:3, fontSize:13, color:T.mid, whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis" }}>{frag.house}</span>
+    </button>
+  );
+}
+function ShelfView({ items, onClick, statuses }) {
+  const cols = useShelfCols();
+  const rows = []; for (let i = 0; i < items.length; i += cols) rows.push(items.slice(i, i + cols));
+  return (
+    <div>
+      {rows.map((row, ri) => (
+        <div key={ri} style={{ marginBottom:26 }}>
+          <div style={{ display:"grid", gridTemplateColumns:`repeat(${cols}, minmax(0, 1fr))`, gap:10, padding:"0 6px", alignItems:"end" }}>
+            {row.map(f => (
+              <button key={f.id} onClick={() => onClick(f.id)} aria-label={`${f.name} by ${f.house}`} style={{ padding:0, border:"none", background:"none", cursor:"pointer", minWidth:0 }}>
+                <span style={{ display:"block", position:"relative" }}>
+                  <Thumb frag={f} w="100%"/>
+                  {statuses[f.id] === "bottle_owned" && <span style={{ position:"absolute", top:6, right:6, width:22, height:22, borderRadius:"50%", background:ACCENT_FILL, display:"flex", alignItems:"center", justifyContent:"center" }}><Icon name="bottle" size={12} color={ON_ACCENT}/></span>}
+                </span>
+              </button>
+            ))}
+          </div>
+          <div aria-hidden="true" style={{ height:12, marginTop:-1, borderRadius:4, background:T.rule, boxShadow:"0 6px 10px -4px rgba(0,0,0,0.45)" }}/>
+        </div>
+      ))}
+    </div>
+  );
+}
 function CollectionTab({ onOpenFrag, statuses:userStatuses, reactions, onReaction, onSuggest, fragrances, wears, onOpenJournal }) {
   const FR = (fragrances && fragrances.length) ? fragrances : FRAGRANCES;
   const [activeFilter,setActiveFilter]=useState("all");
   const [search,setSearch]=useState("");
+  const [view,setViewState]=useState(()=>{try{const v=localStorage.getItem("mos_collection_view");return v==="shelf"||v==="list"||v==="grid"?v:"grid";}catch(e){return "grid";}});
+  const setView=v=>{setViewState(v);try{localStorage.setItem("mos_collection_view",v);}catch(e){}};
   const filters=[
     {key:"all",label:"All",iconName:null},
     {key:"bottle_owned",label:"Bottles",iconName:"bottle"},
@@ -2881,16 +2935,27 @@ function CollectionTab({ onOpenFrag, statuses:userStatuses, reactions, onReactio
           {f.label}<span style={{opacity:0.65,marginLeft:2}}>{chipCount(f.key)}</span>
         </button>
       ))}</div>
-      <div style={{position:"relative",marginBottom:12}}>
+      <div style={{display:"flex",gap:8,alignItems:"center",marginBottom:12}}>
+      <div style={{position:"relative",flex:1,minWidth:0}}>
         <span style={{position:"absolute",left:14,top:"50%",transform:"translateY(-50%)"}}><Icon name="search" size={14} color={T.faint}/></span>
-        <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Search by name, house, note…" style={{width:"100%",background:T.white,border:`1px solid ${search?T.black:T.rule}`,borderRadius:12,padding:"12px 14px 12px 40px",fontSize:13,color:T.black,outline:"none",boxSizing:"border-box",fontFamily:sans,transition:"border-color 0.15s"}}/>
+        <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Search…" style={{width:"100%",background:T.white,border:`1px solid ${search?T.black:T.rule}`,borderRadius:12,padding:"12px 14px 12px 40px",fontSize:13,color:T.black,outline:"none",boxSizing:"border-box",fontFamily:sans,transition:"border-color 0.15s"}}/>
         {search&&<button onClick={()=>setSearch("")} style={{position:"absolute",right:12,top:"50%",transform:"translateY(-50%)",background:"none",border:"none",fontSize:14,color:T.mid,cursor:"pointer"}}>✕</button>}
       </div>
-      {search&&<p style={{fontFamily:sans,fontSize:11,color:T.mid,margin:"0 0 12px"}}>{filtered.length} result{filtered.length!==1?"s":""} for "{search}"</p>}
-      <div className="mos-grid">
-        {filtered.map(f=><FragCard key={f.id} frag={f} onClick={onOpenFrag} userStatus={userStatuses[f.id]} reaction={reactions[f.id]} onReaction={v=>onReaction(f.id,v)} onOpenFrag={onOpenFrag}/>)}
-        {filtered.length===0&&<div style={{gridColumn:"1 / -1",textAlign:"center",padding:"48px 0",color:T.faint}}><p style={{fontSize:28,marginBottom:8}}>○</p><p style={{fontSize:13,marginBottom:16}}>Nothing found</p></div>}
+      <div role="group" aria-label="Collection view" style={{display:"flex",gap:4,flexShrink:0}}>
+        {["grid","shelf","list"].map(k=>(
+          <button key={k} onClick={()=>setView(k)} aria-pressed={view===k} aria-label={k+" view"} style={{width:42,height:42,borderRadius:12,border:`1px solid ${view===k?T.black:T.rule}`,background:view===k?T.black:T.white,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",padding:0}}>
+            <ViewIcon kind={k} color={view===k?T.white:T.mid}/>
+          </button>))}
       </div>
+      </div>
+      {search&&<p style={{fontFamily:sans,fontSize:11,color:T.mid,margin:"0 0 12px"}}>{filtered.length} result{filtered.length!==1?"s":""} for "{search}"</p>}
+      {filtered.length===0
+        ? <div style={{textAlign:"center",padding:"48px 0",color:T.faint}}><p style={{fontSize:28,marginBottom:8}}>○</p><p style={{fontSize:13,marginBottom:16}}>Nothing found</p></div>
+        : view==="list"
+          ? <div className="mos-grid">{filtered.map(f=><FragCard key={f.id} frag={f} onClick={onOpenFrag} userStatus={userStatuses[f.id]} reaction={reactions[f.id]} onReaction={v=>onReaction(f.id,v)} onOpenFrag={onOpenFrag}/>)}</div>
+          : view==="shelf"
+            ? <ShelfView items={filtered} onClick={onOpenFrag} statuses={userStatuses}/>
+            : <div className="mos-tiles">{filtered.map(f=><GridTile key={f.id} frag={f} onClick={onOpenFrag} userStatus={userStatuses[f.id]} reaction={reactions[f.id]}/>)}</div>}
       <div style={{marginTop:20}}><button onClick={onSuggest} style={{width:"100%",padding:"13px 0",borderRadius:12,border:`1px solid ${T.rule}`,background:T.white,color:T.mid,fontSize:12,fontFamily:sans,cursor:"pointer"}}>+ Missing a fragrance? Suggest it</button></div>
     </div>
   );
