@@ -688,19 +688,23 @@ function StatusSelector({ value, onChange }) {
     { title:"Sample", items:STATUSES.filter(s=>s.group==="sample") },
     { title:"Smelled",items:STATUSES.filter(s=>s.group==="tried")  },
   ];
+  const SHORT = { bottle_owned:"Owned", bottle_wishlist:"Wishlist", sample_have:"In hand", sample_wishlist:"Wishlist", smelled:"Smelled", tried_skin:"Tried on skin" };
   return (
     <div>
       {groups.map((g,gi) => (
-        <div key={g.title} style={{ marginBottom:gi<2?16:0 }}>
-          <p style={{ fontFamily:sans, fontSize:9, textTransform:"uppercase", letterSpacing:"0.12em", color:T.mid, margin:"0 0 7px" }}>{g.title}</p>
-          <div style={{ display:"flex", flexDirection:"column", gap:6 }}>
-            {g.items.map(s => (
-              <button key={s.key} onClick={()=>onChange(s.key===value?null:s.key)}
-                style={{ display:"flex", alignItems:"center", gap:10, padding:"10px 14px", borderRadius:10, border:`1px solid ${value===s.key?T.black:T.rule}`, background:value===s.key?T.black:T.white, cursor:"pointer" }}>
-                <Icon name={s.iconName} size={18} color={value===s.key?T.white:T.mid}/>
-                <span style={{ fontFamily:sans, fontSize:12, fontWeight:500, color:value===s.key?T.white:T.ink }}>{s.label}</span>
-              </button>
-            ))}
+        <div key={g.title} style={{ marginBottom:gi<2?22:0 }}>
+          <p style={{ fontFamily:sans, fontSize:11, textTransform:"uppercase", letterSpacing:"0.14em", color:T.mid, margin:"0 0 10px" }}>{g.title}</p>
+          <div style={{ display:"grid", gridTemplateColumns:"repeat(2, minmax(0, 1fr))", gap:10 }}>
+            {g.items.map(s => {
+              const on = value === s.key;
+              return (
+                <button key={s.key} onClick={()=>onChange(on?null:s.key)} aria-pressed={on}
+                  style={{ minHeight:58, padding:"10px 12px", borderRadius:14, border:`1px solid ${on?"transparent":T.rule}`, background:on?"var(--accent)":T.white, color:on?"#fff":T.ink, fontFamily:sans, fontSize:15, fontWeight:on?600:500, cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", gap:8, textAlign:"center" }}>
+                  <Icon name={s.iconName} size={18} color={on?"#fff":T.mid}/>
+                  {SHORT[s.key] || s.label}
+                </button>
+              );
+            })}
           </div>
         </div>
       ))}
