@@ -530,7 +530,7 @@ function noteFallback(name) {
   let h = 0; for (const ch of String(name).toLowerCase()) h = (h * 31 + ch.charCodeAt(0)) >>> 0;
   return NOTE_FALLBACK_PAL[h % NOTE_FALLBACK_PAL.length];
 }
-function NoteIllustration({ name: rawName, size = 72 }) {
+function NoteIllustration({ name: rawName, size = 72, big = false }) {
   const name = String(rawName || "").replace(/(^|[\s-])([a-z])/g, (m, p, ch) => p + ch.toUpperCase());
   const c = NOTE_COLORS[name] || noteFallback(name);
   const arts = {
@@ -571,6 +571,14 @@ function NoteIllustration({ name: rawName, size = 72 }) {
     "Cocoa": <svg viewBox="0 0 60 60" fill="none"><path d="M16 26 C16 18 22 14 30 14 C38 14 44 18 44 26 C44 38 36 48 30 50 C24 48 16 38 16 26Z" fill={c.fill} stroke={c.stroke} strokeWidth="1.2"/><ellipse cx="30" cy="30" rx="8" ry="6" fill={c.accent} opacity="0.3"/></svg>,
   };
   const art = arts[name] || <svg viewBox="0 0 60 60" fill="none"><circle cx="30" cy="30" r="20" fill={c.fill} stroke={c.stroke} strokeWidth="1.2"/><text x="30" y="38.5" textAnchor="middle" fontFamily={serif} fontSize="24" fill={c.accent}>{String(name).charAt(0).toUpperCase()}</text></svg>;
+  if (big) return (
+    <div style={{ display:"flex", flexDirection:"column", alignItems:"flex-start", gap:10, width:"100%" }}>
+      <div style={{ width:"100%", aspectRatio:"1", borderRadius:16, background:c.bg, border:`1px solid ${c.stroke}22`, overflow:"hidden", display:"flex", alignItems:"center", justifyContent:"center" }}>
+        <div style={{ width:"62%", height:"62%" }}>{art}</div>
+      </div>
+      <span style={{ fontFamily:serif, fontSize:20, color:T.black, lineHeight:1.15 }}>{name}</span>
+    </div>
+  );
   return (
     <div style={{ display:"flex", flexDirection:"column", alignItems:"center", gap:5 }}>
       <div style={{ width:size, height:size, borderRadius:12, background:c.bg, border:`1px solid ${c.stroke}22`, overflow:"hidden", display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0 }}>
@@ -3495,11 +3503,11 @@ function LearnTab({ fragrances, onOpenFrag, onOpenBrand }) {
       {tab==="ingredients"&&<>
       <Lbl>Ingredient guide</Lbl>
       <p style={{fontFamily:sans,fontSize:13,color:T.mid,lineHeight:1.6,margin:"0 0 14px"}}>Where each ingredient comes from, how it is made, and where you have smelled it. Tap one marked Guide.</p>
-      <div style={{display:"flex",flexWrap:"wrap",gap:14,marginBottom:28}}>
+      <div className="mos-tiles" style={{marginBottom:28}}>
         {["Rose","Jasmine","Saffron","Oud","Vanilla","Amber","Bergamot","Patchouli","Vetiver","Sandalwood","Incense","Musk","Cardamom"].map(n=>{const has=!!INGREDIENTS[n];return (
-          <button key={n} onClick={()=>has&&setOpenNote(n)} style={{background:"none",border:"none",padding:0,cursor:has?"pointer":"default",textAlign:"center",opacity:has?1:0.5,fontFamily:sans}}>
-            <NoteIllustration name={n} size={84}/>
-            {has&&<span style={{display:"block",fontSize:10,letterSpacing:"0.14em",textTransform:"uppercase",color:T.accent,marginTop:4}}>Guide</span>}
+          <button key={n} onClick={()=>has&&setOpenNote(n)} style={{background:"none",border:"none",padding:0,cursor:has?"pointer":"default",textAlign:"left",opacity:has?1:0.5,fontFamily:sans,minWidth:0,alignSelf:"start",display:"block"}}>
+            <NoteIllustration name={n} big/>
+            {has&&<span style={{display:"block",fontSize:12,letterSpacing:"0.14em",textTransform:"uppercase",color:T.accent,marginTop:4}}>Guide</span>}
           </button>
         );})}
       </div>
