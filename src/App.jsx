@@ -674,6 +674,11 @@ function PriceTable({ prices }) {
 }
 
 // ─── STATUS SELECTOR ─────────────────────────────────────────────────────────
+const FIELD = { width:"100%", background:T.white, border:`1px solid ${T.rule}`, borderRadius:12, padding:"0 14px", minHeight:48, fontSize:16, color:T.ink, outline:"none", fontFamily:sans, boxSizing:"border-box" };
+const FLABEL = { fontFamily:sans, fontSize:11, textTransform:"uppercase", letterSpacing:"0.14em", color:T.mid, margin:"0 0 8px" };
+const selBtn = on => ({ minHeight:52, padding:"10px 12px", borderRadius:14, border:`1px solid ${on?"transparent":T.rule}`, background:on?"var(--accent)":T.white, color:on?"#fff":T.ink, fontFamily:sans, fontSize:15, fontWeight:on?600:500, cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", gap:8, textAlign:"center" });
+const ctaBtn = enabled => ({ width:"100%", minHeight:52, borderRadius:14, border:"none", background:enabled?"var(--accent)":T.lift, color:enabled?"#fff":T.faint, fontSize:16, fontWeight:600, fontFamily:sans, cursor:enabled?"pointer":"not-allowed" });
+const ghostBtn = { minHeight:52, padding:"0 22px", borderRadius:14, border:`1px solid ${T.rule}`, background:T.white, color:T.mid, fontSize:15, fontFamily:sans, cursor:"pointer" };
 const STATUSES = [
   { key:"bottle_owned",    label:"Bottle, owned",    iconName:"bottle",   group:"bottle" },
   { key:"bottle_wishlist", label:"Bottle, wishlist", iconName:"wishstar", group:"bottle" },
@@ -722,7 +727,7 @@ function PrivateNoteEditor({ note, onSave, frag, onAddJournalEntry }) {
   const [publishAsReview,setPublishAsReview]=useState(false);
   const [reviewRating,setReviewRating]=useState(0);
   const [saved,setSaved]=useState(false);
-  const inp={width:"100%",background:T.white,border:`1px solid ${T.rule}`,borderRadius:8,padding:"9px 12px",fontSize:13,color:T.ink,outline:"none",fontFamily:sans,boxSizing:"border-box"};
+  const inp={...FIELD};
 
   function save(){
     onSave({text,prompt,where,date});
@@ -741,53 +746,50 @@ function PrivateNoteEditor({ note, onSave, frag, onAddJournalEntry }) {
   }
 
   const Toggle = ({label, sub, active, onChange}) => (
-    <div onClick={()=>onChange(!active)} style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"11px 14px",borderRadius:10,border:`1px solid ${active?T.black:T.rule}`,background:active?T.black:T.white,cursor:"pointer",transition:"all 0.15s",marginBottom:8}}>
-      <div>
-        <p style={{fontFamily:sans,fontSize:12,fontWeight:500,color:active?T.white:T.ink,margin:0}}>{label}</p>
-        {sub&&<p style={{fontFamily:sans,fontSize:10,color:active?T.onInkDim:T.faint,margin:"1px 0 0"}}>{sub}</p>}
-      </div>
-      <div style={{width:32,height:18,borderRadius:9,background:active?T.trackOn:T.track,position:"relative",flexShrink:0}}>
-        <div style={{position:"absolute",top:2,left:active?14:2,width:14,height:14,borderRadius:"50%",background:active?T.white:T.mid,transition:"left 0.15s"}}/>
-      </div>
-    </div>
+    <button onClick={()=>onChange(!active)} aria-pressed={active} style={{...selBtn(active),flexDirection:"column",gap:2,minHeight:64}}>
+      <span>{label}</span>
+      {sub&&<span style={{fontSize:11,fontWeight:400,opacity:0.8}}>{sub}</span>}
+    </button>
   );
 
   return (
-    <div style={{background:T.lift,borderRadius:14,border:`1px solid ${T.rule}`,padding:16}}>
-      <div style={{display:"flex",alignItems:"center",gap:6,marginBottom:14}}>
+    <div style={{background:T.lift,borderRadius:14,border:`1px solid ${T.rule}`,padding:18}}>
+      <div style={{display:"flex",alignItems:"center",gap:6,marginBottom:16}}>
         <Icon name="lock" size={12} color={T.mid}/>
-        <span style={{fontFamily:sans,fontSize:9,textTransform:"uppercase",letterSpacing:"0.1em",color:T.mid}}>Private, only visible to you</span>
+        <span style={{fontFamily:sans,fontSize:11,textTransform:"uppercase",letterSpacing:"0.12em",color:T.mid}}>Private, only visible to you</span>
       </div>
 
-      <p style={{fontFamily:sans,fontSize:9,textTransform:"uppercase",letterSpacing:"0.12em",color:T.mid,margin:"0 0 6px"}}>What made you reach for this today?</p>
-      <input value={prompt} onChange={e=>setPrompt(e.target.value)} placeholder="A mood, an occasion, an instinct…" style={{...inp,marginBottom:12}}/>
+      <p style={{fontFamily:sans,fontSize:11,textTransform:"uppercase",letterSpacing:"0.14em",color:T.mid,margin:"0 0 8px"}}>What made you reach for this today?</p>
+      <input value={prompt} onChange={e=>setPrompt(e.target.value)} placeholder="A mood, an occasion, an instinct…" style={{...inp,marginBottom:16}}/>
 
-      <p style={{fontFamily:sans,fontSize:9,textTransform:"uppercase",letterSpacing:"0.12em",color:T.mid,margin:"0 0 6px"}}>Your thoughts</p>
-      <textarea value={text} onChange={e=>setText(e.target.value)} placeholder="First impression, dry-down, projection…" rows={4} style={{...inp,resize:"vertical",lineHeight:1.6,marginBottom:10}}/>
+      <p style={{fontFamily:sans,fontSize:11,textTransform:"uppercase",letterSpacing:"0.14em",color:T.mid,margin:"0 0 8px"}}>Your thoughts</p>
+      <textarea value={text} onChange={e=>setText(e.target.value)} placeholder="First impression, dry-down, projection…" rows={4} style={{...inp,resize:"vertical",lineHeight:1.6,padding:"12px 14px",marginBottom:14}}/>
 
-      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:16}}>
-        <div><p style={{fontFamily:sans,fontSize:9,textTransform:"uppercase",letterSpacing:"0.12em",color:T.mid,margin:"0 0 6px"}}>Where smelled</p><input value={where} onChange={e=>setWhere(e.target.value)} placeholder="e.g. Saks, blind buy…" style={inp}/></div>
-        <div><p style={{fontFamily:sans,fontSize:9,textTransform:"uppercase",letterSpacing:"0.12em",color:T.mid,margin:"0 0 6px"}}>Date</p><input value={date} onChange={e=>setDate(e.target.value)} style={inp}/></div>
+      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:20}}>
+        <div><p style={{fontFamily:sans,fontSize:11,textTransform:"uppercase",letterSpacing:"0.14em",color:T.mid,margin:"0 0 8px"}}>Where smelled</p><input value={where} onChange={e=>setWhere(e.target.value)} placeholder="e.g. Saks" style={inp}/></div>
+        <div><p style={{fontFamily:sans,fontSize:11,textTransform:"uppercase",letterSpacing:"0.14em",color:T.mid,margin:"0 0 8px"}}>Date</p><input value={date} onChange={e=>setDate(e.target.value)} style={inp}/></div>
       </div>
 
       <div style={{borderTop:`1px solid ${T.rule}`,paddingTop:14,marginBottom:12}}>
-        <p style={{fontFamily:sans,fontSize:9,textTransform:"uppercase",letterSpacing:"0.12em",color:T.mid,margin:"0 0 10px"}}>Also save as</p>
-        <Toggle label="Add to Journal" sub="Appears in your private scent timeline" active={addToJournal} onChange={setAddToJournal}/>
-        <Toggle label="Publish as Review" sub="Shared with the community" active={publishAsReview} onChange={setPublishAsReview}/>
+        <p style={{fontFamily:sans,fontSize:11,textTransform:"uppercase",letterSpacing:"0.14em",color:T.mid,margin:"0 0 10px"}}>Also save as</p>
+        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:10}}>
+          <Toggle label="Add to Journal" sub="Private timeline" active={addToJournal} onChange={setAddToJournal}/>
+          <Toggle label="Publish as Review" sub="Shared with members" active={publishAsReview} onChange={setPublishAsReview}/>
+        </div>
         {publishAsReview&&(
           <div style={{padding:"10px 14px",borderRadius:10,border:`1px solid ${T.rule}`,background:T.white,marginBottom:4}}>
-            <p style={{fontFamily:sans,fontSize:9,textTransform:"uppercase",letterSpacing:"0.12em",color:T.mid,margin:"0 0 8px"}}>Rating</p>
+            <p style={{fontFamily:sans,fontSize:11,textTransform:"uppercase",letterSpacing:"0.14em",color:T.mid,margin:"0 0 8px"}}>Rating</p>
             <div style={{display:"flex",gap:6}}>
               {[1,2,3,4,5].map(n=>(
-                <span key={n} onClick={()=>setReviewRating(n)} style={{fontSize:22,cursor:"pointer",color:n<=reviewRating?T.black:T.faint,lineHeight:1}}>★</span>
+                <span key={n} onClick={()=>setReviewRating(n)} style={{fontSize:30,cursor:"pointer",color:n<=reviewRating?"var(--accent)":T.faint,lineHeight:1}}>★</span>
               ))}
             </div>
           </div>
         )}
       </div>
 
-      <button onClick={save} disabled={!text.trim()} style={{width:"100%",padding:"10px 0",borderRadius:8,background:saved?T.mid:text.trim()?T.black:T.faint,border:"none",color:T.white,fontSize:12,fontFamily:sans,cursor:text.trim()?"pointer":"not-allowed",transition:"background 0.2s"}}>
-        {saved?"Saved ✓":"Save"}
+      <button onClick={save} disabled={!text.trim()} style={ctaBtn(!!text.trim())}>
+        {saved?"Saved ✓":"Save note"}
       </button>
     </div>
   );
@@ -2096,7 +2098,7 @@ function WearLog({ frag, wears, onLogWear, onDeleteWear }) {
   if (!/^[0-9a-f]{8}-[0-9a-f]{4}-/i.test(String(frag.id))) return null;
   const rated = mine.filter(w => w.rating);
   const avg = rated.length ? (rated.reduce((n, w) => n + w.rating, 0) / rated.length).toFixed(1) : null;
-  const chip = on => ({ fontFamily: sans, fontSize: 11, padding: "6px 12px", borderRadius: 20, cursor: "pointer", border: `1px solid ${on ? T.black : T.rule}`, background: on ? T.black : T.white, color: on ? T.white : T.mid, textTransform: "capitalize" });
+  const chip = on => ({ ...selBtn(on), minHeight:46, fontSize:14, textTransform:"capitalize" });
   async function save() {
     if (busy) return;
     setBusy(true);
@@ -2109,20 +2111,20 @@ function WearLog({ frag, wears, onLogWear, onDeleteWear }) {
         <p style={{ fontFamily: sans, fontSize: 10, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.16em", color: T.mid, margin: 0 }}>Wear log</p>
         {mine.length > 0 && <span style={{ fontFamily: sans, fontSize: 11, color: T.faint }}>Worn {mine.length} time{mine.length !== 1 ? "s" : ""}{avg ? ` · avg ${avg} ★` : ""}</span>}
       </div>
-      {!open && <button onClick={() => setOpen(true)} style={{ width: "100%", padding: "13px 0", borderRadius: 12, border: `1px solid ${T.black}`, background: T.black, color: T.white, fontSize: 12, fontFamily: sans, cursor: "pointer" }}>I wore this</button>}
+      {!open && <button onClick={() => setOpen(true)} style={ctaBtn(true)}>I wore this</button>}
       {open && (
-        <div style={{ background: T.lift, border: `1px solid ${T.rule}`, borderRadius: 14, padding: 16 }}>
-          <p style={{ fontFamily: sans, fontSize: 10, textTransform: "uppercase", letterSpacing: "0.1em", color: T.faint, margin: "0 0 6px" }}>Date</p>
-          <input type="date" value={date} max={todayISO()} onChange={e => setDate(e.target.value)} style={{ fontFamily: sans, fontSize: 13, color: T.ink, background: T.white, border: `1px solid ${T.rule}`, borderRadius: 8, padding: "8px 10px", marginBottom: 14 }}/>
-          <p style={{ fontFamily: sans, fontSize: 10, textTransform: "uppercase", letterSpacing: "0.1em", color: T.faint, margin: "0 0 6px" }}>Occasion</p>
-          <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 14 }}>{WEAR_OCCASIONS.map(o => <button key={o} onClick={() => setOccasion(occasion === o ? "" : o)} style={chip(occasion === o)}>{o}</button>)}</div>
-          <p style={{ fontFamily: sans, fontSize: 10, textTransform: "uppercase", letterSpacing: "0.1em", color: T.faint, margin: "0 0 6px" }}>Weather</p>
-          <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 14 }}>{WEAR_WEATHER.map(o => <button key={o} onClick={() => setWeather(weather === o ? "" : o)} style={chip(weather === o)}>{o}</button>)}</div>
-          <p style={{ fontFamily: sans, fontSize: 10, textTransform: "uppercase", letterSpacing: "0.1em", color: T.faint, margin: "0 0 6px" }}>How did it wear?</p>
-          <div style={{ display: "flex", gap: 4, marginBottom: 16 }}>{[1, 2, 3, 4, 5].map(n => <button key={n} onClick={() => setRating(rating === n ? 0 : n)} aria-label={`${n} star${n > 1 ? "s" : ""}`} style={{ background: "none", border: "none", cursor: "pointer", fontSize: 24, padding: 2, color: n <= rating ? T.black : T.rule, lineHeight: 1 }}>★</button>)}</div>
+        <div style={{ background: T.lift, border: `1px solid ${T.rule}`, borderRadius: 14, padding: 18 }}>
+          <p style={{ fontFamily: sans, fontSize: 11, textTransform: "uppercase", letterSpacing: "0.14em", color: T.mid, margin: "0 0 8px" }}>Date</p>
+          <input type="date" value={date} max={todayISO()} onChange={e => setDate(e.target.value)} style={{ ...FIELD, width:"auto", minWidth:180, marginBottom: 18 }}/>
+          <p style={{ fontFamily: sans, fontSize: 11, textTransform: "uppercase", letterSpacing: "0.14em", color: T.mid, margin: "0 0 8px" }}>Occasion</p>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: 8, marginBottom: 18 }}>{WEAR_OCCASIONS.map(o => <button key={o} onClick={() => setOccasion(occasion === o ? "" : o)} style={chip(occasion === o)}>{o}</button>)}</div>
+          <p style={{ fontFamily: sans, fontSize: 11, textTransform: "uppercase", letterSpacing: "0.14em", color: T.mid, margin: "0 0 8px" }}>Weather</p>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: 8, marginBottom: 18 }}>{WEAR_WEATHER.map(o => <button key={o} onClick={() => setWeather(weather === o ? "" : o)} style={chip(weather === o)}>{o}</button>)}</div>
+          <p style={{ fontFamily: sans, fontSize: 11, textTransform: "uppercase", letterSpacing: "0.14em", color: T.mid, margin: "0 0 8px" }}>How did it wear?</p>
+          <div style={{ display: "flex", gap: 4, marginBottom: 16 }}>{[1, 2, 3, 4, 5].map(n => <button key={n} onClick={() => setRating(rating === n ? 0 : n)} aria-label={`${n} star${n > 1 ? "s" : ""}`} style={{ background: "none", border: "none", cursor: "pointer", fontSize: 32, padding: 2, color: n <= rating ? "var(--accent)" : T.rule, lineHeight: 1 }}>★</button>)}</div>
           <div style={{ display: "flex", gap: 8 }}>
-            <button onClick={save} disabled={busy} style={{ flex: 1, padding: "12px 0", borderRadius: 10, border: "none", background: T.black, color: T.white, fontSize: 12, fontFamily: sans, cursor: "pointer", opacity: busy ? 0.6 : 1 }}>Save wear</button>
-            <button onClick={() => setOpen(false)} style={{ padding: "12px 18px", borderRadius: 10, border: `1px solid ${T.rule}`, background: T.white, color: T.mid, fontSize: 12, fontFamily: sans, cursor: "pointer" }}>Cancel</button>
+            <button onClick={save} disabled={busy} style={{ ...ctaBtn(true), flex:1, width:"auto", opacity: busy ? 0.6 : 1 }}>Save wear</button>
+            <button onClick={() => setOpen(false)} style={ghostBtn}>Cancel</button>
           </div>
         </div>
       )}
@@ -3043,7 +3045,7 @@ function LayeringTab({ layers, onSaveLayer }) {
   const [name,setName]=useState("");const [f1,setF1]=useState("");const [f2,setF2]=useState("");
   const [ratio,setRatio]=useState("50 / 50");const [note,setNote]=useState("");
   const [layerWith,setLayerWith]=useState("fragrance");const [isPublic,setIsPublic]=useState(false);
-  const inp={width:"100%",background:T.lift,border:`1px solid ${T.rule}`,borderRadius:8,padding:"9px 12px",fontSize:13,color:T.ink,outline:"none",fontFamily:sans,boxSizing:"border-box"};
+  const inp={...FIELD};
 
   const BASE_LAYERS=[
     {id:"unscented_lotion",name:"Unscented Lotion",type:"lotion",iconName:"lotion"},
@@ -3078,20 +3080,20 @@ function LayeringTab({ layers, onSaveLayer }) {
         <p style={{fontFamily:serif,fontSize:18,color:T.ink,margin:0,lineHeight:1.5,fontStyle:"italic"}}>"The most interesting thing in fragrance isn't a single bottle. It's two bottles, combined."</p>
       </div>
       {!open ? (
-        <button onClick={()=>setOpen(true)} style={{width:"100%",padding:"13px 0",borderRadius:12,border:`1.5px dashed ${T.rule}`,background:"transparent",color:T.mid,fontSize:12,fontFamily:sans,cursor:"pointer",marginBottom:16}}>+ Log a layering combination</button>
+        <button onClick={()=>setOpen(true)} style={{...ctaBtn(true),marginBottom:16}}>+ Log a layering combination</button>
       ) : (
-        <div style={{background:T.lift,border:`1px solid ${T.rule}`,borderRadius:14,padding:16,marginBottom:16}}>
+        <div style={{background:T.lift,border:`1px solid ${T.rule}`,borderRadius:14,padding:18,marginBottom:16}}>
           <Lbl>Name</Lbl>
-          <input value={name} onChange={e=>setName(e.target.value)} placeholder="e.g. Rainy Sunday" style={{...inp,marginBottom:12}}/>
+          <input value={name} onChange={e=>setName(e.target.value)} placeholder="e.g. Rainy Sunday" style={{...inp,marginBottom:16}}/>
           <Lbl>Layer with</Lbl>
-          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:6,marginBottom:12}}>
+          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:8,marginBottom:16}}>
             {[{key:"fragrance",label:"Fragrance",iconName:"spray"},{key:"lotion",label:"Lotion",iconName:"lotion"},{key:"oil",label:"Body Oil",iconName:"droplet"}].map(lt=>(
-              <button key={lt.key} onClick={()=>setLayerWith(lt.key)} style={{padding:"8px 0",borderRadius:8,border:`1px solid ${layerWith===lt.key?T.black:T.rule}`,background:layerWith===lt.key?T.black:T.white,color:layerWith===lt.key?T.white:T.mid,cursor:"pointer",fontFamily:sans,fontSize:11,display:"flex",flexDirection:"column",alignItems:"center",gap:3}}>
-                <Icon name={lt.iconName} size={16} color={layerWith===lt.key?T.white:T.mid}/><span>{lt.label}</span>
+              <button key={lt.key} onClick={()=>setLayerWith(lt.key)} aria-pressed={layerWith===lt.key} style={{...selBtn(layerWith===lt.key),flexDirection:"column",gap:4,fontSize:13,minHeight:64}}>
+                <Icon name={lt.iconName} size={18} color={layerWith===lt.key?"#fff":T.mid}/><span>{lt.label}</span>
               </button>
             ))}
           </div>
-          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:12}}>
+          <div style={{display:"grid",gridTemplateColumns:"1fr",gap:12,marginBottom:16}}>
             <div><Lbl>First fragrance</Lbl><select value={f1} onChange={e=>setF1(e.target.value)} style={{...inp,appearance:"none"}}><option value="">Select…</option>{FRAGRANCES.map(f=><option key={f.id} value={f.name}>{f.name}</option>)}</select></div>
             <div><Lbl>{layerWith==="fragrance"?"Second":"Base layer"}</Lbl>
               {layerWith==="fragrance" ? (
@@ -3101,27 +3103,19 @@ function LayeringTab({ layers, onSaveLayer }) {
               )}
             </div>
           </div>
-          <div style={{marginBottom:12}}><Lbl>Ratio</Lbl><select value={ratio} onChange={e=>setRatio(e.target.value)} style={{...inp,appearance:"none"}}>{["50 / 50","60 / 40","70 / 30","80 / 20","30 / 70","40 / 60"].map(r=><option key={r}>{r}</option>)}</select></div>
-          <div style={{marginBottom:12}}><Lbl>Notes</Lbl><textarea value={note} onChange={e=>setNote(e.target.value)} placeholder="How to apply, what it smells like…" rows={3} style={{...inp,resize:"vertical",lineHeight:1.6}}/></div>
+          <div style={{marginBottom:16}}><Lbl>Ratio</Lbl><select value={ratio} onChange={e=>setRatio(e.target.value)} style={{...inp,appearance:"none"}}>{["50 / 50","60 / 40","70 / 30","80 / 20","30 / 70","40 / 60"].map(r=><option key={r}>{r}</option>)}</select></div>
+          <div style={{marginBottom:16}}><Lbl>Notes</Lbl><textarea value={note} onChange={e=>setNote(e.target.value)} placeholder="How to apply, what it smells like…" rows={3} style={{...inp,resize:"vertical",lineHeight:1.6,padding:"12px 14px"}}/></div>
 
           
-          <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:14,padding:"10px 12px",background:T.white,borderRadius:8,border:`1px solid ${T.rule}`}}>
-            <div style={{display:"flex",alignItems:"center",gap:10}}>
-              
-              {isPublic ? <OpenLockSVG size={18} color={T.mid}/> : <ClosedLockSVG size={18} color={T.ink}/>}
-              <div>
-                <p style={{fontFamily:sans,fontSize:12,fontWeight:500,color:T.ink,margin:0}}>{isPublic?"Public":"Private"}</p>
-                <p style={{fontFamily:sans,fontSize:11,color:T.mid,margin:"2px 0 0"}}>{isPublic?"Visible to the community":"Only you can see this"}</p>
-              </div>
-            </div>
-            <button onClick={()=>setIsPublic(!isPublic)} style={{width:44,height:24,borderRadius:12,background:isPublic?T.black:T.press,border:"none",cursor:"pointer",position:"relative",transition:"background 0.2s"}}>
-              <div style={{width:18,height:18,borderRadius:"50%",background:T.white,position:"absolute",top:3,left:isPublic?23:3,transition:"left 0.2s"}}/>
-            </button>
+          <Lbl>Who can see it</Lbl>
+          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:18}}>
+            <button onClick={()=>setIsPublic(false)} aria-pressed={!isPublic} style={selBtn(!isPublic)}><ClosedLockSVG size={16} color={!isPublic?"#fff":T.mid}/>Private</button>
+            <button onClick={()=>setIsPublic(true)} aria-pressed={isPublic} style={selBtn(isPublic)}><OpenLockSVG size={16} color={isPublic?"#fff":T.mid}/>Public</button>
           </div>
 
           <div style={{display:"flex",gap:8}}>
-            <button onClick={()=>setOpen(false)} style={{flex:1,padding:"10px 0",borderRadius:8,border:`1px solid ${T.rule}`,background:T.white,color:T.mid,fontSize:12,fontFamily:sans,cursor:"pointer"}}>Cancel</button>
-            <button onClick={()=>{if(f1&&f2&&name){onSaveLayer({name,frags:[f1,f2],ratio,note,layerWith,isPublic,date:new Date().toLocaleDateString("en-US",{month:"short",day:"numeric",year:"numeric"}),rating:4});setOpen(false);setName("");setF1("");setF2("");setNote("");}}} style={{flex:2,padding:"10px 0",borderRadius:8,border:"none",background:T.black,color:T.white,fontSize:12,fontFamily:sans,cursor:"pointer"}}>Save combination</button>
+            <button onClick={()=>setOpen(false)} style={ghostBtn}>Cancel</button>
+            <button onClick={()=>{if(f1&&f2&&name){onSaveLayer({name,frags:[f1,f2],ratio,note,layerWith,isPublic,date:new Date().toLocaleDateString("en-US",{month:"short",day:"numeric",year:"numeric"}),rating:4});setOpen(false);setName("");setF1("");setF2("");setNote("");}}} style={{...ctaBtn(!!(f1&&f2&&name)),flex:1,width:"auto"}}>Save combination</button>
           </div>
         </div>
       )}
