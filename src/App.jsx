@@ -3153,9 +3153,6 @@ function LayeringTab({ layers, onSaveLayer, onSearch }) {
         <h2 style={{fontFamily:serif,fontSize:"clamp(32px, 3.2vw, 50px)",color:T.black,letterSpacing:-0.8,margin:0,fontWeight:400}}>Layering</h2>
         <p style={{fontFamily:sans,fontSize:"clamp(13px, 1.1vw, 17px)",color:T.mid,margin:"6px 0 0"}}>Track what works together, and why.</p>
       </div>
-      <div style={{borderTop:`2px solid ${T.black}`,borderBottom:`1px solid ${T.rule}`,padding:"16px 0",marginBottom:24}}>
-        <p style={{fontFamily:serif,fontSize:18,color:T.ink,margin:0,lineHeight:1.5,fontStyle:"italic"}}>"The most interesting thing in fragrance isn't a single bottle. It's two bottles, combined."</p>
-      </div>
       {!open ? (
         <button onClick={()=>setOpen(true)} style={{...ctaBtn(true),marginBottom:16}}>+ Log a layering combination</button>
       ) : (
@@ -3171,7 +3168,7 @@ function LayeringTab({ layers, onSaveLayer, onSearch }) {
             ))}
           </div>
           <div style={{display:"grid",gridTemplateColumns:"1fr",gap:12,marginBottom:16}}>
-            <div><Lbl>First fragrance</Lbl><FragPicker key={"a"+open} value={f1} onPick={setF1} onSearch={onSearch}/></div>
+            <div><Lbl>{layerWith==="fragrance"?"First fragrance":"Fragrance"}</Lbl><FragPicker key={"a"+open} value={f1} onPick={setF1} onSearch={onSearch}/></div>
             {layerWith==="fragrance" ? (
               <div><Lbl>Second fragrance</Lbl><FragPicker key={"b"+open} value={f2} onPick={setF2} onSearch={onSearch}/></div>
             ) : (
@@ -3237,7 +3234,7 @@ function LayeringTab({ layers, onSaveLayer, onSearch }) {
             })}
             {l.ratio&&<span style={{fontFamily:sans,fontSize:10,color:T.mid,marginLeft:"auto"}}>{l.ratio}</span>}
           </div>
-          <p style={{fontFamily:sans,fontSize:12,color:T.mid,lineHeight:1.65,fontStyle:"italic",margin:0}}>"{l.note}"</p>
+          <p style={{fontFamily:sans,fontSize:12,color:T.mid,lineHeight:1.65,margin:0}}>{l.note}</p>
         </div>
       ))}
     </div>
@@ -4503,7 +4500,7 @@ function ProfileModal({ username, onClose, onBack, currentUser, userStatuses, on
                         </span>
                       ))}
                     </div>
-                    <p style={{ fontFamily:sans, fontSize:12, color:T.mid, lineHeight:1.65, fontStyle:"italic", margin:0 }}>"{l.note}"</p>
+                    <p style={{ fontFamily:sans, fontSize:12, color:T.mid, lineHeight:1.65, margin:0 }}>{l.note}</p>
                   </div>
                 ))
               )}
