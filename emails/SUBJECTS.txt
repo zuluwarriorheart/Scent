@@ -1,0 +1,6 @@
+1-confirm-signup: Confirm your email for Memoir on Skin
+2-reset-password: Reset your Memoir on Skin password
+3-magic-link: Your Memoir on Skin sign-in link
+4-change-email: Confirm your new email for Memoir on Skin
+5-invite: You're invited to Memoir on Skin
+6-reauthentication: Your Memoir on Skin confirmation code
