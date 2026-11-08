@@ -1282,11 +1282,13 @@ const FRAG_SELECT_DIV = `
   accords ( accord_name, rank )
 `;
 const FRAG_SELECT_NEO = FRAG_SELECT_DIV.replace("image_credit,", "image_credit, neo_gourmand,");
+const FRAG_SELECT_KIT = FRAG_SELECT_NEO.replace(", website, diversity", ", website, diversity, has_discovery_kit, kit_name, kit_price, kit_url, has_samples, has_travel_size, travel_size_url");
 const FRAG_SELECT_FULL = FRAG_SELECT_DIV.replace(", website, diversity", ", website");
 const FRAG_SELECT_BASE = FRAG_SELECT_FULL.replace(", ownership, brand_origin, price_tier, line, image_url, image_credit,", ",").replace(", website", "");
 // Runs a query with the full column list, and again without the newer columns if they are not in the database yet.
 async function fetchFragRows(build) {
-  let r = await build(FRAG_SELECT_NEO);
+  let r = await build(FRAG_SELECT_KIT);
+  if (r.error && /has_discovery_kit|kit_name|kit_price|kit_url|has_samples|has_travel_size|travel_size_url/i.test(r.error.message || "")) r = await build(FRAG_SELECT_NEO);
   if (r.error && /neo_gourmand/i.test(r.error.message || "")) r = await build(FRAG_SELECT_DIV);
   if (r.error && /diversity/i.test(r.error.message || "")) r = await build(FRAG_SELECT_FULL);
   if (r.error && /website|line|ownership|brand_origin|price_tier|image_url|image_credit/i.test(r.error.message || "")) r = await build(FRAG_SELECT_BASE);
@@ -1318,6 +1320,7 @@ function mapFrag(f) {
     line: f.line || "",
     brand_origin: f.brand_origin || (f.house && f.house.brand_origin) || "",
     website: (f.house && f.house.website) || "",
+    brandOffer: f.house ? { kit: f.house.has_discovery_kit === true, kitName: f.house.kit_name || "", kitPrice: f.house.kit_price || "", kitUrl: f.house.kit_url || "", samples: f.house.has_samples === true, travel: f.house.has_travel_size === true, travelUrl: f.house.travel_size_url || "" } : null,
     diversity: cleanDiversity(f.house && f.house.diversity),
     womanOwned: isWomanOwned(f.house && f.house.diversity),
     price_tier: f.price_tier || (f.house && f.house.price_tier) || "",
@@ -2112,14 +2115,47 @@ function safeUrl(u) {
 function ExtArrow({ size = 12, color = "currentColor" }) {
   return <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M7 17L17 7"/><path d="M8 7h9v9"/></svg>;
 }
-function SamplesSection({ defaultRegion, onVisit }) {
+function SamplesSection({ defaultRegion, onVisit, frag }) {
   const [region, setRegion] = useState(defaultRegion);
   const [showEarn, setShowEarn] = useState(false);
   const list = SAMPLE_RETAILERS[region] || [];
+  const site = safeUrl(frag && frag.website);
+  const o = (frag && frag.brandOffer) || {};
+  const offers = [];
+  if (o.kit) offers.push({ k:"kit", label: o.kitName || "Discovery set", sub: o.kitPrice || "", url: safeUrl(o.kitUrl) || site });
+  if (o.samples) offers.push({ k:"samples", label:"Sample vials", sub:"", url: site });
+  if (o.travel) offers.push({ k:"travel", label:"Travel sizes", sub:"", url: safeUrl(o.travelUrl) || site });
+  const houseName = (frag && frag.house) || "the house";
   return (
     <div>
       <Lbl>Where to find samples</Lbl>
-      <p style={{ fontFamily:sans, fontSize:13, color:T.mid, lineHeight:1.6, margin:"0 0 14px" }}>Retailers worth browsing for samples. Not every retailer carries every house.</p>
+      {site ? (
+        <div style={{ background:T.white, border:`1px solid ${T.rule}`, borderRadius:18, padding:"18px 18px 16px", marginBottom:26 }}>
+          <p style={{ fontFamily:sans, fontSize:11, fontWeight:600, letterSpacing:"0.16em", textTransform:"uppercase", color:"var(--accent)", margin:"0 0 6px" }}>Start with the brand</p>
+          <p style={{ fontFamily:serif, fontSize:24, lineHeight:1.15, color:T.black, margin:"0 0 6px" }}>{houseName}</p>
+          <p style={{ fontFamily:sans, fontSize:13, color:T.mid, lineHeight:1.65, margin:"0 0 14px" }}>Buying direct builds a relationship with the people who make it. Look for a discovery set, samples or travel sizes before you consider a full bottle.</p>
+          {offers.length > 0 ? (
+            <div style={{ display:"flex", flexDirection:"column", gap:8, marginBottom:14 }}>
+              {offers.map(of => (
+                <a key={of.k} href={of.url} target="_blank" rel="noopener noreferrer" onClick={() => trackEvent("brand_site_click", { fragrance: frag.id, houseSlug: frag.houseSlug, source:"samples_" + of.k })}
+                  style={{ display:"flex", alignItems:"center", justifyContent:"space-between", gap:12, padding:"12px 14px", borderRadius:12, background:T.lift, border:`1px solid ${T.rule}`, textDecoration:"none", color:T.black, minHeight:48, boxSizing:"border-box" }}>
+                  <span style={{ display:"flex", alignItems:"center", gap:10, minWidth:0 }}>
+                    <span style={{ fontFamily:sans, fontSize:10, fontWeight:600, letterSpacing:"0.1em", textTransform:"uppercase", color:"#fff", background:"var(--teal)", borderRadius:20, padding:"3px 9px", flexShrink:0 }}>Available</span>
+                    <span style={{ fontFamily:sans, fontSize:14, fontWeight:500 }}>{of.label}{of.sub ? <span style={{ color:T.mid, fontWeight:400 }}> · {of.sub}</span> : null}</span>
+                  </span>
+                  <ExtArrow size={13} color={T.mid}/>
+                </a>
+              ))}
+            </div>
+          ) : (
+            <p style={{ fontFamily:sans, fontSize:12, color:T.faint, lineHeight:1.6, margin:"0 0 14px" }}>We haven't confirmed what {houseName} sells directly yet. Check their site for a discovery set, samples or travel sizes.</p>
+          )}
+          <a href={site} target="_blank" rel="noopener noreferrer" onClick={() => trackEvent("brand_site_click", { fragrance: frag.id, houseSlug: frag.houseSlug, source:"samples_site" })}
+            style={{ display:"flex", alignItems:"center", justifyContent:"center", gap:8, minHeight:52, borderRadius:14, background:"var(--accent)", color:"#fff", fontFamily:sans, fontSize:16, fontWeight:600, textDecoration:"none" }}>Visit {houseName}<ExtArrow size={14} color="#fff"/></a>
+        </div>
+      ) : null}
+      <p style={{ fontFamily:sans, fontSize:11, fontWeight:600, letterSpacing:"0.16em", textTransform:"uppercase", color:T.mid, margin:"0 0 6px" }}>{site ? "If the brand can't help" : "Retailers and decanters"}</p>
+      <p style={{ fontFamily:sans, fontSize:13, color:T.mid, lineHeight:1.6, margin:"0 0 14px" }}>Sold out, won't ship to you, or no samples? These decanters and retailers can fill the gap. Not every one carries every house.</p>
       <div role="tablist" aria-label="Region" style={{ display:"flex", border:`1px solid ${T.rule}`, borderRadius:10, overflow:"hidden", marginBottom:12 }}>
         {REGION_ORDER.map((r, i) => {
           const on = r === region;
@@ -2349,7 +2385,7 @@ function DetailModal({ frag, entries, onClose, userStatus, setUserStatus, privat
           {tab==="overview"&&(
             <div>
               <div style={{background:T.lift,border:`1px solid ${T.rule}`,borderRadius:16,padding:"22px 18px 20px",marginBottom:32}}>
-                <SamplesSection defaultRegion={regionFor(currentUser)} onVisit={(name, reg) => trackEvent("sample_click", { fragrance: frag.id, source: "fragrance", detail: `${name} (${reg})` })}/>
+                <SamplesSection frag={frag} defaultRegion={regionFor(currentUser)} onVisit={(name, reg) => trackEvent("sample_click", { fragrance: frag.id, source: "fragrance", detail: `${name} (${reg})` })}/>
               </div>
               {(frag.description||frag.story)&&(
                 <div style={{marginBottom:32}}>
