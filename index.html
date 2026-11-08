@@ -13,6 +13,16 @@
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
     <script>
+      // The Railway address is only a backup. Send visitors to the real domain, keeping the path and query.
+      (function () {
+        try {
+          if (location.hostname === 'scent-production-0443.up.railway.app') {
+            location.replace('https://www.memoironskin.com' + location.pathname + location.search + location.hash);
+          }
+        } catch (e) {}
+      })();
+    </script>
+    <script>
       (function () {
         try {
           var pref = localStorage.getItem('mos-theme');
