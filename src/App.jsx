@@ -3908,6 +3908,14 @@ function LandingScreen({ onSignIn, onHaveCode }) {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const formRef = useRef(null);
+  // First-time visitors start on the dark page; nothing is saved unless they press the toggle.
+  useEffect(() => {
+    let forced = false;
+    if (readThemePref() === "system") { forced = true; themeStore.pref = "dark"; paintTheme("dark"); themeStore.subs.forEach(f => f()); }
+    return () => {
+      if (forced && themeStore.pref === "dark" && readThemePref() === "system") { themeStore.pref = "system"; paintTheme("system"); themeStore.subs.forEach(f => f()); }
+    };
+  }, []);
   const okEmail = v => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v.trim());
   async function submit() {
     if (!name.trim()) { setError("Please add your first name."); return; }
@@ -3924,8 +3932,8 @@ function LandingScreen({ onSignIn, onHaveCode }) {
     { n:"Sample", h:"Try it on your skin first.", b:"Find where to try it: niche stores and sample sets worldwide, with the brand's own discovery set listed first.", c:"var(--violet)" },
     { n:"Wear", h:"Log what you wear, and when.", b:"Note the weather, the occasion and how it wore. Your collection grows into a record of your own taste.", c:"var(--teal)" },
     { n:"Keep", h:"A journal that asks how it feels.", b:"Where it takes you, what it reminds you of, the words you reach for. Scent is memory. Keep yours.", c:"var(--accent)" },
+    { n:"Together", h:"A community of noses.", b:"Follow other members, read honest reactions and layering ideas, and share your own. Every review is one person's nose, never a verdict.", c:"var(--tangerine)" },
   ];
-  const FACTS = ["10,000+ fragrances", "470+ houses", "Notes and accords explained", "Store and sample finder"];
   return (
     <div style={{ minHeight:"100svh", fontFamily:sans, color:T.ink }}>
       <header style={{ maxWidth:1080, margin:"0 auto", padding:"16px 20px", display:"flex", alignItems:"center", justifyContent:"space-between", gap:12 }}>
@@ -3975,7 +3983,7 @@ function LandingScreen({ onSignIn, onHaveCode }) {
 
         <section style={{ maxWidth:1080, margin:"0 auto", padding:"56px 20px 24px" }}>
           <h2 style={{ fontFamily:serif, fontWeight:400, fontSize:"clamp(28px, 5vw, 40px)", letterSpacing:-0.8, color:T.black, textAlign:"center", margin:"0 0 28px" }}>Sample. Wear. Repeat.</h2>
-          <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit, minmax(250px, 1fr))", gap:14 }}>
+          <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit, minmax(230px, 1fr))", gap:14 }}>
             {STEPS.map(st => (
               <div key={st.n} style={{ background:T.white, border:`1px solid ${T.rule}`, borderRadius:20, padding:"22px 20px" }}>
                 <p style={{ fontSize:11, fontWeight:600, letterSpacing:"0.16em", textTransform:"uppercase", color:st.c, margin:"0 0 10px" }}>{st.n}</p>
@@ -3983,9 +3991,6 @@ function LandingScreen({ onSignIn, onHaveCode }) {
                 <p style={{ fontSize:14, color:T.mid, lineHeight:1.65, margin:0 }}>{st.b}</p>
               </div>
             ))}
-          </div>
-          <div style={{ display:"flex", flexWrap:"wrap", justifyContent:"center", gap:8, marginTop:22 }}>
-            {FACTS.map(f => <span key={f} style={{ fontSize:13, padding:"7px 14px", borderRadius:20, border:`1px solid ${T.rule}`, background:T.lift, color:T.ink }}>{f}</span>)}
           </div>
         </section>
 
