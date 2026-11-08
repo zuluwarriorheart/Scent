@@ -725,80 +725,122 @@ function StatusSelector({ value, onChange }) {
   );
 }
 
-// ─── PRIVATE NOTE EDITOR ──────────────────────────────────────────────────────
-function PrivateNoteEditor({ note, onSave, frag, onAddJournalEntry }) {
-  const [text,setText]=useState(note?.text||"");
-  const [prompt,setPrompt]=useState(note?.prompt||"");
-  const [where,setWhere]=useState(note?.where||"");
-  const [date,setDate]=useState(note?.date||new Date().toLocaleDateString("en-US",{month:"short",day:"numeric",year:"numeric"}));
-  const [addToJournal,setAddToJournal]=useState(false);
-  const [publishAsReview,setPublishAsReview]=useState(false);
-  const [reviewRating,setReviewRating]=useState(0);
-  const [saved,setSaved]=useState(false);
-  const inp={...FIELD};
-
-  function save(){
-    onSave({text,prompt,where,date});
-    if(addToJournal && text.trim() && onAddJournalEntry){
-      onAddJournalEntry({
-        fragId:frag.id, fragName:frag.name, house:frag.house,
-        family:frag.family, text, prompt, where, date,
-        publishedAsReview:publishAsReview,
-        reviewRating:publishAsReview?reviewRating:null,
-        shared:false,
-        id:Date.now(),
-      });
-    }
-    setSaved(true);
-    setTimeout(()=>setSaved(false),1800);
-  }
-
-  const Toggle = ({label, sub, active, onChange}) => (
-    <button onClick={()=>onChange(!active)} aria-pressed={active} style={{...selBtn(active),flexDirection:"column",gap:2,minHeight:64}}>
-      <span>{label}</span>
-      {sub&&<span style={{fontSize:11,fontWeight:400,opacity:0.8}}>{sub}</span>}
-    </button>
-  );
-
+// ─── GUIDED JOURNAL ───────────────────────────────────────────────────────────
+const JPROMPTS = [
+  { key:"where", q:"Where it takes me", sub:"A place, a season, a time of day", chips:["seaside","a garden","a city street","a quiet room","a market","a forest","a kitchen","a bedroom","morning","evening","night","summer","autumn","winter","spring"] },
+  { key:"fabric", q:"If it were a fabric or texture", sub:"How it would feel under your hand", chips:["silk","cashmere","linen","velvet","denim","leather","cotton","suede","lace","wool","satin","powder","sand","glass"] },
+  { key:"colour", q:"If it had a colour", sub:"The first one that comes to mind", chips:["amber","gold","rose","cream","ivory","green","moss","burgundy","plum","midnight","smoke","white","terracotta","honey"] },
+  { key:"sound", q:"If it had a sound", sub:"What would you hear?", chips:["a hum","rain","jazz","a whisper","a cello","waves","a crackling fire","silence","laughter","a city at night","bells","wind"] },
+  { key:"feel", q:"How it makes me feel", sub:"Choose as many as fit", chips:["calm","confident","nostalgic","cosy","bold","tender","playful","mysterious","grounded","radiant","romantic","wistful","fresh","sensual","safe","energised"] },
+  { key:"reminds", q:"What it reminds me of", sub:"A person, a memory, a moment", text:true, ph:"A grandmother's kitchen, a trip, a song…" },
+  { key:"other", q:"Other notes", sub:"Anything else you want to remember", text:true, ph:"Dry-down, projection, anything at all…" },
+];
+const VOCAB = {
+  nostalgic:"A tender longing for a time or place from the past.",
+  wistful:"Gently sad, with a quiet longing.",
+  tender:"Soft, caring and gentle.",
+  grounded:"Steady and rooted, with both feet on the earth.",
+  radiant:"Glowing, bright and warm.",
+  mysterious:"Hard to read, with something held back.",
+  cosy:"Warm, snug and comforting.",
+  sensual:"Pleasing to the senses, warm and close to the skin.",
+  playful:"Light-hearted, a little mischievous.",
+  bold:"Strong, confident and hard to miss.",
+  calm:"Quiet and settled, with no rush.",
+  safe:"Familiar and protective, like being held.",
+  energised:"Awake, bright and ready to move.",
+  confident:"Sure of yourself, comfortable taking space.",
+  romantic:"Dreamy, affectionate, a little theatrical.",
+  fresh:"Clean, bright and airy.",
+  powder:"Soft and dry, like cosmetic powder or talc.",
+  suede:"Soft, velvety leather with a matte finish.",
+  velvet:"Dense, plush and smooth with a deep pile.",
+  cashmere:"Very fine, soft, warm wool; in scent, a gentle warm musk.",
+  linen:"Crisp, airy, natural cloth.",
+  silk:"Smooth, fine and slightly cool.",
+  amber:"Warm golden resin: sweet, glowing and a little smoky.",
+  terracotta:"Baked earth, a dry warm orange-brown.",
+  midnight:"Deep blue-black, still and nocturnal.",
+  burgundy:"Deep red wine, rich and dark.",
+  moss:"Damp, green and woodland-soft.",
+  smoke:"A dry, grey, drifting, slightly burnt quality.",
+  honey:"Golden, sweet and slightly animalic.",
+};
+const JKEYS = JPROMPTS.map(p => p.key);
+function jDate() { return new Date().toLocaleDateString("en-US", { month:"short", day:"numeric", year:"numeric" }); }
+function entryWords(e) { const a = (e && e.answers) || {}; return ["where","fabric","colour","sound","feel"].flatMap(k => Array.isArray(a[k]) ? a[k] : []).map(w => String(w).trim().toLowerCase()).filter(Boolean); }
+function AnswerChips({ answers }) {
+  const a = answers || {};
+  const rows = JPROMPTS.filter(p => !p.text && Array.isArray(a[p.key]) && a[p.key].length);
+  const reminds = Array.isArray(a.reminds) && a.reminds[0];
+  if (!rows.length && !reminds) return null;
   return (
-    <div style={{background:T.lift,borderRadius:14,border:`1px solid ${T.rule}`,padding:18}}>
-      <div style={{display:"flex",alignItems:"center",gap:6,marginBottom:16}}>
-        <Icon name="lock" size={12} color={T.mid}/>
-        <span style={{fontFamily:sans,fontSize:11,textTransform:"uppercase",letterSpacing:"0.12em",color:T.mid}}>Private, only visible to you</span>
-      </div>
-
-      <p style={{fontFamily:sans,fontSize:11,textTransform:"uppercase",letterSpacing:"0.14em",color:T.mid,margin:"0 0 8px"}}>What made you reach for this today?</p>
-      <input value={prompt} onChange={e=>setPrompt(e.target.value)} placeholder="A mood, an occasion, an instinct…" style={{...inp,marginBottom:16}}/>
-
-      <p style={{fontFamily:sans,fontSize:11,textTransform:"uppercase",letterSpacing:"0.14em",color:T.mid,margin:"0 0 8px"}}>Your thoughts</p>
-      <textarea value={text} onChange={e=>setText(e.target.value)} placeholder="First impression, dry-down, projection…" rows={4} style={{...inp,resize:"vertical",lineHeight:1.6,padding:"12px 14px",marginBottom:14}}/>
-
-      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:20}}>
-        <div><p style={{fontFamily:sans,fontSize:11,textTransform:"uppercase",letterSpacing:"0.14em",color:T.mid,margin:"0 0 8px"}}>Where smelled</p><input value={where} onChange={e=>setWhere(e.target.value)} placeholder="e.g. Saks" style={inp}/></div>
-        <div><p style={{fontFamily:sans,fontSize:11,textTransform:"uppercase",letterSpacing:"0.14em",color:T.mid,margin:"0 0 8px"}}>Date</p><input value={date} onChange={e=>setDate(e.target.value)} style={inp}/></div>
-      </div>
-
-      <div style={{borderTop:`1px solid ${T.rule}`,paddingTop:14,marginBottom:12}}>
-        <p style={{fontFamily:sans,fontSize:11,textTransform:"uppercase",letterSpacing:"0.14em",color:T.mid,margin:"0 0 10px"}}>Also save as</p>
-        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:10}}>
-          <Toggle label="Add to Journal" sub="Private timeline" active={addToJournal} onChange={setAddToJournal}/>
-          <Toggle label="Publish as Review" sub="Shared with members" active={publishAsReview} onChange={setPublishAsReview}/>
+    <div style={{ margin:"4px 0 8px" }}>
+      {rows.map(p => (
+        <div key={p.key} style={{ marginBottom:8 }}>
+          <p style={{ fontFamily:sans, fontSize:10, textTransform:"uppercase", letterSpacing:"0.12em", color:T.faint, margin:"0 0 4px" }}>{p.q}</p>
+          <div style={{ display:"flex", flexWrap:"wrap", gap:5 }}>{a[p.key].map(w => <span key={w} style={{ fontFamily:sans, fontSize:12, padding:"3px 10px", borderRadius:20, background:T.lift, border:`1px solid ${T.rule}`, color:T.ink }}>{w}</span>)}</div>
         </div>
-        {publishAsReview&&(
-          <div style={{padding:"10px 14px",borderRadius:10,border:`1px solid ${T.rule}`,background:T.white,marginBottom:4}}>
-            <p style={{fontFamily:sans,fontSize:11,textTransform:"uppercase",letterSpacing:"0.14em",color:T.mid,margin:"0 0 8px"}}>Rating</p>
-            <div style={{display:"flex",gap:6}}>
-              {[1,2,3,4,5].map(n=>(
-                <span key={n} onClick={()=>setReviewRating(n)} style={{fontSize:30,cursor:"pointer",color:n<=reviewRating?"var(--accent)":T.faint,lineHeight:1}}>★</span>
-              ))}
-            </div>
-          </div>
-        )}
+      ))}
+      {reminds && <div style={{ marginBottom:4 }}>
+        <p style={{ fontFamily:sans, fontSize:10, textTransform:"uppercase", letterSpacing:"0.12em", color:T.faint, margin:"0 0 4px" }}>Reminds me of</p>
+        <p style={{ fontFamily:sans, fontSize:13, color:T.ink, lineHeight:1.6, margin:0 }}>{reminds}</p>
+      </div>}
+    </div>
+  );
+}
+function JournalComposer({ frag, entries, legacyNote, onAddJournalEntry }) {
+  const [ans, setAns] = useState({});
+  const [mine, setMine] = useState({});
+  const [saved, setSaved] = useState(false);
+  const date = jDate();
+  const known = new Set((entries || []).flatMap(entryWords));
+  const has = k => Array.isArray(ans[k]) && ans[k].length > 0;
+  const any = JKEYS.some(has);
+  const toggle = (k, w) => setAns(p => { const cur = p[k] || []; return { ...p, [k]: cur.includes(w) ? cur.filter(x => x !== w) : [...cur, w] }; });
+  const addOwn = k => { const w = (mine[k] || "").trim().toLowerCase(); if (!w) return; setAns(p => { const cur = p[k] || []; return cur.includes(w) ? p : { ...p, [k]: [...cur, w] }; }); setMine(p => ({ ...p, [k]: "" })); };
+  const picked = ["where","fabric","colour","sound","feel"].flatMap(k => ans[k] || []);
+  const fresh = [...new Set(picked)].filter(w => VOCAB[w] && !known.has(w));
+  function save() {
+    if (!any || !onAddJournalEntry) return;
+    const clean = {}; JKEYS.forEach(k => { if (has(k)) clean[k] = ans[k]; });
+    onAddJournalEntry({ fragId:frag.id, fragName:frag.name, house:frag.house, family:frag.family, text:(clean.other && clean.other[0]) || "", prompt:null, where:(clean.where || []).join(", "), date, answers:clean, publishedAsReview:false, reviewRating:null, shared:false, id:Date.now() });
+    setAns({}); setMine({}); setSaved(true); setTimeout(() => setSaved(false), 2200);
+  }
+  return (
+    <div style={{ background:T.lift, borderRadius:16, border:`1px solid ${T.rule}`, padding:18 }}>
+      <div style={{ display:"flex", alignItems:"center", gap:6, marginBottom:6 }}>
+        <Icon name="lock" size={12} color={T.mid}/>
+        <span style={{ fontFamily:sans, fontSize:11, textTransform:"uppercase", letterSpacing:"0.12em", color:T.mid }}>Private, only visible to you</span>
+        <span style={{ fontFamily:sans, fontSize:11, color:T.faint, marginLeft:"auto" }}>{date}</span>
       </div>
-
-      <button onClick={save} disabled={!text.trim()} style={ctaBtn(!!text.trim())}>
-        {saved?"Saved ✓":"Save note"}
-      </button>
+      <p style={{ fontFamily:sans, fontSize:13, color:T.mid, lineHeight:1.6, margin:"0 0 18px" }}>Answer one or all. Tap a word or add your own. There are no wrong answers, and the words you choose build your scent vocabulary.</p>
+      {JPROMPTS.map(pr => (
+        <div key={pr.key} style={{ marginBottom:20 }}>
+          <p style={{ fontFamily:serif, fontSize:18, color:T.black, margin:"0 0 2px" }}>{pr.q}</p>
+          <p style={{ fontFamily:sans, fontSize:12, color:T.faint, margin:"0 0 10px" }}>{pr.sub}</p>
+          {pr.text ? (
+            <textarea value={(ans[pr.key] && ans[pr.key][0]) || ""} onChange={e => { const v = e.target.value; setAns(p => ({ ...p, [pr.key]: v.trim() ? [v] : [] })); }} placeholder={pr.ph} rows={pr.key === "other" ? 3 : 2} style={{ ...FIELD, resize:"vertical", lineHeight:1.6, padding:"12px 14px" }}/>
+          ) : (<>
+            <div style={{ display:"flex", flexWrap:"wrap", gap:7, marginBottom:8 }}>
+              {[...pr.chips, ...(ans[pr.key] || []).filter(w => !pr.chips.includes(w))].map(w => {
+                const on = (ans[pr.key] || []).includes(w);
+                return <button key={w} onClick={() => toggle(pr.key, w)} aria-pressed={on} style={{ minHeight:38, padding:"0 14px", borderRadius:20, border:`1px solid ${on ? "transparent" : T.rule}`, background:on ? "var(--accent)" : T.white, color:on ? "#fff" : T.ink, fontFamily:sans, fontSize:14, fontWeight:on ? 600 : 400, cursor:"pointer" }}>{w}</button>;
+              })}
+            </div>
+            <div style={{ display:"flex", gap:8 }}>
+              <input value={mine[pr.key] || ""} onChange={e => setMine(p => ({ ...p, [pr.key]: e.target.value }))} onKeyDown={e => { if (e.key === "Enter") { e.preventDefault(); addOwn(pr.key); } }} placeholder="Add your own word" style={{ ...FIELD, minHeight:42 }}/>
+              <button onClick={() => addOwn(pr.key)} disabled={!(mine[pr.key] || "").trim()} style={{ ...ghostBtn, minHeight:42, padding:"0 16px" }}>Add</button>
+            </div>
+          </>)}
+        </div>
+      ))}
+      {fresh.length > 0 && (
+        <div style={{ background:T.white, border:`1px solid ${T.rule}`, borderRadius:14, padding:"12px 14px", marginBottom:16 }}>
+          {fresh.map(w => <p key={w} style={{ fontFamily:sans, fontSize:13, color:T.ink, lineHeight:1.55, margin:"0 0 6px" }}><span style={{ fontSize:10, fontWeight:600, textTransform:"uppercase", letterSpacing:"0.1em", color:"var(--accent)", marginRight:8 }}>New word</span><strong style={{ fontWeight:600 }}>{w}</strong>: {VOCAB[w]}</p>)}
+        </div>
+      )}
+      <button onClick={save} disabled={!any} style={ctaBtn(any)}>{saved ? "Saved to your journal ✓" : "Save to journal"}</button>
     </div>
   );
 }
@@ -2203,7 +2245,7 @@ function WearLog({ frag, wears, onLogWear, onDeleteWear }) {
     </div>
   );
 }
-function DetailModal({ frag, onClose, userStatus, setUserStatus, privateNote, setPrivateNote, reaction, setReaction, onOpenFrag, onOpenProfile, onAddJournalEntry, currentUser, onOpenBrand, onOpenPerfumer, wears, onLogWear, onDeleteWear, onBack }) {
+function DetailModal({ frag, entries, onClose, userStatus, setUserStatus, privateNote, setPrivateNote, reaction, setReaction, onOpenFrag, onOpenProfile, onAddJournalEntry, currentUser, onOpenBrand, onOpenPerfumer, wears, onLogWear, onDeleteWear, onBack }) {
   const [tab,setTab]=useState("overview");
   const [showPerfumer, setShowPerfumer]=useState(false);
   const [replyText,setReplyText]=useState("");
@@ -2284,7 +2326,7 @@ function DetailModal({ frag, onClose, userStatus, setUserStatus, privateNote, se
 
         
         <div className="mos-pad mos-dtabs" style={{display:"flex",borderBottom:`1px solid ${T.rule}`,padding:"0 24px",overflowX:"auto"}}>
-          {["overview","tracker","community"].map(t=>(
+          {["overview","tracker","journal","community"].map(t=>(
             <button key={t} onClick={()=>setTab(t)} style={{marginRight:16,padding:"11px 0",whiteSpace:"nowrap",fontSize:10,textTransform:"uppercase",letterSpacing:"0.08em",color:tab===t?T.black:T.mid,background:"none",border:"none",borderBottom:tab===t?`2px solid ${T.black}`:"2px solid transparent",marginBottom:-1,cursor:"pointer",fontFamily:sans}}>{t}</button>
           ))}
         </div>
@@ -2344,28 +2386,41 @@ function DetailModal({ frag, onClose, userStatus, setUserStatus, privateNote, se
           
           {tab==="tracker"&&(
             <div>
-              <p style={{fontFamily:sans,fontSize:13,color:T.mid,lineHeight:1.65,margin:"0 0 18px"}}>Where this fragrance sits in your life.</p>
+              <p style={{fontFamily:sans,fontSize:13,color:T.mid,lineHeight:1.65,margin:"0 0 18px"}}>The facts: where this fragrance sits in your life, and when you wear it.</p>
               <StatusSelector value={userStatus} onChange={setUserStatus}/>
-              <div style={{marginTop:36,paddingTop:28,borderTop:`1px solid ${T.rule}`}}>
-                <p style={{fontFamily:sans,fontSize:10,fontWeight:600,textTransform:"uppercase",letterSpacing:"0.16em",color:T.mid,margin:"0 0 16px"}}>My notes</p>
-              {privateNote?.text&&(
-                <div style={{background:T.white,border:`1px solid ${T.rule}`,borderRadius:14,padding:16,marginBottom:16}}>
-                  <div style={{display:"flex",alignItems:"center",gap:6,marginBottom:10}}>
-                    <Icon name="lock" size={11} color={T.mid}/>
-                    <span style={{fontFamily:sans,fontSize:9,textTransform:"uppercase",letterSpacing:"0.1em",color:T.mid}}>Your note</span>
-                    {privateNote.date&&<span style={{fontFamily:sans,fontSize:10,color:T.faint,marginLeft:"auto"}}>{privateNote.date}</span>}
-                  </div>
-                  {privateNote.where&&<div style={{display:"flex",alignItems:"center",gap:5,marginBottom:8}}><Icon name="pin" size={12} color={T.mid}/><p style={{fontFamily:sans,fontSize:11,color:T.mid,margin:0}}>{privateNote.where}</p></div>}
-                  <p style={{fontFamily:sans,fontSize:13,color:T.ink,lineHeight:1.7,margin:0,fontStyle:"italic"}}>"{privateNote.text}"</p>
-                </div>
-              )}
-              <PrivateNoteEditor note={privateNote} onSave={setPrivateNote} frag={frag} onAddJournalEntry={onAddJournalEntry}/>
-              </div>
+              <div style={{marginTop:36}}/>
               <WearLog frag={frag} wears={wears} onLogWear={onLogWear} onDeleteWear={onDeleteWear}/>
             </div>
           )}
 
           
+          {tab==="journal"&&(
+            <div>
+              <p style={{fontFamily:sans,fontSize:13,color:T.mid,lineHeight:1.65,margin:"0 0 18px"}}>The feelings: how this fragrance moves you, in your own words.</p>
+              {privateNote?.text&&(
+                <div style={{background:T.white,border:`1px solid ${T.rule}`,borderRadius:14,padding:16,marginBottom:16}}>
+                  <p style={{fontFamily:sans,fontSize:10,textTransform:"uppercase",letterSpacing:"0.12em",color:T.faint,margin:"0 0 6px"}}>Earlier note{privateNote.date?` · ${privateNote.date}`:""}</p>
+                  {privateNote.where&&<p style={{fontFamily:sans,fontSize:11,color:T.mid,margin:"0 0 6px"}}>{privateNote.where}</p>}
+                  <p style={{fontFamily:sans,fontSize:13,color:T.ink,lineHeight:1.7,margin:0}}>{privateNote.text}</p>
+                </div>
+              )}
+              <JournalComposer frag={frag} entries={entries} onAddJournalEntry={onAddJournalEntry}/>
+              {(entries||[]).filter(e=>String(e.fragId)===String(frag.id)).length>0&&(
+                <div style={{marginTop:28}}>
+                  <p style={{fontFamily:sans,fontSize:10,fontWeight:600,textTransform:"uppercase",letterSpacing:"0.16em",color:T.mid,margin:"0 0 14px"}}>Your past entries</p>
+                  {(entries||[]).filter(e=>String(e.fragId)===String(frag.id)).map(e=>(
+                    <div key={e.id} style={{background:T.white,border:`1px solid ${T.rule}`,borderRadius:14,padding:16,marginBottom:12}}>
+                      <p style={{fontFamily:sans,fontSize:11,color:T.faint,margin:"0 0 8px"}}>{e.date}</p>
+                      {e.prompt&&<p style={{fontFamily:sans,fontSize:12,color:T.mid,margin:"0 0 6px"}}>{e.prompt}</p>}
+                      <AnswerChips answers={e.answers}/>
+                      {e.text&&<p style={{fontFamily:sans,fontSize:13,color:T.ink,lineHeight:1.7,margin:0}}>{e.text}</p>}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
           {tab==="community"&&(
             <div>
               <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:20}}>
@@ -2486,6 +2541,8 @@ function JournalInsights({ entries, userStatuses, reactions, fragrances, wears, 
   const E = (entries || []).filter(e => inSel(e.date));
   const W = (wears || []).filter(w => inSel(w.date));
   const when = yearSel === "all" ? "all time" : "in " + yearSel;
+  const wordTally = {}; E.forEach(e => entryWords(e).forEach(w => { wordTally[w] = (wordTally[w] || 0) + 1; }));
+  const words = Object.entries(wordTally).sort((a, b) => b[1] - a[1]).slice(0, 14);
 
   // accords across what you own, have sampled or love (not dated, so not year-filtered)
   const LIKE = new Set(["bottle_owned","bottle_wishlist","sample_have","tried_skin"]);
@@ -2557,6 +2614,13 @@ function JournalInsights({ entries, userStatuses, reactions, fragrances, wears, 
       <InsightCard label="Most worn perfumer" headline={perfs[0] ? perfs[0][0] : "None yet"} sub={perfs[0] ? `${perfs[0][1]} wear${perfs[0][1] !== 1 ? "s" : ""} ${when}` : when}
         hint={perfs.length === 0 ? "Log a wear on a fragrance's Tracker tab, and your most worn perfumer shows here." : null}>
         {perfs.length > 1 && perfs.slice(1).map(([n, c]) => <div key={n} style={{ display:"flex", justifyContent:"space-between", marginBottom:6 }}><span style={{ fontFamily:sans, fontSize:13, color:T.ink }}>{n}</span><span style={{ fontFamily:sans, fontSize:11, color:T.faint }}>{c} wear{c !== 1 ? "s" : ""}</span></div>)}
+      </InsightCard>
+
+      <InsightCard label="Your words" headline={words[0] ? words[0][0] : "None yet"} sub={words[0] ? `your most used word ${when}` : when}
+        hint={words.length === 0 ? "Open a fragrance, choose its Journal tab and answer a prompt. The words you pick build your scent vocabulary here." : null}>
+        {words.length > 0 && <div style={{ display:"flex", flexWrap:"wrap", gap:6 }}>
+          {words.map(([w, c]) => <span key={w} style={{ fontFamily:sans, fontSize:12, padding:"5px 12px", borderRadius:20, border:`1px solid ${T.rule}`, background:T.lift, color:T.ink }}>{w} <span style={{ color:T.faint }}>{c}</span></span>)}
+        </div>}
       </InsightCard>
 
       <InsightCard label="Average wear rating" headline={avg ? avg.toFixed(1) : "None yet"} sub={avg ? `stars ${when}` : when}
@@ -3066,7 +3130,8 @@ function JournalTab({ entries, userStatuses, reactions, fragrances, wears, onOpe
               </div>
               <p style={{fontFamily:sans,fontSize:11,color:T.faint,margin:"0 0 6px"}}>{e.house}{e.family?` · ${e.family}`:""}</p>
               {e.prompt&&<p style={{fontFamily:sans,fontSize:12,color:T.mid,margin:"0 0 5px",lineHeight:1.55}}><span style={{color:T.faint}}>↳ </span>{e.prompt}</p>}
-              <p style={{fontFamily:sans,fontSize:13,color:T.ink,lineHeight:1.7,fontStyle:"italic",margin:"0 0 6px"}}>"{e.text}"</p>
+              <AnswerChips answers={e.answers}/>
+              {e.text&&<p style={{fontFamily:sans,fontSize:13,color:T.ink,lineHeight:1.7,margin:"0 0 6px"}}>{e.text}</p>}
               <div style={{display:"flex",alignItems:"center",gap:10,flexWrap:"wrap"}}>
                 {e.where&&<div style={{display:"flex",alignItems:"center",gap:4}}><Icon name="pin" size={10} color={T.faint}/><span style={{fontFamily:sans,fontSize:10,color:T.faint}}>{e.where}</span></div>}
                 {e.publishedAsReview&&<div style={{display:"flex",alignItems:"center",gap:4}}><span style={{fontFamily:sans,fontSize:9,color:T.mid,background:T.lift,padding:"1px 7px",borderRadius:10,border:`1px solid ${T.rule}`}}>Published as review {e.reviewRating?`· ${"★".repeat(e.reviewRating)}`:""}</span></div>}
@@ -3077,7 +3142,7 @@ function JournalTab({ entries, userStatuses, reactions, fragrances, wears, onOpe
         ))}
       </div>
       {all.length===0&&(
-        <p style={{fontFamily:sans,fontSize:11,color:T.faint,textAlign:"center",marginTop:4,lineHeight:1.6}}>Nothing here yet. Wear something today and write down how it feels. Save a note on any fragrance and tick "Add to journal".</p>
+        <p style={{fontFamily:sans,fontSize:11,color:T.faint,textAlign:"center",marginTop:4,lineHeight:1.6}}>Nothing here yet. Wear something today and write down how it feels. Open any fragrance, choose its Journal tab and answer one prompt.</p>
       )}
     </div>
   );
@@ -4853,7 +4918,7 @@ export default function SillageApp() {
         (uf.data || []).forEach(r => { if (r.status) st[r.fragrance_id] = r.status; if (r.reaction) rx[r.fragrance_id] = r.reaction; if (r.note) nt[r.fragrance_id] = r.note; });
         setUserStatuses(st); setReactions(rx); setPrivateNotes(nt);
         if (!wr.error) setWears((wr.data || []).map(r => ({ id: r.id, fragId: r.fragrance_id, date: r.worn_on, occasion: r.occasion, weather: r.weather, rating: r.rating })));
-        setJournalEntries((je.data || []).map(r => ({ id: r.id, fragId: r.fragrance_id, fragName: r.frag_name, house: r.house, family: r.family, prompt: r.prompt, text: r.body, where: r.where_text, date: r.entry_date, shared: r.shared, publishedAsReview: r.published_as_review, reviewRating: r.review_rating })));
+        setJournalEntries((je.data || []).map(r => ({ id: r.id, fragId: r.fragrance_id, fragName: r.frag_name, house: r.house, family: r.family, prompt: r.prompt, text: r.body, where: r.where_text, date: r.entry_date, shared: r.shared, publishedAsReview: r.published_as_review, reviewRating: r.review_rating, answers: r.answers || {} })));
         setLayers((ly.data || []).map(r => ({ id: r.id, name: r.name, frags: r.frags || [], ratio: r.ratio, layerWith: r.layer_with, note: r.note, rating: r.rating, isPublic: r.is_public, date: new Date(r.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) })));
         // Make sure every fragrance in the collection is loaded so the Collection tab can show it.
         const ids = [...new Set((uf.data || []).filter(r => r.status || r.reaction).map(r => r.fragrance_id).concat((wr.data || []).map(r => r.fragrance_id)))];
@@ -4873,7 +4938,7 @@ export default function SillageApp() {
     if (!uid) return;
     const { data, error } = await supabase.from("journal_entries").insert({
       user_id: uid, fragrance_id: isUuid(entry.fragId) ? entry.fragId : null, frag_name: entry.fragName, house: entry.house, family: entry.family || null,
-      prompt: entry.prompt || null, body: entry.text, where_text: entry.where || null, entry_date: entry.date || null,
+      prompt: entry.prompt || null, answers: entry.answers || {}, body: entry.text || "", where_text: entry.where || null, entry_date: entry.date || null,
       shared: !!entry.shared, published_as_review: !!entry.publishedAsReview, review_rating: entry.reviewRating || null,
     }).select("id").single();
     if (error) { flagSave(error); return; }
@@ -5050,6 +5115,7 @@ export default function SillageApp() {
       {modalFrag && (
         <DetailModal
           frag={modalFrag}
+          entries={journalEntries}
           onClose={closeAll}
           onBack={goBack}
           userStatus={userStatuses[modalFrag.id]}
