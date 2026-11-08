@@ -3929,7 +3929,7 @@ function LandingScreen({ onSignIn, onHaveCode }) {
   const goForm = () => { try { formRef.current && formRef.current.scrollIntoView({ behavior:"smooth", block:"center" }); } catch (e) {} };
   const inp = { ...FIELD, minHeight:52 };
   const STEPS = [
-    { n:"Sample", h:"Try it on your skin first.", b:"Find where to try it: niche stores and sample sets worldwide, with the brand's own discovery set listed first.", c:"var(--violet)" },
+    { n:"Sample", h:"Start with the brand.", b:"Buy discovery sets, samples and travel sizes straight from the house, and get to know the people behind the scent. If a brand can't ship to you or has sold out, we point you to decanters.", c:"var(--violet)" },
     { n:"Wear", h:"Log what you wear, and when.", b:"Note the weather, the occasion and how it wore. Your collection grows into a record of your own taste.", c:"var(--teal)" },
     { n:"Keep", h:"A journal that asks how it feels.", b:"Where it takes you, what it reminds you of, the words you reach for. Scent is memory. Keep yours.", c:"var(--accent)" },
     { n:"Together", h:"A community of noses.", b:"Follow other members, read honest reactions and layering ideas, and share your own. Every review is one person's nose, never a verdict.", c:"var(--tangerine)" },
