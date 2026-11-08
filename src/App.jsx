@@ -3900,6 +3900,106 @@ function WaitlistScreen({ onJoin, onHaveCode }) {
   );
 }
 
+// ─── LANDING SCREEN (signed-out homepage) ─────────────────────────────────────
+function LandingScreen({ onSignIn, onHaveCode }) {
+  const [email, setEmail] = useState("");
+  const [name, setName] = useState("");
+  const [done, setDone] = useState(false);
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+  const formRef = useRef(null);
+  const okEmail = v => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v.trim());
+  async function submit() {
+    if (!name.trim()) { setError("Please add your first name."); return; }
+    if (!okEmail(email)) { setError("Please enter a valid email address."); return; }
+    setError(""); setLoading(true);
+    const r = await supabase.rpc("join_waitlist", { p_email: email.trim(), p_name: name.trim() });
+    setLoading(false);
+    if (r.error) { setError("That didn't go through. Try again in a moment."); return; }
+    setDone(true);
+  }
+  const goForm = () => { try { formRef.current && formRef.current.scrollIntoView({ behavior:"smooth", block:"center" }); } catch (e) {} };
+  const inp = { ...FIELD, minHeight:52 };
+  const STEPS = [
+    { n:"Sample", h:"Try it on your skin first.", b:"Find where to try it: niche stores and sample sets worldwide, with the brand's own discovery set listed first.", c:"var(--violet)" },
+    { n:"Wear", h:"Log what you wear, and when.", b:"Note the weather, the occasion and how it wore. Your collection grows into a record of your own taste.", c:"var(--teal)" },
+    { n:"Keep", h:"A journal that asks how it feels.", b:"Where it takes you, what it reminds you of, the words you reach for. Scent is memory. Keep yours.", c:"var(--accent)" },
+  ];
+  const FACTS = ["10,000+ fragrances", "470+ houses", "Notes and accords explained", "Store and sample finder"];
+  return (
+    <div style={{ minHeight:"100svh", fontFamily:sans, color:T.ink }}>
+      <header style={{ maxWidth:1080, margin:"0 auto", padding:"16px 20px", display:"flex", alignItems:"center", justifyContent:"space-between", gap:12 }}>
+        <Logo size={18}/>
+        <div style={{ display:"flex", alignItems:"center", gap:10 }}>
+          <button onClick={onSignIn} style={{ ...ghostBtn, minHeight:40, padding:"0 18px", fontSize:14 }}>Sign in</button>
+          <ThemeToggle/>
+        </div>
+      </header>
+
+      <main>
+        <section style={{ maxWidth:640, margin:"0 auto", padding:"36px 20px 56px", textAlign:"center" }}>
+          <p style={{ display:"inline-block", fontSize:11, fontWeight:600, letterSpacing:"0.16em", textTransform:"uppercase", color:"var(--accent)", background:T.lift, border:`1px solid ${T.rule}`, borderRadius:20, padding:"6px 14px", margin:"0 0 22px" }}>Beta opening soon</p>
+          <h1 style={{ fontFamily:serif, fontWeight:400, fontSize:"clamp(40px, 9vw, 68px)", lineHeight:1.05, letterSpacing:-1.4, color:T.black, margin:"0 0 18px" }}>Where scent becomes memory.</h1>
+          <p style={{ fontSize:"clamp(16px, 2.4vw, 19px)", lineHeight:1.65, color:T.mid, margin:"0 auto 30px", maxWidth:480 }}>Sample first. Wear what you love. Keep the record. We are opening the beta to small groups, and we would love you to be one of them.</p>
+
+          <div ref={formRef} style={{ background:T.white, border:`1px solid ${T.rule}`, borderRadius:22, padding:"22px 20px", textAlign:"left", boxShadow:"0 14px 40px rgba(0,0,0,0.08)" }}>
+            {!done ? (<>
+              <p style={{ fontFamily:serif, fontSize:22, color:T.black, margin:"0 0 4px" }}>Join the beta list</p>
+              <p style={{ fontSize:13, color:T.mid, lineHeight:1.6, margin:"0 0 16px" }}>Just your first name and email. No password, no payment.</p>
+              <div style={{ display:"flex", flexDirection:"column", gap:10, marginBottom:12 }}>
+                <input value={name} onChange={e => { setName(e.target.value); setError(""); }} placeholder="First name" autoComplete="given-name" style={inp} onKeyDown={e => e.key === "Enter" && submit()}/>
+                <input value={email} onChange={e => { setEmail(e.target.value); setError(""); }} placeholder="Email address" type="email" autoComplete="email" style={inp} onKeyDown={e => e.key === "Enter" && submit()}/>
+              </div>
+              {error && <p role="alert" style={{ fontSize:13, color:T.bad, margin:"0 0 10px" }}>{error}</p>}
+              <button onClick={submit} disabled={loading} style={ctaBtn(!loading)}>{loading ? "Joining…" : "Save my spot"}</button>
+              <p style={{ fontSize:12, color:T.faint, lineHeight:1.6, margin:"12px 0 0", textAlign:"center" }}>One email when your spot opens. Nothing else, and we never share it.</p>
+            </>) : (
+              <div style={{ textAlign:"center", padding:"8px 0" }}>
+                <div style={{ width:52, height:52, borderRadius:"50%", background:"var(--accent)", display:"flex", alignItems:"center", justifyContent:"center", margin:"0 auto 14px" }}>
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                </div>
+                <p style={{ fontFamily:serif, fontSize:24, color:T.black, margin:"0 0 6px" }}>You're on the list, {name.trim()}.</p>
+                <p style={{ fontSize:14, color:T.mid, lineHeight:1.65, margin:0 }}>We will write to <strong style={{ color:T.black, fontWeight:500 }}>{email.trim()}</strong> when your spot opens. Until then, think about the scents you own, the ones you have sampled and the ones you keep meaning to try.</p>
+              </div>
+            )}
+          </div>
+          <p style={{ fontSize:13, color:T.mid, margin:"18px 0 0" }}>Already have an invite code?{" "}<button onClick={onHaveCode} style={{ font:"inherit", color:T.black, fontWeight:600, background:"none", border:"none", borderBottom:`1px solid ${T.rule}`, padding:0, cursor:"pointer" }}>Use it here</button></p>
+        </section>
+
+        <section style={{ background:T.lift, borderTop:`1px solid ${T.rule}`, borderBottom:`1px solid ${T.rule}` }}>
+          <div style={{ maxWidth:640, margin:"0 auto", padding:"44px 20px", textAlign:"center" }}>
+            <p style={{ fontFamily:serif, fontSize:"clamp(24px, 5vw, 34px)", lineHeight:1.3, letterSpacing:-0.5, color:T.black, margin:"0 0 10px" }}>We are not here to influence you.<br/>Trust your own nose.</p>
+            <p style={{ fontSize:15, color:T.mid, lineHeight:1.7, margin:0 }}>A review is someone else's nose. We help you find a sample and try it on skin. You make the call.</p>
+          </div>
+        </section>
+
+        <section style={{ maxWidth:1080, margin:"0 auto", padding:"56px 20px 24px" }}>
+          <h2 style={{ fontFamily:serif, fontWeight:400, fontSize:"clamp(28px, 5vw, 40px)", letterSpacing:-0.8, color:T.black, textAlign:"center", margin:"0 0 28px" }}>Sample. Wear. Repeat.</h2>
+          <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit, minmax(250px, 1fr))", gap:14 }}>
+            {STEPS.map(st => (
+              <div key={st.n} style={{ background:T.white, border:`1px solid ${T.rule}`, borderRadius:20, padding:"22px 20px" }}>
+                <p style={{ fontSize:11, fontWeight:600, letterSpacing:"0.16em", textTransform:"uppercase", color:st.c, margin:"0 0 10px" }}>{st.n}</p>
+                <p style={{ fontFamily:serif, fontSize:22, lineHeight:1.2, color:T.black, margin:"0 0 8px" }}>{st.h}</p>
+                <p style={{ fontSize:14, color:T.mid, lineHeight:1.65, margin:0 }}>{st.b}</p>
+              </div>
+            ))}
+          </div>
+          <div style={{ display:"flex", flexWrap:"wrap", justifyContent:"center", gap:8, marginTop:22 }}>
+            {FACTS.map(f => <span key={f} style={{ fontSize:13, padding:"7px 14px", borderRadius:20, border:`1px solid ${T.rule}`, background:T.lift, color:T.ink }}>{f}</span>)}
+          </div>
+        </section>
+
+        <section style={{ maxWidth:640, margin:"0 auto", padding:"40px 20px 56px", textAlign:"center" }}>
+          <p style={{ fontFamily:serif, fontSize:"clamp(26px, 5vw, 36px)", letterSpacing:-0.6, color:T.black, margin:"0 0 8px" }}>Be one of the first in.</p>
+          <p style={{ fontSize:15, color:T.mid, lineHeight:1.65, margin:"0 0 22px" }}>Early members help shape what Memoir on Skin becomes.</p>
+          <button onClick={goForm} style={{ ...ctaBtn(true), maxWidth:320 }}>Join the beta list</button>
+        </section>
+      </main>
+      <div style={{ maxWidth:640, margin:"0 auto", padding:"0 20px 40px" }}><FooterLinks/></div>
+    </div>
+  );
+}
+
 // ─── LOADING SCREEN ───────────────────────────────────────────────────────────
 function LoadingScreen() {
   return (
@@ -5047,10 +5147,10 @@ export default function SillageApp() {
     : "?";
 
   // Preview the sign-up page without logging out: add ?preview=signup to the site address.
-  if (typeof window !== "undefined" && /[?&]preview=signup\b/.test(window.location.search)) return <WaitlistScreen onJoin={() => { window.location.href = window.location.pathname; }} onHaveCode={() => { window.location.href = window.location.pathname + "?join=1"; }}/>;
+  if (typeof window !== "undefined" && /[?&]preview=signup\b/.test(window.location.search)) return <LandingScreen onSignIn={() => { window.location.href = window.location.pathname + "?join=1"; }} onHaveCode={() => { window.location.href = window.location.pathname + "?join=1"; }}/>;
   if (appScreen === "loading") return <LoadingScreen/>;
   if (appScreen === "waitlist" && wantsJoinLink()) return <LoginScreen onWaitlist={() => { window.location.href = window.location.pathname; }}/>;
-  if (appScreen === "waitlist") return <WaitlistScreen onJoin={() => { loginStart.mode = "signin"; setAppScreen("login"); }} onHaveCode={() => { loginStart.mode = "signup"; setAppScreen("login"); }}/>;
+  if (appScreen === "waitlist") return <LandingScreen onSignIn={() => { loginStart.mode = "signin"; setAppScreen("login"); }} onHaveCode={() => { loginStart.mode = "signup"; setAppScreen("login"); }}/>;
   if (appScreen === "login") return <LoginScreen onWaitlist={() => setAppScreen("waitlist")}/>;
   if (appScreen === "onboarding") return <OnboardingScreen onComplete={handleOnboardingComplete}/>;
   // Private invite-code page for the owner: add ?admin=invites to the site address (signed in).
