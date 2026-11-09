@@ -701,7 +701,7 @@ function StatusSelector({ value, onChange }) {
     { title:"Sample", items:STATUSES.filter(s=>s.group==="sample") },
     { title:"Smelled",items:STATUSES.filter(s=>s.group==="tried")  },
   ];
-  const SHORT = { bottle_owned:"Owned", bottle_wishlist:"Wishlist", sample_have:"In hand", sample_wishlist:"Wishlist", smelled:"Smelled", tried_skin:"Tried on skin" };
+  const SHORT = { bottle_owned:"Own", bottle_wishlist:"Wishlist", sample_have:"Own", sample_wishlist:"Wishlist", smelled:"On blotter", tried_skin:"Tried on skin" };
   return (
     <div>
       {groups.map((g,gi) => (
@@ -1306,6 +1306,15 @@ function cleanDiversity(v) {
 }
 // Woman-owned is its own diversity category (separate from ethnic background).
 function isWomanOwned(v) { return /woman|women|female/i.test(String(v == null ? "" : v)); }
+// Some notes arrive joined with a bar ("Mandarin|Raspberry"): show each one on its own.
+function splitNotes(notes, pos) {
+  const seen = new Set(), out = [];
+  notes.filter(n => n.position === pos).forEach(n => String(n.note_name || "").split(/\s*[|\/]\s*/).forEach(part => {
+    const t = part.trim(), k = t.toLowerCase();
+    if (t && !seen.has(k)) { seen.add(k); out.push({ n: t }); }
+  }));
+  return out;
+}
 function mapFrag(f) {
   const own = f.ownership || (f.house && f.house.ownership) || "";
   const notes = f.notes || [];
@@ -1334,9 +1343,9 @@ function mapFrag(f) {
     image: f.image_url || "",
     imageCredit: f.image_credit || "",
     notes: {
-      top: notes.filter(n => n.position === "top").map(n => ({ n: n.note_name })),
-      mid: notes.filter(n => n.position === "mid").map(n => ({ n: n.note_name })),
-      base: notes.filter(n => n.position === "base").map(n => ({ n: n.note_name })),
+      top: splitNotes(notes, "top"),
+      mid: splitNotes(notes, "mid"),
+      base: splitNotes(notes, "base"),
     },
     accords: [...accords].sort((x, y) => x.rank - y.rank).map(x => ({ n: /^sweet$/i.test(String(x.accord_name).trim()) ? "Gourmand" : x.accord_name, v: 80 - (x.rank - 1) * 10 })).filter((a, i, arr) => arr.findIndex(b => String(b.n).toLowerCase() === String(a.n).toLowerCase()) === i),
     longevity: null, sillage: null, seasons: {}, occasions: [], rating: null, votes: 0,
@@ -1644,8 +1653,7 @@ function BrandModal({ brand, onClose, onBack, onOpenFrag }) {
             <>
               <div style={{ display:"flex", alignItems:"center", flexWrap:"wrap", gap:"6px 12px" }}><BrandTypePill type={h.brand_origin}/><span style={{ fontFamily:sans, fontSize:"clamp(14px, 1.1vw, 17px)", color:T.mid }}>{[h.country, h.price_tier].filter(Boolean).join(" · ")}</span></div>
               <div style={{ margin:"6px 0 0" }}>{own && <OwnershipBadge ownership={own} size="large"/>}</div>
-              {cleanDiversity(h.diversity) && <p style={{ fontFamily:sans, fontSize:"clamp(14px, 1.1vw, 17px)", color:T.mid, margin:"8px 0 0" }}>Diversity <strong style={{ color:T.tangerine, fontWeight:600 }}>{cleanDiversity(h.diversity)}</strong></p>}
-              {isWomanOwned(h.diversity) && <p style={{ fontFamily:sans, fontSize:"clamp(14px, 1.1vw, 17px)", color:T.mid, margin:"8px 0 0" }}><strong style={{ color:"var(--orchid)", fontWeight:600 }}>Woman-owned</strong></p>}
+              {(cleanDiversity(h.diversity) || isWomanOwned(h.diversity)) && <p style={{ fontFamily:sans, fontSize:"clamp(14px, 1.1vw, 17px)", color:T.mid, margin:"8px 0 0", display:"flex", flexWrap:"wrap", alignItems:"baseline", gap:"2px 12px" }}>{cleanDiversity(h.diversity) && <span>Diversity <strong style={{ color:T.tangerine, fontWeight:600 }}>{cleanDiversity(h.diversity)}</strong></span>}{isWomanOwned(h.diversity) && <strong style={{ color:"var(--orchid)", fontWeight:600 }}>Woman-owned</strong>}</p>}
               {site && <a href={site} target="_blank" rel="noopener noreferrer" onClick={() => trackEvent("brand_site_click", { houseSlug: h.slug, source: "brand" })} style={{ display:"inline-flex", alignItems:"center", gap:6, margin:"12px 0 0", padding:"6px 14px", minHeight:34, boxSizing:"border-box", borderRadius:20, border:`1px solid ${T.rule}`, background:T.white, fontFamily:sans, fontSize:13, color:T.ink, textDecoration:"none" }}>Brand website<ExtArrow size={11}/></a>}
             </>
           )}
@@ -2183,7 +2191,7 @@ function SamplesSection({ defaultRegion, onVisit, frag }) {
   );
 }
 
-function NotesPyramid({ notes }) {
+function NotesPyramid({ notes, onOpenNote }) {
   return (
     <div>
               {[
@@ -2203,7 +2211,7 @@ function NotesPyramid({ notes }) {
                     <span style={{fontFamily:sans,fontSize:9,color:T.faint}}>{time}</span>
                   </div>
                   <div style={{display:"flex",flexWrap:"wrap",gap:10}}>
-                    {ns.map(note=><NoteIllustration key={note.n} name={note.n} size={72}/>)}
+                    {ns.map(note=><button key={note.n} onClick={()=>onOpenNote&&onOpenNote(note.n,label)} aria-label={`About ${note.n}`} style={{background:"none",border:"none",padding:0,cursor:onOpenNote?"pointer":"default",textAlign:"left",font:"inherit",color:"inherit"}}><NoteIllustration name={note.n} size={72}/></button>)}
                   </div>
                 </div>
               ))}
@@ -2281,9 +2289,35 @@ function WearLog({ frag, wears, onLogWear, onDeleteWear }) {
     </div>
   );
 }
+// Opens from a note on a fragrance page: the ingredient guide when we have one, otherwise a short note card.
+function NoteSheet({ name, tier, house, onClose }) {
+  const has = !!INGREDIENTS[name];
+  useEffect(() => { const h = e => { if (e.key === "Escape") onClose(); }; window.addEventListener("keydown", h); return () => window.removeEventListener("keydown", h); }, [onClose]);
+  return (
+    <div onClick={e => { e.stopPropagation(); onClose(); }} style={{ position:"fixed", inset:0, zIndex:70, background:T.scrim, display:"flex", alignItems:"flex-end", justifyContent:"center" }}>
+      <div onClick={e => e.stopPropagation()} role="dialog" aria-label={name} style={{ background:T.bg, width:"100%", maxWidth:has?1000:460, maxHeight:"93vh", overflowY:"auto", borderRadius:"24px 24px 0 0", border:`1px solid ${T.rule}`, borderBottom:"none", padding:"22px 24px 34px", boxSizing:"border-box" }}>
+        {has ? <IngredientGuide name={name} onBack={onClose} fragrances={[]} backLabel="Back"/> : (
+          <div>
+            <BackBtn onBack={onClose}/>
+            <div style={{ display:"flex", gap:18, alignItems:"center", margin:"4px 0 18px" }}>
+              <div style={{ background:T.lift, borderRadius:14, padding:12, flexShrink:0 }}><NoteIllustration name={name} size={96}/></div>
+              <div>
+                <p style={{ fontFamily:sans, fontSize:11, letterSpacing:"0.18em", textTransform:"uppercase", color:T.accent, fontWeight:600, margin:"0 0 6px" }}>{tier || "Note"}</p>
+                <h3 style={{ fontFamily:serif, fontSize:"clamp(28px, 4vw, 40px)", fontWeight:400, color:T.black, margin:0, lineHeight:1.1 }}>{name}</h3>
+              </div>
+            </div>
+            <p style={{ fontFamily:sans, fontSize:14, color:T.mid, lineHeight:1.7, margin:"0 0 14px" }}>{name} is a {String(tier || "").toLowerCase().replace(" notes", "") ? `${String(tier).toLowerCase().replace(" notes", "")} note` : "note"} in {house ? `${house}'s` : "this"} fragrance. We don't have a full ingredient guide for it yet.</p>
+            <p style={{ fontFamily:sans, fontSize:13, color:T.faint, lineHeight:1.6, margin:0 }}>Guides cover where an ingredient grows, how it is made and where you have smelled it. More are on the way.</p>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
 function DetailModal({ frag, entries, onClose, userStatus, setUserStatus, privateNote, setPrivateNote, reaction, setReaction, onOpenFrag, onOpenProfile, onAddJournalEntry, currentUser, onOpenBrand, onOpenPerfumer, wears, onLogWear, onDeleteWear, onBack }) {
   const [tab,setTab]=useState("overview");
   const [showPerfumer, setShowPerfumer]=useState(false);
+  const [noteSheet, setNoteSheet]=useState(null);
   const [replyText,setReplyText]=useState("");
   const [replyTo,setReplyTo]=useState(null);
   const [revSort,setRevSort]=useState("recent");
@@ -2314,6 +2348,7 @@ function DetailModal({ frag, entries, onClose, userStatus, setUserStatus, privat
   return (
     <div className="mos-sheet-wrap" onClick={onClose} style={{position:"fixed",inset:0,zIndex:50,background:T.scrim,backdropFilter:"blur(16px)",display:"flex",flexDirection:"column",justifyContent:"flex-end",alignItems:"center"}}>
       <div className="mos-sheet" onClick={e=>e.stopPropagation()} style={{background:T.white,borderRadius:"24px 24px 0 0",border:`1px solid ${T.rule}`,borderBottom:"none",width:"100%",maxWidth:460,maxHeight:"93vh",overflowY:"auto"}}>
+        {noteSheet && <NoteSheet name={noteSheet.name} tier={noteSheet.tier} house={frag.house} onClose={()=>setNoteSheet(null)}/>}
 
         
         <div className="mos-pad" style={{position:"relative",padding:"34px 24px 30px",borderBottom:`1px solid ${T.rule}`,overflow:"hidden",background:accA?`${accA}1F`:"transparent"}}>
@@ -2329,13 +2364,9 @@ function DetailModal({ frag, entries, onClose, userStatus, setUserStatus, privat
                 {frag.ownership && <span style={{display:"inline-flex",alignItems:"baseline",gap:6,fontFamily:sans,fontSize:"clamp(13px, 1vw, 15px)",color:T.mid}}>Ownership <OwnershipBadge ownership={frag.ownership} size="large" showTooltip={true}/></span>}
                 {frag.price_tier && <span style={{fontFamily:sans,fontSize:"clamp(13px, 1vw, 15px)",color:T.mid}}>Price tier <strong style={{color:T.teal,fontWeight:600}}>{frag.price_tier}</strong></span>}
                 {frag.country && <span style={{fontFamily:sans,fontSize:"clamp(13px, 1vw, 15px)",color:T.mid}}>Country <strong style={{color:"var(--pink)",fontWeight:600}}>{frag.country}</strong></span>}
-                {frag.diversity && <span style={{fontFamily:sans,fontSize:"clamp(13px, 1vw, 15px)",color:T.mid}}>Diversity <strong style={{color:T.tangerine,fontWeight:600}}>{frag.diversity}</strong></span>}
-                {frag.womanOwned && <span style={{fontFamily:sans,fontSize:"clamp(13px, 1vw, 15px)",color:T.mid}}><strong style={{color:"var(--orchid)",fontWeight:600}}>Woman-owned</strong></span>}
+                {(frag.diversity || frag.womanOwned) && <span style={{fontFamily:sans,fontSize:"clamp(13px, 1vw, 15px)",color:T.mid,display:"inline-flex",flexWrap:"wrap",alignItems:"baseline",gap:"2px 10px"}}>{frag.diversity && <span>Diversity <strong style={{color:T.tangerine,fontWeight:600}}>{frag.diversity}</strong></span>}{frag.womanOwned && <strong style={{color:"var(--orchid)",fontWeight:600}}>Woman-owned</strong>}</span>}
                 {frag.neoGourmand && <span style={{fontFamily:sans,fontSize:"clamp(13px, 1vw, 15px)",color:T.mid}}>Style <strong style={{color:T.accent,fontWeight:600}}>Neo gourmand</strong></span>}
               </div>
-              {safeUrl(frag.website)&&(
-                <a href={safeUrl(frag.website)} target="_blank" rel="noopener noreferrer" onClick={()=>trackEvent("brand_site_click",{fragrance:frag.id,houseSlug:frag.houseSlug,source:"fragrance"})} style={{display:"inline-flex",alignItems:"center",gap:6,margin:"14px 0 0",padding:"6px 14px",minHeight:34,boxSizing:"border-box",borderRadius:20,border:`1px solid ${T.rule}`,background:T.white,fontFamily:sans,fontSize:13,color:T.ink,textDecoration:"none"}}>Brand website<ExtArrow size={11}/></a>
-              )}
               {splitPerfumers(frag.perfumer).length>0 && (
                 <p style={{fontFamily:sans,fontSize:"clamp(13px, 1vw, 15px)",color:T.mid,margin:"14px 0 0",display:"flex",alignItems:"center",flexWrap:"wrap",gap:"2px 6px"}}>
                   <span style={{color:T.faint,fontSize:12}}>by</span>
@@ -2346,6 +2377,9 @@ function DetailModal({ frag, entries, onClose, userStatus, setUserStatus, privat
                     </span>
                   ))}
                 </p>
+              )}
+              {safeUrl(frag.website)&&(
+                <a href={safeUrl(frag.website)} target="_blank" rel="noopener noreferrer" onClick={()=>trackEvent("brand_site_click",{fragrance:frag.id,houseSlug:frag.houseSlug,source:"fragrance"})} style={{display:"inline-flex",alignItems:"center",gap:6,margin:"16px 0 0",padding:"6px 14px",minHeight:34,boxSizing:"border-box",borderRadius:20,border:`1px solid ${T.rule}`,background:T.white,fontFamily:sans,fontSize:13,color:T.ink,textDecoration:"none"}}>Brand website<ExtArrow size={11}/></a>
               )}
               
               {showPerfumer && typeof showPerfumer==="string" && <PerfumerModal name={showPerfumer} onClose={()=>setShowPerfumer(false)}/>}
@@ -2401,7 +2435,7 @@ function DetailModal({ frag, entries, onClose, userStatus, setUserStatus, privat
               {sortedAcc.length>0&&(<div style={{marginBottom:36}}><Lbl mb={12}>Scent Accords</Lbl><AccordBars accords={frag.accords}/></div>)}
               <div style={{marginBottom:36}}>
                 <Lbl mb={14}>Fragrance Notes</Lbl>
-                <NotesPyramid notes={frag.notes}/>
+                <NotesPyramid notes={frag.notes} onOpenNote={(n,tier)=>setNoteSheet({name:n,tier})}/>
               </div>
               <SimilarScents frag={frag} onOpenFrag={onOpenFrag}/>
               {hasSeasons&&(<div style={{marginBottom:36}}><Lbl>Seasons</Lbl><SeasonHeat seasons={frag.seasons}/></div>)}
@@ -3400,7 +3434,7 @@ const INGREDIENTS = {
     origins:[{p:"Madagascar",n:"The largest source. Rich, creamy and sweet."},{p:"Mexico",n:"Where vanilla began."},{p:"Tahiti",n:"A separate species, more floral and fruity."}],
     smelled:[{n:"Shalimar",h:"Guerlain",y:1925},{n:"Tobacco Vanille",h:"Tom Ford",y:2007}] },
 };
-function IngredientGuide({ name, onBack, fragrances, onOpenFrag }) {
+function IngredientGuide({ name, onBack, fragrances, onOpenFrag, backLabel = "Back to Learn" }) {
   const g = INGREDIENTS[name];
   if (!g) return null;
   const lib = (fragrances || []).filter(f => f.notes && f.notes.top.concat(f.notes.mid, f.notes.base).some(n => String(n.n).toLowerCase() === name.toLowerCase())).slice(0, 8);
@@ -3415,7 +3449,7 @@ function IngredientGuide({ name, onBack, fragrances, onOpenFrag }) {
   );
   return (
     <div>
-      <BackBtn onBack={onBack} label="Back to Learn"/>
+      <BackBtn onBack={onBack} label={backLabel}/>
       <div className="mos-guide">
         <div>
           {eyebrow("01", "The plant")}
