@@ -4040,7 +4040,20 @@ function LandingScreen({ onSignIn, onHaveCode }) {
               </div>
             )}
           </div>
-          <p style={{ fontSize:13, color:T.mid, margin:"18px 0 0" }}>Already have an invite code?{" "}<button onClick={onHaveCode} style={{ font:"inherit", color:T.black, fontWeight:600, background:"none", border:"none", borderBottom:`1px solid ${T.rule}`, padding:0, cursor:"pointer" }}>Use it here</button></p>
+          <div style={{ margin:"26px 0 0" }}>
+            <p style={{ fontFamily:serif, fontSize:19, color:T.black, margin:"0 0 6px" }}>Follow along while you wait</p>
+            <p style={{ fontSize:13, color:T.mid, lineHeight:1.6, margin:"0 auto 14px", maxWidth:360 }}>New scents, sample finds and beta news land on our socials first.</p>
+            <div style={{ display:"flex", gap:10, justifyContent:"center", flexWrap:"wrap" }}>
+              {[
+                { n:"Instagram", u:"https://www.instagram.com/memoironskin", icon:<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.2" cy="6.8" r="0.8" fill="currentColor"/></svg> },
+                { n:"TikTok", u:"https://www.tiktok.com/@memoironskin", icon:<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M14 3v11.5a3.5 3.5 0 1 1-3.5-3.5"/><path d="M14 3c.4 2.6 2 4.2 5 4.4"/></svg> },
+              ].map(l => (
+                <a key={l.n} href={l.u} target="_blank" rel="noopener noreferrer"
+                  style={{ display:"inline-flex", alignItems:"center", justifyContent:"center", gap:8, minHeight:46, padding:"0 20px", borderRadius:23, border:`1px solid ${T.rule}`, background:T.white, color:T.ink, fontFamily:sans, fontSize:14, fontWeight:600, textDecoration:"none" }}>{l.icon}{l.n}<span style={{ fontWeight:400, color:T.mid }}>@memoironskin</span></a>
+              ))}
+            </div>
+          </div>
+          <p style={{ fontSize:13, color:T.mid, margin:"22px 0 0" }}>Already have an invite code?{" "}<button onClick={onHaveCode} style={{ font:"inherit", color:T.black, fontWeight:600, background:"none", border:"none", borderBottom:`1px solid ${T.rule}`, padding:0, cursor:"pointer" }}>Use it here</button></p>
         </section>
 
         <section style={{ background:T.lift, borderTop:`1px solid ${T.rule}`, borderBottom:`1px solid ${T.rule}` }}>
