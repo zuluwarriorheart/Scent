@@ -1,0 +1,13 @@
+{
+  "name": "Memoir on Skin",
+  "short_name": "Memoir on Skin",
+  "description": "Where scent becomes memory. A scent journal and sample-first guide to niche and indie fragrance.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0E0B13",
+  "theme_color": "#0E0B13",
+  "icons": [
+    { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" }
+  ]
+}
