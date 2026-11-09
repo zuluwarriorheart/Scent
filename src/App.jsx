@@ -3432,7 +3432,7 @@ function FragPicker({ value, onPick, onSearch, placeholder }) {
   );
 }
 function LayeringTab({ layers, onSaveLayer, onSearch }) {
-  const [open,setOpen]=useState(false);
+  const [open,setOpen]=useState(true); // the form is always showing; toggling `open` just resets the pickers
   const [name,setName]=useState("");const [f1,setF1]=useState("");const [f2,setF2]=useState("");
   const [note,setNote]=useState("");const [brand2,setBrand2]=useState("");const [prod2,setProd2]=useState("");
   const [layerWith,setLayerWith]=useState("fragrance");const [isPublic,setIsPublic]=useState(false);
@@ -3469,9 +3469,7 @@ function LayeringTab({ layers, onSaveLayer, onSearch }) {
         <h2 style={{fontFamily:serif,fontSize:"clamp(32px, 3.2vw, 50px)",color:T.black,letterSpacing:-0.8,margin:0,fontWeight:400}}>Layering</h2>
         <p style={{fontFamily:sans,fontSize:"clamp(13px, 1.1vw, 17px)",color:T.mid,margin:"6px 0 0"}}>Track what works together, and why.</p>
       </div>
-      {!open ? (
-        <button onClick={()=>setOpen(true)} style={{...ctaBtn(true),marginBottom:16}}>+ Log a layering combination</button>
-      ) : (
+      {(
         <div style={{background:T.lift,border:`1px solid ${T.rule}`,borderRadius:14,padding:18,marginBottom:16}}>
           <Lbl>Name</Lbl>
           <input value={name} onChange={e=>setName(e.target.value)} placeholder="e.g. Rainy Sunday" style={{...inp,marginBottom:16}}/>
@@ -3504,13 +3502,12 @@ function LayeringTab({ layers, onSaveLayer, onSearch }) {
           </div>
 
           <div style={{display:"flex",gap:8}}>
-            <button onClick={()=>setOpen(false)} style={ghostBtn}>Cancel</button>
-            <button onClick={()=>{if(ready){onSaveLayer({name,frags:[f1,second],ratio:"",note,layerWith,isPublic,date:new Date().toLocaleDateString("en-US",{month:"short",day:"numeric",year:"numeric"}),rating:4});setOpen(false);setName("");setF1("");setF2("");setBrand2("");setProd2("");setNote("");}}} style={{...ctaBtn(ready),flex:1,width:"auto"}}>Save combination</button>
+            <button onClick={()=>{if(ready){onSaveLayer({name,frags:[f1,second],ratio:"",note,layerWith,isPublic,date:new Date().toLocaleDateString("en-US",{month:"short",day:"numeric",year:"numeric"}),rating:4});setOpen(o=>!o);setName("");setF1("");setF2("");setBrand2("");setProd2("");setNote("");}}} style={{...ctaBtn(ready),flex:1,width:"auto"}}>Save combination</button>
           </div>
         </div>
       )}
 
-      {layers.length===0&&<p style={{fontFamily:sans,fontSize:13,color:T.mid,lineHeight:1.6,margin:"4px 0 16px"}}>No combinations logged yet. Log your first one above.</p>}
+      {layers.length===0&&<p style={{fontFamily:sans,fontSize:13,color:T.mid,lineHeight:1.6,margin:"4px 0 16px"}}>No combinations logged yet. Fill in the form above to log your first one.</p>}
       {layers.map(l=>(
         <div key={l.id} style={{background:T.white,border:`1px solid ${T.rule}`,borderRadius:14,padding:16,marginBottom:10}}>
           <div style={{display:"flex",alignItems:"flex-start",justifyContent:"space-between",marginBottom:10}}>
