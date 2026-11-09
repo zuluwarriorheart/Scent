@@ -2220,6 +2220,7 @@ function NotesPyramid({ notes, onOpenNote }) {
 }
 
 const WEAR_OCCASIONS = ["everyday","work","date","night out","event","travel","home","workout"];
+const WEAR_MOODS = ["happy","calm","confident","energised","romantic","nostalgic","tired","anxious","stressed","lonely","sad","depressed"];
 const WEAR_WEATHER = ["hot","warm","mild","cool","cold","rainy"];
 function todayISO() { const d = new Date(); return new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 10); }
 function fmtWearDate(iso) {
@@ -2229,8 +2230,8 @@ function fmtWearDate(iso) {
 }
 function WearLog({ frag, wears, onLogWear, onDeleteWear }) {
   const mine = (wears || []).filter(w => w.fragId === frag.id).sort((a, b) => (a.date < b.date ? 1 : a.date > b.date ? -1 : 0));
-  const [open, setOpen] = useState(false);
   const [date, setDate] = useState(todayISO());
+  const [moods, setMoods] = useState([]);
   const [occasion, setOccasion] = useState("");
   const [weather, setWeather] = useState("");
   const [rating, setRating] = useState(0);
@@ -2242,8 +2243,8 @@ function WearLog({ frag, wears, onLogWear, onDeleteWear }) {
   async function save() {
     if (busy) return;
     setBusy(true);
-    await onLogWear(frag.id, { date: date || todayISO(), occasion: occasion || null, weather: weather || null, rating: rating || null });
-    setBusy(false); setOpen(false); setOccasion(""); setWeather(""); setRating(0); setDate(todayISO());
+    await onLogWear(frag.id, { date: date || todayISO(), occasion: occasion || null, weather: weather || null, rating: rating || null, moods });
+    setBusy(false); setOccasion(""); setWeather(""); setMoods([]); setRating(0); setDate(todayISO());
   }
   return (
     <div style={{ marginTop: 36, paddingTop: 28, borderTop: `1px solid ${T.rule}` }}>
@@ -2251,8 +2252,7 @@ function WearLog({ frag, wears, onLogWear, onDeleteWear }) {
         <p style={{ fontFamily: sans, fontSize: 10, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.16em", color: T.mid, margin: 0 }}>Wear log</p>
         {mine.length > 0 && <span style={{ fontFamily: sans, fontSize: 11, color: T.faint }}>Worn {mine.length} time{mine.length !== 1 ? "s" : ""}{avg ? ` · avg ${avg} ★` : ""}</span>}
       </div>
-      {!open && <button onClick={() => setOpen(true)} style={ctaBtn(true)}>I wore this</button>}
-      {open && (
+      {(
         <div style={{ background: T.lift, border: `1px solid ${T.rule}`, borderRadius: 14, padding: 18 }}>
           <p style={{ fontFamily: sans, fontSize: 11, textTransform: "uppercase", letterSpacing: "0.14em", color: T.mid, margin: "0 0 8px" }}>Date</p>
           <input type="date" value={date} max={todayISO()} onChange={e => setDate(e.target.value)} style={{ ...FIELD, width:"auto", minWidth:180, marginBottom: 18 }}/>
@@ -2260,11 +2260,13 @@ function WearLog({ frag, wears, onLogWear, onDeleteWear }) {
           <div style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: 8, marginBottom: 18 }}>{WEAR_OCCASIONS.map(o => <button key={o} onClick={() => setOccasion(occasion === o ? "" : o)} style={chip(occasion === o)}>{o}</button>)}</div>
           <p style={{ fontFamily: sans, fontSize: 11, textTransform: "uppercase", letterSpacing: "0.14em", color: T.mid, margin: "0 0 8px" }}>Weather</p>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: 8, marginBottom: 18 }}>{WEAR_WEATHER.map(o => <button key={o} onClick={() => setWeather(weather === o ? "" : o)} style={chip(weather === o)}>{o}</button>)}</div>
+          <p style={{ fontFamily: sans, fontSize: 11, textTransform: "uppercase", letterSpacing: "0.14em", color: T.mid, margin: "0 0 4px" }}>How were you feeling?</p>
+          <p style={{ fontFamily: sans, fontSize: 12, color: T.faint, margin: "0 0 8px", lineHeight: 1.5 }}>Pick any that fit. Private to you.</p>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: 8, marginBottom: 18 }}>{WEAR_MOODS.map(o => { const on = moods.includes(o); return <button key={o} aria-pressed={on} onClick={() => setMoods(on ? moods.filter(x => x !== o) : [...moods, o])} style={chip(on)}>{o}</button>; })}</div>
           <p style={{ fontFamily: sans, fontSize: 11, textTransform: "uppercase", letterSpacing: "0.14em", color: T.mid, margin: "0 0 8px" }}>How did it wear?</p>
           <div style={{ display: "flex", gap: 4, marginBottom: 16 }}>{[1, 2, 3, 4, 5].map(n => <button key={n} onClick={() => setRating(rating === n ? 0 : n)} aria-label={`${n} star${n > 1 ? "s" : ""}`} style={{ background: "none", border: "none", cursor: "pointer", fontSize: 32, padding: 2, color: n <= rating ? "var(--accent)" : T.rule, lineHeight: 1 }}>★</button>)}</div>
           <div style={{ display: "flex", gap: 8 }}>
             <button onClick={save} disabled={busy} style={{ ...ctaBtn(true), flex:1, width:"auto", opacity: busy ? 0.6 : 1 }}>Save wear</button>
-            <button onClick={() => setOpen(false)} style={ghostBtn}>Cancel</button>
           </div>
         </div>
       )}
@@ -2274,7 +2276,7 @@ function WearLog({ frag, wears, onLogWear, onDeleteWear }) {
             <div key={w.id} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, padding: "10px 0", borderBottom: `1px solid ${T.lift}` }}>
               <div style={{ minWidth: 0 }}>
                 <span style={{ fontFamily: sans, fontSize: 13, color: T.ink }}>{fmtWearDate(w.date)}</span>
-                <span style={{ fontFamily: sans, fontSize: 11, color: T.faint, marginLeft: 8, textTransform: "capitalize" }}>{[w.occasion, w.weather].filter(Boolean).join(" · ")}</span>
+                <span style={{ fontFamily: sans, fontSize: 11, color: T.faint, marginLeft: 8, textTransform: "capitalize" }}>{[w.occasion, w.weather, ...(w.moods || [])].filter(Boolean).join(" · ")}</span>
               </div>
               <div style={{ display: "flex", alignItems: "center", gap: 10, flexShrink: 0 }}>
                 {w.rating ? <span style={{ fontFamily: sans, fontSize: 12, color: T.mid }}>{"★".repeat(w.rating)}</span> : null}
@@ -2285,7 +2287,7 @@ function WearLog({ frag, wears, onLogWear, onDeleteWear }) {
           {mine.length > 8 && <p style={{ fontFamily: sans, fontSize: 11, color: T.faint, margin: "10px 0 0" }}>And {mine.length - 8} earlier.</p>}
         </div>
       )}
-      {mine.length === 0 && !open && <p style={{ fontFamily: sans, fontSize: 11, color: T.faint, margin: "12px 0 0", lineHeight: 1.6 }}>Log each wear. Over time you will see what you reach for, and when.</p>}
+      {mine.length === 0 && <p style={{ fontFamily: sans, fontSize: 11, color: T.faint, margin: "12px 0 0", lineHeight: 1.6 }}>Log each wear. Over time you will see what you reach for, and when.</p>}
     </div>
   );
 }
@@ -5082,14 +5084,14 @@ export default function SillageApp() {
           supabase.from("user_fragrances").select("fragrance_id, status, reaction, note").eq("user_id", uid).limit(5000),
           supabase.from("journal_entries").select("*").eq("user_id", uid).order("created_at", { ascending: false }).limit(2000),
           supabase.from("layerings").select("*").eq("user_id", uid).order("created_at", { ascending: false }).limit(1000),
-          supabase.from("wears").select("id, fragrance_id, worn_on, occasion, weather, rating").eq("user_id", uid).order("worn_on", { ascending: false }).limit(5000),
+          supabase.from("wears").select("id, fragrance_id, worn_on, occasion, weather, rating, moods").eq("user_id", uid).order("worn_on", { ascending: false }).limit(5000),
         ]);
         if (off) return;
         if (uf.error || je.error || ly.error) { console.error("Could not load your saved data:", uf.error || je.error || ly.error); return; }
         const st = {}, rx = {}, nt = {};
         (uf.data || []).forEach(r => { if (r.status) st[r.fragrance_id] = r.status; if (r.reaction) rx[r.fragrance_id] = r.reaction; if (r.note) nt[r.fragrance_id] = r.note; });
         setUserStatuses(st); setReactions(rx); setPrivateNotes(nt);
-        if (!wr.error) setWears((wr.data || []).map(r => ({ id: r.id, fragId: r.fragrance_id, date: r.worn_on, occasion: r.occasion, weather: r.weather, rating: r.rating })));
+        if (!wr.error) setWears((wr.data || []).map(r => ({ id: r.id, fragId: r.fragrance_id, date: r.worn_on, occasion: r.occasion, weather: r.weather, rating: r.rating, moods: r.moods || [] })));
         setJournalEntries((je.data || []).map(r => ({ id: r.id, fragId: r.fragrance_id, fragName: r.frag_name, house: r.house, family: r.family, prompt: r.prompt, text: r.body, where: r.where_text, date: r.entry_date, shared: r.shared, publishedAsReview: r.published_as_review, reviewRating: r.review_rating, answers: r.answers || {} })));
         setLayers((ly.data || []).map(r => ({ id: r.id, name: r.name, frags: r.frags || [], ratio: r.ratio, layerWith: r.layer_with, note: r.note, rating: r.rating, isPublic: r.is_public, date: new Date(r.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) })));
         // Make sure every fragrance in the collection is loaded so the Collection tab can show it.
@@ -5119,8 +5121,8 @@ export default function SillageApp() {
   async function logWear(fragId, w) {
     if (!uid || !isUuid(fragId)) return;
     const tempId = "tmp-" + Date.now();
-    setWears(p => [{ id: tempId, fragId, date: w.date, occasion: w.occasion, weather: w.weather, rating: w.rating }, ...p]);
-    const { data, error } = await supabase.from("wears").insert({ user_id: uid, fragrance_id: fragId, worn_on: w.date, occasion: w.occasion, weather: w.weather, rating: w.rating }).select("id").single();
+    setWears(p => [{ id: tempId, fragId, date: w.date, occasion: w.occasion, weather: w.weather, rating: w.rating, moods: w.moods || [] }, ...p]);
+    const { data, error } = await supabase.from("wears").insert({ user_id: uid, fragrance_id: fragId, worn_on: w.date, occasion: w.occasion, weather: w.weather, rating: w.rating, moods: w.moods || [] }).select("id").single();
     if (error) { setWears(p => p.filter(x => x.id !== tempId)); flagSave(error); return; }
     setWears(p => p.map(x => x.id === tempId ? { ...x, id: data.id } : x));
   }
