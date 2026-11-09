@@ -2816,6 +2816,177 @@ function buildShelves(list) {
   return shelves.slice(0, 9);
 }
 
+// ─── REQUESTS BOARD ("I want to smell like…", answered by members) ────────────
+const REQ_KEYS = ["where","feel","colour","fabric","sound"];
+function reqAgo(iso) {
+  const s = Math.max(0, (Date.now() - new Date(iso).getTime()) / 1000);
+  if (s < 3600) return Math.max(1, Math.round(s / 60)) + "m";
+  if (s < 86400) return Math.round(s / 3600) + "h";
+  return Math.round(s / 86400) + "d";
+}
+function RequestsBoard({ onOpenFrag, onSearch }) {
+  const [rows, setRows] = useState(null);
+  const [err, setErr] = useState("");
+  const [composing, setComposing] = useState(false);
+  const [openId, setOpenId] = useState(null);
+  const load = async () => {
+    try {
+      const { data, error } = await supabase.rpc("list_requests", { p_limit: 40 });
+      if (error) throw error;
+      setRows(data || []); setErr("");
+    } catch (e) { console.error("Requests failed:", e); setRows([]); setErr("That didn't go through. Try again in a moment."); }
+  };
+  useEffect(() => { load(); }, []);
+  return (
+    <div style={{ maxWidth:760 }}>
+      <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", gap:12, marginBottom:14 }}>
+        <p style={{ fontFamily:sans, fontSize:13, color:T.mid, lineHeight:1.6, margin:0, flex:1 }}>Describe what you want to smell like. Members say what it reminds them of. Every reply is one person's nose.</p>
+        {!composing && <button onClick={() => setComposing(true)} style={{ ...ctaBtn(true), width:"auto", padding:"0 20px", minHeight:44, fontSize:14, flexShrink:0 }}>New request</button>}
+      </div>
+      {composing && <RequestForm onCancel={() => setComposing(false)} onDone={() => { setComposing(false); load(); }}/>}
+      {err && <p style={{ fontFamily:sans, fontSize:13, color:T.mid, margin:"12px 0" }}>{err}</p>}
+      {rows === null && <p style={{ fontFamily:sans, fontSize:13, color:T.mid, margin:"24px 0" }}>Loading</p>}
+      {rows && rows.length === 0 && !err && !composing && (
+        <div style={{ background:T.white, border:`1px solid ${T.rule}`, borderRadius:16, padding:"22px 18px", textAlign:"center" }}>
+          <p style={{ fontFamily:serif, fontSize:22, color:T.black, margin:"0 0 6px" }}>Start the first request</p>
+          <p style={{ fontFamily:sans, fontSize:13, color:T.mid, lineHeight:1.6, margin:"0 0 14px" }}>A place, a fabric, a feeling. Other noses will tell you what it reminds them of.</p>
+          <button onClick={() => setComposing(true)} style={{ ...ctaBtn(true), width:"auto", padding:"0 24px", minHeight:44, fontSize:14 }}>New request</button>
+        </div>
+      )}
+      {(rows || []).map(r => (
+        <RequestCard key={r.id} r={r} open={openId === r.id} onToggle={() => setOpenId(openId === r.id ? null : r.id)} onChanged={load} onOpenFrag={onOpenFrag} onSearch={onSearch}/>
+      ))}
+    </div>
+  );
+}
+function RequestForm({ onCancel, onDone }) {
+  const [title, setTitle] = useState("");
+  const [answers, setAnswers] = useState({});
+  const [cons, setCons] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [msg, setMsg] = useState("");
+  const toggle = (k, w) => setAnswers(a => { const cur = a[k] || []; return { ...a, [k]: cur.includes(w) ? cur.filter(x => x !== w) : [...cur, w] }; });
+  const ok = title.trim().length >= 5;
+  async function submit() {
+    if (!ok) { setMsg("Add a few words about what you want to smell like."); return; }
+    setBusy(true); setMsg("");
+    const clean = {}; REQ_KEYS.forEach(k => { if ((answers[k] || []).length) clean[k] = answers[k]; });
+    const { error } = await supabase.from("requests").insert({ title: title.trim(), answers: clean, constraints_text: cons.trim() || null });
+    setBusy(false);
+    if (error) { console.error(error); setMsg("That didn't go through. Try again in a moment."); return; }
+    onDone();
+  }
+  return (
+    <div style={{ background:T.white, border:`1px solid ${T.rule}`, borderRadius:16, padding:16, marginBottom:16 }}>
+      <p style={{ fontFamily:sans, fontSize:12, color:T.mid, margin:"0 0 6px" }}>I want to smell like</p>
+      <input value={title} maxLength={160} onChange={e => setTitle(e.target.value)} placeholder="A wet stone courtyard after rain" style={FIELD}/>
+      {JPROMPTS.filter(p => REQ_KEYS.includes(p.key)).map(p => (
+        <div key={p.key} style={{ marginTop:14 }}>
+          <p style={{ fontFamily:sans, fontSize:10, textTransform:"uppercase", letterSpacing:"0.12em", color:T.faint, margin:"0 0 6px" }}>{p.q}</p>
+          <div style={{ display:"flex", flexWrap:"wrap", gap:6 }}>
+            {p.chips.map(w => { const on = (answers[p.key] || []).includes(w); return (
+              <button key={w} onClick={() => toggle(p.key, w)} aria-pressed={on} style={{ fontFamily:sans, fontSize:13, padding:"0 13px", minHeight:36, borderRadius:18, border:`1px solid ${on ? T.black : T.rule}`, background:on ? T.black : T.white, color:on ? T.white : T.ink, cursor:"pointer" }}>{w}</button>
+            ); })}
+          </div>
+        </div>
+      ))}
+      <p style={{ fontFamily:sans, fontSize:12, color:T.mid, margin:"14px 0 6px" }}>Anything to avoid, or a budget (optional)</p>
+      <input value={cons} maxLength={300} onChange={e => setCons(e.target.value)} placeholder="No florals, under $150" style={FIELD}/>
+      {msg && <p style={{ fontFamily:sans, fontSize:13, color:T.mid, margin:"10px 0 0" }}>{msg}</p>}
+      <div style={{ display:"flex", gap:8, marginTop:14 }}>
+        <button onClick={onCancel} style={{ ...ctaBtn(false), background:T.white, border:`1px solid ${T.rule}`, color:T.ink, cursor:"pointer", width:"auto", padding:"0 20px", minHeight:46, fontSize:14, fontWeight:500 }}>Cancel</button>
+        <button onClick={submit} disabled={busy} style={{ ...ctaBtn(ok), flex:1, minHeight:46, fontSize:14, opacity:busy ? 0.6 : 1, cursor:"pointer" }}>{busy ? "Posting" : "Post request"}</button>
+      </div>
+    </div>
+  );
+}
+function RequestCard({ r, open, onToggle, onChanged, onOpenFrag, onSearch }) {
+  const chips = REQ_KEYS.flatMap(k => Array.isArray(r.answers && r.answers[k]) ? r.answers[k].map(w => k + ": " + w) : []);
+  const [replies, setReplies] = useState(null);
+  const [frags, setFrags] = useState({});
+  const [text, setText] = useState("");
+  const [q, setQ] = useState("");
+  const [hits, setHits] = useState([]);
+  const [pick, setPick] = useState(null);
+  const [busy, setBusy] = useState(false);
+  const [note, setNote] = useState("");
+  const loadReplies = async () => {
+    try {
+      const { data, error } = await supabase.rpc("list_request_replies", { p_request: r.id });
+      if (error) throw error;
+      setReplies(data || []);
+      const ids = [...new Set((data || []).map(x => x.fragrance_id).filter(Boolean))];
+      if (ids.length) {
+        const fr = await fetchFragRows(sel => supabase.from("fragrances").select(sel).in("id", ids));
+        if (!fr.error && fr.data) { const m = {}; fr.data.map(mapFrag).forEach(f => { m[f.id] = f; }); setFrags(m); }
+      }
+    } catch (e) { console.error(e); setReplies([]); }
+  };
+  useEffect(() => { if (open && replies === null) loadReplies(); }, [open]);
+  useEffect(() => {
+    if (!onSearch || q.trim().length < 2) { setHits([]); return; }
+    let off = false;
+    const t = setTimeout(async () => { try { const x = await onSearch(q.trim(), "all", 0); if (!off) setHits((x.items || []).filter(f => UUID_RE.test(String(f.id))).slice(0, 5)); } catch (e) {} }, 300);
+    return () => { off = true; clearTimeout(t); };
+  }, [q]);
+  async function post() {
+    if (text.trim().length < 2) { setNote("Write a few words first."); return; }
+    setBusy(true); setNote("");
+    const { error } = await supabase.from("request_replies").insert({ request_id: r.id, body: text.trim(), fragrance_id: pick ? pick.id : null });
+    setBusy(false);
+    if (error) { console.error(error); setNote("That didn't go through. Try again in a moment."); return; }
+    setText(""); setQ(""); setPick(null); setHits([]); setReplies(null); await loadReplies(); onChanged();
+  }
+  async function del(table, id) { const { error } = await supabase.from(table).delete().eq("id", id); if (!error) { if (table === "requests") onChanged(); else { setReplies(null); loadReplies(); onChanged(); } } }
+  async function helped(x) { await supabase.rpc("mark_reply_helped", { p_reply: x.id, p_helped: !x.helped }); loadReplies(); }
+  async function report(x) { const { error } = await supabase.from("request_reports").insert(x ? { reply_id: x.id } : { request_id: r.id }); setNote(error ? "That didn't go through. Try again in a moment." : "Reported. Thank you."); }
+  const small = { fontFamily:sans, fontSize:12, color:T.mid, background:"none", border:"none", cursor:"pointer", padding:"6px 0", minHeight:32 };
+  return (
+    <div style={{ background:T.white, border:`1px solid ${T.rule}`, borderRadius:16, padding:"14px 16px", marginBottom:12 }}>
+      <button onClick={onToggle} aria-expanded={open} style={{ display:"block", width:"100%", textAlign:"left", background:"none", border:"none", padding:0, cursor:"pointer" }}>
+        <p style={{ fontFamily:sans, fontSize:12, color:T.mid, margin:"0 0 3px" }}>@{r.username || "member"} · {reqAgo(r.created_at)} ago · I want to smell like</p>
+        <p style={{ fontFamily:serif, fontSize:20, lineHeight:1.3, color:T.black, margin:"0 0 8px" }}>{r.title}</p>
+        {chips.length > 0 && <div style={{ display:"flex", flexWrap:"wrap", gap:5, marginBottom:8 }}>{chips.map(c => <span key={c} style={{ fontFamily:sans, fontSize:12, padding:"3px 10px", borderRadius:20, background:T.lift, border:`1px solid ${T.rule}`, color:T.ink }}>{c}</span>)}</div>}
+        <p style={{ fontFamily:sans, fontSize:12, color:T.faint, margin:0 }}>{r.constraints_text ? r.constraints_text + " · " : ""}{Number(r.reply_count)} {Number(r.reply_count) === 1 ? "reply" : "replies"}</p>
+      </button>
+      {open && (
+        <div style={{ marginTop:14, borderTop:`1px solid ${T.lift}`, paddingTop:12 }}>
+          {replies === null && <p style={{ fontFamily:sans, fontSize:13, color:T.mid, margin:"0 0 10px" }}>Loading</p>}
+          {replies && replies.length === 0 && <p style={{ fontFamily:sans, fontSize:13, color:T.mid, margin:"0 0 10px" }}>No replies yet. What does it remind you of?</p>}
+          {(replies || []).map(x => { const f = x.fragrance_id ? frags[x.fragrance_id] : null; return (
+            <div key={x.id} style={{ marginBottom:12, paddingLeft:12, borderLeft:`2px solid ${x.helped ? "var(--accent)" : T.rule}` }}>
+              <p style={{ fontFamily:sans, fontSize:12, color:T.mid, margin:"0 0 3px" }}>@{x.username || "member"} · {reqAgo(x.created_at)}{x.helped ? " · helped" : ""}</p>
+              <p style={{ fontFamily:sans, fontSize:14, color:T.ink, lineHeight:1.6, margin:0 }}>{x.body}</p>
+              {f && <button onClick={() => onOpenFrag(f.id)} style={{ display:"flex", alignItems:"center", gap:10, marginTop:8, padding:"8px 10px", background:T.lift, border:`1px solid ${T.rule}`, borderRadius:10, cursor:"pointer", textAlign:"left", maxWidth:"100%" }}>
+                <span><span style={{ display:"block", fontFamily:serif, fontSize:14, color:T.black }}>{f.name}</span><span style={{ display:"block", fontFamily:sans, fontSize:11, color:T.mid }}>{f.house} · Try a sample first</span></span>
+              </button>}
+              <div style={{ display:"flex", gap:14 }}>
+                {r.mine && !x.mine && <button onClick={() => helped(x)} style={small}>{x.helped ? "Undo helped" : "This helped"}</button>}
+                {x.mine ? <button onClick={() => del("request_replies", x.id)} style={small}>Delete</button> : <button onClick={() => report(x)} style={small}>Report</button>}
+              </div>
+            </div>
+          ); })}
+          <div style={{ marginTop:6 }}>
+            <input value={text} maxLength={800} onChange={e => setText(e.target.value)} placeholder="Reminds me of…" style={FIELD}/>
+            {pick
+              ? <p style={{ fontFamily:sans, fontSize:12, color:T.ink, margin:"8px 0 0" }}>Linking {pick.name} by {pick.house} <button onClick={() => setPick(null)} style={{ ...small, display:"inline", padding:0, minHeight:0, marginLeft:6, textDecoration:"underline" }}>Remove</button></p>
+              : onSearch && <input value={q} onChange={e => setQ(e.target.value)} placeholder="Link a fragrance (optional)" style={{ ...FIELD, marginTop:8, minHeight:42, fontSize:16 }}/>}
+            {!pick && hits.map(f => <button key={f.id} onClick={() => { setPick(f); setHits([]); setQ(""); }} style={{ display:"block", width:"100%", textAlign:"left", padding:"9px 4px", background:"none", border:"none", borderBottom:`1px solid ${T.lift}`, fontFamily:sans, fontSize:13, color:T.ink, cursor:"pointer" }}>{f.name} <span style={{ color:T.mid }}>· {f.house}</span></button>)}
+            {note && <p style={{ fontFamily:sans, fontSize:13, color:T.mid, margin:"8px 0 0" }}>{note}</p>}
+            <div style={{ display:"flex", gap:12, alignItems:"center", marginTop:10 }}>
+              <button onClick={post} disabled={busy} style={{ ...ctaBtn(true), width:"auto", padding:"0 22px", minHeight:44, fontSize:14, opacity:busy ? 0.6 : 1, cursor:"pointer" }}>{busy ? "Posting" : "Reply"}</button>
+              {r.mine && <button onClick={() => del("requests", r.id)} style={small}>Delete request</button>}
+              {!r.mine && <button onClick={() => report(null)} style={small}>Report</button>}
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// Set to true to bring the AI Nose tab back. Requests replaces it for now.
+const NOSE_ENABLED = false;
 function DiscoverTab({ onOpenFrag, onOpenBrand, onOpenPerfumer, userStatuses, reactions, onReaction, onSuggest, fragrances, serverShelves, onSearch }) {
   const [mode,setMode]=useState("browse");
   const [messages,setMessages]=useState([{role:"ai",text:"Tell me what you're in the mood for: a memory, a mood, an aesthetic. I'll find your next fragrance."}]);
@@ -2875,14 +3046,15 @@ function DiscoverTab({ onOpenFrag, onOpenBrand, onOpenPerfumer, userStatuses, re
     <div>
       <div style={{marginBottom:20}}>
         <p style={{fontFamily:sans,fontSize:10,fontWeight:600,textTransform:"uppercase",letterSpacing:"0.18em",color:T.accent,margin:"0 0 6px"}}>Discover</p>
-        <h2 style={{fontFamily:serif,fontSize:"clamp(32px, 3.2vw, 50px)",color:T.black,letterSpacing:-0.8,margin:0,fontWeight:400}}>{mode==="browse"?"Sample. Wear. Repeat.":mode==="brands"?"Brands":mode==="perfumers"?"Perfumers":"The Nose"}</h2>
-        <p style={{fontFamily:sans,fontSize:"clamp(13px, 1.1vw, 17px)",color:T.mid,margin:"6px 0 0"}}>{mode==="browse"?"Search by name, or browse by category.":mode==="brands"?"Every house in the library, with who owns it and what it makes.":mode==="perfumers"?"The noses behind the bottles. Find a perfumer, then everything they have made.":"Describe a memory, a mood or a place."}</p>
+        <h2 style={{fontFamily:serif,fontSize:"clamp(32px, 3.2vw, 50px)",color:T.black,letterSpacing:-0.8,margin:0,fontWeight:400}}>{mode==="browse"?"Sample. Wear. Repeat.":mode==="brands"?"Brands":mode==="perfumers"?"Perfumers":mode==="requests"?"Requests":"The Nose"}</h2>
+        <p style={{fontFamily:sans,fontSize:"clamp(13px, 1.1vw, 17px)",color:T.mid,margin:"6px 0 0"}}>{mode==="browse"?"Search by name, or browse by category.":mode==="brands"?"Every house in the library, with who owns it and what it makes.":mode==="perfumers"?"The noses behind the bottles. Find a perfumer, then everything they have made.":mode==="requests"?"Ask what to smell like. Members answer.":"Describe a memory, a mood or a place."}</p>
       </div>
       <div role="tablist" aria-label="Discover" style={{display:"flex",overflowX:"auto",whiteSpace:"nowrap",borderBottom:`1px solid ${T.rule}`,marginBottom:22}}>
         {modeBtn("browse","Browse")}
         {modeBtn("brands","Brands")}
         {modeBtn("perfumers","Perfumers")}
-        {modeBtn("nose","Nose")}
+        {NOSE_ENABLED&&modeBtn("nose","Nose")}
+        {modeBtn("requests","Requests")}
       </div>
 
       {mode==="browse"&&(
@@ -2939,7 +3111,9 @@ function DiscoverTab({ onOpenFrag, onOpenBrand, onOpenPerfumer, userStatuses, re
       {mode==="brands"&&<BrandsDirectory onOpenBrand={onOpenBrand}/>}
       {mode==="perfumers"&&<PerfumersDirectory onOpenPerfumer={onOpenPerfumer}/>}
 
-      {mode==="nose"&&(
+      {mode==="requests"&&<RequestsBoard onOpenFrag={onOpenFrag} onSearch={serverMode?onSearch:null}/>}
+
+      {NOSE_ENABLED&&mode==="nose"&&(
         <div style={{maxWidth:760}}>
           <div style={{background:T.white,border:`1px solid ${T.rule}`,borderRadius:18,overflow:"hidden",marginBottom:14}}>
             <div style={{padding:16,minHeight:240,maxHeight:"52vh",overflowY:"auto",display:"flex",flexDirection:"column",gap:12}}>
