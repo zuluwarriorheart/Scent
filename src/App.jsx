@@ -5418,6 +5418,8 @@ export default function SillageApp() {
 
   // Preview the sign-up page without logging out: add ?preview=signup to the site address.
   if (typeof window !== "undefined" && /[?&]preview=signup\b/.test(window.location.search)) return <LandingScreen onSignIn={() => { window.location.href = window.location.pathname + "?join=1"; }} onHaveCode={() => { window.location.href = window.location.pathname + "?join=1"; }}/>;
+  // The short beta link (memoironskin.com/beta) always lands on the beta sign-up page, even in a browser that is already signed in.
+  if (typeof window !== "undefined" && (window.location.hash === "#beta" || /^\/beta\/?$/.test(window.location.pathname))) return <LandingScreen onSignIn={() => { window.location.href = "/?join=1"; }} onHaveCode={() => { window.location.href = "/?join=1"; }}/>;
   if (appScreen === "loading") return <LoadingScreen/>;
   if (appScreen === "waitlist" && wantsJoinLink()) return <LoginScreen onWaitlist={() => { window.location.href = window.location.pathname; }}/>;
   if (appScreen === "waitlist") return <LandingScreen onSignIn={() => { loginStart.mode = "signin"; setAppScreen("login"); }} onHaveCode={() => { loginStart.mode = "signup"; setAppScreen("login"); }}/>;
