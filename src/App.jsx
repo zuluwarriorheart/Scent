@@ -4070,7 +4070,7 @@ function WaitlistScreen({ onJoin, onHaveCode }) {
     if (!isValidEmail(email)) { setError("Please enter a valid email address."); return; }
     setError("");
     setLoading(true);
-    const r = await supabase.rpc("join_waitlist", { p_email: email.trim(), p_name: name.trim() });
+    const r = await supabase.rpc("join_waitlist", { p_email: email.trim(), p_name: name.trim(), p_src: getSrc() || null });
     setLoading(false);
     if (r.error) { setError("Something went wrong. Please try again in a moment."); return; }
     setSubmitted(true);
@@ -4141,6 +4141,16 @@ function WaitlistScreen({ onJoin, onHaveCode }) {
 }
 
 // ─── LANDING SCREEN (signed-out homepage) ─────────────────────────────────────
+// Which link brought someone to the beta list (e.g. /beta?src=signature). Kept for the visit, sent with the sign-up.
+function getSrc() {
+  try {
+    const q = new URLSearchParams(window.location.search).get("src");
+    const clean = q ? q.toLowerCase().replace(/[^a-z0-9_-]/g, "").slice(0, 30) : "";
+    if (clean) sessionStorage.setItem("mos-src", clean);
+    return clean || sessionStorage.getItem("mos-src") || "";
+  } catch (e) { return ""; }
+}
+if (typeof window !== "undefined") getSrc();
 function LandingScreen({ onSignIn, onHaveCode }) {
   const [email, setEmail] = useState("");
   const [name, setName] = useState("");
@@ -4161,12 +4171,13 @@ function LandingScreen({ onSignIn, onHaveCode }) {
     if (!name.trim()) { setError("Please add your first name."); return; }
     if (!okEmail(email)) { setError("Please enter a valid email address."); return; }
     setError(""); setLoading(true);
-    const r = await supabase.rpc("join_waitlist", { p_email: email.trim(), p_name: name.trim() });
+    const r = await supabase.rpc("join_waitlist", { p_email: email.trim(), p_name: name.trim(), p_src: getSrc() || null });
     setLoading(false);
     if (r.error) { setError("That didn't go through. Try again in a moment."); return; }
     setDone(true);
   }
   const goForm = () => { try { formRef.current && formRef.current.scrollIntoView({ behavior:"smooth", block:"center" }); } catch (e) {} };
+  useEffect(() => { if (window.location.hash === "#beta" || /^\/beta\/?$/.test(window.location.pathname)) { const t = setTimeout(goForm, 400); return () => clearTimeout(t); } }, []);
   const inp = { ...FIELD, minHeight:52 };
   const STEPS = [
     { n:"Sample", h:"Start with the brand.", b:"Buy discovery sets, samples and travel sizes straight from the house, and get to know the people behind the scent. If a brand can't ship to you or has sold out, we point you to decanters.", c:"var(--violet)" },
@@ -4351,6 +4362,7 @@ function InviteAdmin() {
             <span style={{ fontSize:12, color:T.mid }}>{w.status === "waiting" ? "Waiting" : "Invited"}</span>
           </div>
           <p style={{ fontSize:12, color:T.mid, margin:"3px 0 0", wordBreak:"break-all" }}>{w.email}</p>
+          {w.src && <p style={{ fontSize:11, color:T.mid, margin:"3px 0 0" }}>From: <strong style={{ fontWeight:600 }}>{w.src}</strong></p>}
           {w.status === "waiting"
             ? <button onClick={() => inviteWl(w.id, w.email)} style={{ ...btn, marginTop:10 }}>Let in: make their code</button>
             : <p style={{ fontSize:12, margin:"8px 0 0" }}>Code: <span style={{ fontFamily:"ui-monospace, monospace" }}>{w.code}</span> <span onClick={() => share(w.code)} style={{ color:T.mid, cursor:"pointer", textDecoration:"underline" }}>Share</span></p>}
