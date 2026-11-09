@@ -2378,9 +2378,6 @@ function DetailModal({ frag, entries, onClose, userStatus, setUserStatus, privat
                   ))}
                 </p>
               )}
-              {safeUrl(frag.website)&&(
-                <a href={safeUrl(frag.website)} target="_blank" rel="noopener noreferrer" onClick={()=>trackEvent("brand_site_click",{fragrance:frag.id,houseSlug:frag.houseSlug,source:"fragrance"})} style={{display:"inline-flex",alignItems:"center",gap:6,margin:"16px 0 0",padding:"6px 14px",minHeight:34,boxSizing:"border-box",borderRadius:20,border:`1px solid ${T.rule}`,background:T.white,fontFamily:sans,fontSize:13,color:T.ink,textDecoration:"none"}}>Brand website<ExtArrow size={11}/></a>
-              )}
               
               {showPerfumer && typeof showPerfumer==="string" && <PerfumerModal name={showPerfumer} onClose={()=>setShowPerfumer(false)}/>}
             </div>
