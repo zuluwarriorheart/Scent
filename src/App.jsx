@@ -1343,7 +1343,7 @@ function mapFrag(f) {
   const accords = f.accords || [];
   return {
     id: f.id,
-    name: f.slug.replace(/-/g, " ").replace(/\b\w/g, c => c.toUpperCase()),
+    name: (f.house && f.house.slug === "a-n-other" && /^[a-z]{2}-\d{2,4}$/.test(f.slug)) ? f.slug.replace("-", " ").toUpperCase() : f.slug.replace(/-/g, " ").replace(/\b\w/g, c => c.toUpperCase()),
     house: (f.house && f.house.name) || "",
     houseSlug: (f.house && f.house.slug) || "",
     country: (f.house && f.house.country) || "",
