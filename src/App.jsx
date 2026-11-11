@@ -1,4 +1,4 @@
-import { useState, useEffect, useId, useRef, useSyncExternalStore } from "react";
+import { useState, useEffect, useId, useRef, useSyncExternalStore, Fragment } from "react";
 import { createClient } from "@supabase/supabase-js";
 
 // ─── SUPABASE CLIENT ──────────────────────────────────────────────────────────
@@ -1803,6 +1803,32 @@ function PerfumerPortrait({ name, photo: photoProp, size = 150 }) {
 }
 function lastWord(n) { const w = String(n).trim().split(/\s+/); return w[w.length - 1] || n; }
 
+function PerfumerShelf({ onOpenPerfumer, tinted }) {
+  const [pm, setPm] = useState(perfumerPhotoMap);
+  useEffect(() => { if (!pm) { let off = false; loadPerfumerPhotos().then(m => { if (!off) setPm(m); }); return () => { off = true; }; } }, [pm]);
+  const list = Object.keys(pm || {}).sort((a, b) => lastWord(a).localeCompare(lastWord(b)));
+  if (list.length < 2) return null;
+  return (
+    <section className={"mos-bleed" + (tinted ? " mos-band" : "")} style={{ padding:"26px 0 22px" }}>
+      <div className="mos-bleed-pad" style={{ marginBottom:16 }}>
+        <h3 style={{ fontFamily:serif, fontSize:"clamp(26px, 2.3vw, 38px)", fontWeight:400, letterSpacing:-0.6, color:T.black, margin:0, lineHeight:1.1 }}>Meet the perfumers</h3>
+        <p style={{ fontFamily:sans, fontSize:"clamp(14px, 1.1vw, 17px)", color:T.mid, margin:"6px 0 0", lineHeight:1.5 }}>The noses behind the bottles. Tap one to see everything they have made.</p>
+      </div>
+      <div className="mos-shelf mos-bleed-pad" style={{ display:"flex", alignItems:"flex-start", gap:22, overflowX:"auto", paddingTop:2, paddingBottom:14, WebkitOverflowScrolling:"touch" }}>
+        {list.map(k => {
+          const nm = titleCaseName(k);
+          return (
+            <button key={k} onClick={() => onOpenPerfumer && onOpenPerfumer(nm)} style={{ flexShrink:0, width:132, background:"none", border:"none", padding:0, cursor:"pointer", textAlign:"center", fontFamily:sans }}>
+              <PerfumerPortrait name={nm} photo={pm[k]} size={132}/>
+              <span style={{ display:"block", marginTop:10, fontFamily:serif, fontSize:16, lineHeight:1.2, color:T.black }}>{nm}</span>
+            </button>
+          );
+        })}
+      </div>
+    </section>
+  );
+}
+
 function PerfumersDirectory({ onOpenPerfumer }) {
   const [rows, setRows] = useState(null);
   const [q, setQ] = useState("");
@@ -3139,7 +3165,12 @@ function DiscoverTab({ onOpenFrag, onOpenBrand, onOpenPerfumer, userStatuses, re
           )}
           {!isSearching&&(
             <>
-              {shelves.map((s,i)=><Shelf key={s.key} title={s.title} blurb={s.blurb} items={s.items} groups={s.groups} onOpenFrag={onOpenFrag} userStatuses={userStatuses} tinted={i%2===0}/>)}
+              {shelves.map((s,i)=>(
+                <Fragment key={s.key}>
+                  <Shelf title={s.title} blurb={s.blurb} items={s.items} groups={s.groups} onOpenFrag={onOpenFrag} userStatuses={userStatuses} tinted={i%2===0}/>
+                  {s.key==="new"&&<PerfumerShelf onOpenPerfumer={onOpenPerfumer} tinted={i%2!==0}/>}
+                </Fragment>
+              ))}
             </>
           )}
         </>
