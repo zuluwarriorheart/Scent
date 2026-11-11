@@ -2831,13 +2831,14 @@ const HOUSE_GROUPS = [
   { key:"designer", label:"Designer" },
 ];
 // TEMPORARY: show this house under "New to the shelf" so the look can be judged. Set to "" to restore real new releases.
-const PREVIEW_NEW_HOUSE = "jijide";
+const PREVIEW_NEW_HOUSES = ["a-n-other", "jijide"]; // newest uploads first
+const PREVIEW_NEW_HOUSE = PREVIEW_NEW_HOUSES[0];
 const NEO_BLURB = "Gourmand with an edge. Grain, salt, smoke and savory notes alongside the sweet.";
 function buildShelves(list) {
   const shelves = [];
   const add = (key, title, blurb, items, max=12) => { if (items.length >= 2) shelves.push({ key, title, blurb, items: items.slice(0, max) }); };
   const withYear = list.filter(f => Number(f.year) > 0);
-  add("new", "New to the shelf", "The most recent releases in the library.", [...withYear].sort((a,b)=>(PREVIEW_NEW_HOUSE && (b.houseSlug===PREVIEW_NEW_HOUSE)-(a.houseSlug===PREVIEW_NEW_HOUSE)) || b.year-a.year));
+  add("new", "New to the shelf", "The most recent releases in the library.", [...withYear].sort((a,b)=>(PREVIEW_NEW_HOUSES.indexOf(a.houseSlug)+1 || 99)-(PREVIEW_NEW_HOUSES.indexOf(b.houseSlug)+1 || 99) || b.year-a.year));
   add("neo", "Neo gourmand", NEO_BLURB, list.filter(f => f.neoGourmand), 12);
   add("indie", "Independent houses", "Made by houses that answer to no conglomerate.", list.filter(f => f.ownership && f.ownership.status === "independent"));
   add("niche", "Niche houses", "Small, independent houses where fragrance is the whole point.", list.filter(f => houseGroups(f).includes("niche")));
@@ -5194,17 +5195,20 @@ export default function SillageApp() {
               const items = rows.filter(r => r.shelf === key).sort((x, y) => x.pos - y.pos).map(r => byId.get(r.id)).filter(Boolean);
               return { key, title: SHELF_META[key][0], blurb: SHELF_META[key][1], items };
             }).filter(s => s.items.length >= 2);
-            if (PREVIEW_NEW_HOUSE) {
+            if (PREVIEW_NEW_HOUSES.length) {
               try {
-                const { data: ph } = await supabase.from("houses").select("id, name").eq("slug", PREVIEW_NEW_HOUSE).maybeSingle();
-                if (ph) {
-                  const pr = await fetchFragRows(sel => supabase.from("fragrances").select(sel).eq("house_id", ph.id).not("image_url", "is", null).order("slug", { ascending: true }).limit(15));
-                  if (!pr.error && pr.data && pr.data.length >= 2) {
-                    const pm = pr.data.map(mapFrag); mergeFrags(pm);
-                    const ns = { key: "new", title: "New to the shelf", blurb: "The most recent releases in the library.", items: pm };
-                    const ix = shelves.findIndex(x => x.key === "new");
-                    if (ix >= 0) shelves[ix] = ns; else shelves.unshift(ns);
-                  }
+                let pm = [];
+                for (const hs of PREVIEW_NEW_HOUSES) {
+                  const { data: ph } = await supabase.from("houses").select("id, name").eq("slug", hs).maybeSingle();
+                  if (!ph) continue;
+                  const pr = await fetchFragRows(sel => supabase.from("fragrances").select(sel).eq("house_id", ph.id).not("image_url", "is", null).order("created_at", { ascending: false }).order("slug", { ascending: true }).limit(9));
+                  if (!pr.error && pr.data) pm = pm.concat(pr.data.map(mapFrag));
+                }
+                if (pm.length >= 2) {
+                  mergeFrags(pm);
+                  const ns = { key: "new", title: "New to the shelf", blurb: "The most recent releases in the library.", items: pm };
+                  const ix = shelves.findIndex(x => x.key === "new");
+                  if (ix >= 0) shelves[ix] = ns; else shelves.unshift(ns);
                 }
               } catch (e) {}
             }
