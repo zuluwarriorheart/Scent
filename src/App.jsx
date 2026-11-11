@@ -1781,7 +1781,20 @@ async function loadPerfumers() {
   }
   return Object.keys(PERFUMERS).map(n => ({ name: n, frag_count: null, house_count: null }));
 }
-function PerfumerPortrait({ name, photo, size = 150 }) {
+let perfumerPhotoMap = null, perfumerPhotoLoad = null;
+function loadPerfumerPhotos() {
+  if (perfumerPhotoMap) return Promise.resolve(perfumerPhotoMap);
+  if (!perfumerPhotoLoad) perfumerPhotoLoad = Promise.resolve(supabase.from("perfumer_photos").select("name, image_url")).then(r => {
+    const m = {};
+    if (!r.error && r.data) r.data.forEach(x => { m[String(x.name).toLowerCase()] = x.image_url; });
+    perfumerPhotoMap = m; return m;
+  }).catch(() => { perfumerPhotoLoad = null; return {}; });
+  return perfumerPhotoLoad;
+}
+function PerfumerPortrait({ name, photo: photoProp, size = 150 }) {
+  const [pm, setPm] = useState(perfumerPhotoMap);
+  useEffect(() => { if (!photoProp && !pm) { let off = false; loadPerfumerPhotos().then(m => { if (!off) setPm(m); }); return () => { off = true; }; } }, [photoProp, pm]);
+  const photo = photoProp || (pm && pm[String(name).toLowerCase()]) || "";
   const ini = String(name).split(/\s+/).map(w => w[0]).join("").slice(0, 2).toUpperCase();
   const hue = hueFor(name);
   return photo
