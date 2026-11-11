@@ -1798,7 +1798,7 @@ function PerfumerPortrait({ name, photo: photoProp, size = 150 }) {
   const ini = String(name).split(/\s+/).map(w => w[0]).join("").slice(0, 2).toUpperCase();
   const hue = hueFor(name);
   return photo
-    ? <img src={photo} alt={name} style={{ width:size, height:size, borderRadius:"50%", objectFit:"cover", flexShrink:0 }}/>
+    ? <img src={photo} alt={name} style={{ width:size, height:size, borderRadius:"50%", objectFit:"cover", objectPosition:"50% 22%", flexShrink:0 }}/>
     : <span style={{ width:size, height:size, borderRadius:"50%", flexShrink:0, background:`var(--tint-${hue})`, color:`var(--${hue})`, display:"flex", alignItems:"center", justifyContent:"center", fontFamily:serif, fontSize:size*0.34, letterSpacing:-1 }}>{ini}</span>;
 }
 function lastWord(n) { const w = String(n).trim().split(/\s+/); return w[w.length - 1] || n; }
