@@ -2186,10 +2186,12 @@ const SAMPLE_RETAILERS = {
   EU: [
     { name:"Jovoy Paris",      url:"https://www.jovoyparis.com" },
     { name:"Nose Paris",       url:"https://www.nose.fr" },
+    { name:"Luckyscent",       url:"https://www.luckyscent.com" },
   ],
   UK: [
     { name:"Jovoy Mayfair",    url:"https://www.jovoyparis.com" },
     { name:"Bloom Perfumery",  url:"https://www.bloomperfumery.com" },
+    { name:"Luckyscent",       url:"https://www.luckyscent.com" },
   ],
 };
 const REGION_ORDER = ["US", "CA", "EU", "UK"];
