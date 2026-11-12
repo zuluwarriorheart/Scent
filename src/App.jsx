@@ -1238,7 +1238,35 @@ function Thumb({ frag, w="var(--thumb-w)" }) {
     </span>
   );
 }
-function ReviewCard({ hueKey, who, whoLabel, badges, date, rating, text, fragName, house, image, helpful, replyCount, onWho, onFrag, onReply, children }) {
+// ─── MEMBER FEELINGS (one tap per impression; no public star score) ─────────
+const FEELINGS = [
+  { key:"loved", label:"Loved it", color:"var(--accent)" },
+  { key:"artistry", label:"Appreciate the artistry", color:"var(--orchid)" },
+  { key:"notforme", label:"Not for me", color:"var(--violet)" },
+];
+const MIN_FEELINGS = 5;
+function FeelingChip({ feeling, size="normal" }) {
+  const f = FEELINGS.find(x => x.key === feeling);
+  if (!f) return null;
+  return <span style={{ display:"inline-flex", alignItems:"center", gap:6, fontFamily:sans, fontSize:size==="small"?11:13, fontWeight:600, color:f.color, border:`1px solid ${f.color}`, borderRadius:20, padding:size==="small"?"2px 10px":"4px 12px" }}><span style={{ width:7, height:7, borderRadius:"50%", background:f.color }}/>{f.label}</span>;
+}
+function FeelingBar({ items }) {
+  const total = items.length;
+  if (total < MIN_FEELINGS) return null;
+  return (
+    <div style={{ flex:1, minWidth:0, marginRight:16 }}>
+      <p style={{ fontFamily:serif, fontSize:22, color:T.black, margin:"0 0 10px", lineHeight:1.1 }}>How members felt</p>
+      <div style={{ display:"flex", height:12, borderRadius:6, overflow:"hidden", gap:2 }} role="img" aria-label={FEELINGS.map(f => `${items.filter(i => i.feeling === f.key).length} ${f.label}`).join(", ")}>
+        {FEELINGS.map(f => { const c = items.filter(i => i.feeling === f.key).length; return c ? <div key={f.key} style={{ flex:c, background:f.color }}/> : null; })}
+      </div>
+      <div style={{ display:"flex", flexWrap:"wrap", gap:"4px 14px", marginTop:8 }}>
+        {FEELINGS.map(f => { const c = items.filter(i => i.feeling === f.key).length; return <span key={f.key} style={{ fontFamily:sans, fontSize:12, color:T.mid, display:"inline-flex", alignItems:"center", gap:5 }}><span style={{ width:8, height:8, borderRadius:"50%", background:f.color }}/>{f.label} {Math.round(c / total * 100)}%</span>; })}
+      </div>
+      <p style={{ fontFamily:sans, fontSize:12, color:T.faint, margin:"8px 0 0" }}>Some scents aren't for everyone. Let your skin tell you.</p>
+    </div>
+  );
+}
+function ReviewCard({ hueKey, who, whoLabel, badges, date, feeling, text, fragName, house, image, helpful, replyCount, onWho, onFrag, onReply, children }) {
   const [liked, setLiked] = useState(false);
   const RH = ["violet","teal","orchid","pink"]; // cool brand colours only: orange and coral tints read as brown on dark
   let hh = 0; for (const c of String(fragName || hueKey || who || "x")) hh = (hh * 31 + c.charCodeAt(0)) >>> 0;
@@ -1258,8 +1286,8 @@ function ReviewCard({ hueKey, who, whoLabel, badges, date, rating, text, fragNam
         </div>
       </div>
       <div style={{ marginTop:14, background:`var(--tint-${hue})`, borderRadius:18, padding:"18px 18px 16px" }}>
-        <div style={{ display:"flex", gap:3 }}>{[1,2,3,4,5].map(n => <span key={n} style={{ fontSize:22, lineHeight:1, color:n <= Math.round(rating) ? `var(--${hue})` : T.faint }}>{n <= Math.round(rating) ? "★" : "☆"}</span>)}</div>
-        {text && <p style={{ fontFamily:sans, fontSize:15, color:T.ink, lineHeight:1.65, margin:"14px 0 0" }}>{text}</p>}
+        {feeling && <FeelingChip feeling={feeling}/>}
+        {text && <p style={{ fontFamily:sans, fontSize:15, color:T.ink, lineHeight:1.65, margin:feeling?"14px 0 0":0 }}>{text}</p>}
         {fragName && (
           <div style={{ display:"flex", alignItems:"flex-end", justifyContent:"space-between", gap:12, marginTop:text?18:34 }}>
             <div style={{ minWidth:0 }}>
@@ -2108,7 +2136,6 @@ function FragCard({ frag, onClick, userStatus, reaction, onReaction, onOpenFrag,
             </div>
             {userStatus && <StatusBadge statusKey={userStatus}/>}
           </div>
-          <div style={{display:"flex",alignItems:"center",gap:6,marginTop:5}}><Stars rating={frag.rating}/><span style={{fontFamily:sans,fontSize:10,color:T.faint}}>{frag.votes.toLocaleString()}</span></div>
           <div style={{display:"flex",gap:5,flexWrap:"wrap",marginTop:6}}>
             {frag.occasions.slice(0,2).map(o=><span key={o} style={{fontFamily:sans,fontSize:10,padding:"2px 8px",borderRadius:20,background:T.lift,color:T.mid,border:`1px solid ${T.rule}`}}>{o}</span>)}
           </div>
@@ -2386,10 +2413,22 @@ function DetailModal({ frag, entries, onClose, userStatus, setUserStatus, finish
   const [revSort,setRevSort]=useState("recent");
   const [replies,setReplies]=useState({});
   const REVIEWS=[
-    {id:0,username:"scentcollector_jw",name:"James W.",rating:5,text:"Give it 20 minutes past the opening, the smoky birch dry-down is masterful.",date:"2 days ago",helpful:34,user:{isFounder:true,memberNumber:12,isTopContributor:true,country:"GB"}},
-    {id:1,username:"niche_nomad",name:"Nadia M.",rating:4,text:"Overpriced? Yes. Masterpiece of construction? Undeniably.",date:"1 week ago",helpful:28,user:{isFounder:true,memberNumber:89,isTopContributor:false,country:"FR"}},
-    {id:2,username:"basenotebrigade",name:"Bruno K.",rating:5,text:"Had three people ask what I was wearing at a conference. Projection is serious.",date:"2 weeks ago",helpful:19,user:{isFounder:false,memberNumber:null,isTopContributor:true,country:"DE"}},
+    {id:0,username:"scentcollector_jw",name:"James W.",feeling:"loved",text:"Give it 20 minutes past the opening, the smoky birch dry-down is masterful.",date:"2 days ago",helpful:34,user:{isFounder:true,memberNumber:12,isTopContributor:true,country:"GB"}},
+    {id:1,username:"niche_nomad",name:"Nadia M.",feeling:"artistry",text:"Overpriced? Yes. Masterpiece of construction? Undeniably.",date:"1 week ago",helpful:28,user:{isFounder:true,memberNumber:89,isTopContributor:false,country:"FR"}},
+    {id:2,username:"basenotebrigade",name:"Bruno K.",feeling:"loved",text:"Had three people ask what I was wearing at a conference. Projection is serious.",date:"2 weeks ago",helpful:19,user:{isFounder:false,memberNumber:null,isTopContributor:true,country:"DE"}},
+    {id:3,username:"demo_member_a",name:"Demo A.",feeling:"notforme",text:"Beautifully made, just not my skin. Too sharp on me.",date:"3 weeks ago",helpful:6,user:null},
+    {id:4,username:"demo_member_b",name:"Demo B.",feeling:"artistry",text:"I wouldn't wear it, but I can see exactly what the perfumer was doing.",date:"1 month ago",helpful:9,user:null},
   ];
+  const [mine,setMine]=useState([]);
+  const [composing,setComposing]=useState(false);
+  const [myFeeling,setMyFeeling]=useState(null);
+  const [myText,setMyText]=useState("");
+  const allReviews=[...mine,...REVIEWS];
+  function submitImpression(){
+    if(!myFeeling)return;
+    setMine(m=>[{id:"mine-"+Date.now(),username:"you",name:"You",feeling:myFeeling,text:myText.trim(),date:"Just now",helpful:0,user:null},...m]);
+    setComposing(false);setMyFeeling(null);setMyText("");
+  }
 
   function submitReply(reviewId){
     if(!replyText.trim())return;
@@ -2404,7 +2443,6 @@ function DetailModal({ frag, entries, onClose, userStatus, setUserStatus, finish
   const hasOcc = !!frag.occasions && frag.occasions.length > 0;
   const hasLeft = true;
   const stats = [
-    { label:"Rating", value: frag.rating != null ? frag.rating : null },
     { label:"Longevity", value: frag.longevity != null ? `${frag.longevity}/5` : null },
     { label:"Sillage", value: frag.sillage != null ? `${frag.sillage}/5` : null },
   ].filter(s => s.value != null);
@@ -2554,22 +2592,28 @@ function DetailModal({ frag, entries, onClose, userStatus, setUserStatus, finish
 
           {tab==="community"&&(
             <div>
-              <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:20}}>
-                <div>
-                  <span style={{fontFamily:serif,fontSize:44,color:T.black,lineHeight:1}}>{frag.rating}</span>
-                  <span style={{fontFamily:sans,fontSize:14,color:T.mid}}> / 5</span>
-                  <div style={{display:"flex",alignItems:"center",gap:8,marginTop:5}}><Stars rating={frag.rating} size={12}/><span style={{fontFamily:sans,fontSize:11,color:T.mid}}>{frag.votes.toLocaleString()} ratings</span></div>
-                </div>
-                <button style={{...ctaBtn(true),width:"auto",padding:"0 20px",minHeight:44,fontSize:14}}>Write Review</button>
+              <div style={{display:"flex",alignItems:"flex-start",justifyContent:"space-between",marginBottom:20}}>
+                <FeelingBar items={allReviews}/>
+                <button onClick={()=>setComposing(c=>!c)} style={{...ctaBtn(true),width:"auto",padding:"0 20px",minHeight:44,fontSize:14,marginLeft:"auto",flexShrink:0}}>Write impression</button>
               </div>
+              {composing&&(
+                <div style={{border:`1px solid ${T.rule}`,borderRadius:18,padding:16,marginBottom:16}}>
+                  <p style={{fontFamily:sans,fontSize:13,color:T.mid,margin:"0 0 10px"}}>How did it feel on your skin?</p>
+                  <div style={{display:"flex",flexWrap:"wrap",gap:8,marginBottom:12}}>
+                    {FEELINGS.map(f=><button key={f.key} onClick={()=>setMyFeeling(f.key)} aria-pressed={myFeeling===f.key} style={{fontFamily:sans,fontSize:13,fontWeight:600,minHeight:40,padding:"0 14px",borderRadius:20,cursor:"pointer",border:`1px solid ${f.color}`,background:myFeeling===f.key?f.color:"transparent",color:myFeeling===f.key?T.white:f.color}}>{f.label}</button>)}
+                  </div>
+                  <textarea value={myText} onChange={e=>setMyText(e.target.value)} placeholder="In your own words (optional)" rows={3} style={{...FIELD,width:"100%",height:"auto",padding:12,resize:"vertical"}}/>
+                  <button onClick={submitImpression} disabled={!myFeeling} style={{...ctaBtn(true),width:"auto",padding:"0 20px",minHeight:44,marginTop:10,opacity:myFeeling?1:0.5}}>Post</button>
+                </div>
+              )}
               <div style={{marginBottom:6}}>
-                <select value={revSort} onChange={e=>setRevSort(e.target.value)} aria-label="Sort reviews" style={{...FIELD,width:"auto",minHeight:42,borderRadius:21,padding:"0 16px",fontSize:14}}>
+                <select value={revSort} onChange={e=>setRevSort(e.target.value)} aria-label="Sort impressions" style={{...FIELD,width:"auto",minHeight:42,borderRadius:21,padding:"0 16px",fontSize:14}}>
                   <option value="recent">Recently added</option>
                   <option value="helpful">Most helpful</option>
                 </select>
               </div>
-              {(revSort==="helpful"?[...REVIEWS].sort((x,y)=>y.helpful-x.helpful):REVIEWS).map(r=>(
-                <ReviewCard key={r.id} who={r.username} whoLabel={"@"+r.username} badges={<UserBadges user={r.user} size="small"/>} date={r.date} rating={r.rating} text={r.text}
+              {(revSort==="helpful"?[...allReviews].sort((x,y)=>y.helpful-x.helpful):allReviews).map(r=>(
+                <ReviewCard key={r.id} who={r.username} whoLabel={"@"+r.username} badges={<UserBadges user={r.user} size="small"/>} date={r.date} feeling={r.feeling} text={r.text}
                   hueKey={frag.name} helpful={r.helpful} replyCount={(replies[r.id]||[]).length}
                   onWho={()=>onOpenProfile&&onOpenProfile(r.username)} onReply={()=>setReplyTo(replyTo===r.id?null:r.id)}>
                   {(replies[r.id]||[]).map((rep,i)=>(
@@ -4983,7 +5027,7 @@ function ProfileModal({ username, onClose, onBack, currentUser, userStatuses, on
                 </div>
               ) : (
                 (member.reviews || []).map((r, i) => (
-                  <ReviewCard key={i} who={member.username} whoLabel={member.name} date={r.date} rating={r.rating} text={r.text}
+                  <ReviewCard key={i} who={member.username} whoLabel={member.name} date={r.date} text={r.text}
                     fragName={r.fragName} house={r.house} helpful={0} replyCount={0} onFrag={() => { onOpenFrag && onOpenFrag(r.fragId); }}/>
                 ))
               )}
