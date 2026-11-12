@@ -2178,6 +2178,7 @@ const SAMPLE_RETAILERS = {
     { name:"Scent Split",      url:"https://scentsplit.com" },
     { name:"Ministry of Scent", url:"https://ministryofscent.com" },
     { name:"ZGO Perfumery",    url:"https://zgoperfumery.com" },
+    { name:"Luckyscent",       url:"https://www.luckyscent.com" },
   ],
   CA: [
     { name:"Scent Split",      url:"https://scentsplit.com" },
