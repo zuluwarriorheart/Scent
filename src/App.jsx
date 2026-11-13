@@ -2899,7 +2899,7 @@ function houseGroups(f) {
 }
 const HOUSE_GROUPS = [
   { key:"all", label:"All" },
-  { key:"independent", label:"Independent" },
+  { key:"independent", label:"Indie" },
   { key:"niche", label:"Niche" },
   { key:"designer", label:"Designer" },
 ];
@@ -2913,7 +2913,7 @@ function buildShelves(list) {
   const withYear = list.filter(f => Number(f.year) > 0);
   add("new", "New to the shelf", "The most recent releases in the library.", [...withYear].sort((a,b)=>(PREVIEW_NEW_HOUSES.indexOf(a.houseSlug)+1 || 99)-(PREVIEW_NEW_HOUSES.indexOf(b.houseSlug)+1 || 99) || b.year-a.year));
   add("neo", "Neo gourmand", NEO_BLURB, list.filter(f => f.neoGourmand), 12);
-  add("indie", "Independent houses", "Made by houses that answer to no conglomerate.", list.filter(f => f.ownership && f.ownership.status === "independent"));
+  add("indie", "Indie houses", "Made by houses that answer to no conglomerate.", list.filter(f => f.ownership && f.ownership.status === "independent"));
   add("niche", "Niche houses", "Small, independent houses where fragrance is the whole point.", list.filter(f => houseGroups(f).includes("niche")));
   add("designer", "Designer houses", "The fashion and heritage names most people meet first.", list.filter(f => houseGroups(f).includes("designer")));
   const counts = {};
@@ -5248,7 +5248,7 @@ export default function SillageApp() {
   useEffect(() => {
     const SHELF_META = {
       new: ["New to the shelf", "The most recent releases in the library."],
-      indie: ["Independent houses", "Made by houses that answer to no conglomerate."],
+      indie: ["Indie houses", "Made by houses that answer to no conglomerate."],
       niche: ["Niche houses", "Small houses where fragrance is the whole point."],
       designer: ["Designer houses", "The fashion and heritage names most people meet first."],
       "acc-woody": ["Woody", ACCORD_BLURBS.woody || "Fragrances built around woody."],
