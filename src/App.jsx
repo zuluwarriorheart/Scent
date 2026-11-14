@@ -1,4 +1,4 @@
-import { useState, useEffect, useId, useRef, useSyncExternalStore, Fragment } from "react";
+import { useState, useEffect, useId, useRef, useMemo, useSyncExternalStore, Fragment } from "react";
 import { createClient } from "@supabase/supabase-js";
 
 // ─── SUPABASE CLIENT ──────────────────────────────────────────────────────────
@@ -3547,7 +3547,176 @@ function FragPicker({ value, onPick, onSearch, placeholder }) {
     </div>
   );
 }
-function LayeringTab({ layers, onSaveLayer, onSearch }) {
+// ─── LAYERING PLANNER: combos from what a member already owns, plus shareable images ───
+const LAYER_VIBE = { citrus:"bright", fresh:"crisp", green:"calm", aquatic:"airy", floral:"romantic", powdery:"soft", gourmand:"cozy", vanilla:"cozy", amber:"warm", spicy:"spicy", woody:"grounded", smoky:"bold", leather:"bold", oud:"deep", musky:"skin-close", fruity:"playful", tobacco:"moody", balsamic:"warm", earthy:"earthy", aromatic:"herbal", coconut:"sunny", tropical:"sunny", rose:"romantic", iris:"quiet" };
+const LAYER_CONTRAST = [["citrus","woody"],["citrus","amber"],["citrus","floral"],["fresh","gourmand"],["fresh","musky"],["fruity","vanilla"],["fruity","woody"],["floral","woody"],["floral","gourmand"],["floral","musky"],["floral","leather"],["floral","amber"],["floral","spicy"],["smoky","gourmand"],["green","floral"],["aquatic","woody"],["powdery","woody"],["tobacco","gourmand"],["rose","oud"],["iris","woody"]];
+const LAYER_HEAVY = new Set(["gourmand","amber","woody","smoky","leather","oud","tobacco","vanilla","balsamic","spicy","musky","earthy"]);
+function layerTraits(f) {
+  const acc = new Set(((f.accords || []).map(a => String(a && a.n ? a.n : a).toLowerCase())).flatMap(n => [n, n.split(/\s+/).pop()]));
+  const notes = new Set(["top","mid","base"].flatMap(k => ((f.notes && f.notes[k]) || []).map(x => String(x && x.n ? x.n : x).toLowerCase().trim())).filter(Boolean));
+  return { acc, notes };
+}
+function layerRng(str) { let h = 1779033703 ^ str.length; for (let i = 0; i < str.length; i++) { h = Math.imul(h ^ str.charCodeAt(i), 3432918353); h = (h << 13) | (h >>> 19); } return () => { h = Math.imul(h ^ (h >>> 16), 2246822507); h = Math.imul(h ^ (h >>> 13), 3266489909); h ^= h >>> 16; return (h >>> 0) / 4294967296; }; }
+function scoreCombo(a, b) {
+  const A = layerTraits(a), B = layerTraits(b);
+  const shared = [...A.notes].filter(n => B.notes.has(n));
+  let contrast = null;
+  for (const [x, y] of LAYER_CONTRAST) { if (A.acc.has(x) && B.acc.has(y)) { contrast = { x, y, ofA: x, ofB: y }; break; } if (A.acc.has(y) && B.acc.has(x)) { contrast = { x: y, y: x, ofA: y, ofB: x }; break; } }
+  if (!shared.length && !contrast) return null;
+  let score = Math.min(shared.length, 3) * 1.2 + (contrast ? 2 : 0);
+  if (shared.length >= 4 && !contrast) score *= 0.7;
+  const heavy = t => [...t.acc].filter(x => LAYER_HEAVY.has(x)).length;
+  const aFirst = heavy(A) >= heavy(B);
+  const first = aFirst ? a : b, second = aFirst ? b : a;
+  const vibes = [...new Set([...A.acc, ...B.acc].map(x => LAYER_VIBE[x]).filter(Boolean))].slice(0, 2);
+  const nm = x => x.charAt(0).toUpperCase() + x.slice(1);
+  let kind, why;
+  if (shared.length && contrast) { kind = "Bridge"; why = `Both carry ${shared.slice(0, 2).join(" and ")}. ${a.name} brings ${contrast.ofA}, ${b.name} adds ${contrast.ofB}.`; }
+  else if (contrast) { kind = "Contrast"; why = `${a.name}'s ${contrast.ofA} meets ${b.name}'s ${contrast.ofB}.`; }
+  else { kind = "Deepen"; why = `Both share ${shared.slice(0, 3).join(", ")}, so the pairing stacks and deepens it.`; }
+  return { a: first, b: second, kind, why, vibe: vibes.length ? vibes.map(nm).join(" · ") : "Your own blend", score, tip: `Spray ${first.name} first, then one spray of ${second.name} over it. Start light and adjust.` };
+}
+function planLayering(frags, seed, count = 7) {
+  const list = frags.slice(0, 60), pairs = [];
+  for (let i = 0; i < list.length; i++) for (let j = i + 1; j < list.length; j++) { const c = scoreCombo(list[i], list[j]); if (c) pairs.push(c); }
+  const rnd = layerRng(seed);
+  pairs.forEach(p => { p.k = p.score + rnd() * 1.6; });
+  pairs.sort((x, y) => y.k - x.k);
+  const out = [], used = {};
+  for (const cap of [2, 3, 7]) {
+    for (const p of pairs) {
+      if (out.length >= count) break;
+      if (out.includes(p)) continue;
+      if ((used[p.a.id] || 0) >= cap || (used[p.b.id] || 0) >= cap) continue;
+      out.push(p); used[p.a.id] = (used[p.a.id] || 0) + 1; used[p.b.id] = (used[p.b.id] || 0) + 1;
+    }
+  }
+  return out;
+}
+const LAYER_DAYS = ["Mon","Tue","Wed","Thu","Fri","Sat","Sun"];
+function weekStart(offset) { const d = new Date(); d.setHours(12, 0, 0, 0); d.setDate(d.getDate() - ((d.getDay() + 6) % 7) + offset * 7); return d; }
+function weekLabel(d) { const e = new Date(d); e.setDate(e.getDate() + 6); const m = x => x.toLocaleDateString("en-US", { month: "short" }); return d.getMonth() === e.getMonth() ? `${m(d)} ${d.getDate()} – ${e.getDate()}` : `${m(d)} ${d.getDate()} – ${m(e)} ${e.getDate()}`; }
+
+async function drawLayeringImage(combos, title, subtitle) {
+  try { await Promise.all([document.fonts.load(`40px ${serif}`), document.fonts.load(`italic 40px ${serif}`), document.fonts.load(`22px ${sans}`), document.fonts.load(`600 22px ${sans}`)]); } catch (e) {}
+  const single = combos.length === 1, W = 1080, H = single ? 1350 : 300 + combos.length * 176 + 150;
+  const c = document.createElement("canvas"); c.width = W; c.height = H; const x = c.getContext("2d");
+  const INK = "#0E0B13", CARD = "#181320", LINE = "#2B2435", PINK = "#EC679C", PAPER = "#F5F0F6", MUTED = "#A79EB3";
+  const g = x.createLinearGradient(0, 0, 0, H); g.addColorStop(0, "#15101D"); g.addColorStop(1, INK); x.fillStyle = g; x.fillRect(0, 0, W, H);
+  const fit = (t, w) => { let s = String(t); if (x.measureText(s).width <= w) return s; while (s.length > 1 && x.measureText(s + "…").width > w) s = s.slice(0, -1); return s.trimEnd() + "…"; };
+  const wrap = (t, w, maxLines) => { const words = String(t).split(" "), lines = []; let cur = ""; for (const wd of words) { const tr = cur ? cur + " " + wd : wd; if (x.measureText(tr).width > w && cur) { lines.push(cur); cur = wd; } else cur = tr; } if (cur) lines.push(cur); if (lines.length > maxLines) { lines.length = maxLines; lines[maxLines - 1] = fit(lines[maxLines - 1] + "…", w); } return lines; };
+  const rr = (px, py, w, h, r) => { x.beginPath(); x.moveTo(px + r, py); x.arcTo(px + w, py, px + w, py + h, r); x.arcTo(px + w, py + h, px, py + h, r); x.arcTo(px, py + h, px, py, r); x.arcTo(px, py, px + w, py, r); x.closePath(); };
+  x.textBaseline = "alphabetic";
+  x.font = `500 52px ${serif}`; x.fillStyle = PAPER; x.fillText("memoir", 70, 110);
+  const mw = x.measureText("memoir ").width; x.font = `italic 500 52px ${serif}`; x.fillStyle = PINK; x.fillText("on skin", 70 + mw, 110);
+  x.font = `400 64px ${serif}`; x.fillStyle = PAPER; x.fillText(title, 70, 220);
+  x.font = `500 26px ${sans}`; x.fillStyle = MUTED; x.fillText(subtitle.toUpperCase(), 70, 268);
+  if (single) {
+    const cb = combos[0];
+    x.font = `600 24px ${sans}`; x.fillStyle = PINK; x.fillText(`${cb.kind.toUpperCase()}  ·  ${cb.vibe.toUpperCase()}`, 70, 380);
+    x.font = `400 72px ${serif}`; x.fillStyle = PAPER; let yy = 480;
+    for (const l of wrap(cb.a.name, 940, 2)) { x.fillText(l, 70, yy); yy += 84; }
+    x.font = `italic 400 52px ${serif}`; x.fillStyle = PINK; x.fillText("+", 70, yy + 6); yy += 96;
+    x.font = `400 72px ${serif}`; x.fillStyle = PAPER;
+    for (const l of wrap(cb.b.name, 940, 2)) { x.fillText(l, 70, yy); yy += 84; }
+    x.font = `400 26px ${sans}`; x.fillStyle = MUTED; x.fillText(`${cb.a.house}  +  ${cb.b.house}`.slice(0, 70), 70, yy + 20); yy += 90;
+    rr(70, yy, 940, 330, 28); x.fillStyle = CARD; x.fill(); x.strokeStyle = LINE; x.lineWidth = 2; x.stroke();
+    x.font = `600 22px ${sans}`; x.fillStyle = PINK; x.fillText("WHY IT WORKS", 110, yy + 62);
+    x.font = `400 30px ${sans}`; x.fillStyle = PAPER; wrap(cb.why, 860, 3).forEach((l, i) => x.fillText(l, 110, yy + 112 + i * 44));
+    x.font = `600 22px ${sans}`; x.fillStyle = PINK; x.fillText("HOW TO WEAR", 110, yy + 262);
+    x.font = `400 28px ${sans}`; x.fillStyle = MUTED; wrap(cb.tip, 860, 2).forEach((l, i) => x.fillText(l, 110, yy + 304 + i * 38));
+  } else {
+    combos.forEach((cb, i) => {
+      const y = 310 + i * 176;
+      rr(60, y, 960, 156, 26); x.fillStyle = CARD; x.fill(); x.strokeStyle = LINE; x.lineWidth = 2; x.stroke();
+      x.font = `600 26px ${sans}`; x.fillStyle = PINK; x.fillText((LAYER_DAYS[i] || "").toUpperCase(), 92, y + 90);
+      x.font = `400 32px ${serif}`; x.fillStyle = PAPER; x.fillText(fit(cb.a.name, 780), 220, y + 52);
+      x.fillStyle = PINK; x.font = `italic 400 30px ${serif}`; x.fillText("+", 220, y + 94); x.fillStyle = PAPER; x.font = `400 32px ${serif}`; x.fillText(fit(cb.b.name, 750), 256, y + 96);
+      x.font = `500 22px ${sans}`; x.fillStyle = MUTED; x.fillText(fit(`${cb.vibe}  ·  ${cb.kind}`, 780), 220, y + 134);
+    });
+  }
+  x.font = `italic 400 30px ${serif}`; x.fillStyle = PAPER; x.fillText("Sample first. Remember always.", 70, H - 70);
+  x.font = `500 24px ${sans}`; x.fillStyle = MUTED; const url = "memoironskin.com"; x.fillText(url, W - 70 - x.measureText(url).width, H - 70);
+  return new Promise(res => c.toBlob(b => res(b), "image/png"));
+}
+
+function LayeringPlanner({ fragrances, userStatuses, onSaveLayer }) {
+  const [offset, setOffset] = useState(0);
+  const [shuffle, setShuffle] = useState(0);
+  const [saved, setSaved] = useState({});
+  const [img, setImg] = useState(null); // {url, blob, name}
+  const [busy, setBusy] = useState(false);
+  const mine = useMemo(() => (fragrances || []).filter(f => userStatuses && (userStatuses[f.id] === "bottle_owned" || userStatuses[f.id] === "sample_have")), [fragrances, userStatuses]);
+  const start = weekStart(offset), label = weekLabel(start);
+  const key = start.toISOString().slice(0, 10);
+  const plan = useMemo(() => mine.length >= 2 ? planLayering(mine, key + ":" + shuffle) : [], [mine, key, shuffle]);
+  useEffect(() => () => { if (img && img.url) URL.revokeObjectURL(img.url); }, [img]);
+  async function makeImage(combos, title, sub, name) {
+    setBusy(true);
+    try { const blob = await drawLayeringImage(combos, title, sub); if (blob) setImg({ blob, url: URL.createObjectURL(blob), name }); } catch (e) {}
+    setBusy(false);
+  }
+  async function share() {
+    if (!img) return;
+    try { const file = new File([img.blob], img.name, { type: "image/png" }); if (navigator.canShare && navigator.canShare({ files: [file] })) { await navigator.share({ files: [file], text: "Made with Memoir on Skin" }); return; } } catch (e) { return; }
+    const a = document.createElement("a"); a.href = img.url; a.download = img.name; a.click();
+  }
+  const card = { background:T.lift, border:`1px solid ${T.rule}`, borderRadius:14, padding:18, marginBottom:16 };
+  const small = { fontFamily:sans, fontSize:12, minHeight:36, padding:"0 14px", borderRadius:18, border:`1px solid ${T.rule}`, background:T.white, color:T.ink, cursor:"pointer" };
+  return (
+    <div style={card}>
+      <p style={{ ...FLABEL, margin:"0 0 6px" }}>From your collection</p>
+      <h3 style={{ fontFamily:serif, fontSize:22, fontWeight:400, color:T.black, margin:"0 0 6px" }}>Your layering week</h3>
+      <p style={{ fontFamily:sans, fontSize:13, color:T.mid, lineHeight:1.6, margin:"0 0 14px" }}>Combinations built only from fragrances you own or have samples of. Worked out on your device, nothing is sent anywhere.</p>
+      {mine.length < 2 ? (
+        <p style={{ fontFamily:sans, fontSize:13, color:T.mid, lineHeight:1.6, margin:0 }}>Mark at least two fragrances as <b>Bottle: Own</b> or <b>Sample: Own</b> in your Collection and we'll suggest your week.</p>
+      ) : (
+        <>
+          <div style={{ display:"flex", flexWrap:"wrap", gap:8, marginBottom:14 }}>
+            {[[0, "This week"], [1, "Next week"]].map(([o, l]) => <button key={o} aria-pressed={offset === o} onClick={() => { setOffset(o); setShuffle(0); }} style={{ ...small, background:offset === o ? "var(--accent)" : T.white, color:offset === o ? "#fff" : T.ink, border:offset === o ? "1px solid transparent" : small.border }}>{l}</button>)}
+            <button onClick={() => setShuffle(s => s + 1)} style={small}>Shuffle</button>
+            <span style={{ fontFamily:sans, fontSize:12, color:T.faint, alignSelf:"center" }}>{label}</span>
+          </div>
+          {plan.length === 0 ? (
+            <p style={{ fontFamily:sans, fontSize:13, color:T.mid, lineHeight:1.6, margin:0 }}>We couldn't find a pairing that shares notes or contrasts well yet. Add another fragrance or sample and try again.</p>
+          ) : (
+            <>
+              {plan.map((p, i) => (
+                <div key={p.a.id + "-" + p.b.id} style={{ background:T.white, border:`1px solid ${T.rule}`, borderRadius:12, padding:"12px 14px", marginBottom:8 }}>
+                  <div style={{ display:"flex", gap:10, alignItems:"baseline" }}>
+                    <span style={{ fontFamily:sans, fontSize:11, letterSpacing:"0.14em", color:"var(--accent)", fontWeight:600, minWidth:30 }}>{LAYER_DAYS[i].toUpperCase()}</span>
+                    <p style={{ fontFamily:serif, fontSize:16, color:T.ink, margin:0, lineHeight:1.35 }}>{p.a.name} <span style={{ color:"var(--accent)", fontStyle:"italic" }}>+</span> {p.b.name}</p>
+                  </div>
+                  <p style={{ fontFamily:sans, fontSize:11, letterSpacing:"0.08em", textTransform:"uppercase", color:T.mid, margin:"6px 0 4px 40px" }}>{p.vibe} · {p.kind}</p>
+                  <p style={{ fontFamily:sans, fontSize:12.5, color:T.mid, lineHeight:1.55, margin:"0 0 8px 40px" }}>{p.why} {p.tip}</p>
+                  <div style={{ display:"flex", gap:8, marginLeft:40 }}>
+                    <button disabled={busy} onClick={() => makeImage([p], p.a.name.length + p.b.name.length > 40 ? "Layering combo" : "Layering combo", p.vibe, "memoir-layering-combo.png")} style={small}>Image</button>
+                    <button disabled={!!saved[p.a.id + p.b.id]} onClick={() => { onSaveLayer({ name:`${p.a.name} + ${p.b.name}`, frags:[p.a.name, p.b.name], ratio:"", note:`${p.why} ${p.tip}`, layerWith:"fragrance", isPublic:false, date:new Date().toLocaleDateString("en-US", { month:"short", day:"numeric", year:"numeric" }), rating:4 }); setSaved(s => ({ ...s, [p.a.id + p.b.id]:true })); }} style={small}>{saved[p.a.id + p.b.id] ? "Saved" : "Save to my combos"}</button>
+                  </div>
+                </div>
+              ))}
+              {plan.length < 7 && <p style={{ fontFamily:sans, fontSize:12, color:T.faint, margin:"4px 0 10px" }}>Only {plan.length} good pairings so far. Add more fragrances or samples for a full week.</p>}
+              <button disabled={busy} onClick={() => makeImage(plan, "Layering week", label, "memoir-layering-week.png")} style={{ ...ctaBtn(!busy), marginTop:6 }}>{busy ? "Making your image…" : "Make my week image"}</button>
+            </>
+          )}
+        </>
+      )}
+      {img && (
+        <div role="dialog" aria-modal="true" onClick={() => setImg(null)} style={{ position:"fixed", inset:0, zIndex:1000, background:"rgba(10,8,14,0.82)", display:"flex", alignItems:"center", justifyContent:"center", padding:16 }}>
+          <div onClick={e => e.stopPropagation()} style={{ background:T.white, borderRadius:18, padding:16, maxWidth:440, width:"100%", maxHeight:"92vh", overflowY:"auto" }}>
+            <img src={img.url} alt="Your layering image" style={{ width:"100%", borderRadius:12, display:"block", marginBottom:12 }}/>
+            <div style={{ display:"flex", gap:10 }}>
+              <button onClick={share} style={{ ...ctaBtn(true), flex:1 }}>{typeof navigator !== "undefined" && navigator.canShare ? "Share or save" : "Save image"}</button>
+              <button onClick={() => setImg(null)} style={ghostBtn}>Close</button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function LayeringTab({ layers, onSaveLayer, onSearch, fragrances, userStatuses }) {
   const [open,setOpen]=useState(true); // the form is always showing; toggling `open` just resets the pickers
   const [name,setName]=useState("");const [f1,setF1]=useState("");const [f2,setF2]=useState("");
   const [note,setNote]=useState("");const [brand2,setBrand2]=useState("");const [prod2,setProd2]=useState("");
@@ -3585,6 +3754,7 @@ function LayeringTab({ layers, onSaveLayer, onSearch }) {
         <h2 style={{fontFamily:serif,fontSize:"clamp(32px, 3.2vw, 50px)",color:T.black,letterSpacing:-0.8,margin:0,fontWeight:400}}>Layering</h2>
         <p style={{fontFamily:sans,fontSize:"clamp(13px, 1.1vw, 17px)",color:T.mid,margin:"6px 0 0"}}>Track what works together, and why.</p>
       </div>
+      <LayeringPlanner fragrances={fragrances} userStatuses={userStatuses} onSaveLayer={onSaveLayer}/>
       {(
         <div style={{background:T.lift,border:`1px solid ${T.rule}`,borderRadius:14,padding:18,marginBottom:16}}>
           <Lbl>Name</Lbl>
@@ -5585,7 +5755,7 @@ export default function SillageApp() {
       <main className="mos-main mos-wrap" style={{ position:"relative", zIndex:1, paddingTop:28, paddingBottom:64 }}>
         {activeTab==="Discover"   && <DiscoverTab   onOpenBrand={openBrand} onOpenPerfumer={openPerfumer} fragrances={fragrances} serverShelves={serverShelves} onSearch={serverShelves ? searchFrags : null} onOpenFrag={openFrag} userStatuses={userStatuses} reactions={reactions} onReaction={onReaction} onSuggest={() => setShowSuggest(true)} currentUser={currentUser}/>}
         {activeTab==="Collection" && <CollectionTab fragrances={fragrances} onOpenFrag={openFrag} statuses={userStatuses} reactions={reactions} onReaction={onReaction} onSuggest={() => setShowSuggest(true)} wears={wears} onOpenJournal={() => setActiveTab("Journal")}/>}
-        {activeTab==="Layering"   && <div className="mos-prose"><LayeringTab layers={layers} onSaveLayer={saveLayer} onSearch={searchFrags}/></div>}
+        {activeTab==="Layering"   && <div className="mos-prose"><LayeringTab layers={layers} onSaveLayer={saveLayer} onSearch={searchFrags} fragrances={fragrances} userStatuses={userStatuses}/></div>}
         {activeTab==="Journal"    && <div className="mos-prose"><JournalTab entries={journalEntries} userStatuses={userStatuses} reactions={reactions} fragrances={fragrances} wears={wears} onOpenFrag={openFrag}/></div>}
         {activeTab==="Learn"      && <div className="mos-prose"><LearnTab fragrances={fragrances} onOpenFrag={openFrag} onOpenBrand={openBrand}/></div>}
         <FooterLinks/>
