@@ -698,6 +698,18 @@ const STATUSES = [
   { key:"smelled",         label:"Smelled",           iconName:"nose",     group:"tried"  },
   { key:"tried_skin",      label:"Tried on skin",     iconName:"skin",     group:"tried"  },
 ];
+// A fragrance can hold several statuses at once (e.g. own the sample, wishlist the bottle, smelled on a blotter).
+// Bottle and Sample each hold one status at a time; Smelled can hold both. `primaryStatus` is the single status the cards and badges show.
+const STATUS_PRIORITY = ["bottle_owned","bottle_finished","sample_have","sample_finished","bottle_wishlist","sample_wishlist","tried_skin","smelled"];
+const primaryStatus = arr => STATUS_PRIORITY.find(k => (arr || []).includes(k)) || null;
+const isFinishedSet = arr => (arr || []).some(k => k === "bottle_finished" || k === "sample_finished");
+function toggleStatus(arr, key) {
+  const cur = arr || [], def = STATUSES.find(x => x.key === key);
+  if (!def) return cur;
+  if (cur.includes(key)) return cur.filter(k => k !== key);
+  const keep = def.group === "tried" ? cur : cur.filter(k => ((STATUSES.find(x => x.key === k) || {}).group) !== def.group);
+  return [...keep, key];
+}
 function StatusSelector({ value, onChange }) {
   const groups = [
     { title:"Bottle", items:STATUSES.filter(s=>s.group==="bottle") },
@@ -712,9 +724,9 @@ function StatusSelector({ value, onChange }) {
           <p style={{ fontFamily:sans, fontSize:11, textTransform:"uppercase", letterSpacing:"0.14em", color:T.mid, margin:"0 0 10px" }}>{g.title}</p>
           <div style={{ display:"grid", gridTemplateColumns:`repeat(${g.items.length >= 3 ? 3 : 2}, minmax(0, 1fr))`, gap:10 }}>
             {g.items.map(s => {
-              const on = value === s.key;
+              const on = (value || []).includes(s.key);
               return (
-                <button key={s.key} onClick={()=>onChange(on?null:s.key)} aria-pressed={on}
+                <button key={s.key} onClick={()=>onChange(s.key)} aria-pressed={on}
                   style={{ minHeight:58, padding:g.items.length >= 3 ? "10px 6px" : "10px 12px", borderRadius:14, border:`1px solid ${on?"transparent":T.rule}`, background:on?"var(--accent)":T.white, color:on?"#fff":T.ink, fontFamily:sans, fontSize:15, fontWeight:on?600:500, cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", gap:8, textAlign:"center" }}>
                   <Icon name={s.iconName} size={18} color={on?"#fff":T.mid}/>
                   {SHORT[s.key] || s.label}
@@ -729,7 +741,8 @@ function StatusSelector({ value, onChange }) {
 }
 
 // Shown under the status buttons once a bottle or sample is marked Finished.
-function FinishedPanel({ status, finish, onChange }) {
+function FinishedPanel({ status: statusSet, finish, onChange }) {
+  const status = (statusSet || []).includes("bottle_finished") ? "bottle_finished" : (statusSet || []).includes("sample_finished") ? "sample_finished" : null;
   if (status !== "bottle_finished" && status !== "sample_finished") return null;
   const what = status === "bottle_finished" ? "bottle" : "sample";
   const f = finish || {};
@@ -3420,7 +3433,7 @@ function ShelfView({ items, onClick, statuses }) {
     </div>
   );
 }
-function CollectionTab({ onOpenFrag, statuses:userStatuses, reactions, onReaction, onSuggest, fragrances, wears, onOpenJournal }) {
+function CollectionTab({ onOpenFrag, statuses:userStatuses, statusSets:sets, reactions, onReaction, onSuggest, fragrances, wears, onOpenJournal }) {
   const FR = (fragrances && fragrances.length) ? fragrances : FRAGRANCES;
   const [activeFilter,setActiveFilter]=useState("all");
   const [search,setSearch]=useState("");
@@ -3439,10 +3452,11 @@ function CollectionTab({ onOpenFrag, statuses:userStatuses, reactions, onReactio
     {key:"like",label:"Like",iconName:"thumbsup"},
     {key:"dislike",label:"Dislike",iconName:"thumbsdown"},
   ];
-  const counts={};STATUSES.forEach(s=>{counts[s.key]=FR.filter(f=>userStatuses[f.id]===s.key).length;});counts.finished=(counts.bottle_finished||0)+(counts.sample_finished||0);
+  const has=(id,k)=>((sets||{})[id]||[]).includes(k);
+  const counts={};STATUSES.forEach(s=>{counts[s.key]=FR.filter(f=>has(f.id,s.key)).length;});counts.finished=FR.filter(f=>isFinishedSet((sets||{})[f.id])).length;
   const rCounts={love:0,like:0,dislike:0};Object.values(reactions).forEach(r=>{if(r)rCounts[r]++;});
   const chipCount=k=>k==="all"?FR.filter(x=>userStatuses[x.id]||reactions[x.id]).length:(rCounts[k]!==undefined?rCounts[k]:(counts[k]||0));
-  const filtered=FR.filter(f=>{const rf=["love","like","dislike"];const ms=activeFilter==="all"?!!(userStatuses[f.id]||reactions[f.id]):(rf.includes(activeFilter)?reactions[f.id]===activeFilter:(activeFilter==="finished"?(userStatuses[f.id]==="bottle_finished"||userStatuses[f.id]==="sample_finished"):userStatuses[f.id]===activeFilter));const q=search.toLowerCase();const mq=!search||String(f.name||"").toLowerCase().includes(q)||String(f.house||"").toLowerCase().includes(q)||String(f.family||"").toLowerCase().includes(q)||(f.accords||[]).some(a=>String(a.n||"").toLowerCase().includes(q))||(((f.notes&&f.notes.top)||[]).concat((f.notes&&f.notes.mid)||[],(f.notes&&f.notes.base)||[])).some(n=>String((n&&n.n)||"").toLowerCase().includes(q));return ms&&mq;});
+  const filtered=FR.filter(f=>{const rf=["love","like","dislike"];const ms=activeFilter==="all"?!!(userStatuses[f.id]||reactions[f.id]):(rf.includes(activeFilter)?reactions[f.id]===activeFilter:(activeFilter==="finished"?isFinishedSet((sets||{})[f.id]):has(f.id,activeFilter)));const q=search.toLowerCase();const mq=!search||String(f.name||"").toLowerCase().includes(q)||String(f.house||"").toLowerCase().includes(q)||String(f.family||"").toLowerCase().includes(q)||(f.accords||[]).some(a=>String(a.n||"").toLowerCase().includes(q))||(((f.notes&&f.notes.top)||[]).concat((f.notes&&f.notes.mid)||[],(f.notes&&f.notes.base)||[])).some(n=>String((n&&n.n)||"").toLowerCase().includes(q));return ms&&mq;});
   return (
     <div>
       <div className="mos-pagehead">
@@ -3688,13 +3702,13 @@ async function drawLayeringImage(combos, title, subtitle) {
   return new Promise(res => c.toBlob(b => res(b), "image/png"));
 }
 
-function LayeringPlanner({ fragrances, userStatuses, onSaveLayer }) {
+function LayeringPlanner({ fragrances, statusSets, onSaveLayer }) {
   const [offset, setOffset] = useState(0);
   const [shuffle, setShuffle] = useState(0);
   const [saved, setSaved] = useState({});
   const [img, setImg] = useState(null); // {url, blob, name}
   const [busy, setBusy] = useState(false);
-  const mine = useMemo(() => (fragrances || []).filter(f => userStatuses && (userStatuses[f.id] === "bottle_owned" || userStatuses[f.id] === "sample_have")), [fragrances, userStatuses]);
+  const mine = useMemo(() => (fragrances || []).filter(f => { const st = (statusSets && statusSets[f.id]) || []; return st.includes("bottle_owned") || st.includes("sample_have"); }), [fragrances, statusSets]);
   const start = weekStart(offset), label = weekLabel(start);
   const key = start.toISOString().slice(0, 10);
   const plan = useMemo(() => mine.length >= 2 ? planLayering(mine, key + ":" + shuffle) : [], [mine, key, shuffle]);
@@ -3764,7 +3778,7 @@ function LayeringPlanner({ fragrances, userStatuses, onSaveLayer }) {
   );
 }
 
-function LayeringTab({ layers, onSaveLayer, onSearch, fragrances, userStatuses }) {
+function LayeringTab({ layers, onSaveLayer, onSearch, fragrances, statusSets }) {
   const [open,setOpen]=useState(true); // the form is always showing; toggling `open` just resets the pickers
   const [name,setName]=useState("");const [f1,setF1]=useState("");const [f2,setF2]=useState("");
   const [note,setNote]=useState("");const [brand2,setBrand2]=useState("");const [prod2,setProd2]=useState("");
@@ -3802,7 +3816,7 @@ function LayeringTab({ layers, onSaveLayer, onSearch, fragrances, userStatuses }
         <h2 style={{fontFamily:serif,fontSize:"clamp(32px, 3.2vw, 50px)",color:T.black,letterSpacing:-0.8,margin:0,fontWeight:400}}>Layering</h2>
         <p style={{fontFamily:sans,fontSize:"clamp(13px, 1.1vw, 17px)",color:T.mid,margin:"6px 0 0"}}>Track what works together, and why.</p>
       </div>
-      <LayeringPlanner fragrances={fragrances} userStatuses={userStatuses} onSaveLayer={onSaveLayer}/>
+      <LayeringPlanner fragrances={fragrances} statusSets={statusSets} onSaveLayer={onSaveLayer}/>
       {(
         <div style={{background:T.lift,border:`1px solid ${T.rule}`,borderRadius:14,padding:18,marginBottom:16}}>
           <Lbl>Name</Lbl>
@@ -5628,6 +5642,7 @@ export default function SillageApp() {
   const [showSuggest, setShowSuggest] = useState(false);
   const [profileUsername, setProfileUsername] = useState(null);
   const [userStatuses, setUserStatuses] = useState({});
+  const [statusSets, setStatusSets] = useState({});
   const [finishes, setFinishes] = useState({});
   const [privateNotes, setPrivateNotes] = useState({});
   const [reactions, setReactions] = useState({});
@@ -5861,22 +5876,22 @@ export default function SillageApp() {
     if (error) flagSave(error);
   }
   useEffect(() => {
-    setUserStatuses({}); setFinishes({}); setReactions({}); setPrivateNotes({}); setJournalEntries([]); setLayers([]); setWears([]);
+    setUserStatuses({}); setStatusSets({}); setFinishes({}); setReactions({}); setPrivateNotes({}); setJournalEntries([]); setLayers([]); setWears([]);
     if (!uid) return;
     let off = false;
     (async () => {
       try {
         const [uf, je, ly, wr] = await Promise.all([
-          supabase.from("user_fragrances").select("fragrance_id, status, reaction, note, finished_on, rebuy").eq("user_id", uid).limit(5000),
+          supabase.from("user_fragrances").select("fragrance_id, status, statuses, reaction, note, finished_on, rebuy").eq("user_id", uid).limit(5000),
           supabase.from("journal_entries").select("*").eq("user_id", uid).order("created_at", { ascending: false }).limit(2000),
           supabase.from("layerings").select("*").eq("user_id", uid).order("created_at", { ascending: false }).limit(1000),
           supabase.from("wears").select("id, fragrance_id, worn_on, occasion, weather, occasions, weathers, rating, moods").eq("user_id", uid).order("worn_on", { ascending: false }).limit(5000),
         ]);
         if (off) return;
         if (uf.error || je.error || ly.error) { console.error("Could not load your saved data:", uf.error || je.error || ly.error); return; }
-        const st = {}, rx = {}, nt = {}, fin = {};
-        (uf.data || []).forEach(r => { if (r.finished_on || r.rebuy) fin[r.fragrance_id] = { on: r.finished_on || null, rebuy: r.rebuy || null }; if (r.status) st[r.fragrance_id] = r.status; if (r.reaction) rx[r.fragrance_id] = r.reaction; if (r.note) nt[r.fragrance_id] = r.note; });
-        setUserStatuses(st); setFinishes(fin); setReactions(rx); setPrivateNotes(nt);
+        const st = {}, sets = {}, rx = {}, nt = {}, fin = {};
+        (uf.data || []).forEach(r => { if (r.finished_on || r.rebuy) fin[r.fragrance_id] = { on: r.finished_on || null, rebuy: r.rebuy || null }; const set = (r.statuses && r.statuses.length) ? r.statuses : (r.status ? [r.status] : []); if (set.length) { sets[r.fragrance_id] = set; st[r.fragrance_id] = primaryStatus(set) || r.status; } if (r.reaction) rx[r.fragrance_id] = r.reaction; if (r.note) nt[r.fragrance_id] = r.note; });
+        setUserStatuses(st); setStatusSets(sets); setFinishes(fin); setReactions(rx); setPrivateNotes(nt);
         if (!wr.error) setWears((wr.data || []).map(r => ({ id: r.id, fragId: r.fragrance_id, date: r.worn_on, occasion: r.occasion, weather: r.weather, occasions: (r.occasions && r.occasions.length) ? r.occasions : (r.occasion ? [r.occasion] : []), weathers: (r.weathers && r.weathers.length) ? r.weathers : (r.weather ? [r.weather] : []), rating: r.rating, moods: r.moods || [] })));
         setJournalEntries((je.data || []).map(r => ({ id: r.id, fragId: r.fragrance_id, fragName: r.frag_name, house: r.house, family: r.family, prompt: r.prompt, text: r.body, where: r.where_text, date: r.entry_date, shared: r.shared, publishedAsReview: r.published_as_review, reviewRating: r.review_rating, answers: r.answers || {} })));
         setLayers((ly.data || []).map(r => ({ id: r.id, name: r.name, frags: r.frags || [], ratio: r.ratio, layerWith: r.layer_with, note: r.note, rating: r.rating, isPublic: r.is_public, date: new Date(r.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) })));
@@ -6057,8 +6072,8 @@ export default function SillageApp() {
 
       <main className="mos-main mos-wrap" style={{ position:"relative", zIndex:1, paddingTop:28, paddingBottom:64 }}>
         {activeTab==="Discover"   && <DiscoverTab   onOpenBrand={openBrand} onOpenPerfumer={openPerfumer} fragrances={fragrances} serverShelves={serverShelves} onSearch={serverShelves ? searchFrags : null} onOpenFrag={openFrag} userStatuses={userStatuses} reactions={reactions} onReaction={onReaction} onSuggest={() => setShowSuggest(true)} currentUser={currentUser}/>}
-        {activeTab==="Collection" && <CollectionTab fragrances={fragrances} onOpenFrag={openFrag} statuses={userStatuses} reactions={reactions} onReaction={onReaction} onSuggest={() => setShowSuggest(true)} wears={wears} onOpenJournal={() => setActiveTab("Journal")}/>}
-        {activeTab==="Layering"   && <div className="mos-prose"><LayeringTab layers={layers} onSaveLayer={saveLayer} onSearch={searchFrags} fragrances={fragrances} userStatuses={userStatuses}/></div>}
+        {activeTab==="Collection" && <CollectionTab fragrances={fragrances} onOpenFrag={openFrag} statuses={userStatuses} statusSets={statusSets} reactions={reactions} onReaction={onReaction} onSuggest={() => setShowSuggest(true)} wears={wears} onOpenJournal={() => setActiveTab("Journal")}/>}
+        {activeTab==="Layering"   && <div className="mos-prose"><LayeringTab layers={layers} onSaveLayer={saveLayer} onSearch={searchFrags} fragrances={fragrances} statusSets={statusSets}/></div>}
         {activeTab==="Journal"    && <div className="mos-prose"><JournalTab entries={journalEntries} userStatuses={userStatuses} reactions={reactions} fragrances={fragrances} wears={wears} onOpenFrag={openFrag}/></div>}
         {activeTab==="Learn"      && <div className="mos-prose"><LearnTab fragrances={fragrances} onOpenFrag={openFrag} onOpenBrand={openBrand}/></div>}
         <FooterLinks/>
@@ -6083,15 +6098,18 @@ export default function SillageApp() {
           entries={journalEntries}
           onClose={closeAll}
           onBack={goBack}
-          userStatus={userStatuses[modalFrag.id]}
+          userStatus={statusSets[modalFrag.id] || []}
           finish={finishes[modalFrag.id]}
           setFinish={patch => { const cur = finishes[modalFrag.id] || {}; const next = { on: cur.on || null, rebuy: cur.rebuy || null, ...patch }; setFinishes(p => ({ ...p, [modalFrag.id]: next })); saveUserFrag(modalFrag.id, { finished_on: next.on, rebuy: next.rebuy }); }}
-          setUserStatus={s => { setUserStatuses(p => { const n = { ...p }; if (s) n[modalFrag.id] = s; else delete n[modalFrag.id]; return n; });
-            const isFin = s === "bottle_finished" || s === "sample_finished", wasFin = userStatuses[modalFrag.id] === "bottle_finished" || userStatuses[modalFrag.id] === "sample_finished";
-            const patch = { status: s || null };
-            if (isFin && !wasFin) { const on = todayISO(); patch.finished_on = on; setFinishes(p => ({ ...p, [modalFrag.id]: { on, rebuy: (p[modalFrag.id] || {}).rebuy || null } })); }
-            if (!isFin && wasFin) { patch.finished_on = null; patch.rebuy = null; setFinishes(p => { const n = { ...p }; delete n[modalFrag.id]; return n; }); }
-            saveUserFrag(modalFrag.id, patch); trackEvent("status_set", { fragrance: modalFrag.id, source: "fragrance", detail: s ? String(s) : "removed" }); }}
+          setUserStatus={key => {
+            const id = modalFrag.id, before = statusSets[id] || [], after = toggleStatus(before, key), prim = primaryStatus(after);
+            setStatusSets(p => { const n = { ...p }; if (after.length) n[id] = after; else delete n[id]; return n; });
+            setUserStatuses(p => { const n = { ...p }; if (prim) n[id] = prim; else delete n[id]; return n; });
+            const isFin = isFinishedSet(after), wasFin = isFinishedSet(before);
+            const patch = { status: prim, statuses: after };
+            if (isFin && !wasFin) { const on = todayISO(); patch.finished_on = on; setFinishes(p => ({ ...p, [id]: { on, rebuy: (p[id] || {}).rebuy || null } })); }
+            if (!isFin && wasFin) { patch.finished_on = null; patch.rebuy = null; setFinishes(p => { const n = { ...p }; delete n[id]; return n; }); }
+            saveUserFrag(id, patch); trackEvent("status_set", { fragrance: id, source: "fragrance", detail: after.includes(key) ? String(key) : "removed" }); }}
           privateNote={privateNotes[modalFrag.id]}
           setPrivateNote={n => { setPrivateNotes(p => ({ ...p, [modalFrag.id]: n })); saveUserFrag(modalFrag.id, { note: n }); }}
           reaction={reactions[modalFrag.id]}
