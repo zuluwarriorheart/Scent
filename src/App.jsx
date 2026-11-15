@@ -3508,7 +3508,7 @@ async function loadKits() {
   _kitsCache = out.map(h => ({ ...h, url: h.kit_url || h.website || "", n: counts.get(h.slug) || 0 })).filter(h => h.url);
   return _kitsCache;
 }
-function KitsShelf({ onOpenBrand }) {
+function KitsShelf({ onOpenBrand, tinted }) {
   const [rows, setRows] = useState(null);
   const [all, setAll] = useState(false);
   const [q, setQ] = useState("");
@@ -3533,7 +3533,7 @@ function KitsShelf({ onOpenBrand }) {
     </div>
   );
   return (
-    <section className="mos-bleed" style={{ padding:"26px 0 22px" }}>
+    <section className={"mos-bleed" + (tinted ? " mos-band" : "")} style={{ padding:"26px 0 22px" }}>
       <div className="mos-bleed-pad" style={{ marginBottom:16 }}>
         <h3 style={{ fontFamily:serif, fontSize:"clamp(26px, 2.3vw, 38px)", fontWeight:400, letterSpacing:-0.6, color:T.black, margin:0, lineHeight:1.1 }}>Discovery kits</h3>
         <p style={{ fontFamily:sans, fontSize:"clamp(14px, 1.1vw, 17px)", color:T.mid, margin:"6px 0 0", lineHeight:1.5 }}>Sample first. {rows.length} houses sell a discovery set or samples on their own site. Links go straight to the brand, so check the contents and price there.</p>
@@ -3666,11 +3666,10 @@ function DiscoverTab({ onOpenFrag, onOpenBrand, onOpenPerfumer, onOpenProfile, f
           )}
           {!isSearching&&(
             <>
-              <KitsShelf onOpenBrand={onOpenBrand}/>
               {shelves.map((s,i)=>(
                 <Fragment key={s.key}>
                   <Shelf title={s.title} blurb={s.blurb} items={s.items} groups={s.groups} onOpenFrag={onOpenFrag} userStatuses={userStatuses} tinted={i%2===0}/>
-                  {s.key==="new"&&<PerfumerShelf onOpenPerfumer={onOpenPerfumer} tinted={i%2!==0}/>}
+                  {s.key==="new"&&<><PerfumerShelf onOpenPerfumer={onOpenPerfumer} tinted={i%2!==0}/><KitsShelf onOpenBrand={onOpenBrand} tinted={i%2===0}/></>}
                 </Fragment>
               ))}
             </>
