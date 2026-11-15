@@ -77,6 +77,7 @@ input:focus-visible, textarea:focus-visible, select:focus-visible { outline:2px 
 .mos-pagehead::after { content:""; position:absolute; left:0; bottom:-1px; width:40px; height:2px; background:var(--ink-strong); }
 
 .mos-tabs-top { display:flex; gap:var(--nav-gap); overflow-x:auto; }
+@media (max-width:639px) { .mos-hide-sm { display:none !important; } }
 .mos-tabbar { display:none; }
 :root { --page-w:1240px; --gutter:20px; --cover-w:156px; --thumb-w:128px; --logo-fs:23px; --ctl:34px; --ctl-fs:12px; --nav-fs:12px; --nav-gap:26px; }
 @media (min-width:640px) { :root { --gutter:28px; --cover-w:184px; --thumb-w:184px; --logo-fs:28px; --ctl:38px; --ctl-fs:13px; --nav-fs:13px; --nav-gap:32px; } }
@@ -272,6 +273,7 @@ function Icon({ name, size=18, color=T.mid }) {
     globe: <svg viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z"/></svg>,
     tip: <svg viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><line x1="9" y1="18" x2="15" y2="18"/><line x1="10" y1="22" x2="14" y2="22"/><path d="M15.09 14c.18-.98.65-1.74 1.41-2.5A4.65 4.65 0 0018 8 6 6 0 006 8c0 1 .23 2.23 1.5 3.5A4.61 4.61 0 018.91 14"/></svg>,
     search: <svg viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>,
+    people: <svg viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c0-3.6 2.9-6 6.5-6 1.5 0 2.8.4 3.9 1.1"/><circle cx="17" cy="16.5" r="3"/><path d="M19.2 18.7L21.5 21"/></svg>,
     droplet: <svg viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2.69l5.66 5.66a8 8 0 11-11.31 0z"/></svg>,
     lotion: <svg viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><rect x="8" y="4" width="8" height="16" rx="2"/><path d="M10 4V2h4v2"/><line x1="8" y1="9" x2="16" y2="9"/></svg>,
     sun: <svg viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="4.5"/><line x1="12" y1="1.5" x2="12" y2="3.5"/><line x1="12" y1="20.5" x2="12" y2="22.5"/><line x1="4.2" y1="4.2" x2="5.6" y2="5.6"/><line x1="18.4" y1="18.4" x2="19.8" y2="19.8"/><line x1="1.5" y1="12" x2="3.5" y2="12"/><line x1="20.5" y1="12" x2="22.5" y2="12"/><line x1="4.2" y1="19.8" x2="5.6" y2="18.4"/><line x1="18.4" y1="5.6" x2="19.8" y2="4.2"/></svg>,
@@ -899,9 +901,10 @@ const LEGAL_CONTENT = {
   },
   privacy: {
     title: "Privacy Policy",
-    updated: "Last updated: June 2026",
+    updated: "Last updated: November 2026",
     sections: [
       { heading: "What we collect", body: "We collect your name, email address, username, and country when you register. We collect fragrance interactions, statuses, reactions, journal entries, and reviews, to power your personal experience." },
+      { heading: "Profiles and following", body: "Other signed-in members can see your username, country flag, bio, and how many people follow you and how many you follow. Only you can see the lists of who you follow and who follows you. People can find you by username only: your name and email are never searchable or shown to other members. You can switch off search, and edit your bio and country, at any time under Edit profile. Your collection, wears, journal and private notes stay private unless you choose to share them." },
       { heading: "What we never do", body: "We do not sell your data. We do not share your personal information with advertisers. Private notes are encrypted and never accessible to the Memoir on Skin team." },
       { heading: "How we use your data", body: "Your data is used to provide the Memoir on Skin service, personalise your discovery experience, and improve the platform. Aggregate, anonymised data may be used to identify fragrance trends." },
       { heading: "Journal entries and private notes", body: "Private notes and journal entries marked as private are stored securely and are visible only to you. Publishing a journal entry or review makes that content visible to the community." },
@@ -5337,24 +5340,163 @@ const MOCK_MEMBERS = [
   },
 ];
 
+// ─── EDIT PROFILE (bio, country, whether people can find you) ─────────────────
+function ProfileEditor({ user, onCancel, onSaved }) {
+  const [bio, setBio] = useState(user.bio || "");
+  const [country, setCountry] = useState(user.country || "");
+  const [disc, setDisc] = useState(user.discoverable !== false);
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState("");
+  async function save() {
+    setBusy(true); setErr("");
+    const fields = { bio: bio.trim(), country: country || "", discoverable: disc };
+    const { error } = await supabase.from("profiles").update({ bio: fields.bio || null, country: country || null, discoverable: disc }).eq("id", user.id);
+    setBusy(false);
+    if (error) { setErr("That didn't go through. Try again in a moment."); return; }
+    onSaved(fields);
+  }
+  return (
+    <div>
+      <p style={{ ...FLABEL, margin:"0 0 6px" }}>Bio</p>
+      <textarea value={bio} onChange={e => setBio(e.target.value.slice(0, 280))} rows={4} placeholder="A line or two about your nose." style={{ ...FIELD, padding:"12px 14px", lineHeight:1.5, resize:"vertical" }}/>
+      <p style={{ fontFamily:sans, fontSize:11, color:T.faint, margin:"4px 0 18px", textAlign:"right" }}>{bio.length} / 280</p>
+      <p style={{ ...FLABEL, margin:"0 0 6px" }}>Country</p>
+      <CountryPicker value={country} onChange={setCountry} style={{ marginBottom:18 }}/>
+      <label style={{ display:"flex", alignItems:"flex-start", gap:12, padding:"12px 14px", border:`1px solid ${T.rule}`, borderRadius:12, cursor:"pointer", marginBottom:6 }}>
+        <input type="checkbox" checked={disc} onChange={e => setDisc(e.target.checked)} style={{ width:20, height:20, marginTop:1, accentColor:"var(--accent)", flexShrink:0 }}/>
+        <span style={{ fontFamily:sans, fontSize:14, color:T.ink, lineHeight:1.5 }}>Let people find me by username
+          <span style={{ display:"block", fontSize:12, color:T.mid, marginTop:2 }}>Your name and email are never searchable. Turning this off hides you from People search; anyone you share a post or link with can still open your profile.</span>
+        </span>
+      </label>
+      <p style={{ fontFamily:sans, fontSize:12, color:T.faint, margin:"0 0 16px" }}>Your username is permanent: it is how your posts and combinations are credited.</p>
+      {err && <p style={{ fontFamily:sans, fontSize:12, color:T.bad, margin:"0 0 12px" }}>{err}</p>}
+      <div style={{ display:"flex", gap:8 }}>
+        <button onClick={save} disabled={busy} style={{ ...ctaBtn(true), flex:1, minHeight:46, fontSize:14, opacity:busy?0.6:1 }}>{busy ? "Saving" : "Save"}</button>
+        <button onClick={onCancel} style={{ ...ghostBtn, minHeight:46, fontSize:14 }}>Cancel</button>
+      </div>
+    </div>
+  );
+}
+
+// ─── FIND PEOPLE (search members by username) ─────────────────────────────────
+function PeopleSearch({ initialQ, onQ, onClose, onBack, onOpenProfile, following, onToggleFollow }) {
+  const [q, setQ] = useState(initialQ || "");
+  const [rows, setRows] = useState(null);
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState("");
+  useEffect(() => {
+    onQ && onQ(q);
+    const s = q.trim().replace(/^@/, "");
+    if (s.length < 2) { setRows(null); setBusy(false); setErr(""); return; }
+    let live = true;
+    setBusy(true);
+    const t = setTimeout(async () => {
+      const { data, error } = await supabase.rpc("search_members", { p_q: s, p_limit: 20 });
+      if (!live) return;
+      setBusy(false);
+      if (error) { setErr("That didn't go through. Try again in a moment."); setRows([]); }
+      else { setErr(""); setRows(data || []); }
+    }, 300);
+    return () => { live = false; clearTimeout(t); };
+  }, [q]);
+  const typed = q.trim().replace(/^@/, "").length;
+  return (
+    <div className="mos-sheet-wrap" onClick={onClose} style={{ position:"fixed", inset:0, zIndex:58, background:"rgba(10,10,10,0.5)", backdropFilter:"blur(12px)", display:"flex", flexDirection:"column", justifyContent:"flex-end", alignItems:"center" }}>
+      <div className="mos-sheet" onClick={e => e.stopPropagation()} style={{ background:T.white, borderRadius:"24px 24px 0 0", border:`1px solid ${T.rule}`, borderBottom:"none", width:"100%", maxWidth:460, height:"85vh", display:"flex", flexDirection:"column" }}>
+        <div className="mos-pad" style={{ padding:"20px 24px 14px", borderBottom:`1px solid ${T.rule}` }}>
+          <BackBtn onBack={onBack || onClose}/>
+          <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", margin:"4px 0 14px" }}>
+            <h2 style={{ fontFamily:serif, fontSize:24, fontWeight:400, color:T.black, margin:0, letterSpacing:-0.3 }}>Find people</h2>
+            <button onClick={onClose} aria-label="Close" style={{ width:30, height:30, borderRadius:"50%", border:`1px solid ${T.rule}`, background:T.white, cursor:"pointer", fontSize:13, color:T.mid }}>✕</button>
+          </div>
+          <input value={q} onChange={e => setQ(e.target.value)} autoFocus autoCapitalize="none" autoCorrect="off" spellCheck={false} aria-label="Search members by username" placeholder="Search by username" style={FIELD}/>
+          <p style={{ fontFamily:sans, fontSize:12, color:T.faint, margin:"8px 0 0" }}>Usernames only. Names and emails are never searchable.</p>
+        </div>
+        <div className="mos-pad" style={{ padding:"8px 24px 32px", overflowY:"auto", flex:1 }}>
+          {typed < 2 && <p style={{ fontFamily:sans, fontSize:13, color:T.faint, padding:"16px 0", margin:0 }}>Type at least two letters.</p>}
+          {typed >= 2 && busy && rows === null && <p style={{ fontFamily:sans, fontSize:13, color:T.faint, padding:"16px 0", margin:0 }}>Searching…</p>}
+          {err && <p style={{ fontFamily:sans, fontSize:13, color:T.bad, padding:"16px 0", margin:0 }}>{err}</p>}
+          {typed >= 2 && rows !== null && rows.length === 0 && !err && (
+            <div style={{ textAlign:"center", padding:"32px 0" }}>
+              <p style={{ fontFamily:serif, fontSize:18, color:T.faint, margin:"0 0 6px" }}>No one found</p>
+              <p style={{ fontFamily:sans, fontSize:13, color:T.faint, margin:0, lineHeight:1.6 }}>Check the spelling. Some members choose not to appear in search.</p>
+            </div>
+          )}
+          {(rows || []).map((m, i) => {
+            const on = following.has(String(m.username).toLowerCase());
+            return (
+              <div key={m.username} onClick={() => onOpenProfile(m.username)} style={{ display:"flex", alignItems:"center", gap:12, padding:"12px 0", borderBottom: i < rows.length-1 ? `1px solid ${T.lift}` : "none", cursor:"pointer" }}>
+                <div style={{ width:42, height:42, borderRadius:"50%", background:T.black, display:"flex", alignItems:"center", justifyContent:"center", fontSize:14, fontWeight:600, color:T.white, fontFamily:sans, flexShrink:0 }}>{String(m.username).slice(0,2).toUpperCase()}</div>
+                <div style={{ flex:1, minWidth:0 }}>
+                  <span style={{ fontFamily:serif, fontSize:15, color:T.black }}>@{m.username}</span>{m.country && <span style={{ marginLeft:6, fontSize:13 }}>{countryFlag(m.country)}</span>}
+                  {m.bio && <p style={{ fontFamily:sans, fontSize:12, color:T.faint, margin:"2px 0 0", whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis" }}>{m.bio}</p>}
+                </div>
+                <button onClick={e => { e.stopPropagation(); onToggleFollow(m.username); }} aria-pressed={on} style={{ padding:"8px 14px", minHeight:36, borderRadius:20, background:on?T.white:T.black, border:`1px solid ${on?T.rule:T.black}`, color:on?T.mid:T.white, fontSize:12, fontFamily:sans, fontWeight:500, cursor:"pointer", flexShrink:0 }}>{on ? "Following" : "Follow"}</button>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ─── PROFILE MODAL ────────────────────────────────────────────────────────────
-function ProfileModal({ username, onClose, onBack, currentUser, userStatuses, onOpenFrag, isFollowing, onToggleFollow, following, onOpenProfile, onSignOut, myStats }) {
-  const [tab, setTab] = useState("reviews");
-
-  const isSelf = currentUser && currentUser.username === username;
+function ProfileModal({ username, onClose, onBack, currentUser, userStatuses, onOpenFrag, isFollowing, onToggleFollow, following, onOpenProfile, onSignOut, myStats, onFindPeople, onProfileSaved }) {
+  const isSelf = !!currentUser && String(currentUser.username || "").toLowerCase() === String(username || "").toLowerCase();
   const isSillage = username === "memoir";
+  const mock = MOCK_MEMBERS.find(m => m.username === username);
+  const [tab, setTab] = useState(isSelf ? "following" : mock ? "reviews" : "posts");
+  const [real, setReal] = useState(null);   // the member's public row from the database
+  const [loaded, setLoaded] = useState(isSillage);
+  const [list, setList] = useState(null);   // people shown on the Following / Followers tabs
+  const [editing, setEditing] = useState(false);
 
-  const followingList = isSelf && following
-    ? [SILLAGE_ACCOUNT, ...MOCK_MEMBERS.filter(m => following.has(m.username))]
-    : [];
+  useEffect(() => {
+    if (isSillage) return;
+    let live = true;
+    supabase.rpc("get_member", { p_username: username }).then(({ data, error }) => {
+      if (!live) return;
+      setReal(!error && data && data[0] ? data[0] : null);
+      setLoaded(true);
+    });
+    return () => { live = false; };
+  }, [username]);
 
+  useEffect(() => {
+    if (!isSelf || (tab !== "following" && tab !== "followers")) return;
+    let live = true;
+    setList(null);
+    supabase.rpc("list_follows", { p_kind: tab }).then(({ data, error }) => { if (live) setList(error ? [] : (data || [])); });
+    return () => { live = false; };
+  }, [tab, isSelf, following]);
+
+  // Real members are shown by username only. Their name and email are never shown to others.
   const member = isSillage
     ? SILLAGE_ACCOUNT
-    : isSelf
-      ? { ...currentUser, bio: currentUser.bio || "Your Memoir on Skin profile.", followers: 1, following: following ? following.size : 1, statuses: userStatuses || {}, reactions: {}, reviews: [], layers: [] }
-      : MOCK_MEMBERS.find(m => m.username === username);
+    : real
+      ? { username: real.username, name: null, country: real.country || "", bio: real.bio || "", isFounder: real.member_number != null && real.member_number <= 1000, memberNumber: real.member_number, isTopContributor: !!real.is_top_contributor, followers: Number(real.followers) || 0, following: Number(real.following_count) || 0, statuses: {}, reactions: {}, reviews: [], layers: [] }
+      : isSelf
+        ? { ...currentUser, name: null, followers: 0, following: 0, statuses: {}, reactions: {}, reviews: [], layers: [] }
+        : mock;
 
-  if (!member) return null;
+  if (!member) {
+    if (!loaded) return null;
+    return (
+      <div className="mos-sheet-wrap" onClick={onClose} style={{ position:"fixed", inset:0, zIndex:60, background:"rgba(10,10,10,0.5)", backdropFilter:"blur(12px)", display:"flex", flexDirection:"column", justifyContent:"flex-end", alignItems:"center" }}>
+        <div className="mos-sheet mos-pad" onClick={e => e.stopPropagation()} style={{ background:T.white, borderRadius:"24px 24px 0 0", border:`1px solid ${T.rule}`, borderBottom:"none", width:"100%", maxWidth:460, padding:"20px 24px 40px" }}>
+          <BackBtn onBack={onBack||onClose}/>
+          <p style={{ fontFamily:serif, fontSize:20, color:T.black, margin:"18px 0 6px" }}>We couldn't find that member</p>
+          <p style={{ fontFamily:sans, fontSize:13, color:T.mid, lineHeight:1.65, margin:0 }}>They may have left, or the username may have changed.</p>
+        </div>
+      </div>
+    );
+  }
+
+  const stats = [[member.followers || 0, "followers"], [member.following || 0, "following"]];
+  if (isSelf) stats.push([Object.keys(userStatuses || {}).length, "fragrances"]);
+  else if (mock && !real) stats.push([Object.keys(member.statuses || {}).length, "fragrances"]);
+  const tabs = isSillage ? ["posts", "reviews"] : isSelf ? ["following", "followers"] : real ? ["posts"] : ["reviews", "layering", "collection", "in common"];
 
   const initials = isSillage ? "m." : (member.username || member.name || "?").slice(0, 2).toUpperCase();
 
@@ -5381,10 +5523,10 @@ function ProfileModal({ username, onClose, onBack, currentUser, userStatuses, on
               </div>
               <div>
                 <div style={{ display:"flex", alignItems:"center", gap:6, marginBottom:4, flexWrap:"wrap" }}>
-                  <span style={{ fontFamily:serif, fontSize:18, color:T.black, letterSpacing:-0.3 }}>{member.name}</span>
+                  <span style={{ fontFamily:serif, fontSize:18, color:T.black, letterSpacing:-0.3 }}>{member.name || "@" + member.username}</span>
                   {isSillage && <span style={{ fontFamily:sans, fontSize:9, textTransform:"uppercase", letterSpacing:"0.1em", color:T.faint, background:T.lift, padding:"2px 7px", borderRadius:10, border:`1px solid ${T.rule}` }}>Official</span>}
                 </div>
-                <span style={{ fontFamily:sans, fontSize:12, color:T.mid }}>@{member.username}</span>
+                {member.name && <span style={{ fontFamily:sans, fontSize:12, color:T.mid }}>@{member.username}</span>}
                 {!isSillage && (member.isFounder || member.isTopContributor) && (
                   <div style={{ marginTop:6 }}>
                     <UserBadges user={member} size="small"/>
@@ -5400,11 +5542,7 @@ function ProfileModal({ username, onClose, onBack, currentUser, userStatuses, on
           )}
 
           <div style={{ display:"flex", gap:24, marginBottom:16 }}>
-            {[
-              [member.followers || 0, "followers"],
-              [member.following || 0, "following"],
-              [Object.keys(member.statuses || {}).length, "fragrances"],
-            ].map(([num, label]) => (
+            {stats.map(([num, label]) => (
               <div key={label}>
                 <span style={{ fontFamily:serif, fontSize:18, color:T.black }}>{num}</span>
                 <span style={{ fontFamily:sans, fontSize:11, color:T.mid, marginLeft:4 }}>{label}</span>
@@ -5426,7 +5564,7 @@ function ProfileModal({ username, onClose, onBack, currentUser, userStatuses, on
           {!isSelf && (
             <div style={{ display:"flex", gap:8, marginBottom:18 }}>
               <button
-                onClick={() => !isSillage && onToggleFollow && onToggleFollow(username)}
+                onClick={async () => { if (isSillage || !onToggleFollow) return; const n = await onToggleFollow(username); if (typeof n === "number" && !isNaN(n)) setReal(r => r ? { ...r, followers: n } : r); }}
                 style={{ flex:1, padding:"11px 0", borderRadius:12, background:isFollowing?T.white:T.black, border:`1px solid ${isFollowing?T.rule:T.black}`, color:isFollowing?T.mid:T.white, fontSize:13, fontFamily:sans, fontWeight:500, cursor:isSillage?"default":"pointer", transition:"all 0.2s", opacity: isSillage ? 0.7 : 1 }}
               >
                 {isSillage ? "Following" : isFollowing ? "Following" : "Follow"}
@@ -5445,8 +5583,11 @@ function ProfileModal({ username, onClose, onBack, currentUser, userStatuses, on
 
           {isSelf && (
             <div style={{ display:"flex", gap:8, marginBottom:18 }}>
-              <button style={{ flex:1, padding:"11px 0", borderRadius:12, border:`1px solid ${T.rule}`, background:T.white, color:T.mid, fontSize:13, fontFamily:sans, cursor:"pointer" }}>
-                Edit profile
+              <button onClick={() => setEditing(e => !e)} aria-expanded={editing} style={{ flex:1, padding:"11px 0", borderRadius:12, border:`1px solid ${editing?T.black:T.rule}`, background:T.white, color:editing?T.black:T.mid, fontSize:13, fontFamily:sans, cursor:"pointer" }}>
+                {editing ? "Close editor" : "Edit profile"}
+              </button>
+              <button onClick={() => onFindPeople && onFindPeople()} style={{ flex:1, padding:"11px 0", borderRadius:12, border:`1px solid ${T.rule}`, background:T.white, color:T.mid, fontSize:13, fontFamily:sans, cursor:"pointer" }}>
+                Find people
               </button>
               <button onClick={onSignOut} style={{ padding:"11px 18px", borderRadius:12, border:`1px solid ${T.rule}`, background:T.white, color:T.bad, fontSize:13, fontFamily:sans, cursor:"pointer" }}>
                 Sign out
@@ -5462,10 +5603,10 @@ function ProfileModal({ username, onClose, onBack, currentUser, userStatuses, on
           )}
 
           <div className="mos-dtabs" style={{ display:"flex", gap:0, overflowX:"auto" }}>
-            {(isSillage ? ["posts","reviews"] : isSelf ? ["reviews","layering","collection","following"] : ["reviews","layering","collection","in common"]).map(t => (
+            {tabs.map(t => (
               (t === "in common" && (isSelf || commonFrags.length === 0)) ? null : (
-                <button key={t} onClick={() => setTab(t)} style={{ marginRight:16, paddingBottom:12, fontSize:10, textTransform:"uppercase", letterSpacing:"0.08em", color:tab===t?T.black:T.faint, background:"none", border:"none", borderBottom:tab===t?`2px solid ${T.black}`:"2px solid transparent", marginBottom:-1, cursor:"pointer", whiteSpace:"nowrap", fontFamily:sans }}>
-                  {t}{t==="layering"&&publicLayers.length>0?` (${publicLayers.length})`:""}{t==="following"?` (${followingList.length})`:""}
+                <button key={t} onClick={() => { setTab(t); setEditing(false); }} style={{ marginRight:16, paddingBottom:12, fontSize:10, textTransform:"uppercase", letterSpacing:"0.08em", color:tab===t?T.black:T.faint, background:"none", border:"none", borderBottom:tab===t?`2px solid ${T.black}`:"2px solid transparent", marginBottom:-1, cursor:"pointer", whiteSpace:"nowrap", fontFamily:sans }}>
+                  {t}{t==="layering"&&publicLayers.length>0?` (${publicLayers.length})`:""}
                 </button>
               )
             ))}
@@ -5474,7 +5615,18 @@ function ProfileModal({ username, onClose, onBack, currentUser, userStatuses, on
 
         <div className="mos-pad" style={{ padding:"20px 24px 40px" }}>
 
-          {tab === "posts" && isSillage && (
+          {editing && isSelf && (
+            <ProfileEditor user={currentUser} onCancel={() => setEditing(false)} onSaved={fields => { onProfileSaved && onProfileSaved(fields); setReal(r => r ? { ...r, bio: fields.bio, country: fields.country } : r); setEditing(false); }}/>
+          )}
+
+          {!editing && tab === "posts" && !isSillage && (
+            <div style={{ textAlign:"center", padding:"40px 0" }}>
+              <p style={{ fontFamily:serif, fontSize:18, color:T.faint, margin:"0 0 8px" }}>Nothing shared yet</p>
+              <p style={{ fontFamily:sans, fontSize:13, color:T.faint, margin:0 }}>Posts and requests will appear here.</p>
+            </div>
+          )}
+
+          {!editing && tab === "posts" && isSillage && (
             <div>
               {(SILLAGE_ACCOUNT.posts || []).map((p, i) => (
                 <div key={i} style={{ paddingBottom:20, marginBottom:20, borderBottom:i < SILLAGE_ACCOUNT.posts.length-1 ? `1px solid ${T.lift}` : "none" }}>
@@ -5485,27 +5637,42 @@ function ProfileModal({ username, onClose, onBack, currentUser, userStatuses, on
             </div>
           )}
 
-          {tab === "following" && isSelf && (
+          {!editing && (tab === "following" || tab === "followers") && isSelf && (
             <div>
-              {followingList.map((m, i) => (
-                <div key={m.username} onClick={() => onOpenProfile && onOpenProfile(m.username)} style={{ display:"flex", alignItems:"center", gap:12, padding:"12px 0", borderBottom: i < followingList.length-1 ? `1px solid ${T.lift}` : "none", cursor:"pointer" }}>
-                  <div style={{ width:40, height:40, borderRadius:"50%", background:T.black, display:"flex", alignItems:"center", justifyContent:"center", fontSize:m.isSillageOfficial?13:14, fontWeight:600, color:T.white, fontFamily:m.isSillageOfficial?serif:sans, flexShrink:0 }}>
-                    {m.isSillageOfficial ? "m." : (m.username||m.name||"?").slice(0,2).toUpperCase()}
-                  </div>
+              {tab === "following" && (
+                <div onClick={() => onOpenProfile && onOpenProfile("memoir")} style={{ display:"flex", alignItems:"center", gap:12, padding:"12px 0", borderBottom:`1px solid ${T.lift}`, cursor:"pointer" }}>
+                  <div style={{ width:40, height:40, borderRadius:"50%", background:T.black, display:"flex", alignItems:"center", justifyContent:"center", fontSize:13, fontWeight:600, color:T.white, fontFamily:serif, flexShrink:0 }}>m.</div>
                   <div style={{ flex:1, minWidth:0 }}>
                     <div style={{ display:"flex", alignItems:"center", gap:6 }}>
-                      <span style={{ fontFamily:serif, fontSize:14, color:T.black }}>{m.name}</span>
-                      {m.isSillageOfficial && <span style={{ fontFamily:sans, fontSize:9, textTransform:"uppercase", letterSpacing:"0.1em", color:T.faint, background:T.lift, padding:"1px 6px", borderRadius:8, border:`1px solid ${T.rule}` }}>Official</span>}
+                      <span style={{ fontFamily:serif, fontSize:14, color:T.black }}>Memoir on Skin</span>
+                      <span style={{ fontFamily:sans, fontSize:9, textTransform:"uppercase", letterSpacing:"0.1em", color:T.faint, background:T.lift, padding:"1px 6px", borderRadius:8, border:`1px solid ${T.rule}` }}>Official</span>
                     </div>
-                    <span style={{ fontFamily:sans, fontSize:11, color:T.faint }}>@{m.username}</span>
+                    <span style={{ fontFamily:sans, fontSize:11, color:T.faint }}>@memoir</span>
                   </div>
-                  {m.isSillageOfficial && <span style={{ fontFamily:sans, fontSize:10, color:T.faint }}>Always following</span>}
+                  <span style={{ fontFamily:sans, fontSize:10, color:T.faint }}>Always following</span>
+                </div>
+              )}
+              {list === null && <p style={{ fontFamily:sans, fontSize:13, color:T.faint, padding:"16px 0", margin:0 }}>Loading…</p>}
+              {list !== null && list.length === 0 && (
+                <div style={{ textAlign:"center", padding:"32px 0 8px" }}>
+                  <p style={{ fontFamily:serif, fontSize:18, color:T.faint, margin:"0 0 8px" }}>{tab === "following" ? "You aren't following anyone yet" : "No followers yet"}</p>
+                  <p style={{ fontFamily:sans, fontSize:13, color:T.faint, margin:"0 0 16px", lineHeight:1.6 }}>{tab === "following" ? "Search by username to find other members." : "Followers show up here when someone follows you."}</p>
+                  {tab === "following" && <button onClick={() => onFindPeople && onFindPeople()} style={{ ...ctaBtn(true), width:"auto", padding:"0 24px", minHeight:44, fontSize:14 }}>Find people</button>}
+                </div>
+              )}
+              {(list || []).map((m, i) => (
+                <div key={m.username} onClick={() => onOpenProfile && onOpenProfile(m.username)} style={{ display:"flex", alignItems:"center", gap:12, padding:"12px 0", borderBottom: i < list.length-1 ? `1px solid ${T.lift}` : "none", cursor:"pointer" }}>
+                  <div style={{ width:40, height:40, borderRadius:"50%", background:T.black, display:"flex", alignItems:"center", justifyContent:"center", fontSize:14, fontWeight:600, color:T.white, fontFamily:sans, flexShrink:0 }}>{(m.username||"?").slice(0,2).toUpperCase()}</div>
+                  <div style={{ flex:1, minWidth:0 }}>
+                    <span style={{ fontFamily:serif, fontSize:14, color:T.black }}>@{m.username}</span>{m.country && <span style={{ marginLeft:6, fontSize:13 }}>{countryFlag(m.country)}</span>}
+                    {m.bio && <p style={{ fontFamily:sans, fontSize:11, color:T.faint, margin:"2px 0 0", whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis" }}>{m.bio}</p>}
+                  </div>
                 </div>
               ))}
             </div>
           )}
 
-          {tab === "reviews" && (
+          {!editing && tab === "reviews" && (
             <div>
               {(member.reviews || []).length === 0 ? (
                 <div style={{ textAlign:"center", padding:"40px 0" }}>
@@ -5641,6 +5808,8 @@ export default function SillageApp() {
   const [modalFragId, setModalFragId] = useState(null);
   const [showSuggest, setShowSuggest] = useState(false);
   const [profileUsername, setProfileUsername] = useState(null);
+  const [peopleOpen, setPeopleOpen] = useState(false);
+  const [peopleQ, setPeopleQ] = useState("");
   const [userStatuses, setUserStatuses] = useState({});
   const [statusSets, setStatusSets] = useState({});
   const [finishes, setFinishes] = useState({});
@@ -5684,6 +5853,7 @@ export default function SillageApp() {
         name: profile.display_name || profile.username,
         country: profile.country || "",
         bio: profile.bio || "",
+        discoverable: profile.discoverable !== false,
         regionOverride: profile.region_override || "",
         isFounder: profile.member_number != null && profile.member_number <= 1000,
         memberNumber: profile.member_number,
@@ -5942,13 +6112,32 @@ export default function SillageApp() {
     if (error) { flagSave(error); return; }
     if (data) setLayers(p => p.map(x => x.id === tempId ? { ...x, id: data.id } : x));
   }
-  function toggleFollow(username) {
-    setFollowing(prev => {
-      const next = new Set(prev);
-      if (username === "memoir") return next; // can't unfollow the official account
-      next.has(username) ? next.delete(username) : next.add(username);
-      return next;
+  // Who you follow is saved in the database (lowercase usernames). The official account is always included.
+  useEffect(() => {
+    if (!uid) { setFollowing(new Set(["memoir"])); return; }
+    let live = true;
+    supabase.rpc("list_follows", { p_kind: "following" }).then(({ data, error }) => {
+      if (!live || error) return;
+      setFollowing(new Set(["memoir", ...(data || []).map(r => String(r.username).toLowerCase())]));
     });
+    return () => { live = false; };
+  }, [uid]);
+  async function toggleFollow(username) {
+    const key = String(username || "").toLowerCase();
+    if (key === "memoir" || !uid) return; // can't unfollow the official account
+    const was = following.has(key);
+    const flip = on => setFollowing(prev => { const n = new Set(prev); on ? n.add(key) : n.delete(key); return n; });
+    flip(!was);
+    if (MOCK_MEMBERS.some(m => m.username.toLowerCase() === key)) return; // demo members are not real accounts
+    const { data, error } = await supabase.rpc("set_follow", { p_username: username, p_follow: !was });
+    if (error) {
+      flip(was);
+      setSaveIssue("That didn't go through. Try again in a moment.");
+      clearTimeout(issueTimer.current);
+      issueTimer.current = setTimeout(() => setSaveIssue(""), 7000);
+      return;
+    }
+    return Number(data);
   }
 
   const NAV = [{ tab:"Discover", icon:"compass" }, { tab:"Collection", icon:"bottle" }, { tab:"Layering", icon:"layers" }, { tab:"Journal", icon:"book" }, { tab:"Learn", icon:"tip" }];
@@ -5963,9 +6152,11 @@ export default function SillageApp() {
     if (perfumerRef) return { t: "perfumer", name: perfumerRef };
     if (brandRef) return { t: "brand", ref: brandRef };
     if (profileUsername) return { t: "profile", username: profileUsername };
+    if (peopleOpen) return { t: "people" };
     return null;
   }
   function applyView(v) {
+    setPeopleOpen(!!v && v.t === "people");
     setModalFragId(v && v.t === "frag" ? v.id : null);
     setPerfumerRef(v && v.t === "perfumer" ? v.name : null);
     setBrandRef(v && v.t === "brand" ? v.ref : null);
@@ -6006,6 +6197,7 @@ export default function SillageApp() {
   function openBrand(ref) { goto({ t: "brand", ref }); }
   function openPerfumer(n) { goto({ t: "perfumer", name: n }); }
   function openProfile(username) { goto({ t: "profile", username }); }
+  function openPeople() { goto({ t: "people" }); }
   function onReaction(fragId, val) { setReactions(p => ({ ...p, [fragId]: val })); saveUserFrag(fragId, { reaction: val || null }); }
 
   function handleOnboardingComplete(fields) {
@@ -6042,9 +6234,12 @@ export default function SillageApp() {
         <div className="mos-wrap">
           <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", padding:"14px 0 12px", gap:10 }}>
             <Logo fluid/>
-            <div style={{ display:"flex", alignItems:"center", gap:8 }}>
+            <div style={{ display:"flex", alignItems:"center", gap:6, flexShrink:0 }}>
               <button onClick={() => setShowSuggest(true)} style={{ fontFamily:sans, fontSize:"var(--ctl-fs)", fontWeight:500, height:"var(--ctl)", padding:"0 16px", borderRadius:20, border:`1px solid ${T.rule}`, background:T.white, color:T.mid, cursor:"pointer", whiteSpace:"nowrap" }}>+ Suggest</button>
-              <ThemeToggle size="var(--ctl)"/>
+              <span className="mos-hide-sm" style={{ display:"contents" }}><ThemeToggle size="var(--ctl)"/></span>
+              <button onClick={openPeople} title="Find people" aria-label="Find people" style={{ width:"var(--ctl)", height:"var(--ctl)", borderRadius:"50%", padding:0, background:T.white, border:`1px solid ${T.rule}`, cursor:"pointer", flexShrink:0, display:"flex", alignItems:"center", justifyContent:"center" }}>
+                <Icon name="people" size={18} color={T.mid}/>
+              </button>
               <button
                 onClick={() => currentUser && openProfile(currentUser.username)}
                 title={currentUser ? "@" + currentUser.username : ""}
@@ -6129,15 +6324,19 @@ export default function SillageApp() {
       {saveIssue && <div role="status" style={{ position:"fixed", left:16, right:16, bottom:"calc(84px + env(safe-area-inset-bottom))", zIndex:80, maxWidth:520, margin:"0 auto", background:T.black, color:T.white, borderRadius:14, padding:"12px 16px", fontFamily:sans, fontSize:13, lineHeight:1.5 }}>{saveIssue}</div>}
       {brandRef && <BrandModal brand={brandRef} onClose={closeAll} onBack={goBack} onOpenFrag={openFrag}/>}
       {showSuggest && <SuggestModal onClose={() => setShowSuggest(false)} currentUser={currentUser}/>}
+      {peopleOpen && <PeopleSearch initialQ={peopleQ} onQ={setPeopleQ} onClose={closeAll} onBack={goBack} onOpenProfile={openProfile} following={following} onToggleFollow={toggleFollow}/>}
       {profileUsername && (
         <ProfileModal
+          key={profileUsername}
           username={profileUsername}
+          onFindPeople={openPeople}
+          onProfileSaved={fields => setCurrentUser(p => ({ ...p, ...fields }))}
           onClose={closeAll}
           onBack={goBack}
           currentUser={currentUser}
           userStatuses={userStatuses}
           onOpenFrag={id => openFrag(id)}
-          isFollowing={following.has(profileUsername)}
+          isFollowing={following.has(String(profileUsername).toLowerCase())}
           onToggleFollow={toggleFollow}
           following={following}
           onOpenProfile={username => openProfile(username)}
