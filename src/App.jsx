@@ -44,7 +44,7 @@ const THEME_CSS = `
   --scrim:rgba(250,247,245,0.93); --glass:rgba(250,247,245,0.86);
   --on-ink-dim:rgba(255,255,255,0.62); --track:rgba(23,16,28,0.10); --track-on:rgba(255,255,255,0.30);
   --accent:#C9206B; --accent-soft:rgba(201,32,107,0.10);
-  --tangerine:#E85D12; --on-tang:#FFFFFF; --coral:#E24A3D; --pink:#D42A74; --orchid:#9A3F8E; --violet:#6A3FC4; --teal:#17788F;
+  --tangerine:#E85D12; --on-tang:#FFFFFF; --tang-soft:#FDE6D6; --tang-line:#F6CBAE; --tang-ink:#4A2208; --tang-chip:rgba(255,255,255,0.6); --coral:#E24A3D; --pink:#D42A74; --orchid:#9A3F8E; --violet:#6A3FC4; --teal:#17788F;
   --tint-tangerine:rgba(232,93,18,0.12); --tint-coral:rgba(226,74,61,0.12); --tint-pink:rgba(212,42,116,0.11);
   --tint-orchid:rgba(154,63,142,0.12); --tint-violet:rgba(106,63,196,0.11); --tint-teal:rgba(23,120,143,0.12);
   --good:#2E7D32; --bad:#C0392B;
@@ -60,7 +60,7 @@ html[data-theme="dark"] {
   --scrim:rgba(15,11,20,0.90); --glass:rgba(15,11,20,0.84);
   --on-ink-dim:rgba(15,11,20,0.62); --track:rgba(255,255,255,0.14); --track-on:rgba(15,11,20,0.28);
   --accent:#FF5C9D; --accent-soft:rgba(255,92,157,0.14);
-  --tangerine:#FF8040; --on-tang:#2A1306; --coral:#FF6B5E; --pink:#FF5C9D; --orchid:#D07FC4; --violet:#A68BFF; --teal:#4CC3E3;
+  --tangerine:#FF8040; --on-tang:#2A1306; --tang-soft:#3B2417; --tang-line:#5A3822; --tang-ink:#FFE8D8; --tang-chip:rgba(255,255,255,0.08); --coral:#FF6B5E; --pink:#FF5C9D; --orchid:#D07FC4; --violet:#A68BFF; --teal:#4CC3E3;
   --tint-tangerine:rgba(255,128,64,0.17); --tint-coral:rgba(255,107,94,0.17); --tint-pink:rgba(255,92,157,0.17);
   --tint-orchid:rgba(208,127,196,0.17); --tint-violet:rgba(166,139,255,0.17); --tint-teal:rgba(76,195,227,0.16);
   --good:#5BC27C; --bad:#FF7A6B;
@@ -3205,28 +3205,28 @@ function PostCard({ p, frag, onOpenProfile, onOpenFrag, onChanged, inThread }) {
   async function report() { const { error } = await supabase.rpc("report_post", { p_id: p.id }); setNote(error ? postError(error) : "Reported. Thank you."); }
   const rc = Number(p.reply_count) || 0;
   return (
-    <article style={{ background:"var(--tangerine)", border:"1px solid var(--tangerine)", color:"var(--on-tang)", borderRadius:16, padding:"14px 16px", marginBottom:12 }}>
+    <article style={{ background:"var(--tang-soft)", border:"1px solid var(--tang-line)", color:"var(--tang-ink)", borderRadius:16, padding:"14px 16px", marginBottom:12 }}>
       <div style={{ display:"flex", alignItems:"center", gap:10, marginBottom:10 }}>
-        <button onClick={() => onOpenProfile(p.username)} aria-label={"Open @" + p.username} style={{ ...AVATAR_COMMUNITY, background:"var(--on-tang)", color:"var(--tangerine)", width:36, height:36, cursor:"pointer", fontSize:13 }}>{String(p.username).slice(0, 2).toUpperCase()}</button>
+        <button onClick={() => onOpenProfile(p.username)} aria-label={"Open @" + p.username} style={{ ...AVATAR_COMMUNITY, width:36, height:36, cursor:"pointer", fontSize:13 }}>{String(p.username).slice(0, 2).toUpperCase()}</button>
         <div style={{ minWidth:0, flex:1 }}>
-          <button onClick={() => onOpenProfile(p.username)} style={{ background:"none", border:"none", padding:0, cursor:"pointer", fontFamily:serif, fontSize:15, color:"var(--on-tang)" }}>@{p.username}</button>
+          <button onClick={() => onOpenProfile(p.username)} style={{ background:"none", border:"none", padding:0, cursor:"pointer", fontFamily:serif, fontSize:15, color:"var(--tang-ink)" }}>@{p.username}</button>
           {p.country && <span style={{ marginLeft:6, fontSize:13 }}>{countryFlag(p.country)}</span>}
-          <p style={{ fontFamily:sans, fontSize:12, color:"var(--on-tang)", opacity:0.8, margin:"1px 0 0" }}>{p.kind === "share" ? "Shared a fragrance" : "Shared a thought"} · {reqAgo(p.created_at)}{p.audience === "followers" ? " · Followers" : ""}</p>
+          <p style={{ fontFamily:sans, fontSize:12, color:"var(--tang-ink)", opacity:0.8, margin:"1px 0 0" }}>{p.kind === "share" ? "Shared a fragrance" : "Shared a thought"} · {reqAgo(p.created_at)}{p.audience === "followers" ? " · Followers" : ""}</p>
         </div>
       </div>
-      <p style={{ fontFamily:sans, fontSize:15, lineHeight:1.65, margin:0, color:"var(--on-tang)", whiteSpace:"pre-wrap", overflowWrap:"anywhere" }}>{p.body}</p>
+      <p style={{ fontFamily:sans, fontSize:15, lineHeight:1.65, margin:0, color:"var(--tang-ink)", whiteSpace:"pre-wrap", overflowWrap:"anywhere" }}>{p.body}</p>
       {p.fragrance_id && frag && (
-        <button onClick={() => onOpenFrag(frag.id)} style={{ display:"flex", alignItems:"center", gap:10, marginTop:10, padding:"10px 12px", background:"rgba(255,255,255,0.22)", border:"1px solid rgba(255,255,255,0.4)", borderRadius:12, cursor:"pointer", textAlign:"left", maxWidth:"100%" }}>
-          <span><span style={{ display:"block", fontFamily:serif, fontSize:15, color:"var(--on-tang)" }}>{frag.name}</span><span style={{ display:"block", fontFamily:sans, fontSize:12, color:"var(--on-tang)", opacity:0.85 }}>{frag.house}</span></span>
+        <button onClick={() => onOpenFrag(frag.id)} style={{ display:"flex", alignItems:"center", gap:10, marginTop:10, padding:"10px 12px", background:"var(--tang-chip)", border:"1px solid var(--tang-line)", borderRadius:12, cursor:"pointer", textAlign:"left", maxWidth:"100%" }}>
+          <span><span style={{ display:"block", fontFamily:serif, fontSize:15, color:"var(--tang-ink)" }}>{frag.name}</span><span style={{ display:"block", fontFamily:sans, fontSize:12, color:"var(--tang-ink)", opacity:0.85 }}>{frag.house}</span></span>
         </button>
       )}
       <div style={{ display:"flex", gap:14, alignItems:"center", marginTop:6, flexWrap:"wrap" }}>
-        {!inThread && <button onClick={() => setThread(true)} style={{ ...POST_BTN, color:"var(--on-tang)", fontWeight:700, textDecoration:"underline" }}>{rc > 0 ? rc + (rc === 1 ? " reply" : " replies") : "Reply"}</button>}
-        {p.can_delete && !confirm && <button onClick={() => setConfirm(true)} style={{ ...POST_BTN, color:"var(--on-tang)" }}>Delete</button>}
-        {p.can_delete && confirm && <span style={{ fontFamily:sans, fontSize:12, color:"var(--on-tang)" }}>Delete this post? <button onClick={del} style={{ ...POST_BTN, color:"var(--on-tang)", fontWeight:700, textDecoration:"underline", display:"inline", padding:"0 6px" }}>Yes</button><button onClick={() => setConfirm(false)} style={{ ...POST_BTN, display:"inline", padding:"0 6px" }}>No</button></span>}
-        {!p.mine && <button onClick={report} style={{ ...POST_BTN, color:"var(--on-tang)" }}>Report</button>}
-        {Number(p.report_count) > 0 && <span style={{ fontFamily:sans, fontSize:12, color:"var(--on-tang)", fontWeight:700 }}>Reported by {Number(p.report_count)}</span>}
-        {note && <span style={{ fontFamily:sans, fontSize:12, color:"var(--on-tang)" }}>{note}</span>}
+        {!inThread && <button onClick={() => setThread(true)} style={{ ...POST_BTN, color:"var(--tang-ink)", fontWeight:700, textDecoration:"underline" }}>{rc > 0 ? rc + (rc === 1 ? " reply" : " replies") : "Reply"}</button>}
+        {p.can_delete && !confirm && <button onClick={() => setConfirm(true)} style={{ ...POST_BTN, color:"var(--tang-ink)" }}>Delete</button>}
+        {p.can_delete && confirm && <span style={{ fontFamily:sans, fontSize:12, color:"var(--tang-ink)" }}>Delete this post? <button onClick={del} style={{ ...POST_BTN, color:"var(--tang-ink)", fontWeight:700, textDecoration:"underline", display:"inline", padding:"0 6px" }}>Yes</button><button onClick={() => setConfirm(false)} style={{ ...POST_BTN, display:"inline", padding:"0 6px" }}>No</button></span>}
+        {!p.mine && <button onClick={report} style={{ ...POST_BTN, color:"var(--tang-ink)" }}>Report</button>}
+        {Number(p.report_count) > 0 && <span style={{ fontFamily:sans, fontSize:12, color:"var(--tang-ink)", fontWeight:700 }}>Reported by {Number(p.report_count)}</span>}
+        {note && <span style={{ fontFamily:sans, fontSize:12, color:"var(--tang-ink)" }}>{note}</span>}
       </div>
       {thread && <PostThread postId={p.id} onClose={() => setThread(false)} onChanged={onChanged} onOpenProfile={onOpenProfile} onOpenFrag={onOpenFrag}/>}
     </article>
@@ -3767,7 +3767,188 @@ function ShelfView({ items, onClick, statuses }) {
     </div>
   );
 }
-function CollectionTab({ onOpenFrag, statuses:userStatuses, statusSets:sets, reactions, onReaction, onSuggest, fragrances, wears, onOpenJournal }) {
+// ─── COLLECTION IMPORT ────────────────────────────────────────────────────────
+// Reads a spreadsheet / CSV / pasted list in the browser, matches rows to our fragrances, and adds them with a status.
+// The file itself is never uploaded; only the matched statuses are saved.
+const impNorm = s => String(s || "").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/&/g, " and ")
+  .replace(/\b(eau de parfum|eau de toilette|eau de cologne|extrait de parfum|extrait|parfum|edp|edt|cologne|intense|the|by|for men|for women|pour homme|pour femme)\b/g, " ")
+  .replace(/[^a-z0-9]+/g, "");
+function impParseDelimited(text) {
+  const first = text.split(/\r?\n/)[0] || "";
+  const d = [["\t", (first.match(/\t/g) || []).length], [";", (first.match(/;/g) || []).length], [",", (first.match(/,/g) || []).length]].sort((a, b) => b[1] - a[1])[0];
+  const delim = d[1] > 0 ? d[0] : null;
+  if (!delim) return text.split(/\r?\n/).map(l => l.trim()).filter(Boolean).map(l => [l]);
+  const rows = []; let row = [], cell = "", q = false;
+  for (let i = 0; i < text.length; i++) {
+    const c = text[i];
+    if (q) { if (c === '"') { if (text[i + 1] === '"') { cell += '"'; i++; } else q = false; } else cell += c; }
+    else if (c === '"') q = true;
+    else if (c === delim) { row.push(cell); cell = ""; }
+    else if (c === "\n" || c === "\r") { if (c === "\r" && text[i + 1] === "\n") i++; row.push(cell); cell = ""; if (row.some(x => x.trim())) rows.push(row); row = []; }
+    else cell += c;
+  }
+  row.push(cell); if (row.some(x => x.trim())) rows.push(row);
+  return rows;
+}
+function impStatusFrom(txt) {
+  const t = String(txt || "").toLowerCase();
+  if (!t.trim()) return null;
+  const smp = /sample|decant|vial|mini|travel|split/.test(t);
+  if (/wish|want|desire|\bwl\b|to buy|interested|seeking|crave/.test(t)) return smp ? "sample_wishlist" : "bottle_wishlist";
+  if (/finish|empty|used up|killed|gone|sold|passed/.test(t)) return smp ? "sample_finished" : "bottle_finished";
+  if (smp) return "sample_have";
+  if (/own|have|bottle|collection|full|shelf|keep|current/.test(t)) return "bottle_owned";
+  if (/tried|worn|wear|tested|skin/.test(t)) return "tried_skin";
+  if (/smell|sniff|blotter/.test(t)) return "smelled";
+  return null;
+}
+function impGuess(header, rows) {
+  const h = header.map(x => String(x || "").toLowerCase().trim());
+  const find = re => h.findIndex(x => re.test(x));
+  let name = find(/^(name|fragrance|perfume|scent|title|product|fragrance name|perfume name)\b/); if (name < 0) name = find(/name|fragrance|perfume|scent/);
+  const house = find(/^(house|brand|designer|maker|company|perfume house)\b/);
+  const status = find(/status|list|collection|category|type|state|shelf|own|have|wish/);
+  return { name: name >= 0 ? name : 0, house: house >= 0 && house !== name ? house : -1, status: status >= 0 && status !== name && status !== house ? status : -1, hasHeader: name >= 0 || house >= 0 };
+}
+function impMatch(rawName, rawHouse, index) {
+  const n = impNorm(rawName), hRaw = impNorm(rawHouse);
+  if (!n) return null;
+  if (hRaw) {
+    const exact = index.byKey.get(hRaw + "|" + n); if (exact) return exact;
+    const cands = (index.byName.get(n) || []).filter(f => { const fh = impNorm(f.house); return fh.includes(hRaw) || hRaw.includes(fh); });
+    if (cands.length === 1) return cands[0];
+  } else {
+    const c = index.byName.get(n); if (c && c.length === 1) return c[0];
+    // "House Name" in one cell
+    for (const f of index.all) { if (index.combined.get(f.id) === n) return f; }
+    for (const f of index.all) { const fh = impNorm(f.house); if (fh && n.startsWith(fh) && impNorm(f.name) === n.slice(fh.length)) return f; }
+    // "Name - House" or "Name by House"
+    for (const f of index.all) { const fn = impNorm(f.name), fh = impNorm(f.house); if (fn && fh && n === fn + fh) return f; }
+  }
+  return null;
+}
+function ImportSheet({ fragrances, existing, onApply, onClose }) {
+  const [step, setStep] = useState("pick");
+  const [rows, setRows] = useState([]);
+  const [header, setHeader] = useState([]);
+  const [map, setMap] = useState({ name: 0, house: -1, status: -1 });
+  const [hasHeader, setHasHeader] = useState(true);
+  const [defStatus, setDefStatus] = useState("bottle_owned");
+  const [paste, setPaste] = useState("");
+  const [err, setErr] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [result, setResult] = useState(null);
+  const fileRef = useRef(null);
+  const index = useMemo(() => {
+    const byKey = new Map(), byName = new Map(), combined = new Map();
+    (fragrances || []).forEach(f => { const n = impNorm(f.name), h = impNorm(f.house); byKey.set(h + "|" + n, f); if (!byName.has(n)) byName.set(n, []); byName.get(n).push(f); combined.set(f.id, h + n); });
+    return { byKey, byName, combined, all: fragrances || [] };
+  }, [fragrances]);
+  const bodyRows = hasHeader ? rows.slice(1) : rows;
+  const parsed = useMemo(() => {
+    if (step !== "map") return { matched: [], unmatched: [] };
+    const seen = new Set(), matched = [], unmatched = [];
+    bodyRows.forEach(r => {
+      const nm = (r[map.name] || "").toString().trim(); if (!nm) return;
+      const hs = map.house >= 0 ? (r[map.house] || "").toString().trim() : "";
+      const f = impMatch(nm, hs, index);
+      if (!f) { unmatched.push((hs ? hs + " " : "") + nm); return; }
+      const st = (map.status >= 0 ? impStatusFrom(r[map.status]) : null) || defStatus;
+      const k = f.id + "|" + st; if (seen.has(k)) return; seen.add(k);
+      matched.push({ frag: f, status: st });
+    });
+    return { matched, unmatched };
+  }, [step, bodyRows, map, defStatus, index]);
+  function load(table) {
+    if (!table.length) { setErr("We couldn't find any rows in that."); return; }
+    const guess = impGuess(table[0].map(String), table);
+    setRows(table); setHeader(table[0].map(x => String(x == null ? "" : x))); setHasHeader(guess.hasHeader);
+    setMap({ name: guess.name, house: guess.house, status: guess.status }); setErr(""); setStep("map");
+  }
+  async function onFile(e) {
+    const file = e.target.files && e.target.files[0]; if (!file) return;
+    setBusy(true); setErr("");
+    try {
+      const lower = file.name.toLowerCase();
+      if (/\.xlsx$/.test(lower)) {
+        const mod = await import("read-excel-file");
+        const table = await (mod.default || mod)(file);
+        load(table.map(r => r.map(c => c == null ? "" : String(c))));
+      } else if (/\.json$/.test(lower)) {
+        const data = JSON.parse(await file.text());
+        const arr = Array.isArray(data) ? data : (data.fragrances || data.items || data.collection || []);
+        if (!arr.length || typeof arr[0] !== "object") throw new Error("json");
+        const keys = Array.from(new Set(arr.flatMap(o => Object.keys(o))));
+        load([keys, ...arr.map(o => keys.map(k => o[k] == null ? "" : typeof o[k] === "object" ? "" : String(o[k])))]);
+      } else if (/\.(xls|numbers|ods)$/.test(lower)) {
+        setErr("Please save that file as .xlsx or .csv first (File → Download or Export), then drop it here.");
+      } else {
+        load(impParseDelimited(await file.text()));
+      }
+    } catch (x) { setErr("We couldn't read that file. Try saving it as a .csv and dropping it in again."); }
+    setBusy(false); if (fileRef.current) fileRef.current.value = "";
+  }
+  async function apply() {
+    setBusy(true);
+    const r = await onApply(parsed.matched);
+    setBusy(false); setResult({ added: r.added, already: r.already, unmatched: parsed.unmatched });
+    setStep("done");
+  }
+  const sel = { ...FIELD, padding:"10px 12px", fontSize:13, minHeight:42 };
+  const colOpts = (none) => [none ? <option key="n" value={-1}>None</option> : null, ...header.map((h, i) => <option key={i} value={i}>{hasHeader ? (h || "Column " + (i + 1)) : "Column " + (i + 1) + (rows[0] && rows[0][i] ? " (" + String(rows[0][i]).slice(0, 18) + ")" : "")}</option>)];
+  const label = (st) => (STATUSES.find(s => s.key === st) || {}).label || st;
+  const sampleRows = bodyRows.slice(0, 3);
+  return createPortal(
+    <div role="dialog" aria-modal="true" aria-label="Import your collection" style={{ position:"fixed", inset:0, zIndex:3000, background:"rgba(0,0,0,0.5)", display:"flex", alignItems:"flex-end", justifyContent:"center" }} onClick={onClose}>
+      <div onClick={e => e.stopPropagation()} style={{ background:T.white, width:"100%", maxWidth:560, maxHeight:"92vh", overflowY:"auto", borderRadius:"20px 20px 0 0", padding:"22px 20px 28px", boxSizing:"border-box" }}>
+        <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:6 }}>
+          <h3 style={{ fontFamily:serif, fontSize:22, fontWeight:400, color:T.black, margin:0 }}>Bring your collection in</h3>
+          <button onClick={onClose} aria-label="Close" style={{ background:"none", border:"none", fontSize:20, color:T.mid, cursor:"pointer" }}>✕</button>
+        </div>
+        {step === "pick" && <>
+          <p style={{ fontFamily:sans, fontSize:14, color:T.mid, lineHeight:1.6, margin:"0 0 14px" }}>Already tracking fragrances in a spreadsheet, or on Parfumo, Basenotes, Fragrantica or Sniff? Drop in whatever you have, and we'll match it to our fragrances and add it for you.</p>
+          <input ref={fileRef} type="file" accept=".csv,.tsv,.txt,.xlsx,.json,text/csv,text/plain" onChange={onFile} style={{ display:"none" }}/>
+          <button onClick={() => fileRef.current && fileRef.current.click()} disabled={busy} style={{ ...communityCta(true), width:"100%", marginBottom:10 }}>{busy ? "Reading…" : "Choose a file (.xlsx, .csv, .txt)"}</button>
+          <p style={{ fontFamily:sans, fontSize:12, color:T.faint, margin:"0 0 16px", lineHeight:1.6 }}>If a site lets you export your list, use that file. If it doesn't, open your list on the site, select it, copy, and paste it below. One fragrance per line works fine, e.g. “Creed Aventus”.</p>
+          <textarea value={paste} onChange={e => setPaste(e.target.value)} rows={5} placeholder={"Paste your list here\nCreed – Aventus\nByredo – Gypsy Water"} style={{ ...FIELD, width:"100%", boxSizing:"border-box", resize:"vertical", fontSize:14 }}/>
+          <button onClick={() => paste.trim() ? load(impParseDelimited(paste)) : setErr("Paste your list first, or choose a file.")} style={{ ...ghostBtn, width:"100%", marginTop:10 }}>Use pasted list</button>
+          {err && <p style={{ fontFamily:sans, fontSize:13, color:T.bad, margin:"12px 0 0" }}>{err}</p>}
+          <p style={{ fontFamily:sans, fontSize:12, color:T.faint, margin:"16px 0 0", lineHeight:1.6 }}>Your file is read on your device. Nothing is uploaded except the fragrances we match, saved to your own collection. You'll see a preview before anything is added.</p>
+        </>}
+        {step === "map" && <>
+          <p style={{ fontFamily:sans, fontSize:14, color:T.mid, lineHeight:1.6, margin:"0 0 14px" }}>We found {bodyRows.length} row{bodyRows.length === 1 ? "" : "s"}. Check we've read the right columns.</p>
+          <label style={{ ...FLABEL, display:"block", margin:"0 0 4px" }}>Fragrance name</label>
+          <select value={map.name} onChange={e => setMap({ ...map, name:+e.target.value })} style={{ ...sel, width:"100%", marginBottom:10 }}>{colOpts(false)}</select>
+          <label style={{ ...FLABEL, display:"block", margin:"0 0 4px" }}>House / brand (if it has its own column)</label>
+          <select value={map.house} onChange={e => setMap({ ...map, house:+e.target.value })} style={{ ...sel, width:"100%", marginBottom:10 }}>{colOpts(true)}</select>
+          <label style={{ ...FLABEL, display:"block", margin:"0 0 4px" }}>Status (own, wishlist, sample… if it has a column)</label>
+          <select value={map.status} onChange={e => setMap({ ...map, status:+e.target.value })} style={{ ...sel, width:"100%", marginBottom:10 }}>{colOpts(true)}</select>
+          <label style={{ ...FLABEL, display:"block", margin:"0 0 4px" }}>{map.status >= 0 ? "When a row has no clear status, add it as" : "Add everything as"}</label>
+          <select value={defStatus} onChange={e => setDefStatus(e.target.value)} style={{ ...sel, width:"100%", marginBottom:10 }}>{STATUSES.map(s => <option key={s.key} value={s.key}>{s.label}</option>)}</select>
+          <label style={{ display:"flex", alignItems:"center", gap:8, fontFamily:sans, fontSize:13, color:T.mid, margin:"4px 0 14px" }}><input type="checkbox" checked={hasHeader} onChange={e => setHasHeader(e.target.checked)}/> First row is a heading</label>
+          <div style={{ background:T.lift, border:`1px solid ${T.rule}`, borderRadius:12, padding:"12px 14px", marginBottom:14 }}>
+            <p style={{ fontFamily:sans, fontSize:14, color:T.black, margin:0 }}><strong>{parsed.matched.length}</strong> matched · <strong>{parsed.unmatched.length}</strong> not found</p>
+            {parsed.matched.slice(0, 4).map((m, i) => <p key={i} style={{ fontFamily:sans, fontSize:12, color:T.mid, margin:"6px 0 0" }}>{m.frag.name} · {m.frag.house} → {label(m.status)}</p>)}
+            {parsed.matched.length > 4 && <p style={{ fontFamily:sans, fontSize:12, color:T.faint, margin:"6px 0 0" }}>and {parsed.matched.length - 4} more</p>}
+          </div>
+          <div style={{ display:"flex", gap:8 }}>
+            <button onClick={() => setStep("pick")} style={{ ...ghostBtn, flex:1 }}>Back</button>
+            <button onClick={apply} disabled={busy || !parsed.matched.length} style={{ ...communityCta(!busy && parsed.matched.length > 0), flex:2 }}>{busy ? "Adding…" : "Add " + parsed.matched.length + " to my collection"}</button>
+          </div>
+        </>}
+        {step === "done" && result && <>
+          <p style={{ fontFamily:sans, fontSize:15, color:T.black, lineHeight:1.6, margin:"6px 0 4px" }}>Added {result.added} to your collection{result.already ? " (" + result.already + " already had that status)" : ""}.</p>
+          {result.unmatched.length > 0 && <>
+            <p style={{ fontFamily:sans, fontSize:13, color:T.mid, lineHeight:1.6, margin:"10px 0 8px" }}>{result.unmatched.length} weren't in our library yet. You can find the missing ones in Suggest a fragrance, and we'll add them.</p>
+            <div style={{ maxHeight:160, overflowY:"auto", background:T.lift, border:`1px solid ${T.rule}`, borderRadius:12, padding:"10px 14px", fontFamily:sans, fontSize:12, color:T.mid, lineHeight:1.7 }}>{result.unmatched.slice(0, 200).map((u, i) => <div key={i}>{u}</div>)}</div>
+          </>}
+          <button onClick={onClose} style={{ ...communityCta(true), width:"100%", marginTop:16 }}>Done</button>
+        </>}
+      </div>
+    </div>, document.body);
+}
+
+function CollectionTab({ onImport, onOpenFrag, statuses:userStatuses, statusSets:sets, reactions, onReaction, onSuggest, fragrances, wears, onOpenJournal }) {
   const FR = (fragrances && fragrances.length) ? fragrances : FRAGRANCES;
   const [activeFilter,setActiveFilter]=useState("all");
   const [search,setSearch]=useState("");
@@ -3797,6 +3978,7 @@ function CollectionTab({ onOpenFrag, statuses:userStatuses, statusSets:sets, rea
         <h2 style={{fontFamily:serif,fontSize:"clamp(32px, 3.2vw, 50px)",color:T.black,letterSpacing:-0.8,margin:0,fontWeight:400}}>My collection</h2>
         <p style={{fontFamily:sans,fontSize:"clamp(13px, 1.1vw, 17px)",color:T.mid,margin:"6px 0 0"}}>Bottles, samples, and everything in between.</p>
       </div>
+      {onImport&&<button onClick={onImport} style={{display:"block",background:"none",border:"none",padding:0,margin:"0 0 8px",fontFamily:sans,fontSize:12,color:T.black,cursor:"pointer",textDecoration:"underline",fontWeight:600}}>Import from a spreadsheet or another site</button>}
       {onOpenJournal&&<button onClick={onOpenJournal} style={{display:"block",background:"none",border:"none",padding:0,margin:"0 0 14px",fontFamily:sans,fontSize:12,color:T.mid,cursor:"pointer",textDecoration:"underline",textDecorationColor:T.rule,textUnderlineOffset:3}}>See your taste profile in Journal →</button>}
       <div style={{display:"flex",gap:6,overflowX:"auto",paddingBottom:4,marginBottom:14}}>{filters.map(f=>(
         <button key={f.key} onClick={()=>setActiveFilter(f.key)} style={{fontFamily:sans,fontSize:10,padding:"5px 12px",borderRadius:20,whiteSpace:"nowrap",border:`1px solid ${activeFilter===f.key?T.black:T.rule}`,background:activeFilter===f.key?T.black:T.white,color:activeFilter===f.key?T.white:T.mid,cursor:"pointer",display:"flex",alignItems:"center",gap:5}}>
@@ -5556,6 +5738,7 @@ function OnboardingScreen({ onComplete }) {
   const [country, setCountry] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [bringList, setBringList] = useState(false);
 
   const isValidUsername = (v) => /^[a-zA-Z0-9_]{3,20}$/.test(v.trim());
 
@@ -5570,6 +5753,7 @@ function OnboardingScreen({ onComplete }) {
       .eq("id", user.id);
     setLoading(false);
     if (updateError) { setError(updateError.message); return; }
+    try { if (bringList) localStorage.setItem("mos_open_import", "1"); } catch (e) {}
     onComplete({ username: username.trim(), country: country || null, needs_setup: false });
   }
 
@@ -5596,6 +5780,7 @@ function OnboardingScreen({ onComplete }) {
           </div>
           <CountryPicker value={country} onChange={setCountry}/>
         </div>
+        <label style={{ display:"flex", alignItems:"flex-start", gap:10, fontFamily:sans, fontSize:13, color:T.mid, lineHeight:1.5, margin:"0 0 16px", cursor:"pointer" }}><input type="checkbox" checked={bringList} onChange={e => setBringList(e.target.checked)} style={{ marginTop:3 }}/>I already track fragrances in a spreadsheet or on another site. Help me bring them over.</label>
         {error && <p style={{ fontFamily:sans, fontSize:12, color:T.bad, margin:"0 0 12px" }}>{error}</p>}
         <button onClick={handleDone} disabled={loading} style={{ width:"100%", padding:"15px 0", borderRadius:12, background:loading?T.faint:T.black, border:"none", color:T.white, fontSize:14, fontFamily:sans, fontWeight:600, cursor:loading?"not-allowed":"pointer", marginBottom:12 }}>
           {loading ? "Saving…" : "Complete setup"}
@@ -6153,6 +6338,29 @@ export default function SillageApp() {
   const [activeTab, setActiveTab] = useState("Discover");
   const [modalFragId, setModalFragId] = useState(null);
   const [showSuggest, setShowSuggest] = useState(false);
+  const [importOpen, setImportOpen] = useState(false);
+  // Members who ticked "I have a list to bring in" at sign-up get the import sheet once, in their collection.
+  useEffect(() => {
+    if (!uid || appScreen !== "app") return;
+    try { if (localStorage.getItem("mos_open_import") === "1") { localStorage.removeItem("mos_open_import"); setActiveTab("Collection"); setImportOpen(true); } } catch (e) {}
+  }, [uid, appScreen]);
+  async function applyImport(items) {
+    let added = 0, already = 0; const rowsOut = []; const nextSets = { ...statusSets }; const nextSt = { ...userStatuses };
+    items.forEach(({ frag, status }) => {
+      const before = nextSets[frag.id] || [];
+      if (before.includes(status)) { already++; return; }
+      const after = toggleStatus(before, status), prim = primaryStatus(after);
+      nextSets[frag.id] = after; nextSt[frag.id] = prim; added++;
+      rowsOut.push({ user_id: uid, fragrance_id: frag.id, status: prim, statuses: after, updated_at: new Date().toISOString() });
+    });
+    setStatusSets(nextSets); setUserStatuses(nextSt);
+    if (uid) for (let i = 0; i < rowsOut.length; i += 200) {
+      const { error } = await supabase.from("user_fragrances").upsert(rowsOut.slice(i, i + 200).filter(r => isUuid(r.fragrance_id)), { onConflict: "user_id,fragrance_id" });
+      if (error) { flagSave(error); break; }
+    }
+    trackEvent("collection_import", { source: "import", detail: String(added) });
+    return { added, already };
+  }
   const [profileUsername, setProfileUsername] = useState(null);
   const [peopleOpen, setPeopleOpen] = useState(false);
   const [peopleQ, setPeopleQ] = useState("");
@@ -6637,7 +6845,7 @@ export default function SillageApp() {
 
       <main className="mos-main mos-wrap" style={{ position:"relative", zIndex:1, paddingTop:28, paddingBottom:64 }}>
         {activeTab==="Discover"   && <DiscoverTab   onOpenBrand={openBrand} onOpenPerfumer={openPerfumer} onOpenProfile={openProfile} following={following} fragrances={fragrances} serverShelves={serverShelves} onSearch={serverShelves ? searchFrags : null} onOpenFrag={openFrag} userStatuses={userStatuses} reactions={reactions} onReaction={onReaction} onSuggest={() => setShowSuggest(true)} currentUser={currentUser}/>}
-        {activeTab==="Collection" && <CollectionTab fragrances={fragrances} onOpenFrag={openFrag} statuses={userStatuses} statusSets={statusSets} reactions={reactions} onReaction={onReaction} onSuggest={() => setShowSuggest(true)} wears={wears} onOpenJournal={() => setActiveTab("Journal")}/>}
+        {activeTab==="Collection" && <CollectionTab onImport={() => setImportOpen(true)} fragrances={fragrances} onOpenFrag={openFrag} statuses={userStatuses} statusSets={statusSets} reactions={reactions} onReaction={onReaction} onSuggest={() => setShowSuggest(true)} wears={wears} onOpenJournal={() => setActiveTab("Journal")}/>}
         {activeTab==="Layering"   && <div className="mos-prose"><LayeringTab layers={layers} onSaveLayer={saveLayer} onSearch={searchFrags} fragrances={fragrances} statusSets={statusSets}/></div>}
         {activeTab==="Journal"    && <div className="mos-prose"><JournalTab entries={journalEntries} userStatuses={userStatuses} reactions={reactions} fragrances={fragrances} wears={wears} onOpenFrag={openFrag}/></div>}
         {activeTab==="Learn"      && <div className="mos-prose"><LearnTab fragrances={fragrances} onOpenFrag={openFrag} onOpenBrand={openBrand}/></div>}
@@ -6693,6 +6901,7 @@ export default function SillageApp() {
       {perfumerRef && <PerfumerPage name={perfumerRef} onClose={closeAll} onBack={goBack} onOpenFrag={openFrag} onOpenBrand={openBrand}/>}
       {saveIssue && <div role="status" style={{ position:"fixed", left:16, right:16, bottom:"calc(84px + env(safe-area-inset-bottom))", zIndex:80, maxWidth:520, margin:"0 auto", background:T.black, color:T.white, borderRadius:14, padding:"12px 16px", fontFamily:sans, fontSize:13, lineHeight:1.5 }}>{saveIssue}</div>}
       {brandRef && <BrandModal brand={brandRef} onClose={closeAll} onBack={goBack} onOpenFrag={openFrag}/>}
+      {importOpen && <ImportSheet fragrances={fragrances} existing={statusSets} onApply={applyImport} onClose={() => setImportOpen(false)}/>}
       {showSuggest && <SuggestModal onClose={() => setShowSuggest(false)} currentUser={currentUser}/>}
       {notifOpen && <NotificationsSheet onClose={() => setNotifOpen(false)} onOpen={openNotification} onRead={() => setBellCount(0)}/>}
       {notifTarget && notifTarget.kind === "post" && <PostThread postId={notifTarget.id} onClose={() => setNotifTarget(null)} onOpenProfile={openProfile} onOpenFrag={openFrag}/>}
