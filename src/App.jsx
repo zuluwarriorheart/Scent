@@ -44,7 +44,7 @@ const THEME_CSS = `
   --scrim:rgba(250,247,245,0.93); --glass:rgba(250,247,245,0.86);
   --on-ink-dim:rgba(255,255,255,0.62); --track:rgba(23,16,28,0.10); --track-on:rgba(255,255,255,0.30);
   --accent:#C9206B; --accent-soft:rgba(201,32,107,0.10);
-  --tangerine:#E85D12; --coral:#E24A3D; --pink:#D42A74; --orchid:#9A3F8E; --violet:#6A3FC4; --teal:#17788F;
+  --tangerine:#E85D12; --on-tang:#FFFFFF; --coral:#E24A3D; --pink:#D42A74; --orchid:#9A3F8E; --violet:#6A3FC4; --teal:#17788F;
   --tint-tangerine:rgba(232,93,18,0.12); --tint-coral:rgba(226,74,61,0.12); --tint-pink:rgba(212,42,116,0.11);
   --tint-orchid:rgba(154,63,142,0.12); --tint-violet:rgba(106,63,196,0.11); --tint-teal:rgba(23,120,143,0.12);
   --good:#2E7D32; --bad:#C0392B;
@@ -60,7 +60,7 @@ html[data-theme="dark"] {
   --scrim:rgba(15,11,20,0.90); --glass:rgba(15,11,20,0.84);
   --on-ink-dim:rgba(15,11,20,0.62); --track:rgba(255,255,255,0.14); --track-on:rgba(15,11,20,0.28);
   --accent:#FF5C9D; --accent-soft:rgba(255,92,157,0.14);
-  --tangerine:#FF8040; --coral:#FF6B5E; --pink:#FF5C9D; --orchid:#D07FC4; --violet:#A68BFF; --teal:#4CC3E3;
+  --tangerine:#FF8040; --on-tang:#2A1306; --coral:#FF6B5E; --pink:#FF5C9D; --orchid:#D07FC4; --violet:#A68BFF; --teal:#4CC3E3;
   --tint-tangerine:rgba(255,128,64,0.17); --tint-coral:rgba(255,107,94,0.17); --tint-pink:rgba(255,92,157,0.17);
   --tint-orchid:rgba(208,127,196,0.17); --tint-violet:rgba(166,139,255,0.17); --tint-teal:rgba(76,195,227,0.16);
   --good:#5BC27C; --bad:#FF7A6B;
@@ -79,6 +79,7 @@ input:focus-visible, textarea:focus-visible, select:focus-visible { outline:2px 
 
 .mos-tabs-top { display:flex; gap:var(--nav-gap); overflow-x:auto; }
 @media (max-width:639px) { .mos-hide-sm { display:none !important; } }
+@media (max-width:480px) { .mos-suggest { width:var(--ctl); padding:0 !important; border-radius:50% !important; font-size:20px !important; } .mos-suggest-label { display:none; } }
 .mos-tabbar { display:none; }
 :root { --page-w:1240px; --gutter:20px; --cover-w:156px; --thumb-w:128px; --logo-fs:23px; --ctl:34px; --ctl-fs:12px; --nav-fs:12px; --nav-gap:26px; }
 @media (min-width:640px) { :root { --gutter:28px; --cover-w:184px; --thumb-w:184px; --logo-fs:28px; --ctl:38px; --ctl-fs:13px; --nav-fs:13px; --nav-gap:32px; } }
@@ -692,6 +693,7 @@ const FIELD = { width:"100%", background:T.white, border:`1px solid ${T.rule}`, 
 const FLABEL = { fontFamily:sans, fontSize:11, textTransform:"uppercase", letterSpacing:"0.14em", color:T.mid, margin:"0 0 8px" };
 const selBtn = on => ({ minHeight:52, padding:"10px 12px", borderRadius:14, border:`1px solid ${on?"transparent":T.rule}`, background:on?"var(--accent)":T.white, color:on?"#fff":T.ink, fontFamily:sans, fontSize:15, fontWeight:on?600:500, cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", gap:8, textAlign:"center" });
 const ctaBtn = enabled => ({ width:"100%", minHeight:52, borderRadius:14, border:"none", background:enabled?"var(--accent)":T.lift, color:enabled?"#fff":T.faint, fontSize:16, fontWeight:600, fontFamily:sans, cursor:enabled?"pointer":"not-allowed" });
+const communityCta = enabled => ({ ...ctaBtn(enabled), background:enabled?"var(--tangerine)":T.lift, color:enabled?"var(--on-tang)":T.faint });
 const ghostBtn = { minHeight:52, padding:"0 22px", borderRadius:14, border:`1px solid ${T.rule}`, background:T.white, color:T.mid, fontSize:15, fontFamily:sans, cursor:"pointer" };
 const STATUSES = [
   { key:"bottle_owned",    label:"Bottle, owned",    iconName:"bottle",   group:"bottle" },
@@ -3072,7 +3074,7 @@ function RequestForm({ onCancel, onDone }) {
       {msg && <p style={{ fontFamily:sans, fontSize:13, color:T.mid, margin:"10px 0 0" }}>{msg}</p>}
       <div style={{ display:"flex", gap:8, marginTop:14 }}>
         <button onClick={onCancel} style={{ ...ctaBtn(false), background:T.white, border:`1px solid ${T.rule}`, color:T.ink, cursor:"pointer", width:"auto", padding:"0 20px", minHeight:46, fontSize:14, fontWeight:500 }}>Cancel</button>
-        <button onClick={submit} disabled={busy} style={{ ...ctaBtn(ok), flex:1, minHeight:46, fontSize:14, opacity:busy ? 0.6 : 1, cursor:"pointer" }}>{busy ? "Posting" : "Post request"}</button>
+        <button onClick={submit} disabled={busy} style={{ ...communityCta(ok), flex:1, minHeight:46, fontSize:14, opacity:busy ? 0.6 : 1, cursor:"pointer" }}>{busy ? "Posting" : "Post request"}</button>
       </div>
     </div>
   );
@@ -3151,7 +3153,7 @@ function RequestCard({ r, open, onToggle, onChanged, onOpenFrag, onSearch }) {
             {!pick && hits.map(f => <button key={f.id} onClick={() => { setPick(f); setHits([]); setQ(""); }} style={{ display:"block", width:"100%", textAlign:"left", padding:"9px 4px", background:"none", border:"none", borderBottom:`1px solid ${T.lift}`, fontFamily:sans, fontSize:13, color:T.ink, cursor:"pointer" }}>{f.name} <span style={{ color:T.mid }}>· {f.house}</span></button>)}
             {note && <p style={{ fontFamily:sans, fontSize:13, color:T.mid, margin:"8px 0 0" }}>{note}</p>}
             <div style={{ display:"flex", gap:12, alignItems:"center", marginTop:10 }}>
-              <button onClick={post} disabled={busy} style={{ ...ctaBtn(true), width:"auto", padding:"0 22px", minHeight:44, fontSize:14, opacity:busy ? 0.6 : 1, cursor:"pointer" }}>{busy ? "Posting" : "Reply"}</button>
+              <button onClick={post} disabled={busy} style={{ ...communityCta(true), width:"auto", padding:"0 22px", minHeight:44, fontSize:14, opacity:busy ? 0.6 : 1, cursor:"pointer" }}>{busy ? "Posting" : "Reply"}</button>
               {r.mine && <button onClick={() => del("requests", r.id)} style={small}>Delete request</button>}
               {!r.mine && <button onClick={() => report(null)} style={small}>Report</button>}
             </div>
@@ -3182,15 +3184,18 @@ function usePostFrags(rows) {
   }, [rows]);
   return frags;
 }
-function PostCard({ p, frag, onOpenProfile, onOpenFrag, onChanged }) {
+const AVATAR_COMMUNITY = { borderRadius:"50%", background:"var(--tangerine)", color:"var(--on-tang)", border:"none", fontFamily:sans, fontWeight:600, flexShrink:0 };
+function PostCard({ p, frag, onOpenProfile, onOpenFrag, onChanged, inThread }) {
   const [confirm, setConfirm] = useState(false);
   const [note, setNote] = useState("");
+  const [thread, setThread] = useState(false);
   async function del() { const { error } = await supabase.rpc("delete_post", { p_id: p.id }); if (error) { setNote(postError(error)); setConfirm(false); return; } onChanged(); }
   async function report() { const { error } = await supabase.rpc("report_post", { p_id: p.id }); setNote(error ? postError(error) : "Reported. Thank you."); }
+  const rc = Number(p.reply_count) || 0;
   return (
     <article style={{ background:T.white, border:`1px solid ${T.rule}`, borderRadius:16, padding:"14px 16px", marginBottom:12 }}>
       <div style={{ display:"flex", alignItems:"center", gap:10, marginBottom:10 }}>
-        <button onClick={() => onOpenProfile(p.username)} aria-label={"Open @" + p.username} style={{ width:36, height:36, borderRadius:"50%", background:T.black, color:T.white, border:"none", cursor:"pointer", fontFamily:sans, fontSize:13, fontWeight:600, flexShrink:0 }}>{String(p.username).slice(0, 2).toUpperCase()}</button>
+        <button onClick={() => onOpenProfile(p.username)} aria-label={"Open @" + p.username} style={{ ...AVATAR_COMMUNITY, width:36, height:36, cursor:"pointer", fontSize:13 }}>{String(p.username).slice(0, 2).toUpperCase()}</button>
         <div style={{ minWidth:0, flex:1 }}>
           <button onClick={() => onOpenProfile(p.username)} style={{ background:"none", border:"none", padding:0, cursor:"pointer", fontFamily:serif, fontSize:15, color:T.black }}>@{p.username}</button>
           {p.country && <span style={{ marginLeft:6, fontSize:13 }}>{countryFlag(p.country)}</span>}
@@ -3204,13 +3209,160 @@ function PostCard({ p, frag, onOpenProfile, onOpenFrag, onChanged }) {
         </button>
       )}
       <div style={{ display:"flex", gap:14, alignItems:"center", marginTop:6, flexWrap:"wrap" }}>
+        {!inThread && <button onClick={() => setThread(true)} style={{ ...POST_BTN, color:"var(--tangerine)", fontWeight:600 }}>{rc > 0 ? rc + (rc === 1 ? " reply" : " replies") : "Reply"}</button>}
         {p.can_delete && !confirm && <button onClick={() => setConfirm(true)} style={POST_BTN}>Delete</button>}
         {p.can_delete && confirm && <span style={{ fontFamily:sans, fontSize:12, color:T.mid }}>Delete this post? <button onClick={del} style={{ ...POST_BTN, color:T.bad, display:"inline", padding:"0 6px" }}>Yes</button><button onClick={() => setConfirm(false)} style={{ ...POST_BTN, display:"inline", padding:"0 6px" }}>No</button></span>}
         {!p.mine && <button onClick={report} style={POST_BTN}>Report</button>}
         {Number(p.report_count) > 0 && <span style={{ fontFamily:sans, fontSize:12, color:T.bad }}>Reported by {Number(p.report_count)}</span>}
         {note && <span style={{ fontFamily:sans, fontSize:12, color:T.mid }}>{note}</span>}
       </div>
+      {thread && <PostThread postId={p.id} onClose={() => setThread(false)} onChanged={onChanged} onOpenProfile={onOpenProfile} onOpenFrag={onOpenFrag}/>}
     </article>
+  );
+}
+function ReplyRow({ r, onOpenProfile, onChanged }) {
+  const [confirm, setConfirm] = useState(false);
+  const [note, setNote] = useState("");
+  async function del() { const { error } = await supabase.rpc("delete_reply", { p_id: r.id }); if (error) { setNote(postError(error)); setConfirm(false); return; } onChanged(); }
+  async function report() { const { error } = await supabase.rpc("report_reply", { p_id: r.id }); setNote(error ? postError(error) : "Reported. Thank you."); }
+  return (
+    <div style={{ marginBottom:14, paddingLeft:12, borderLeft:`2px solid var(--tangerine)` }}>
+      <p style={{ fontFamily:sans, fontSize:12, color:T.mid, margin:"0 0 3px" }}>
+        <button onClick={() => onOpenProfile(r.username)} style={{ background:"none", border:"none", padding:0, cursor:"pointer", fontFamily:sans, fontSize:12, color:T.ink, fontWeight:600 }}>@{r.username}</button>
+        {r.country && <span style={{ marginLeft:5 }}>{countryFlag(r.country)}</span>} · {reqAgo(r.created_at)}
+      </p>
+      <p style={{ fontFamily:sans, fontSize:14, color:T.ink, lineHeight:1.6, margin:0, whiteSpace:"pre-wrap", overflowWrap:"anywhere" }}>{r.body}</p>
+      <div style={{ display:"flex", gap:14, alignItems:"center", flexWrap:"wrap" }}>
+        {r.can_delete && !confirm && <button onClick={() => setConfirm(true)} style={POST_BTN}>Delete</button>}
+        {r.can_delete && confirm && <span style={{ fontFamily:sans, fontSize:12, color:T.mid }}>Delete this reply? <button onClick={del} style={{ ...POST_BTN, color:T.bad, display:"inline", padding:"0 6px" }}>Yes</button><button onClick={() => setConfirm(false)} style={{ ...POST_BTN, display:"inline", padding:"0 6px" }}>No</button></span>}
+        {!r.mine && <button onClick={report} style={POST_BTN}>Report</button>}
+        {note && <span style={{ fontFamily:sans, fontSize:12, color:T.mid }}>{note}</span>}
+      </div>
+    </div>
+  );
+}
+// A post with its replies and a reply box. Opens from a post card or from a notification.
+function PostThread({ postId, onClose, onChanged, onOpenProfile, onOpenFrag }) {
+  const [post, setPost] = useState(undefined);   // undefined = loading, null = not available
+  const [replies, setReplies] = useState(null);
+  const [text, setText] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [msg, setMsg] = useState("");
+  const frags = usePostFrags(post ? [post] : []);
+  const load = async () => {
+    const [a, b] = await Promise.all([supabase.rpc("get_post", { p_id: postId }), supabase.rpc("list_post_replies", { p_post: postId })]);
+    setPost(!a.error && a.data && a.data[0] ? a.data[0] : null);
+    setReplies(b.error ? [] : (b.data || []));
+  };
+  useEffect(() => { load(); }, [postId]);
+  async function send() {
+    if (!text.trim()) { setMsg("Write a few words first."); return; }
+    setBusy(true); setMsg("");
+    const { error } = await supabase.rpc("create_reply", { p_post: postId, p_body: text.trim() });
+    setBusy(false);
+    if (error) { console.error(error); setMsg(postError(error)); return; }
+    setText(""); await load(); onChanged && onChanged();
+  }
+  const goProfile = u => { onClose(); onOpenProfile(u); };
+  const goFrag = id => { onClose(); onOpenFrag(id); };
+  return createPortal(
+    <div className="mos-sheet-wrap" onClick={onClose} style={{ position:"fixed", inset:0, zIndex:62, background:"rgba(10,10,10,0.5)", backdropFilter:"blur(12px)", display:"flex", flexDirection:"column", justifyContent:"flex-end", alignItems:"center" }}>
+      <div className="mos-sheet" onClick={e => e.stopPropagation()} style={{ background:T.white, borderRadius:"24px 24px 0 0", border:`1px solid ${T.rule}`, borderBottom:"none", width:"100%", maxWidth:460, maxHeight:"92vh", overflowY:"auto" }}>
+        <div className="mos-pad" style={{ padding:"20px 24px 32px" }}>
+          <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:14 }}>
+            <h2 style={{ fontFamily:serif, fontSize:20, fontWeight:400, color:T.black, margin:0 }}>Post</h2>
+            <button onClick={onClose} aria-label="Close" style={{ width:30, height:30, borderRadius:"50%", border:`1px solid ${T.rule}`, background:T.white, cursor:"pointer", fontSize:13, color:T.mid }}>✕</button>
+          </div>
+          {post === undefined && <p style={{ fontFamily:sans, fontSize:13, color:T.mid }}>Loading</p>}
+          {post === null && <p style={{ fontFamily:serif, fontSize:18, color:T.faint, margin:"16px 0" }}>This post is no longer available.</p>}
+          {post && <PostCard p={post} frag={post.fragrance_id ? frags[post.fragrance_id] : null} inThread onOpenProfile={goProfile} onOpenFrag={goFrag} onChanged={() => { onChanged && onChanged(); onClose(); }}/>}
+          {post && (
+            <div style={{ marginTop:8 }}>
+              <p style={{ ...FLABEL, margin:"0 0 10px" }}>Replies{replies && replies.length ? " (" + replies.length + ")" : ""}</p>
+              {replies === null && <p style={{ fontFamily:sans, fontSize:13, color:T.mid }}>Loading</p>}
+              {replies && replies.length === 0 && <p style={{ fontFamily:sans, fontSize:13, color:T.mid, margin:"0 0 14px" }}>No replies yet.</p>}
+              {(replies || []).map(r => <ReplyRow key={r.id} r={r} onOpenProfile={goProfile} onChanged={() => { load(); onChanged && onChanged(); }}/>)}
+              <textarea value={text} onChange={e => setText(e.target.value.slice(0, 500))} rows={3} placeholder="Write a reply" aria-label="Write a reply" style={{ ...FIELD, padding:"12px 14px", lineHeight:1.5, resize:"vertical", marginTop:6 }}/>
+              {msg && <p style={{ fontFamily:sans, fontSize:13, color:T.bad, margin:"8px 0 0" }}>{msg}</p>}
+              <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginTop:10 }}>
+                <span style={{ fontFamily:sans, fontSize:11, color:T.faint }}>{text.length} / 500</span>
+                <button onClick={send} disabled={busy} style={{ ...communityCta(text.trim().length > 0), width:"auto", padding:"0 24px", minHeight:44, fontSize:14, opacity:busy ? 0.6 : 1 }}>{busy ? "Sending" : "Reply"}</button>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>,
+    document.body
+  );
+}
+// The bell: replies to your posts and requests, and new followers.
+function NotificationsSheet({ onClose, onOpen, onRead }) {
+  const [rows, setRows] = useState(null);
+  useEffect(() => {
+    let live = true;
+    supabase.rpc("list_notifications", { p_limit: 40 }).then(async ({ data, error }) => {
+      if (!live) return;
+      setRows(error ? [] : (data || []));
+      if (!error && (data || []).some(n => !n.is_read)) { await supabase.rpc("mark_notifications_read"); onRead && onRead(); }
+    });
+    return () => { live = false; };
+  }, []);
+  const text = n => n.kind === "follow" ? "started following you" : n.kind === "request_reply" ? "replied to your request" : "replied to your post";
+  return createPortal(
+    <div className="mos-sheet-wrap" onClick={onClose} style={{ position:"fixed", inset:0, zIndex:62, background:"rgba(10,10,10,0.5)", backdropFilter:"blur(12px)", display:"flex", flexDirection:"column", justifyContent:"flex-end", alignItems:"center" }}>
+      <div className="mos-sheet" onClick={e => e.stopPropagation()} style={{ background:T.white, borderRadius:"24px 24px 0 0", border:`1px solid ${T.rule}`, borderBottom:"none", width:"100%", maxWidth:460, height:"75vh", display:"flex", flexDirection:"column" }}>
+        <div className="mos-pad" style={{ padding:"20px 24px 12px", display:"flex", alignItems:"center", justifyContent:"space-between", borderBottom:`1px solid ${T.rule}` }}>
+          <h2 style={{ fontFamily:serif, fontSize:22, fontWeight:400, color:T.black, margin:0 }}>Notifications</h2>
+          <button onClick={onClose} aria-label="Close" style={{ width:30, height:30, borderRadius:"50%", border:`1px solid ${T.rule}`, background:T.white, cursor:"pointer", fontSize:13, color:T.mid }}>✕</button>
+        </div>
+        <div className="mos-pad" style={{ padding:"4px 24px 32px", overflowY:"auto", flex:1 }}>
+          {rows === null && <p style={{ fontFamily:sans, fontSize:13, color:T.mid, padding:"16px 0", margin:0 }}>Loading</p>}
+          {rows && rows.length === 0 && (
+            <div style={{ textAlign:"center", padding:"40px 0" }}>
+              <p style={{ fontFamily:serif, fontSize:18, color:T.faint, margin:"0 0 8px" }}>Nothing yet</p>
+              <p style={{ fontFamily:sans, fontSize:13, color:T.faint, margin:0, lineHeight:1.6 }}>Replies to your posts and requests, and new followers, show up here.</p>
+            </div>
+          )}
+          {(rows || []).map((n, i) => (
+            <button key={n.id} onClick={() => onOpen(n)} style={{ display:"flex", alignItems:"flex-start", gap:12, width:"100%", textAlign:"left", padding:"14px 0", background:"none", border:"none", borderBottom: i < rows.length - 1 ? `1px solid ${T.lift}` : "none", cursor:"pointer" }}>
+              <span aria-hidden="true" style={{ width:8, height:8, borderRadius:"50%", background:n.is_read ? "transparent" : "var(--tangerine)", marginTop:7, flexShrink:0 }}/>
+              <span style={{ flex:1, minWidth:0 }}>
+                <span style={{ display:"block", fontFamily:sans, fontSize:14, color:T.ink, lineHeight:1.5 }}><strong style={{ fontWeight:600 }}>@{n.username || "someone"}</strong> {text(n)}</span>
+                {n.preview && <span style={{ display:"block", fontFamily:sans, fontSize:13, color:T.mid, marginTop:2, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>“{n.preview}”</span>}
+                <span style={{ display:"block", fontFamily:sans, fontSize:11, color:T.faint, marginTop:3 }}>{reqAgo(n.created_at)} ago</span>
+              </span>
+            </button>
+          ))}
+        </div>
+      </div>
+    </div>,
+    document.body
+  );
+}
+// Opens one request (with its replies) from a notification.
+function RequestSheet({ requestId, onClose, onOpenFrag, onSearch }) {
+  const [row, setRow] = useState(undefined);
+  const load = async () => {
+    const { data, error } = await supabase.rpc("list_requests", { p_limit: 100 });
+    setRow(error ? null : ((data || []).find(r => r.id === requestId) || null));
+  };
+  useEffect(() => { load(); }, [requestId]);
+  return createPortal(
+    <div className="mos-sheet-wrap" onClick={onClose} style={{ position:"fixed", inset:0, zIndex:62, background:"rgba(10,10,10,0.5)", backdropFilter:"blur(12px)", display:"flex", flexDirection:"column", justifyContent:"flex-end", alignItems:"center" }}>
+      <div className="mos-sheet" onClick={e => e.stopPropagation()} style={{ background:T.white, borderRadius:"24px 24px 0 0", border:`1px solid ${T.rule}`, borderBottom:"none", width:"100%", maxWidth:460, maxHeight:"92vh", overflowY:"auto" }}>
+        <div className="mos-pad" style={{ padding:"20px 24px 32px" }}>
+          <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:14 }}>
+            <h2 style={{ fontFamily:serif, fontSize:20, fontWeight:400, color:T.black, margin:0 }}>Request</h2>
+            <button onClick={onClose} aria-label="Close" style={{ width:30, height:30, borderRadius:"50%", border:`1px solid ${T.rule}`, background:T.white, cursor:"pointer", fontSize:13, color:T.mid }}>✕</button>
+          </div>
+          {row === undefined && <p style={{ fontFamily:sans, fontSize:13, color:T.mid }}>Loading</p>}
+          {row === null && <p style={{ fontFamily:serif, fontSize:18, color:T.faint, margin:"16px 0" }}>This request is no longer available.</p>}
+          {row && <RequestCard r={row} open onToggle={() => {}} onChanged={() => { load(); }} onOpenFrag={id => { onClose(); onOpenFrag(id); }} onSearch={onSearch}/>}
+        </div>
+      </div>
+    </div>,
+    document.body
   );
 }
 function PostComposer({ onClose, onPosted, onSearch }) {
@@ -3245,7 +3397,7 @@ function PostComposer({ onClose, onPosted, onSearch }) {
           <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:16 }}>
             <button onClick={onClose} style={{ ...POST_BTN, fontSize:15 }}>Cancel</button>
             <h2 style={{ fontFamily:serif, fontSize:20, fontWeight:400, color:T.black, margin:0 }}>New post</h2>
-            {kind === "request" ? <span style={{ width:64 }}/> : <button onClick={submit} disabled={busy} style={{ ...ctaBtn(ok), width:"auto", padding:"0 20px", minHeight:40, fontSize:14, opacity:busy ? 0.6 : 1, cursor:"pointer" }}>{busy ? "Posting" : "Share"}</button>}
+            {kind === "request" ? <span style={{ width:64 }}/> : <button onClick={submit} disabled={busy} style={{ ...communityCta(ok), width:"auto", padding:"0 20px", minHeight:40, fontSize:14, opacity:busy ? 0.6 : 1, cursor:"pointer" }}>{busy ? "Posting" : "Share"}</button>}
           </div>
           <p style={{ ...FLABEL, margin:"0 0 6px" }}>Type</p>
           <div style={{ display:"flex", gap:8, marginBottom:14 }}>
@@ -3313,13 +3465,13 @@ function CommunityFeed({ onOpenProfile, onOpenFrag, onSearch, following }) {
         <div style={{ background:T.white, border:`1px solid ${T.rule}`, borderRadius:16, padding:"22px 18px", textAlign:"center" }}>
           <p style={{ fontFamily:serif, fontSize:22, color:T.black, margin:"0 0 6px" }}>{emptyTitle}</p>
           <p style={{ fontFamily:sans, fontSize:13, color:T.mid, lineHeight:1.6, margin:"0 0 14px" }}>{emptyBody}</p>
-          <button onClick={() => setComposing(true)} style={{ ...ctaBtn(true), width:"auto", padding:"0 24px", minHeight:44, fontSize:14 }}>Create post</button>
+          <button onClick={() => setComposing(true)} style={{ ...communityCta(true), width:"auto", padding:"0 24px", minHeight:44, fontSize:14 }}>Create post</button>
         </div>
       )}
       {(rows || []).map(p => p._k === "request"
         ? <RequestCard key={"r" + p.id} r={p} open={openId === p.id} onToggle={() => setOpenId(openId === p.id ? null : p.id)} onChanged={() => load(feed)} onOpenFrag={onOpenFrag} onSearch={onSearch}/>
         : <PostCard key={"p" + p.id} p={p} frag={p.fragrance_id ? frags[p.fragrance_id] : null} onOpenProfile={onOpenProfile} onOpenFrag={onOpenFrag} onChanged={() => load(feed)}/>)}
-      <button className="mos-fab" onClick={() => setComposing(true)} style={{ display:"flex", alignItems:"center", gap:8, height:52, padding:"0 22px", borderRadius:26, border:"none", background:"var(--accent)", color:"#fff", fontFamily:sans, fontSize:15, fontWeight:600, cursor:"pointer", boxShadow:"0 6px 20px rgba(0,0,0,0.25)" }}><span style={{ fontSize:22, lineHeight:1 }}>+</span>Create post</button>
+      <button className="mos-fab" onClick={() => setComposing(true)} style={{ display:"flex", alignItems:"center", gap:8, height:52, padding:"0 22px", borderRadius:26, border:"none", background:"var(--tangerine)", color:"var(--on-tang)", fontFamily:sans, fontSize:15, fontWeight:600, cursor:"pointer", boxShadow:"0 6px 20px rgba(0,0,0,0.25)" }}><span style={{ fontSize:22, lineHeight:1 }}>+</span>Create post</button>
       {composing && <PostComposer onClose={() => setComposing(false)} onSearch={onSearch} onPosted={() => { setComposing(false); setFeed("latest"); setRows(null); load("latest"); }}/>}
     </div>
   );
@@ -5992,6 +6144,9 @@ export default function SillageApp() {
   const [profileUsername, setProfileUsername] = useState(null);
   const [peopleOpen, setPeopleOpen] = useState(false);
   const [peopleQ, setPeopleQ] = useState("");
+  const [bellCount, setBellCount] = useState(0);
+  const [notifOpen, setNotifOpen] = useState(false);
+  const [notifTarget, setNotifTarget] = useState(null);
   const [userStatuses, setUserStatuses] = useState({});
   const [statusSets, setStatusSets] = useState({});
   const [finishes, setFinishes] = useState({});
@@ -6304,6 +6459,23 @@ export default function SillageApp() {
     });
     return () => { live = false; };
   }, [uid]);
+  // The bell: unread count, refreshed every minute and when you come back to the app.
+  useEffect(() => {
+    if (!uid) { setBellCount(0); return; }
+    let live = true;
+    const check = () => supabase.rpc("unread_notifications").then(({ data, error }) => { if (live && !error) setBellCount(Number(data) || 0); });
+    check();
+    const t = setInterval(check, 60000);
+    const vis = () => { if (document.visibilityState === "visible") check(); };
+    document.addEventListener("visibilitychange", vis);
+    return () => { live = false; clearInterval(t); document.removeEventListener("visibilitychange", vis); };
+  }, [uid]);
+  function openNotification(n) {
+    setNotifOpen(false);
+    if (n.kind === "follow" && n.username) openProfile(n.username);
+    else if (n.kind === "request_reply" && n.request_id) setNotifTarget({ kind: "request", id: n.request_id });
+    else if (n.post_id) setNotifTarget({ kind: "post", id: n.post_id });
+  }
   async function toggleFollow(username) {
     const key = String(username || "").toLowerCase();
     if (key === "memoir" || !uid) return; // can't unfollow the official account
@@ -6417,10 +6589,14 @@ export default function SillageApp() {
           <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", padding:"14px 0 12px", gap:10 }}>
             <Logo fluid/>
             <div style={{ display:"flex", alignItems:"center", gap:6, flexShrink:0 }}>
-              <button onClick={() => setShowSuggest(true)} style={{ fontFamily:sans, fontSize:"var(--ctl-fs)", fontWeight:500, height:"var(--ctl)", padding:"0 16px", borderRadius:20, border:`1px solid ${T.rule}`, background:T.white, color:T.mid, cursor:"pointer", whiteSpace:"nowrap" }}>+ Suggest</button>
+              <button className="mos-suggest" onClick={() => setShowSuggest(true)} aria-label="Suggest a fragrance" title="Suggest a fragrance" style={{ fontFamily:sans, fontSize:"var(--ctl-fs)", fontWeight:500, height:"var(--ctl)", padding:"0 16px", borderRadius:20, border:`1px solid ${T.rule}`, background:T.white, color:T.mid, cursor:"pointer", whiteSpace:"nowrap" }}>+<span className="mos-suggest-label"> Suggest</span></button>
               <span className="mos-hide-sm" style={{ display:"contents" }}><ThemeToggle size="var(--ctl)"/></span>
               <button onClick={openPeople} title="Find people" aria-label="Find people" style={{ width:"var(--ctl)", height:"var(--ctl)", borderRadius:"50%", padding:0, background:T.white, border:`1px solid ${T.rule}`, cursor:"pointer", flexShrink:0, display:"flex", alignItems:"center", justifyContent:"center" }}>
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" style={{ color:T.ink, display:"block" }}><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c0-3.6 2.9-6 6.5-6 1.5 0 2.8.4 3.9 1.1"/><circle cx="17" cy="16.5" r="3"/><path d="M19.2 18.7L21.5 21"/></svg>
+              </button>
+              <button onClick={() => setNotifOpen(true)} title="Notifications" aria-label={bellCount > 0 ? "Notifications, " + bellCount + " new" : "Notifications"} style={{ position:"relative", width:"var(--ctl)", height:"var(--ctl)", borderRadius:"50%", padding:0, background:T.white, border:`1px solid ${T.rule}`, cursor:"pointer", flexShrink:0, display:"flex", alignItems:"center", justifyContent:"center" }}>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" style={{ color:T.ink, display:"block" }}><path d="M18 8a6 6 0 10-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg>
+                {bellCount > 0 && <span aria-hidden="true" style={{ position:"absolute", top:-3, right:-3, minWidth:17, height:17, padding:"0 4px", boxSizing:"border-box", borderRadius:9, background:"var(--tangerine)", color:"var(--on-tang)", fontFamily:sans, fontSize:10, fontWeight:700, display:"flex", alignItems:"center", justifyContent:"center", lineHeight:1 }}>{bellCount > 9 ? "9+" : bellCount}</span>}
               </button>
               <button
                 onClick={() => currentUser && openProfile(currentUser.username)}
@@ -6506,6 +6682,9 @@ export default function SillageApp() {
       {saveIssue && <div role="status" style={{ position:"fixed", left:16, right:16, bottom:"calc(84px + env(safe-area-inset-bottom))", zIndex:80, maxWidth:520, margin:"0 auto", background:T.black, color:T.white, borderRadius:14, padding:"12px 16px", fontFamily:sans, fontSize:13, lineHeight:1.5 }}>{saveIssue}</div>}
       {brandRef && <BrandModal brand={brandRef} onClose={closeAll} onBack={goBack} onOpenFrag={openFrag}/>}
       {showSuggest && <SuggestModal onClose={() => setShowSuggest(false)} currentUser={currentUser}/>}
+      {notifOpen && <NotificationsSheet onClose={() => setNotifOpen(false)} onOpen={openNotification} onRead={() => setBellCount(0)}/>}
+      {notifTarget && notifTarget.kind === "post" && <PostThread postId={notifTarget.id} onClose={() => setNotifTarget(null)} onOpenProfile={openProfile} onOpenFrag={openFrag}/>}
+      {notifTarget && notifTarget.kind === "request" && <RequestSheet requestId={notifTarget.id} onClose={() => setNotifTarget(null)} onOpenFrag={openFrag} onSearch={searchFrags}/>}
       {peopleOpen && <PeopleSearch initialQ={peopleQ} onQ={setPeopleQ} onClose={closeAll} onBack={goBack} onOpenProfile={openProfile} following={following} onToggleFollow={toggleFollow}/>}
       {profileUsername && (
         <ProfileModal
