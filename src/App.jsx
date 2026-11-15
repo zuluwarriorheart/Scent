@@ -3906,10 +3906,10 @@ function ImportSheet({ fragrances, existing, onApply, onClose }) {
           <button onClick={onClose} aria-label="Close" style={{ background:"none", border:"none", fontSize:20, color:T.mid, cursor:"pointer" }}>✕</button>
         </div>
         {step === "pick" && <>
-          <p style={{ fontFamily:sans, fontSize:14, color:T.mid, lineHeight:1.6, margin:"0 0 14px" }}>Already tracking fragrances in a spreadsheet, or on Parfumo, Basenotes, Fragrantica or Sniff? Drop in whatever you have, and we'll match it to our fragrances and add it for you.</p>
+          <p style={{ fontFamily:sans, fontSize:14, color:T.mid, lineHeight:1.6, margin:"0 0 14px" }}>Already tracking fragrances in a spreadsheet or on another fragrance site? Drop in what you have, and we'll match it to our fragrances and add it for you. Many sites let you export your list, so it's worth looking in your account settings.</p>
           <input ref={fileRef} type="file" accept=".csv,.tsv,.txt,.xlsx,.json,text/csv,text/plain" onChange={onFile} style={{ display:"none" }}/>
           <button onClick={() => fileRef.current && fileRef.current.click()} disabled={busy} style={{ ...communityCta(true), width:"100%", marginBottom:10 }}>{busy ? "Reading…" : "Choose a file (.xlsx, .csv, .txt)"}</button>
-          <p style={{ fontFamily:sans, fontSize:12, color:T.faint, margin:"0 0 16px", lineHeight:1.6 }}>If a site lets you export your list, use that file. If it doesn't, open your list on the site, select it, copy, and paste it below. One fragrance per line works fine, e.g. “Creed Aventus”.</p>
+          <p style={{ fontFamily:sans, fontSize:12, color:T.faint, margin:"0 0 16px", lineHeight:1.6 }}>If a site doesn't offer an export, open your list there, select it, copy, and paste it below. One fragrance per line works fine, e.g. “Creed Aventus”.</p>
           <textarea value={paste} onChange={e => setPaste(e.target.value)} rows={5} placeholder={"Paste your list here\nCreed – Aventus\nByredo – Gypsy Water"} style={{ ...FIELD, width:"100%", boxSizing:"border-box", resize:"vertical", fontSize:14 }}/>
           <button onClick={() => paste.trim() ? load(impParseDelimited(paste)) : setErr("Paste your list first, or choose a file.")} style={{ ...ghostBtn, width:"100%", marginTop:10 }}>Use pasted list</button>
           {err && <p style={{ fontFamily:sans, fontSize:13, color:T.bad, margin:"12px 0 0" }}>{err}</p>}
