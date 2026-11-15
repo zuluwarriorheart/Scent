@@ -950,6 +950,7 @@ function FooterLinks({ dark = false }) {
     { label:"Terms of Service", action:() => setLegal("terms") },
     { label:"Privacy Policy", action:() => setLegal("privacy") },
     { label:"How we earn", action:() => setLegal("affiliate") },
+    { label:"For brands", action:() => { window.location.href = "/brands"; } },
   ];
   return (
     <>
@@ -967,6 +968,26 @@ function FooterLinks({ dark = false }) {
       </div>
       {legal && <LegalModal type={legal} onClose={() => setLegal(null)}/>}
     </>
+  );
+}
+
+// Form building blocks. Kept at module level so inputs keep focus while typing.
+function FormField({ label, req, hint, children }) {
+  return (
+    <label style={{ display:"block", marginBottom:16 }}>
+      <span style={{ display:"block", fontFamily:sans, fontSize:11, textTransform:"uppercase", letterSpacing:"0.12em", color:T.mid, margin:"0 0 7px" }}>{label}{req && <span style={{ color:T.accent }}> *</span>}</span>
+      {children}
+      {hint && <span style={{ display:"block", fontFamily:sans, fontSize:12, color:T.faint, margin:"6px 0 0", lineHeight:1.5 }}>{hint}</span>}
+    </label>
+  );
+}
+function FormSec({ title, sub, children, gap = 40 }) {
+  return (
+    <section style={{ marginBottom:gap }}>
+      <h3 style={{ fontFamily:serif, fontSize:"clamp(22px, 2vw, 28px)", fontWeight:400, letterSpacing:-0.3, color:T.black, margin:"0 0 4px" }}>{title}</h3>
+      {sub ? <p style={{ fontFamily:sans, fontSize:13, color:T.mid, lineHeight:1.6, margin:"0 0 18px" }}>{sub}</p> : <div style={{ height:14 }}/>}
+      {children}
+    </section>
   );
 }
 
@@ -1023,21 +1044,6 @@ function SuggestModal({ onClose, currentUser }) {
     }
     setBusy(false);
   }
-  const Field=({label,req,hint,children})=>(
-    <label style={{display:"block",marginBottom:16}}>
-      <span style={{display:"block",fontFamily:sans,fontSize:11,textTransform:"uppercase",letterSpacing:"0.12em",color:T.mid,margin:"0 0 7px"}}>{label}{req&&<span style={{color:T.accent}}> *</span>}</span>
-      {children}
-      {hint&&<span style={{display:"block",fontFamily:sans,fontSize:12,color:T.faint,margin:"6px 0 0",lineHeight:1.5}}>{hint}</span>}
-    </label>
-  );
-  const Sec=({title,sub,children})=>(
-    <section>
-      <h3 style={{fontFamily:serif,fontSize:"clamp(20px, 1.8vw, 26px)",fontWeight:400,letterSpacing:-0.3,color:T.black,margin:"0 0 4px"}}>{title}</h3>
-      {sub&&<p style={{fontFamily:sans,fontSize:13,color:T.mid,lineHeight:1.6,margin:"0 0 18px"}}>{sub}</p>}
-      {!sub&&<div style={{height:14}}/>}
-      {children}
-    </section>
-  );
   const input=(k,ph,props={})=><input className="mos-in" value={form[k]} onChange={e=>set(k,e.target.value)} placeholder={ph} {...props}/>;
   const choice=(k,opts)=>(
     <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
@@ -1054,7 +1060,7 @@ function SuggestModal({ onClose, currentUser }) {
           <BackBtn onBack={onClose}/>
           <p style={{ fontFamily:sans, fontSize:11, fontWeight:600, textTransform:"uppercase", letterSpacing:"0.18em", color:T.accent, margin:"0 0 6px" }}>Community</p>
           <h2 style={{ fontFamily:serif, fontSize:"clamp(30px, 3vw, 46px)", fontWeight:400, letterSpacing:-0.6, color:T.black, margin:0, paddingRight:40 }}>Suggest a fragrance</h2>
-          <p style={{ fontFamily:sans, fontSize:"clamp(14px, 1.1vw, 16px)", color:T.mid, lineHeight:1.65, margin:"10px 0 0", maxWidth:640 }}>Can't find it? Tell us what you know. The name, house, house website, country, at least one note and a bottle photo are required, and every extra detail saves us a search. A person reviews each suggestion before it goes in.</p>
+          <p style={{ fontFamily:sans, fontSize:"clamp(14px, 1.1vw, 16px)", color:T.mid, lineHeight:1.65, margin:"10px 0 0", maxWidth:640 }}>Can't find it? Tell us what you know. The name, house, house website, country, at least one note and a bottle photo are required, and every extra detail saves us a search. A person reviews each suggestion before it goes in. <a href="/brands" style={{ color:T.ink }}>Are you a brand? Submit your whole house here.</a></p>
         </div>
         {submitted ? (
           <div className="mos-pad" style={{ padding:"56px 24px 72px", textAlign:"center" }}>
@@ -1069,61 +1075,61 @@ function SuggestModal({ onClose, currentUser }) {
           <div className="mos-pad" style={{ padding:"28px 24px 56px" }}>
             <div className="mos-formgrid">
               <div>
-                <Sec title="The fragrance" sub="What goes at the top of the card.">
-                  <Field label="Fragrance name" req>{input("name","e.g. Tobacco Oud")}</Field>
-                  <Field label="House" req>{input("house","e.g. Maison Example")}</Field>
+                <FormSec gap={0} title="The fragrance" sub="What goes at the top of the card.">
+                  <FormField label="Fragrance name" req>{input("name","e.g. Tobacco Oud")}</FormField>
+                  <FormField label="House" req>{input("house","e.g. Maison Example")}</FormField>
                   <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12}}>
-                    <Field label="Year">{input("year","e.g. 2018",{inputMode:"numeric"})}</Field>
-                    <Field label="Concentration">
+                    <FormField label="Year">{input("year","e.g. 2018",{inputMode:"numeric"})}</FormField>
+                    <FormField label="Concentration">
                       <select className="mos-in" value={form.concentration} onChange={e=>set("concentration",e.target.value)}>
                         <option value="">Select</option>
                         {["Eau de Parfum","Eau de Toilette","Parfum","Extrait","Eau de Cologne","Eau Fraîche"].map(c=><option key={c}>{c}</option>)}
                       </select>
-                    </Field>
+                    </FormField>
                   </div>
-                  <Field label="Perfumer">{input("perfumer","Nose or creator, if known")}</Field>
-                  <Field label="Family">{input("family","e.g. Woody, Floral, Amber")}</Field>
-                  <Field label="Price tier">{choice("priceTier",[{val:"Mass-market",label:"Mass-market"},{val:"Prestige",label:"Prestige"},{val:"Luxury",label:"Luxury"}])}</Field>
-                </Sec>
+                  <FormField label="Perfumer">{input("perfumer","Nose or creator, if known")}</FormField>
+                  <FormField label="Family">{input("family","e.g. Woody, Floral, Amber")}</FormField>
+                  <FormField label="Price tier">{choice("priceTier",[{val:"Mass-market",label:"Mass-market"},{val:"Prestige",label:"Prestige"},{val:"Luxury",label:"Luxury"}])}</FormField>
+                </FormSec>
                 <div style={{height:34}}/>
-                <Sec title="Notes and accords" sub="Separate each with a comma. At least one note is required; leave blank what you don't know.">
-                  <Field label="Top notes" req hint="Add at least one note in top, heart or base.">{input("top","e.g. Bergamot, Saffron")}</Field>
-                  <Field label="Heart notes">{input("heart","e.g. Rose, Iris")}</Field>
-                  <Field label="Base notes">{input("base","e.g. Sandalwood, Musk")}</Field>
-                  <Field label="Main accords" hint="Up to five, strongest first. e.g. Woody, Floral, Powdery.">{input("accords","Woody, Floral, Powdery")}</Field>
-                </Sec>
+                <FormSec gap={0} title="Notes and accords" sub="Separate each with a comma. At least one note is required; leave blank what you don't know.">
+                  <FormField label="Top notes" req hint="Add at least one note in top, heart or base.">{input("top","e.g. Bergamot, Saffron")}</FormField>
+                  <FormField label="Heart notes">{input("heart","e.g. Rose, Iris")}</FormField>
+                  <FormField label="Base notes">{input("base","e.g. Sandalwood, Musk")}</FormField>
+                  <FormField label="Main accords" hint="Up to five, strongest first. e.g. Woody, Floral, Powdery.">{input("accords","Woody, Floral, Powdery")}</FormField>
+                </FormSec>
               </div>
               <div>
-                <Sec title="The house" sub="Shown next to the house name on the card.">
-                  <Field label="House website" req>{input("website","maisonexample.com",{inputMode:"url",autoCapitalize:"none"})}</Field>
-                  <Field label="Country" req>{input("country","Where the house is based")}</Field>
-                  <Field label="Ownership">{choice("ownershipStatus",[{val:"independent",label:"Independent"},{val:"conglomerate",label:"Conglomerate-owned"}])}</Field>
+                <FormSec gap={0} title="The house" sub="Shown next to the house name on the card.">
+                  <FormField label="House website" req>{input("website","maisonexample.com",{inputMode:"url",autoCapitalize:"none"})}</FormField>
+                  <FormField label="Country" req>{input("country","Where the house is based")}</FormField>
+                  <FormField label="Ownership">{choice("ownershipStatus",[{val:"independent",label:"Independent"},{val:"conglomerate",label:"Conglomerate-owned"}])}</FormField>
                   {form.ownershipStatus==="conglomerate"&&(
                     <div style={{display:"grid",gridTemplateColumns:"1.6fr 1fr",gap:12}}>
-                      <Field label="Parent company">{input("ownershipParent","e.g. LVMH, Puig")}</Field>
-                      <Field label="Year acquired">{input("ownershipYear","If known",{inputMode:"numeric"})}</Field>
+                      <FormField label="Parent company">{input("ownershipParent","e.g. LVMH, Puig")}</FormField>
+                      <FormField label="Year acquired">{input("ownershipYear","If known",{inputMode:"numeric"})}</FormField>
                     </div>
                   )}
-                </Sec>
+                </FormSec>
                 <div style={{height:34}}/>
-                <Sec title="The story" sub="A line or two in your own words.">
-                  <Field label="What is it about?"><textarea className="mos-in" rows={3} value={form.story} onChange={e=>set("story",e.target.value)} placeholder="The idea, the inspiration, how it wears" style={{resize:"vertical",lineHeight:1.6}}/></Field>
-                  <Field label="Why should we add it?"><textarea className="mos-in" rows={2} value={form.why} onChange={e=>set("why",e.target.value)} placeholder="Optional" style={{resize:"vertical",lineHeight:1.6}}/></Field>
-                </Sec>
+                <FormSec gap={0} title="The story" sub="A line or two in your own words.">
+                  <FormField label="What is it about?"><textarea className="mos-in" rows={3} value={form.story} onChange={e=>set("story",e.target.value)} placeholder="The idea, the inspiration, how it wears" style={{resize:"vertical",lineHeight:1.6}}/></FormField>
+                  <FormField label="Why should we add it?"><textarea className="mos-in" rows={2} value={form.why} onChange={e=>set("why",e.target.value)} placeholder="Optional" style={{resize:"vertical",lineHeight:1.6}}/></FormField>
+                </FormSec>
                 <div style={{height:34}}/>
-                <Sec title="Samples and sources" sub="Helps us fill in the rest of the card.">
-                  <Field label="Where can people get a sample?" hint="A retailer or the house's own shop, if you know one.">{input("sampleWhere","Retailer name or link")}</Field>
-                  <Field label="Link to the fragrance">{input("sourceUrl","Brand page or reference link",{inputMode:"url",autoCapitalize:"none"})}</Field>
-                  <Field label="Bottle photo" req hint="Upload your own photo of the bottle. Please don't use images from the brand's website or anywhere else online: they're protected by copyright. Brands can send us approved images directly.">
+                <FormSec gap={0} title="Samples and sources" sub="Helps us fill in the rest of the card.">
+                  <FormField label="Where can people get a sample?" hint="A retailer or the house's own shop, if you know one.">{input("sampleWhere","Retailer name or link")}</FormField>
+                  <FormField label="Link to the fragrance">{input("sourceUrl","Brand page or reference link",{inputMode:"url",autoCapitalize:"none"})}</FormField>
+                  <FormField label="Bottle photo" req hint="Upload your own photo of the bottle. Please don't use images from the brand's website or anywhere else online: they're protected by copyright. Brands can send us approved images directly.">
                     <input type="file" accept="image/*" onChange={e=>pickPhoto(e.target.files&&e.target.files[0])} style={{fontFamily:sans,fontSize:14,color:T.ink,maxWidth:"100%"}}/>
-                  </Field>
+                  </FormField>
                   {photo&&<img src={photo.url} alt="Your bottle photo" style={{width:"100%",maxWidth:240,borderRadius:12,border:`1px solid ${T.rule}`,display:"block",margin:"0 0 12px"}}/>}
                   <label style={{display:"flex",gap:10,alignItems:"flex-start",margin:"0 0 18px",fontFamily:sans,fontSize:13,color:T.mid,lineHeight:1.5,cursor:"pointer"}}>
                     <input type="checkbox" checked={ownPhoto} onChange={e=>setOwnPhoto(e.target.checked)} style={{marginTop:3,width:18,height:18,flex:"none"}}/>
                     <span>This is my own photo. It isn't copied from the brand's website or anywhere else.</span>
                   </label>
-                  <Field label="Your first review"><textarea className="mos-in" rows={3} value={form.firstReview} onChange={e=>set("firstReview",e.target.value)} placeholder="Optional. How does it open and dry down?" style={{resize:"vertical",lineHeight:1.6}}/></Field>
-                </Sec>
+                  <FormField label="Your first review"><textarea className="mos-in" rows={3} value={form.firstReview} onChange={e=>set("firstReview",e.target.value)} placeholder="Optional. How does it open and dry down?" style={{resize:"vertical",lineHeight:1.6}}/></FormField>
+                </FormSec>
               </div>
             </div>
             <div style={{ marginTop:36, maxWidth:420 }}>
@@ -4606,6 +4612,258 @@ function LoadingScreen() {
   );
 }
 
+// ─── FOR BRANDS: public submission page (memoironskin.com/brands), no account needed ───
+const DIVERSITY_OPTS = ["Black-owned","Asian-owned","South Asian-owned","Latino / Hispanic-owned","Middle Eastern-owned","Indigenous-owned","POC-owned","Woman-owned","LGBTQ+-owned","None of these"];
+async function compressPhoto(file, max = 2000, q = 0.9) {
+  const url = URL.createObjectURL(file);
+  try {
+    const img = await new Promise((res, rej) => { const i = new Image(); i.onload = () => res(i); i.onerror = rej; i.src = url; });
+    const sc = Math.min(1, max / Math.max(img.width, img.height));
+    const c = document.createElement("canvas"); c.width = Math.round(img.width * sc); c.height = Math.round(img.height * sc);
+    const x = c.getContext("2d"); x.fillStyle = "#fff"; x.fillRect(0, 0, c.width, c.height); x.drawImage(img, 0, 0, c.width, c.height);
+    const blob = await new Promise(r => c.toBlob(r, "image/jpeg", q));
+    if (!blob) throw new Error("encode");
+    return blob;
+  } finally { URL.revokeObjectURL(url); }
+}
+const newBrandFrag = () => ({ k: Math.random().toString(36).slice(2), name:"", year:"", perfumer:"", concentration:"", family:"", top:"", heart:"", base:"", accords:"", story:"", photo:null });
+
+function BrandSubmitPage() {
+  const [c, setC] = useState({ name:"", role:"", email:"" });
+  const [h, setH] = useState({ name:"", website:"", country:"", founded:"", founders:"", ownershipStatus:"", parent:"", diversity:[], diversityOther:"", brandType:"", priceTier:"", story:"", kitName:"", kitPrice:"", kitUrl:"", samples:"", travel:"", travelUrl:"", affiliateUrl:"", pressEmail:"", instagram:"", pressKitUrl:"" });
+  const [fr, setFr] = useState([newBrandFrag()]);
+  const [auth1, setAuth1] = useState(false);
+  const [auth2, setAuth2] = useState(false);
+  const [trap, setTrap] = useState("");
+  const [busy, setBusy] = useState("");
+  const [err, setErr] = useState("");
+  const [done, setDone] = useState(false);
+  const setHF = (k, v) => setH(p => ({ ...p, [k]: v }));
+  const setCF = (k, v) => setC(p => ({ ...p, [k]: v }));
+  const setF = (i, k, v) => setFr(p => p.map((f, j) => j === i ? { ...f, [k]: v } : f));
+  const toggleDiv = d => setH(p => { const on = p.diversity.includes(d); let next = on ? p.diversity.filter(x => x !== d) : [...p.diversity, d]; if (!on && d === "None of these") next = ["None of these"]; if (!on && d !== "None of these") next = next.filter(x => x !== "None of these"); return { ...p, diversity: next }; });
+  async function pick(i, file) {
+    if (!file) return; setErr("");
+    try { const blob = await compressPhoto(file); setFr(p => p.map((f, j) => { if (j !== i) return f; if (f.photo) URL.revokeObjectURL(f.photo.url); return { ...f, photo: { blob, url: URL.createObjectURL(blob) } }; })); }
+    catch (e) { setErr("We couldn't read one of the photos. Try a JPG or PNG."); }
+  }
+  async function submit() {
+    const miss = [];
+    if (!c.name.trim()) miss.push("your name");
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(c.email.trim())) miss.push("a valid email");
+    if (!h.name.trim()) miss.push("house name");
+    if (!/\S+\.\S+/.test(h.website.trim())) miss.push("house website");
+    if (!h.country.trim()) miss.push("country");
+    if (!h.ownershipStatus) miss.push("ownership");
+    if (!h.diversity.length && !h.diversityOther.trim()) miss.push("diversity (choose \"None of these\" if it doesn't apply)");
+    fr.forEach((f, i) => {
+      const n = f.name.trim() || `fragrance ${i + 1}`, m = [];
+      if (!f.name.trim()) m.push("name"); if (!f.year.trim()) m.push("year"); if (!f.perfumer.trim()) m.push("perfumer");
+      if (!(f.top.trim() || f.heart.trim() || f.base.trim())) m.push("notes"); if (!f.photo) m.push("bottle photo");
+      if (m.length) miss.push(`${n}: ${m.join(", ")}`);
+    });
+    if (!auth1 || !auth2) miss.push("both permission boxes");
+    if (miss.length) { setErr("Still needed: " + miss.join("; ") + "."); return; }
+    if (trap) { setDone(true); return; } // spam trap filled in: pretend success
+    setErr("");
+    try {
+      const id = (crypto.randomUUID ? crypto.randomUUID() : "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, ch => { const r = Math.random() * 16 | 0; return (ch === "x" ? r : (r & 3 | 8)).toString(16); }));
+      const out = [];
+      for (let i = 0; i < fr.length; i++) {
+        setBusy(`Uploading photo ${i + 1} of ${fr.length}…`);
+        const f = fr[i], path = `${id}/f${i + 1}-${Math.random().toString(36).slice(2, 8)}.jpg`;
+        const up = await supabase.storage.from("brand-submissions").upload(path, f.photo.blob, { contentType:"image/jpeg" });
+        if (up.error) throw up.error;
+        const { photo, k, ...rest } = f; out.push({ ...rest, imagePath: path });
+      }
+      setBusy("Sending…");
+      const ins = await supabase.from("brand_submissions").insert({ id, contact: c, house: h, fragrances: out, consent: true });
+      if (ins.error) throw ins.error;
+      setDone(true);
+    } catch (e) { console.error("Brand submission failed:", e); setErr("That did not send. Please try again, or email team@memoironskin.com and we will help."); }
+    setBusy("");
+  }
+  const inp = (get, set, k, ph, props = {}) => <input className="mos-in" value={get[k]} onChange={e => set(k, e.target.value)} placeholder={ph} {...props}/>;
+  const two = { display:"grid", gridTemplateColumns:"1fr 1fr", gap:12 };
+  const choice = (val, opts, on) => (
+    <div style={{ display:"flex", gap:8, flexWrap:"wrap" }}>
+      {opts.map(o => { const sel = val === o.val; return <button type="button" key={o.val} onClick={() => on(sel ? "" : o.val)} aria-pressed={sel} style={{ flex:"1 1 auto", minHeight:46, padding:"0 16px", borderRadius:10, border:`1px solid ${sel ? T.black : T.rule}`, background:sel ? T.black : T.white, color:sel ? T.white : T.ink, fontFamily:sans, fontSize:14, fontWeight:sel ? 600 : 400, cursor:"pointer" }}>{o.label}</button>; })}
+    </div>
+  );
+  const chk = (on, set, children) => (
+    <label style={{ display:"flex", gap:10, alignItems:"flex-start", margin:"0 0 14px", fontFamily:sans, fontSize:13.5, color:T.ink, lineHeight:1.55, cursor:"pointer" }}>
+      <input type="checkbox" checked={on} onChange={e => set(e.target.checked)} style={{ marginTop:3, width:18, height:18, flex:"none" }}/><span>{children}</span>
+    </label>
+  );
+  const wrap = { maxWidth:720, margin:"0 auto", padding:"28px 20px 72px" };
+  if (done) return (
+    <div style={{ ...wrap, textAlign:"center", paddingTop:80 }}>
+      <Wordmark size={28}/>
+      <h2 style={{ fontFamily:serif, fontSize:"clamp(30px, 4vw, 44px)", fontWeight:400, color:T.black, margin:"36px 0 12px" }}>Thank you</h2>
+      <p style={{ fontFamily:sans, fontSize:15, color:T.mid, lineHeight:1.7, maxWidth:460, margin:"0 auto 28px" }}><strong style={{ color:T.ink }}>{h.name}</strong> is in our review queue. A person will check everything and write to {c.email} if we need anything. Nothing goes live until we've reviewed it.</p>
+      <a href="/" style={{ fontFamily:sans, fontSize:14, color:T.ink }}>Back to Memoir on Skin</a>
+    </div>
+  );
+  return (
+    <div style={wrap}>
+      <a href="/" aria-label="Memoir on Skin home" style={{ textDecoration:"none" }}><Wordmark size={26}/></a>
+      <p style={{ fontFamily:sans, fontSize:11, fontWeight:600, textTransform:"uppercase", letterSpacing:"0.18em", color:T.accent, margin:"34px 0 6px" }}>For brands</p>
+      <h1 style={{ fontFamily:serif, fontSize:"clamp(32px, 4.4vw, 52px)", fontWeight:400, letterSpacing:-0.8, color:T.black, margin:"0 0 12px", lineHeight:1.1 }}>Add your house to Memoir on Skin</h1>
+      <p style={{ fontFamily:sans, fontSize:15, color:T.mid, lineHeight:1.7, margin:"0 0 10px" }}>Memoir on Skin is a scent journal and sample-first guide to niche and indie fragrance. Members are sent to your website first for discovery sets and samples. Tell us about your house and every fragrance, and upload your own bottle images. No account needed.</p>
+      <p style={{ fontFamily:sans, fontSize:13, color:T.faint, lineHeight:1.6, margin:"0 0 36px" }}>A person reviews every submission before anything is published. Some links on our site may be affiliate links; it never affects what we feature.</p>
+
+      <FormSec title="About you" sub="So we can reach you.">
+        <FormField label="Your name" req>{inp(c, setCF, "name", "Full name")}</FormField>
+        <div style={two}>
+          <FormField label="Role">{inp(c, setCF, "role", "e.g. Founder, PR")}</FormField>
+          <FormField label="Email" req>{inp(c, setCF, "email", "you@brand.com", { type:"email", inputMode:"email", autoCapitalize:"none" })}</FormField>
+        </div>
+      </FormSec>
+
+      <FormSec title="The house" sub="Shown on your brand page.">
+        <FormField label="House name" req>{inp(h, setHF, "name", "e.g. Maison Example")}</FormField>
+        <FormField label="House website" req>{inp(h, setHF, "website", "maisonexample.com", { inputMode:"url", autoCapitalize:"none" })}</FormField>
+        <div style={two}>
+          <FormField label="Country" req>{inp(h, setHF, "country", "Where the house is based")}</FormField>
+          <FormField label="Year founded">{inp(h, setHF, "founded", "e.g. 2016", { inputMode:"numeric" })}</FormField>
+        </div>
+        <FormField label="Founder(s) and perfumer(s)">{inp(h, setHF, "founders", "Names, if you'd like them shown")}</FormField>
+        <FormField label="Ownership" req>{choice(h.ownershipStatus, [{ val:"independent", label:"Independent" }, { val:"conglomerate", label:"Owned by a group" }], v => setHF("ownershipStatus", v))}</FormField>
+        {h.ownershipStatus === "conglomerate" && <FormField label="Parent company">{inp(h, setHF, "parent", "e.g. LVMH, Puig")}</FormField>}
+        <FormField label="Diversity" req hint="Choose all that apply. We only show what you tell us.">
+          <div style={{ display:"flex", flexWrap:"wrap", gap:8 }}>
+            {DIVERSITY_OPTS.map(d => { const on = h.diversity.includes(d); return <button type="button" key={d} onClick={() => toggleDiv(d)} aria-pressed={on} style={{ minHeight:42, padding:"0 14px", borderRadius:21, border:`1px solid ${on ? T.black : T.rule}`, background:on ? T.black : T.white, color:on ? T.white : T.ink, fontFamily:sans, fontSize:13.5, cursor:"pointer" }}>{d}</button>; })}
+          </div>
+          <input className="mos-in" style={{ marginTop:10 }} value={h.diversityOther} onChange={e => setHF("diversityOther", e.target.value)} placeholder="Other (please describe)"/>
+        </FormField>
+        <FormField label="Brand type">{choice(h.brandType, [{ val:"Indie", label:"Indie" }, { val:"Niche", label:"Niche" }, { val:"Designer", label:"Designer" }], v => setHF("brandType", v))}</FormField>
+        <FormField label="Price tier">{choice(h.priceTier, [{ val:"Mass-market", label:"Mass-market" }, { val:"Prestige", label:"Prestige" }, { val:"Luxury", label:"Luxury" }], v => setHF("priceTier", v))}</FormField>
+        <FormField label="Your story"><textarea className="mos-in" rows={4} value={h.story} onChange={e => setHF("story", e.target.value)} placeholder="A few lines about the house, in your own words" style={{ resize:"vertical", lineHeight:1.6 }}/></FormField>
+      </FormSec>
+
+      <FormSec title="Samples and kits" sub="We send members to you first, so tell us what you offer.">
+        <div style={two}>
+          <FormField label="Discovery set name">{inp(h, setHF, "kitName", "e.g. Discovery Set")}</FormField>
+          <FormField label="Price">{inp(h, setHF, "kitPrice", "e.g. $45 or €37")}</FormField>
+        </div>
+        <FormField label="Discovery set link">{inp(h, setHF, "kitUrl", "Link to the set on your site", { inputMode:"url", autoCapitalize:"none" })}</FormField>
+        <FormField label="Individual samples">{choice(h.samples, [{ val:"yes", label:"Yes" }, { val:"no", label:"No" }], v => setHF("samples", v))}</FormField>
+        <FormField label="Travel sizes">{choice(h.travel, [{ val:"yes", label:"Yes" }, { val:"no", label:"No" }], v => setHF("travel", v))}</FormField>
+        {h.travel === "yes" && <FormField label="Travel size link">{inp(h, setHF, "travelUrl", "Link", { inputMode:"url", autoCapitalize:"none" })}</FormField>}
+        <FormField label="Affiliate program link" hint="If you have one. Optional.">{inp(h, setHF, "affiliateUrl", "Link", { inputMode:"url", autoCapitalize:"none" })}</FormField>
+        <div style={two}>
+          <FormField label="Press contact email">{inp(h, setHF, "pressEmail", "press@brand.com", { type:"email", autoCapitalize:"none" })}</FormField>
+          <FormField label="Instagram">{inp(h, setHF, "instagram", "@handle", { autoCapitalize:"none" })}</FormField>
+        </div>
+        <FormField label="Press kit link" hint="Optional. A link to a folder with extra images or a full catalogue helps us.">{inp(h, setHF, "pressKitUrl", "Link", { inputMode:"url", autoCapitalize:"none" })}</FormField>
+      </FormSec>
+
+      <FormSec title="Your fragrances" sub="Add every fragrance you'd like on Memoir on Skin. Each one needs its name, year, perfumer, at least one note and a bottle image.">
+        {fr.map((f, i) => (
+          <div key={f.k} style={{ background:T.lift, border:`1px solid ${T.rule}`, borderRadius:16, padding:18, marginBottom:16 }}>
+            <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:14 }}>
+              <span style={{ fontFamily:sans, fontSize:11, letterSpacing:"0.14em", textTransform:"uppercase", color:T.mid, fontWeight:600 }}>Fragrance {i + 1}</span>
+              {fr.length > 1 && <button type="button" onClick={() => setFr(p => p.filter((_, j) => j !== i))} style={{ background:"none", border:"none", color:T.mid, fontFamily:sans, fontSize:13, cursor:"pointer", textDecoration:"underline" }}>Remove</button>}
+            </div>
+            <FormField label="Fragrance name" req>{inp(f, (k, v) => setF(i, k, v), "name", "e.g. Tobacco Oud")}</FormField>
+            <div style={two}>
+              <FormField label="Year" req>{inp(f, (k, v) => setF(i, k, v), "year", "e.g. 2021", { inputMode:"numeric" })}</FormField>
+              <FormField label="Concentration">
+                <select className="mos-in" value={f.concentration} onChange={e => setF(i, "concentration", e.target.value)}><option value="">Select</option>{["Eau de Parfum","Eau de Toilette","Parfum","Extrait","Eau de Cologne","Eau Fraîche"].map(x => <option key={x}>{x}</option>)}</select>
+              </FormField>
+            </div>
+            <FormField label="Perfumer" req hint="Write &quot;In-house&quot; if there is no named perfumer.">{inp(f, (k, v) => setF(i, k, v), "perfumer", "Nose or creator")}</FormField>
+            <FormField label="Family">{inp(f, (k, v) => setF(i, k, v), "family", "e.g. Woody, Floral, Amber")}</FormField>
+            <FormField label="Top notes" req hint="Separate each with a comma. At least one note across top, heart and base.">{inp(f, (k, v) => setF(i, k, v), "top", "e.g. Bergamot, Saffron")}</FormField>
+            <FormField label="Heart notes">{inp(f, (k, v) => setF(i, k, v), "heart", "e.g. Rose, Iris")}</FormField>
+            <FormField label="Base notes">{inp(f, (k, v) => setF(i, k, v), "base", "e.g. Sandalwood, Musk")}</FormField>
+            <FormField label="Main accords" hint="Up to five, strongest first.">{inp(f, (k, v) => setF(i, k, v), "accords", "Woody, Floral, Powdery")}</FormField>
+            <FormField label="About this fragrance"><textarea className="mos-in" rows={3} value={f.story} onChange={e => setF(i, "story", e.target.value)} placeholder="The idea, the inspiration, how it wears" style={{ resize:"vertical", lineHeight:1.6 }}/></FormField>
+            <FormField label="Bottle image" req hint="White or plain background if you can. JPG, PNG or WebP.">
+              <input type="file" accept="image/*" onChange={e => pick(i, e.target.files && e.target.files[0])} style={{ fontFamily:sans, fontSize:14, color:T.ink, maxWidth:"100%" }}/>
+            </FormField>
+            {f.photo && <img src={f.photo.url} alt={`${f.name || "Fragrance"} bottle`} style={{ width:"100%", maxWidth:200, borderRadius:12, border:`1px solid ${T.rule}`, display:"block" }}/>}
+          </div>
+        ))}
+        {fr.length < 80 && <button type="button" onClick={() => setFr(p => [...p, newBrandFrag()])} style={{ ...ghostBtn, width:"100%" }}>+ Add another fragrance</button>}
+      </FormSec>
+
+      <FormSec title="Permission" sub="Please confirm both.">
+        {chk(auth1, setAuth1, "I am authorised to represent this house and to submit this information.")}
+        {chk(auth2, setAuth2, "I own or hold the rights to the images and text I'm submitting, and I give Memoir on Skin permission to display them on our website and app, credited to the house. I can ask for anything to be changed or removed by emailing team@memoironskin.com.")}
+      </FormSec>
+
+      <div aria-hidden="true" style={{ position:"absolute", left:"-9999px", width:1, height:1, overflow:"hidden" }}>
+        <label>Leave this empty<input tabIndex={-1} autoComplete="off" value={trap} onChange={e => setTrap(e.target.value)}/></label>
+      </div>
+      {err && <p role="alert" style={{ fontFamily:sans, fontSize:13, color:T.bad, margin:"0 0 12px", lineHeight:1.55 }}>{err}</p>}
+      <button onClick={submit} disabled={!!busy} style={{ width:"100%", maxWidth:420, minHeight:54, borderRadius:12, background:T.black, border:"none", color:T.white, fontSize:15, fontWeight:500, fontFamily:sans, cursor:busy ? "default" : "pointer", opacity:busy ? 0.6 : 1 }}>{busy || "Send to Memoir on Skin"}</button>
+      <p style={{ fontFamily:sans, fontSize:12, color:T.faint, margin:"14px 0 0" }}>Questions? team@memoironskin.com</p>
+    </div>
+  );
+}
+
+// ─── OWNER: review brand submissions (?admin=brands, signed in as admin) ───
+function BrandSubmissionsAdmin() {
+  const [rows, setRows] = useState(null);
+  const [open, setOpen] = useState(null);
+  const [urls, setUrls] = useState({});
+  const [msg, setMsg] = useState("");
+  async function load() { const r = await supabase.rpc("admin_list_brand_submissions"); if (r.error) { setMsg("Not available for this account."); setRows([]); return; } setRows(r.data || []); }
+  useEffect(() => { load(); }, []);
+  async function expand(s) {
+    setOpen(o => o === s.id ? null : s.id);
+    const paths = (s.fragrances || []).map(f => f.imagePath).filter(Boolean).filter(p => !urls[p]);
+    if (!paths.length) return;
+    const r = await supabase.storage.from("brand-submissions").createSignedUrls(paths, 3600);
+    if (r.data) setUrls(u => { const n = { ...u }; r.data.forEach(x => { if (x.signedUrl) n[x.path] = x.signedUrl; }); return n; });
+  }
+  async function setStatus(id, status) { const r = await supabase.rpc("admin_set_brand_submission", { p_id: id, p_status: status }); if (r.error) { setMsg(r.error.message); return; } load(); }
+  const row = { background:T.white, border:`1px solid ${T.rule}`, borderRadius:14, padding:16, marginBottom:10, fontFamily:sans };
+  const kv = (k, v) => v ? <p style={{ fontSize:13, color:T.ink, margin:"3px 0", lineHeight:1.5 }}><span style={{ color:T.mid }}>{k}: </span>{Array.isArray(v) ? v.join(", ") : String(v)}</p> : null;
+  return (
+    <div style={{ maxWidth:760, margin:"0 auto", padding:"28px 20px 72px" }}>
+      <a href="/" style={{ textDecoration:"none" }}><Wordmark size={24}/></a>
+      <h1 style={{ fontFamily:serif, fontSize:32, fontWeight:400, color:T.black, margin:"26px 0 6px" }}>Brand submissions</h1>
+      <p style={{ fontFamily:sans, fontSize:13, color:T.mid, margin:"0 0 20px" }}>Forms sent from memoironskin.com/brands. Photos open via private links that expire after an hour.</p>
+      {msg && <p style={{ fontFamily:sans, fontSize:13, color:T.bad }}>{msg}</p>}
+      {rows === null && <p style={{ fontFamily:sans, color:T.mid }}>Loading…</p>}
+      {rows && rows.length === 0 && !msg && <p style={{ fontFamily:sans, color:T.mid }}>Nothing yet.</p>}
+      {(rows || []).map(s => (
+        <div key={s.id} style={row}>
+          <div style={{ display:"flex", justifyContent:"space-between", gap:10, alignItems:"baseline", flexWrap:"wrap" }}>
+            <p style={{ fontFamily:serif, fontSize:18, color:T.ink, margin:0 }}>{s.house.name}</p>
+            <span style={{ fontSize:11, letterSpacing:"0.12em", textTransform:"uppercase", color:s.status === "new" ? "var(--accent)" : T.mid, fontWeight:600 }}>{s.status}</span>
+          </div>
+          <p style={{ fontSize:12, color:T.mid, margin:"4px 0 10px" }}>{new Date(s.created_at).toLocaleString()} · {(s.fragrances || []).length} fragrance{(s.fragrances || []).length === 1 ? "" : "s"} · {s.contact.name} · <a href={`mailto:${s.contact.email}`} style={{ color:T.mid }}>{s.contact.email}</a></p>
+          <button onClick={() => expand(s)} style={{ ...ghostBtn, minHeight:38, fontSize:13, padding:"0 16px" }}>{open === s.id ? "Hide details" : "View details"}</button>
+          {open === s.id && (
+            <div style={{ marginTop:14 }}>
+              {kv("Role", s.contact.role)}{kv("Website", s.house.website)}{kv("Country", s.house.country)}{kv("Founded", s.house.founded)}{kv("Founders / perfumers", s.house.founders)}
+              {kv("Ownership", s.house.ownershipStatus === "conglomerate" ? `Owned by a group ${s.house.parent || ""}` : s.house.ownershipStatus)}
+              {kv("Diversity", [...(s.house.diversity || []), s.house.diversityOther].filter(Boolean))}{kv("Brand type", s.house.brandType)}{kv("Price tier", s.house.priceTier)}{kv("Story", s.house.story)}
+              {kv("Discovery set", [s.house.kitName, s.house.kitPrice, s.house.kitUrl].filter(Boolean).join(" · "))}{kv("Individual samples", s.house.samples)}{kv("Travel sizes", [s.house.travel, s.house.travelUrl].filter(Boolean).join(" · "))}
+              {kv("Affiliate", s.house.affiliateUrl)}{kv("Press email", s.house.pressEmail)}{kv("Instagram", s.house.instagram)}{kv("Press kit", s.house.pressKitUrl)}
+              {(s.fragrances || []).map((f, i) => (
+                <div key={i} style={{ display:"flex", gap:12, padding:"12px 0", borderTop:`1px solid ${T.rule}`, marginTop:10 }}>
+                  {urls[f.imagePath] ? <a href={urls[f.imagePath]} target="_blank" rel="noopener noreferrer"><img src={urls[f.imagePath]} alt="" style={{ width:84, height:105, objectFit:"cover", borderRadius:8, border:`1px solid ${T.rule}` }}/></a> : <div style={{ width:84, height:105, borderRadius:8, background:T.lift, flex:"none" }}/>}
+                  <div style={{ minWidth:0 }}>
+                    <p style={{ fontFamily:serif, fontSize:16, color:T.ink, margin:"0 0 4px" }}>{f.name} <span style={{ color:T.mid, fontSize:13 }}>{f.year}</span></p>
+                    {kv("Perfumer", f.perfumer)}{kv("Concentration", f.concentration)}{kv("Family", f.family)}{kv("Top", f.top)}{kv("Heart", f.heart)}{kv("Base", f.base)}{kv("Accords", f.accords)}{kv("About", f.story)}
+                  </div>
+                </div>
+              ))}
+              <div style={{ display:"flex", gap:8, flexWrap:"wrap", marginTop:12 }}>
+                {["reviewing", "accepted", "declined"].map(st => <button key={st} onClick={() => setStatus(s.id, st)} style={{ ...ghostBtn, minHeight:38, fontSize:13, padding:"0 16px" }}>Mark {st}</button>)}
+              </div>
+            </div>
+          )}
+        </div>
+      ))}
+    </div>
+  );
+}
+
 // ─── INVITE ADMIN (owner only; server checks admin rights) ────────────────────
 function InviteAdmin() {
   const [rows, setRows] = useState(null);
@@ -5749,6 +6007,8 @@ export default function SillageApp() {
   if (typeof window !== "undefined" && /[?&]preview=signup\b/.test(window.location.search)) return <LandingScreen onSignIn={() => { window.location.href = window.location.pathname + "?join=1"; }} onHaveCode={() => { window.location.href = window.location.pathname + "?join=1"; }}/>;
   // The short beta link (memoironskin.com/beta) always lands on the beta sign-up page, even in a browser that is already signed in.
   if (typeof window !== "undefined" && (window.location.hash === "#beta" || /^\/beta\/?$/.test(window.location.pathname))) return <LandingScreen onSignIn={() => { window.location.href = "/?join=1"; }} onHaveCode={() => { window.location.href = "/?join=1"; }}/>;
+  // Public page for brands to submit their house and fragrances (memoironskin.com/brands). No account needed.
+  if (typeof window !== "undefined" && (window.location.hash === "#brands" || /^\/brands\/?$/.test(window.location.pathname))) return <BrandSubmitPage/>;
   if (appScreen === "loading") return <LoadingScreen/>;
   if (appScreen === "waitlist" && wantsJoinLink()) return <LoginScreen onWaitlist={() => { window.location.href = window.location.pathname; }}/>;
   if (appScreen === "waitlist") return <LandingScreen onSignIn={() => { loginStart.mode = "signin"; setAppScreen("login"); }} onHaveCode={() => { loginStart.mode = "signup"; setAppScreen("login"); }}/>;
@@ -5756,6 +6016,7 @@ export default function SillageApp() {
   if (appScreen === "onboarding") return <OnboardingScreen onComplete={handleOnboardingComplete}/>;
   // Private invite-code page for the owner: add ?admin=invites to the site address (signed in).
   if (appScreen === "app" && typeof window !== "undefined" && /[?&]admin=invites\b/.test(window.location.search)) return <InviteAdmin/>;
+  if (appScreen === "app" && typeof window !== "undefined" && /[?&]admin=brands\b/.test(window.location.search)) return <BrandSubmissionsAdmin/>;
 
   return (
     <div style={{ minHeight:"100svh", background:"transparent", fontFamily:sans, position:"relative" }}>
