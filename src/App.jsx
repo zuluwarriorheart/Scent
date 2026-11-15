@@ -3491,6 +3491,66 @@ function CommunityFeed({ onOpenProfile, onOpenFrag, onSearch, following }) {
 
 // Set to true to bring the AI Nose tab back. Requests replaces it for now.
 const NOSE_ENABLED = false;
+// ─── DISCOVERY KITS SHELF ─────────────────────────────────────────────────────
+// Houses whose own site sells a discovery set or samples. Links go to the brand, never through a retailer.
+let _kitsCache = null;
+async function loadKits() {
+  if (_kitsCache) return _kitsCache;
+  const out = [];
+  for (let from = 0; from < 2000; from += 100) {
+    const r = await supabase.from("houses").select("id, name, slug, country, brand_origin, kit_name, kit_price, kit_url, website").eq("has_discovery_kit", true).order("name").range(from, from + 99);
+    if (r.error) throw r.error;
+    out.push(...(r.data || []));
+    if ((r.data || []).length < 100) break;
+  }
+  let counts = new Map();
+  try { (await loadBrands()).forEach(b => counts.set(b.slug, Number(b.frag_count) || 0)); } catch (e) {}
+  _kitsCache = out.map(h => ({ ...h, url: h.kit_url || h.website || "", n: counts.get(h.slug) || 0 })).filter(h => h.url);
+  return _kitsCache;
+}
+function KitsShelf({ onOpenBrand }) {
+  const [rows, setRows] = useState(null);
+  const [all, setAll] = useState(false);
+  const [q, setQ] = useState("");
+  useEffect(() => { let off = false; loadKits().then(d => { if (!off) setRows(d); }).catch(() => { if (!off) setRows([]); }); return () => { off = true; }; }, []);
+  const featured = useMemo(() => {
+    if (!rows) return [];
+    const day = Math.floor(Date.now() / 86400000);
+    const seeded = h => { let x = 0; const s = h.slug + day; for (let i = 0; i < s.length; i++) x = (x * 31 + s.charCodeAt(i)) >>> 0; return x; };
+    return [...rows].sort((a, b) => seeded(a) - seeded(b)).slice(0, 12);
+  }, [rows]);
+  if (!rows || rows.length === 0) return null;
+  const needle = q.trim().toLowerCase();
+  const shown = all ? rows.filter(h => !needle || [h.name, h.country].some(v => String(v || "").toLowerCase().includes(needle))) : featured;
+  const card = h => (
+    <div key={h.id} style={{ flex:all ? "1 1 240px" : "0 0 252px", maxWidth:all ? "none" : 252, boxSizing:"border-box", background:T.white, border:`1px solid ${T.rule}`, borderRadius:16, padding:"16px 16px 14px", display:"flex", flexDirection:"column", scrollSnapAlign:"start" }}>
+      <button onClick={() => onOpenBrand && onOpenBrand({ slug:h.slug, name:h.name })} style={{ textAlign:"left", background:"none", border:"none", padding:0, cursor:"pointer" }}>
+        <span style={{ display:"block", fontFamily:serif, fontSize:20, color:T.black, lineHeight:1.2 }}>{String(h.name).replace(/\s*\(now .*\)$/, "")}</span>
+        <span style={{ display:"block", fontFamily:sans, fontSize:12, color:T.mid, margin:"4px 0 0" }}>{[h.country, h.brand_origin].filter(Boolean).join(" · ")}{h.n ? (h.country || h.brand_origin ? " · " : "") + h.n + " fragrance" + (h.n === 1 ? "" : "s") : ""}</span>
+      </button>
+      <p style={{ fontFamily:sans, fontSize:14, color:T.ink, margin:"12px 0 0", lineHeight:1.4 }}>{h.kit_name || "Discovery set or samples"}{h.kit_price && <span style={{ color:T.teal, fontWeight:600 }}> · {h.kit_price}</span>}</p>
+      <a href={h.url} target="_blank" rel="noopener noreferrer" onClick={() => trackEvent("brand_site_click", { houseSlug:h.slug, source:"kits", detail:"kit" })} style={{ ...ctaBtn(true), marginTop:"auto", display:"inline-flex", alignItems:"center", justifyContent:"center", textDecoration:"none", minHeight:40, fontSize:13, paddingTop:0, paddingBottom:0, marginBlockStart:14 }}>Get it from the brand ↗</a>
+    </div>
+  );
+  return (
+    <section className="mos-bleed" style={{ padding:"26px 0 22px" }}>
+      <div className="mos-bleed-pad" style={{ marginBottom:16 }}>
+        <h3 style={{ fontFamily:serif, fontSize:"clamp(26px, 2.3vw, 38px)", fontWeight:400, letterSpacing:-0.6, color:T.black, margin:0, lineHeight:1.1 }}>Discovery kits</h3>
+        <p style={{ fontFamily:sans, fontSize:"clamp(14px, 1.1vw, 17px)", color:T.mid, margin:"6px 0 0", lineHeight:1.5 }}>Sample first. {rows.length} houses sell a discovery set or samples on their own site. Links go straight to the brand, so check the contents and price there.</p>
+        {all && <div style={{ position:"relative", marginTop:14, maxWidth:520 }}>
+          <input value={q} onChange={e => setQ(e.target.value)} placeholder="Search kits by brand or country" style={{ ...FIELD, width:"100%", boxSizing:"border-box" }}/>
+        </div>}
+      </div>
+      {all
+        ? <div className="mos-bleed-pad" style={{ display:"flex", flexWrap:"wrap", gap:14 }}>{shown.map(card)}{shown.length === 0 && <p style={{ fontFamily:sans, fontSize:14, color:T.mid }}>No kits match that.</p>}</div>
+        : <div className="mos-shelf mos-bleed-pad" style={{ display:"flex", alignItems:"stretch", gap:14, overflowX:"auto", paddingTop:2, paddingBottom:14, scrollSnapType:"x proximity", WebkitOverflowScrolling:"touch" }}>{shown.map(card)}</div>}
+      <div className="mos-bleed-pad" style={{ marginTop:6 }}>
+        <button onClick={() => { setAll(v => !v); setQ(""); }} style={{ ...ghostBtn, minHeight:42, fontSize:14, padding:"0 20px" }}>{all ? "Show fewer" : "See all " + rows.length + " kits"}</button>
+      </div>
+    </section>
+  );
+}
+
 function DiscoverTab({ onOpenFrag, onOpenBrand, onOpenPerfumer, onOpenProfile, following, userStatuses, reactions, onReaction, onSuggest, fragrances, serverShelves, onSearch }) {
   const [mode,setMode]=useState("browse");
   const [messages,setMessages]=useState([{role:"ai",text:"Tell me what you're in the mood for: a memory, a mood, an aesthetic. I'll find your next fragrance."}]);
@@ -3606,6 +3666,7 @@ function DiscoverTab({ onOpenFrag, onOpenBrand, onOpenPerfumer, onOpenProfile, f
           )}
           {!isSearching&&(
             <>
+              <KitsShelf onOpenBrand={onOpenBrand}/>
               {shelves.map((s,i)=>(
                 <Fragment key={s.key}>
                   <Shelf title={s.title} blurb={s.blurb} items={s.items} groups={s.groups} onOpenFrag={onOpenFrag} userStatuses={userStatuses} tinted={i%2===0}/>
