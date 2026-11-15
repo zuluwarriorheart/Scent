@@ -1,4 +1,5 @@
 import { useState, useEffect, useId, useRef, useMemo, useSyncExternalStore, Fragment } from "react";
+import { createPortal } from "react-dom";
 import { createClient } from "@supabase/supabase-js";
 
 // ─── SUPABASE CLIENT ──────────────────────────────────────────────────────────
@@ -132,6 +133,8 @@ button, a, summary, [role="tab"] { touch-action:manipulation; }
 .mos-shelf::-webkit-scrollbar { display:none; }
 @media (min-width:760px) { .mos-shelf { padding-left:0 !important; padding-right:0 !important; width:min(calc(100vw - 2 * var(--gutter)), calc(var(--page-w) - 2 * var(--gutter))); margin-left:auto; margin-right:auto; scroll-padding-left:0; } }
 .mos-band { background:var(--lift); }
+.mos-fab { position:fixed; right:16px; bottom:28px; z-index:44; }
+@media (max-width:639px) { .mos-fab { bottom:calc(84px + env(safe-area-inset-bottom)); } }
 @media (max-width:639px) {
   .mos-tabs-top { display:none; }
   .mos-tabbar { display:flex; }
@@ -3159,9 +3162,162 @@ function RequestCard({ r, open, onToggle, onChanged, onOpenFrag, onSearch }) {
   );
 }
 
+// ─── COMMUNITY FEED (shares and thoughts; latest or from people you follow) ───
+const POST_BTN = { fontFamily:sans, fontSize:12, color:T.mid, background:"none", border:"none", cursor:"pointer", padding:"6px 0", minHeight:32 };
+function postError(error) {
+  const m = String((error && error.message) || "");
+  return /Slow down|Write between|Pick a fragrance|Finish setting|Sign in/.test(m) ? m : "That didn't go through. Try again in a moment.";
+}
+function usePostFrags(rows) {
+  const [frags, setFrags] = useState({});
+  useEffect(() => {
+    const ids = [...new Set((rows || []).map(x => x.fragrance_id).filter(Boolean))].filter(id => !frags[id]);
+    if (!ids.length) return;
+    let live = true;
+    fetchFragRows(sel => supabase.from("fragrances").select(sel).in("id", ids)).then(fr => {
+      if (!live || fr.error || !fr.data) return;
+      setFrags(prev => { const m = { ...prev }; fr.data.map(mapFrag).forEach(f => { m[f.id] = f; }); return m; });
+    });
+    return () => { live = false; };
+  }, [rows]);
+  return frags;
+}
+function PostCard({ p, frag, onOpenProfile, onOpenFrag, onChanged }) {
+  const [confirm, setConfirm] = useState(false);
+  const [note, setNote] = useState("");
+  async function del() { const { error } = await supabase.rpc("delete_post", { p_id: p.id }); if (error) { setNote(postError(error)); setConfirm(false); return; } onChanged(); }
+  async function report() { const { error } = await supabase.rpc("report_post", { p_id: p.id }); setNote(error ? postError(error) : "Reported. Thank you."); }
+  return (
+    <article style={{ background:T.white, border:`1px solid ${T.rule}`, borderRadius:16, padding:"14px 16px", marginBottom:12 }}>
+      <div style={{ display:"flex", alignItems:"center", gap:10, marginBottom:10 }}>
+        <button onClick={() => onOpenProfile(p.username)} aria-label={"Open @" + p.username} style={{ width:36, height:36, borderRadius:"50%", background:T.black, color:T.white, border:"none", cursor:"pointer", fontFamily:sans, fontSize:13, fontWeight:600, flexShrink:0 }}>{String(p.username).slice(0, 2).toUpperCase()}</button>
+        <div style={{ minWidth:0, flex:1 }}>
+          <button onClick={() => onOpenProfile(p.username)} style={{ background:"none", border:"none", padding:0, cursor:"pointer", fontFamily:serif, fontSize:15, color:T.black }}>@{p.username}</button>
+          {p.country && <span style={{ marginLeft:6, fontSize:13 }}>{countryFlag(p.country)}</span>}
+          <p style={{ fontFamily:sans, fontSize:12, color:T.faint, margin:"1px 0 0" }}>{p.kind === "share" ? "Shared a fragrance" : "Shared a thought"} · {reqAgo(p.created_at)}{p.audience === "followers" ? " · Followers" : ""}</p>
+        </div>
+      </div>
+      <p style={{ fontFamily:sans, fontSize:15, color:T.ink, lineHeight:1.65, margin:0, whiteSpace:"pre-wrap", overflowWrap:"anywhere" }}>{p.body}</p>
+      {p.fragrance_id && frag && (
+        <button onClick={() => onOpenFrag(frag.id)} style={{ display:"flex", alignItems:"center", gap:10, marginTop:10, padding:"10px 12px", background:T.lift, border:`1px solid ${T.rule}`, borderRadius:12, cursor:"pointer", textAlign:"left", maxWidth:"100%" }}>
+          <span><span style={{ display:"block", fontFamily:serif, fontSize:15, color:T.black }}>{frag.name}</span><span style={{ display:"block", fontFamily:sans, fontSize:12, color:T.mid }}>{frag.house}</span></span>
+        </button>
+      )}
+      <div style={{ display:"flex", gap:14, alignItems:"center", marginTop:6, flexWrap:"wrap" }}>
+        {p.can_delete && !confirm && <button onClick={() => setConfirm(true)} style={POST_BTN}>Delete</button>}
+        {p.can_delete && confirm && <span style={{ fontFamily:sans, fontSize:12, color:T.mid }}>Delete this post? <button onClick={del} style={{ ...POST_BTN, color:T.bad, display:"inline", padding:"0 6px" }}>Yes</button><button onClick={() => setConfirm(false)} style={{ ...POST_BTN, display:"inline", padding:"0 6px" }}>No</button></span>}
+        {!p.mine && <button onClick={report} style={POST_BTN}>Report</button>}
+        {Number(p.report_count) > 0 && <span style={{ fontFamily:sans, fontSize:12, color:T.bad }}>Reported by {Number(p.report_count)}</span>}
+        {note && <span style={{ fontFamily:sans, fontSize:12, color:T.mid }}>{note}</span>}
+      </div>
+    </article>
+  );
+}
+function PostComposer({ onClose, onPosted, onSearch }) {
+  const [kind, setKind] = useState("share");
+  const [audience, setAudience] = useState("everyone");
+  const [body, setBody] = useState("");
+  const [pick, setPick] = useState(null);
+  const [q, setQ] = useState("");
+  const [hits, setHits] = useState([]);
+  const [busy, setBusy] = useState(false);
+  const [msg, setMsg] = useState("");
+  useEffect(() => {
+    if (!onSearch || q.trim().length < 2) { setHits([]); return; }
+    let off = false;
+    const t = setTimeout(async () => { try { const x = await onSearch(q.trim(), "all", 0); if (!off) setHits((x.items || []).filter(f => UUID_RE.test(String(f.id))).slice(0, 5)); } catch (e) {} }, 300);
+    return () => { off = true; clearTimeout(t); };
+  }, [q]);
+  const ok = body.trim().length >= 1 && (kind !== "share" || !!pick);
+  async function submit() {
+    if (!ok) { setMsg(kind === "share" && !pick ? "Pick a fragrance to share." : "Write something first."); return; }
+    setBusy(true); setMsg("");
+    const { error } = await supabase.rpc("create_post", { p_kind: kind, p_body: body.trim(), p_fragrance: pick ? pick.id : null, p_audience: audience });
+    setBusy(false);
+    if (error) { console.error(error); setMsg(postError(error)); return; }
+    onPosted();
+  }
+  const pill = on => ({ flex:1, minHeight:44, borderRadius:12, border:`1px solid ${on ? T.black : T.rule}`, background:on ? T.black : T.white, color:on ? T.white : T.ink, fontFamily:sans, fontSize:14, cursor:"pointer" });
+  return createPortal(
+    <div className="mos-sheet-wrap" onClick={onClose} style={{ position:"fixed", inset:0, zIndex:62, background:"rgba(10,10,10,0.5)", backdropFilter:"blur(12px)", display:"flex", flexDirection:"column", justifyContent:"flex-end", alignItems:"center" }}>
+      <div className="mos-sheet" onClick={e => e.stopPropagation()} style={{ background:T.white, borderRadius:"24px 24px 0 0", border:`1px solid ${T.rule}`, borderBottom:"none", width:"100%", maxWidth:460, maxHeight:"92vh", overflowY:"auto" }}>
+        <div className="mos-pad" style={{ padding:"20px 24px 32px" }}>
+          <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:16 }}>
+            <button onClick={onClose} style={{ ...POST_BTN, fontSize:15 }}>Cancel</button>
+            <h2 style={{ fontFamily:serif, fontSize:20, fontWeight:400, color:T.black, margin:0 }}>New post</h2>
+            <button onClick={submit} disabled={busy} style={{ ...ctaBtn(ok), width:"auto", padding:"0 20px", minHeight:40, fontSize:14, opacity:busy ? 0.6 : 1, cursor:"pointer" }}>{busy ? "Posting" : "Share"}</button>
+          </div>
+          <p style={{ ...FLABEL, margin:"0 0 6px" }}>Type</p>
+          <div style={{ display:"flex", gap:8, marginBottom:14 }}>
+            <button onClick={() => setKind("share")} aria-pressed={kind === "share"} style={pill(kind === "share")}>A fragrance</button>
+            <button onClick={() => setKind("thought")} aria-pressed={kind === "thought"} style={pill(kind === "thought")}>A thought</button>
+          </div>
+          <p style={{ ...FLABEL, margin:"0 0 6px" }}>Who can see it</p>
+          <div style={{ display:"flex", gap:8, marginBottom:14 }}>
+            <button onClick={() => setAudience("everyone")} aria-pressed={audience === "everyone"} style={pill(audience === "everyone")}>Everyone</button>
+            <button onClick={() => setAudience("followers")} aria-pressed={audience === "followers"} style={pill(audience === "followers")}>Followers</button>
+          </div>
+          <textarea value={body} onChange={e => setBody(e.target.value.slice(0, 750))} rows={5} autoFocus placeholder={kind === "share" ? "How does it wear on you?" : "What do you want to say?"} style={{ ...FIELD, padding:"12px 14px", lineHeight:1.5, resize:"vertical" }}/>
+          <p style={{ fontFamily:sans, fontSize:11, color:T.faint, margin:"4px 0 12px", textAlign:"right" }}>{body.length} / 750</p>
+          {pick
+            ? <p style={{ fontFamily:sans, fontSize:13, color:T.ink, margin:"0 0 8px" }}>Attached: <strong style={{ fontWeight:600 }}>{pick.name}</strong> by {pick.house} <button onClick={() => setPick(null)} style={{ ...POST_BTN, display:"inline", padding:0, minHeight:0, marginLeft:6, textDecoration:"underline" }}>Remove</button></p>
+            : onSearch && <input value={q} onChange={e => setQ(e.target.value)} placeholder={kind === "share" ? "Find the fragrance to share" : "Attach a fragrance (optional)"} aria-label="Find a fragrance" style={FIELD}/>}
+          {!pick && hits.map(f => <button key={f.id} onClick={() => { setPick(f); setHits([]); setQ(""); }} style={{ display:"block", width:"100%", textAlign:"left", padding:"10px 4px", background:"none", border:"none", borderBottom:`1px solid ${T.lift}`, fontFamily:sans, fontSize:14, color:T.ink, cursor:"pointer" }}>{f.name} <span style={{ color:T.mid }}>· {f.house}</span></button>)}
+          {msg && <p style={{ fontFamily:sans, fontSize:13, color:T.bad, margin:"10px 0 0" }}>{msg}</p>}
+          <p style={{ fontFamily:sans, fontSize:12, color:T.faint, margin:"14px 0 0", lineHeight:1.5 }}>Your collection, wears and journal stay private. Only what you write here is shared.</p>
+        </div>
+      </div>
+    </div>,
+    document.body
+  );
+}
+function CommunityFeed({ onOpenProfile, onOpenFrag, onSearch }) {
+  const [feed, setFeed] = useState("latest");
+  const [rows, setRows] = useState(null);
+  const [err, setErr] = useState("");
+  const [composing, setComposing] = useState(false);
+  const [more, setMore] = useState(false);
+  const frags = usePostFrags(rows);
+  const load = async (f = feed) => {
+    const { data, error } = await supabase.rpc("list_posts", { p_feed: f, p_limit: 30 });
+    if (error) { console.error("Posts failed:", error); setRows([]); setErr("That didn't go through. Try again in a moment."); return; }
+    setRows(data || []); setErr(""); setMore((data || []).length >= 30);
+  };
+  useEffect(() => { setRows(null); load(feed); }, [feed]);
+  async function older() {
+    const last = rows && rows[rows.length - 1]; if (!last) return;
+    const { data, error } = await supabase.rpc("list_posts", { p_feed: feed, p_limit: 30, p_before: last.created_at });
+    if (error) { setErr("That didn't go through. Try again in a moment."); return; }
+    setRows(r => [...r, ...(data || [])]); setMore((data || []).length >= 30);
+  }
+  const chip = on => ({ fontFamily:sans, fontSize:13, padding:"0 16px", minHeight:38, borderRadius:20, border:`1px solid ${on ? T.black : T.rule}`, background:on ? T.black : T.white, color:on ? T.white : T.ink, cursor:"pointer" });
+  return (
+    <div style={{ maxWidth:760 }}>
+      <div style={{ display:"flex", gap:8, marginBottom:14 }}>
+        <button onClick={() => setFeed("latest")} aria-pressed={feed === "latest"} style={chip(feed === "latest")}>Latest</button>
+        <button onClick={() => setFeed("following")} aria-pressed={feed === "following"} style={chip(feed === "following")}>Following</button>
+      </div>
+      <button onClick={() => setComposing(true)} style={{ display:"block", width:"100%", textAlign:"left", background:T.white, border:`1px solid ${T.rule}`, borderRadius:16, padding:"14px 16px", marginBottom:14, cursor:"pointer", fontFamily:sans, fontSize:15, color:T.faint }}>What do you want to say?</button>
+      {err && <p style={{ fontFamily:sans, fontSize:13, color:T.mid, margin:"12px 0" }}>{err}</p>}
+      {rows === null && <p style={{ fontFamily:sans, fontSize:13, color:T.mid, margin:"24px 0" }}>Loading</p>}
+      {rows && rows.length === 0 && !err && (
+        <div style={{ background:T.white, border:`1px solid ${T.rule}`, borderRadius:16, padding:"22px 18px", textAlign:"center" }}>
+          <p style={{ fontFamily:serif, fontSize:22, color:T.black, margin:"0 0 6px" }}>{feed === "following" ? "Nothing from people you follow yet" : "Be the first to post"}</p>
+          <p style={{ fontFamily:sans, fontSize:13, color:T.mid, lineHeight:1.6, margin:"0 0 14px" }}>{feed === "following" ? "Follow a few members and their posts will show up here, newest first." : "Share a fragrance you are wearing, or a thought about one."}</p>
+          <button onClick={() => setComposing(true)} style={{ ...ctaBtn(true), width:"auto", padding:"0 24px", minHeight:44, fontSize:14 }}>Create post</button>
+        </div>
+      )}
+      {(rows || []).map(p => <PostCard key={p.id} p={p} frag={p.fragrance_id ? frags[p.fragrance_id] : null} onOpenProfile={onOpenProfile} onOpenFrag={onOpenFrag} onChanged={() => load(feed)}/>)}
+      {more && <button onClick={older} style={{ ...ghostBtn, width:"100%", minHeight:44, marginTop:4 }}>Show older</button>}
+      <button className="mos-fab" onClick={() => setComposing(true)} style={{ display:"flex", alignItems:"center", gap:8, height:52, padding:"0 22px", borderRadius:26, border:"none", background:"var(--accent)", color:"#fff", fontFamily:sans, fontSize:15, fontWeight:600, cursor:"pointer", boxShadow:"0 6px 20px rgba(0,0,0,0.25)" }}><span style={{ fontSize:22, lineHeight:1 }}>+</span>Create post</button>
+      {composing && <PostComposer onClose={() => setComposing(false)} onSearch={onSearch} onPosted={() => { setComposing(false); setFeed("latest"); setRows(null); load("latest"); }}/>}
+    </div>
+  );
+}
+
 // Set to true to bring the AI Nose tab back. Requests replaces it for now.
 const NOSE_ENABLED = false;
-function DiscoverTab({ onOpenFrag, onOpenBrand, onOpenPerfumer, userStatuses, reactions, onReaction, onSuggest, fragrances, serverShelves, onSearch }) {
+function DiscoverTab({ onOpenFrag, onOpenBrand, onOpenPerfumer, onOpenProfile, userStatuses, reactions, onReaction, onSuggest, fragrances, serverShelves, onSearch }) {
   const [mode,setMode]=useState("browse");
   const [messages,setMessages]=useState([{role:"ai",text:"Tell me what you're in the mood for: a memory, a mood, an aesthetic. I'll find your next fragrance."}]);
   const [input,setInput]=useState("");
@@ -3220,14 +3376,15 @@ function DiscoverTab({ onOpenFrag, onOpenBrand, onOpenPerfumer, userStatuses, re
     <div>
       <div style={{marginBottom:20}}>
         <p style={{fontFamily:sans,fontSize:10,fontWeight:600,textTransform:"uppercase",letterSpacing:"0.18em",color:T.accent,margin:"0 0 6px"}}>Discover</p>
-        <h2 style={{fontFamily:serif,fontSize:"clamp(32px, 3.2vw, 50px)",color:T.black,letterSpacing:-0.8,margin:0,fontWeight:400}}>{mode==="browse"?"Sample. Wear. Repeat.":mode==="brands"?"Brands":mode==="perfumers"?"Perfumers":mode==="requests"?"Requests":"The Nose"}</h2>
-        <p style={{fontFamily:sans,fontSize:"clamp(13px, 1.1vw, 17px)",color:T.mid,margin:"6px 0 0"}}>{mode==="browse"?"Search by name, or browse by category.":mode==="brands"?"Every house in the library, with who owns it and what it makes.":mode==="perfumers"?"The noses behind the bottles. Find a perfumer, then everything they have made.":mode==="requests"?"Ask what to smell like. Members answer.":"Describe a memory, a mood or a place."}</p>
+        <h2 style={{fontFamily:serif,fontSize:"clamp(32px, 3.2vw, 50px)",color:T.black,letterSpacing:-0.8,margin:0,fontWeight:400}}>{mode==="browse"?"Sample. Wear. Repeat.":mode==="brands"?"Brands":mode==="perfumers"?"Perfumers":mode==="community"?"Community":mode==="requests"?"Requests":"The Nose"}</h2>
+        <p style={{fontFamily:sans,fontSize:"clamp(13px, 1.1vw, 17px)",color:T.mid,margin:"6px 0 0"}}>{mode==="browse"?"Search by name, or browse by category.":mode==="brands"?"Every house in the library, with who owns it and what it makes.":mode==="perfumers"?"The noses behind the bottles. Find a perfumer, then everything they have made.":mode==="community"?"What members are wearing and thinking, newest first.":mode==="requests"?"Ask what to smell like. Members answer.":"Describe a memory, a mood or a place."}</p>
       </div>
       <div role="tablist" aria-label="Discover" style={{display:"flex",overflowX:"auto",whiteSpace:"nowrap",borderBottom:`1px solid ${T.rule}`,marginBottom:22}}>
         {modeBtn("browse","Browse")}
         {modeBtn("brands","Brands")}
         {modeBtn("perfumers","Perfumers")}
         {NOSE_ENABLED&&modeBtn("nose","Nose")}
+        {modeBtn("community","Community")}
         {modeBtn("requests","Requests")}
       </div>
 
@@ -3290,6 +3447,7 @@ function DiscoverTab({ onOpenFrag, onOpenBrand, onOpenPerfumer, userStatuses, re
       {mode==="brands"&&<BrandsDirectory onOpenBrand={onOpenBrand}/>}
       {mode==="perfumers"&&<PerfumersDirectory onOpenPerfumer={onOpenPerfumer}/>}
 
+      {mode==="community"&&<CommunityFeed onOpenProfile={onOpenProfile} onOpenFrag={onOpenFrag} onSearch={serverMode?onSearch:null}/>}
       {mode==="requests"&&<RequestsBoard onOpenFrag={onOpenFrag} onSearch={serverMode?onSearch:null}/>}
 
       {NOSE_ENABLED&&mode==="nose"&&(
@@ -5441,12 +5599,30 @@ function PeopleSearch({ initialQ, onQ, onClose, onBack, onOpenProfile, following
   );
 }
 
+function ProfilePosts({ username, onOpenProfile, onOpenFrag }) {
+  const [rows, setRows] = useState(null);
+  const frags = usePostFrags(rows);
+  const load = async () => {
+    const { data, error } = await supabase.rpc("list_posts", { p_feed: "latest", p_username: username, p_limit: 30 });
+    setRows(error ? [] : (data || []));
+  };
+  useEffect(() => { setRows(null); load(); }, [username]);
+  if (rows === null) return <p style={{ fontFamily:sans, fontSize:13, color:T.faint, padding:"16px 0", margin:0 }}>Loading…</p>;
+  if (rows.length === 0) return (
+    <div style={{ textAlign:"center", padding:"40px 0" }}>
+      <p style={{ fontFamily:serif, fontSize:18, color:T.faint, margin:"0 0 8px" }}>Nothing shared yet</p>
+      <p style={{ fontFamily:sans, fontSize:13, color:T.faint, margin:0 }}>Posts will appear here.</p>
+    </div>
+  );
+  return <div>{rows.map(p => <PostCard key={p.id} p={p} frag={p.fragrance_id ? frags[p.fragrance_id] : null} onOpenProfile={onOpenProfile} onOpenFrag={onOpenFrag} onChanged={load}/>)}</div>;
+}
+
 // ─── PROFILE MODAL ────────────────────────────────────────────────────────────
 function ProfileModal({ username, onClose, onBack, currentUser, userStatuses, onOpenFrag, isFollowing, onToggleFollow, following, onOpenProfile, onSignOut, myStats, onFindPeople, onProfileSaved }) {
   const isSelf = !!currentUser && String(currentUser.username || "").toLowerCase() === String(username || "").toLowerCase();
   const isSillage = username === "memoir";
   const mock = MOCK_MEMBERS.find(m => m.username === username);
-  const [tab, setTab] = useState(isSelf ? "following" : mock ? "reviews" : "posts");
+  const [tab, setTab] = useState(mock && !isSelf ? "reviews" : "posts");
   const [real, setReal] = useState(null);   // the member's public row from the database
   const [loaded, setLoaded] = useState(isSillage);
   const [list, setList] = useState(null);   // people shown on the Following / Followers tabs
@@ -5496,7 +5672,7 @@ function ProfileModal({ username, onClose, onBack, currentUser, userStatuses, on
   const stats = [[member.followers || 0, "followers"], [member.following || 0, "following"]];
   if (isSelf) stats.push([Object.keys(userStatuses || {}).length, "fragrances"]);
   else if (mock && !real) stats.push([Object.keys(member.statuses || {}).length, "fragrances"]);
-  const tabs = isSillage ? ["posts", "reviews"] : isSelf ? ["following", "followers"] : real ? ["posts"] : ["reviews", "layering", "collection", "in common"];
+  const tabs = isSillage ? ["posts", "reviews"] : isSelf ? ["posts", "following", "followers"] : real ? ["posts"] : ["reviews", "layering", "collection", "in common"];
 
   const initials = isSillage ? "m." : (member.username || member.name || "?").slice(0, 2).toUpperCase();
 
@@ -5619,11 +5795,8 @@ function ProfileModal({ username, onClose, onBack, currentUser, userStatuses, on
             <ProfileEditor user={currentUser} onCancel={() => setEditing(false)} onSaved={fields => { onProfileSaved && onProfileSaved(fields); setReal(r => r ? { ...r, bio: fields.bio, country: fields.country } : r); setEditing(false); }}/>
           )}
 
-          {!editing && tab === "posts" && !isSillage && (
-            <div style={{ textAlign:"center", padding:"40px 0" }}>
-              <p style={{ fontFamily:serif, fontSize:18, color:T.faint, margin:"0 0 8px" }}>Nothing shared yet</p>
-              <p style={{ fontFamily:sans, fontSize:13, color:T.faint, margin:0 }}>Posts and requests will appear here.</p>
-            </div>
+          {!editing && tab === "posts" && !isSillage && !mock && (
+            <ProfilePosts username={member.username} onOpenProfile={onOpenProfile} onOpenFrag={onOpenFrag}/>
           )}
 
           {!editing && tab === "posts" && isSillage && (
@@ -6266,7 +6439,7 @@ export default function SillageApp() {
       </header>
 
       <main className="mos-main mos-wrap" style={{ position:"relative", zIndex:1, paddingTop:28, paddingBottom:64 }}>
-        {activeTab==="Discover"   && <DiscoverTab   onOpenBrand={openBrand} onOpenPerfumer={openPerfumer} fragrances={fragrances} serverShelves={serverShelves} onSearch={serverShelves ? searchFrags : null} onOpenFrag={openFrag} userStatuses={userStatuses} reactions={reactions} onReaction={onReaction} onSuggest={() => setShowSuggest(true)} currentUser={currentUser}/>}
+        {activeTab==="Discover"   && <DiscoverTab   onOpenBrand={openBrand} onOpenPerfumer={openPerfumer} onOpenProfile={openProfile} fragrances={fragrances} serverShelves={serverShelves} onSearch={serverShelves ? searchFrags : null} onOpenFrag={openFrag} userStatuses={userStatuses} reactions={reactions} onReaction={onReaction} onSuggest={() => setShowSuggest(true)} currentUser={currentUser}/>}
         {activeTab==="Collection" && <CollectionTab fragrances={fragrances} onOpenFrag={openFrag} statuses={userStatuses} statusSets={statusSets} reactions={reactions} onReaction={onReaction} onSuggest={() => setShowSuggest(true)} wears={wears} onOpenJournal={() => setActiveTab("Journal")}/>}
         {activeTab==="Layering"   && <div className="mos-prose"><LayeringTab layers={layers} onSaveLayer={saveLayer} onSearch={searchFrags} fragrances={fragrances} statusSets={statusSets}/></div>}
         {activeTab==="Journal"    && <div className="mos-prose"><JournalTab entries={journalEntries} userStatuses={userStatuses} reactions={reactions} fragrances={fragrances} wears={wears} onOpenFrag={openFrag}/></div>}
