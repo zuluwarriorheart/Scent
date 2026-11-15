@@ -2368,8 +2368,9 @@ function WearLog({ frag, wears, onLogWear, onDeleteWear }) {
   const mine = (wears || []).filter(w => w.fragId === frag.id).sort((a, b) => (a.date < b.date ? 1 : a.date > b.date ? -1 : 0));
   const [date, setDate] = useState(todayISO());
   const [moods, setMoods] = useState([]);
-  const [occasion, setOccasion] = useState("");
-  const [weather, setWeather] = useState("");
+  const [occasions, setOccasions] = useState([]);
+  const [weathers, setWeathers] = useState([]);
+  const toggleIn = (set, v) => set(a => a.includes(v) ? a.filter(x => x !== v) : [...a, v]);
   const [rating, setRating] = useState(0);
   const [busy, setBusy] = useState(false);
   if (!/^[0-9a-f]{8}-[0-9a-f]{4}-/i.test(String(frag.id))) return null;
@@ -2379,8 +2380,8 @@ function WearLog({ frag, wears, onLogWear, onDeleteWear }) {
   async function save() {
     if (busy) return;
     setBusy(true);
-    await onLogWear(frag.id, { date: date || todayISO(), occasion: occasion || null, weather: weather || null, rating: rating || null, moods });
-    setBusy(false); setOccasion(""); setWeather(""); setMoods([]); setRating(0); setDate(todayISO());
+    await onLogWear(frag.id, { date: date || todayISO(), occasion: occasions[0] || null, weather: weathers[0] || null, occasions, weathers, rating: rating || null, moods });
+    setBusy(false); setOccasions([]); setWeathers([]); setMoods([]); setRating(0); setDate(todayISO());
   }
   return (
     <div style={{ marginTop: 36, paddingTop: 28, borderTop: `1px solid ${T.rule}` }}>
@@ -2392,10 +2393,12 @@ function WearLog({ frag, wears, onLogWear, onDeleteWear }) {
         <div style={{ background: T.lift, border: `1px solid ${T.rule}`, borderRadius: 14, padding: 18 }}>
           <p style={{ fontFamily: sans, fontSize: 11, textTransform: "uppercase", letterSpacing: "0.14em", color: T.mid, margin: "0 0 8px" }}>Date</p>
           <input type="date" value={date} max={todayISO()} onChange={e => setDate(e.target.value)} style={{ ...FIELD, width:"auto", minWidth:180, marginBottom: 18 }}/>
-          <p style={{ fontFamily: sans, fontSize: 11, textTransform: "uppercase", letterSpacing: "0.14em", color: T.mid, margin: "0 0 8px" }}>Occasion</p>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: 8, marginBottom: 18 }}>{WEAR_OCCASIONS.map(o => <button key={o} onClick={() => setOccasion(occasion === o ? "" : o)} style={chip(occasion === o)}>{o}</button>)}</div>
-          <p style={{ fontFamily: sans, fontSize: 11, textTransform: "uppercase", letterSpacing: "0.14em", color: T.mid, margin: "0 0 8px" }}>Weather</p>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: 8, marginBottom: 18 }}>{WEAR_WEATHER.map(o => <button key={o} onClick={() => setWeather(weather === o ? "" : o)} style={chip(weather === o)}>{o}</button>)}</div>
+          <p style={{ fontFamily: sans, fontSize: 11, textTransform: "uppercase", letterSpacing: "0.14em", color: T.mid, margin: "0 0 4px" }}>Occasion</p>
+          <p style={{ fontFamily: sans, fontSize: 12, color: T.faint, margin: "0 0 8px", lineHeight: 1.5 }}>Pick any that fit.</p>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: 8, marginBottom: 18 }}>{WEAR_OCCASIONS.map(o => <button key={o} aria-pressed={occasions.includes(o)} onClick={() => toggleIn(setOccasions, o)} style={chip(occasions.includes(o))}>{o}</button>)}</div>
+          <p style={{ fontFamily: sans, fontSize: 11, textTransform: "uppercase", letterSpacing: "0.14em", color: T.mid, margin: "0 0 4px" }}>Weather</p>
+          <p style={{ fontFamily: sans, fontSize: 12, color: T.faint, margin: "0 0 8px", lineHeight: 1.5 }}>Pick any that fit.</p>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: 8, marginBottom: 18 }}>{WEAR_WEATHER.map(o => <button key={o} aria-pressed={weathers.includes(o)} onClick={() => toggleIn(setWeathers, o)} style={chip(weathers.includes(o))}>{o}</button>)}</div>
           <p style={{ fontFamily: sans, fontSize: 11, textTransform: "uppercase", letterSpacing: "0.14em", color: T.mid, margin: "0 0 4px" }}>How were you feeling?</p>
           <p style={{ fontFamily: sans, fontSize: 12, color: T.faint, margin: "0 0 8px", lineHeight: 1.5 }}>Pick any that fit. Private to you.</p>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: 8, marginBottom: 18 }}>{WEAR_MOODS.map(o => { const on = moods.includes(o); return <button key={o} aria-pressed={on} onClick={() => setMoods(on ? moods.filter(x => x !== o) : [...moods, o])} style={chip(on)}>{o}</button>; })}</div>
@@ -2412,7 +2415,7 @@ function WearLog({ frag, wears, onLogWear, onDeleteWear }) {
             <div key={w.id} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, padding: "10px 0", borderBottom: `1px solid ${T.lift}` }}>
               <div style={{ minWidth: 0 }}>
                 <span style={{ fontFamily: sans, fontSize: 13, color: T.ink }}>{fmtWearDate(w.date)}</span>
-                <span style={{ fontFamily: sans, fontSize: 11, color: T.faint, marginLeft: 8, textTransform: "capitalize" }}>{[w.occasion, w.weather, ...(w.moods || [])].filter(Boolean).join(" · ")}</span>
+                <span style={{ fontFamily: sans, fontSize: 11, color: T.faint, marginLeft: 8, textTransform: "capitalize" }}>{[...(w.occasions && w.occasions.length ? w.occasions : [w.occasion]), ...(w.weathers && w.weathers.length ? w.weathers : [w.weather]), ...(w.moods || [])].filter(Boolean).join(" · ")}</span>
               </div>
               <div style={{ display: "flex", alignItems: "center", gap: 10, flexShrink: 0 }}>
                 {w.rating ? <span style={{ fontFamily: sans, fontSize: 12, color: T.mid }}>{"★".repeat(w.rating)}</span> : null}
@@ -2788,8 +2791,8 @@ function JournalInsights({ entries, userStatuses, reactions, fragrances, wears, 
   const byFrag = {}, ratings = {}, perf = {}, occ = {}, wx = {};
   W.forEach(w => {
     byFrag[w.fragId] = (byFrag[w.fragId] || 0) + 1;
-    if (w.occasion) occ[w.occasion] = (occ[w.occasion] || 0) + 1;
-    if (w.weather) wx[w.weather] = (wx[w.weather] || 0) + 1;
+    (w.occasions && w.occasions.length ? w.occasions : [w.occasion]).filter(Boolean).forEach(o => { occ[o] = (occ[o] || 0) + 1; });
+    (w.weathers && w.weathers.length ? w.weathers : [w.weather]).filter(Boolean).forEach(o => { wx[o] = (wx[o] || 0) + 1; });
     const f = FR.find(x => x.id === w.fragId);
     String((f && f.perfumer) || "").split(/\s*(?:&|\/|,|\band\b)\s*/i).map(x => x.trim()).filter(Boolean).forEach(n => { perf[n] = (perf[n] || 0) + 1; });
     if (w.rating) ratings[w.rating] = (ratings[w.rating] || 0) + 1;
@@ -5867,14 +5870,14 @@ export default function SillageApp() {
           supabase.from("user_fragrances").select("fragrance_id, status, reaction, note, finished_on, rebuy").eq("user_id", uid).limit(5000),
           supabase.from("journal_entries").select("*").eq("user_id", uid).order("created_at", { ascending: false }).limit(2000),
           supabase.from("layerings").select("*").eq("user_id", uid).order("created_at", { ascending: false }).limit(1000),
-          supabase.from("wears").select("id, fragrance_id, worn_on, occasion, weather, rating, moods").eq("user_id", uid).order("worn_on", { ascending: false }).limit(5000),
+          supabase.from("wears").select("id, fragrance_id, worn_on, occasion, weather, occasions, weathers, rating, moods").eq("user_id", uid).order("worn_on", { ascending: false }).limit(5000),
         ]);
         if (off) return;
         if (uf.error || je.error || ly.error) { console.error("Could not load your saved data:", uf.error || je.error || ly.error); return; }
         const st = {}, rx = {}, nt = {}, fin = {};
         (uf.data || []).forEach(r => { if (r.finished_on || r.rebuy) fin[r.fragrance_id] = { on: r.finished_on || null, rebuy: r.rebuy || null }; if (r.status) st[r.fragrance_id] = r.status; if (r.reaction) rx[r.fragrance_id] = r.reaction; if (r.note) nt[r.fragrance_id] = r.note; });
         setUserStatuses(st); setFinishes(fin); setReactions(rx); setPrivateNotes(nt);
-        if (!wr.error) setWears((wr.data || []).map(r => ({ id: r.id, fragId: r.fragrance_id, date: r.worn_on, occasion: r.occasion, weather: r.weather, rating: r.rating, moods: r.moods || [] })));
+        if (!wr.error) setWears((wr.data || []).map(r => ({ id: r.id, fragId: r.fragrance_id, date: r.worn_on, occasion: r.occasion, weather: r.weather, occasions: (r.occasions && r.occasions.length) ? r.occasions : (r.occasion ? [r.occasion] : []), weathers: (r.weathers && r.weathers.length) ? r.weathers : (r.weather ? [r.weather] : []), rating: r.rating, moods: r.moods || [] })));
         setJournalEntries((je.data || []).map(r => ({ id: r.id, fragId: r.fragrance_id, fragName: r.frag_name, house: r.house, family: r.family, prompt: r.prompt, text: r.body, where: r.where_text, date: r.entry_date, shared: r.shared, publishedAsReview: r.published_as_review, reviewRating: r.review_rating, answers: r.answers || {} })));
         setLayers((ly.data || []).map(r => ({ id: r.id, name: r.name, frags: r.frags || [], ratio: r.ratio, layerWith: r.layer_with, note: r.note, rating: r.rating, isPublic: r.is_public, date: new Date(r.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) })));
         // Make sure every fragrance in the collection is loaded so the Collection tab can show it.
@@ -5904,8 +5907,8 @@ export default function SillageApp() {
   async function logWear(fragId, w) {
     if (!uid || !isUuid(fragId)) return;
     const tempId = "tmp-" + Date.now();
-    setWears(p => [{ id: tempId, fragId, date: w.date, occasion: w.occasion, weather: w.weather, rating: w.rating, moods: w.moods || [] }, ...p]);
-    const { data, error } = await supabase.from("wears").insert({ user_id: uid, fragrance_id: fragId, worn_on: w.date, occasion: w.occasion, weather: w.weather, rating: w.rating, moods: w.moods || [] }).select("id").single();
+    setWears(p => [{ id: tempId, fragId, date: w.date, occasion: w.occasion, weather: w.weather, occasions: w.occasions || [], weathers: w.weathers || [], rating: w.rating, moods: w.moods || [] }, ...p]);
+    const { data, error } = await supabase.from("wears").insert({ user_id: uid, fragrance_id: fragId, worn_on: w.date, occasion: w.occasion, weather: w.weather, occasions: w.occasions || [], weathers: w.weathers || [], rating: w.rating, moods: w.moods || [] }).select("id").single();
     if (error) { setWears(p => p.filter(x => x.id !== tempId)); flagSave(error); return; }
     setWears(p => p.map(x => x.id === tempId ? { ...x, id: data.id } : x));
   }
