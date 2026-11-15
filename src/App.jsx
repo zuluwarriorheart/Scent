@@ -1648,8 +1648,20 @@ function ownershipOf(h) {
   const o = h && h.ownership;
   return o ? { status: o === "Independent" ? "independent" : "conglomerate", parent: o } : null;
 }
+// The database returns at most 100 rows per request, so long lists are fetched a page at a time.
+async function rpcAll(name, args) {
+  const out = [];
+  for (let from = 0; from < 10000; from += 100) {
+    const r = await supabase.rpc(name, args || {}).range(from, from + 99);
+    if (r.error) return { data: null, error: r.error };
+    const rows = r.data || [];
+    out.push(...rows);
+    if (rows.length < 100) break;
+  }
+  return { data: out, error: null };
+}
 async function loadBrands() {
-  const r = await supabase.rpc("brands_list");
+  const r = await rpcAll("brands_list");
   if (!r.error && r.data) return r.data;
   const f = await supabase.from("houses").select("*").order("name").limit(2000);
   if (f.error) throw f.error;
@@ -1861,7 +1873,7 @@ function splitPerfumers(s) {
   return String(s || "").split(/\s*(?:,|&|\/|;|\sand\s|\swith\s)\s*/i).map(x => x.trim()).filter(x => x.length > 2 && !/^(unknown|n\/a|na|various|none|anonymous)$/i.test(x));
 }
 async function loadPerfumers() {
-  const r = await supabase.rpc("perfumers_list");
+  const r = await rpcAll("perfumers_list");
   if (!r.error && r.data) {
     // Capitalise names and merge rows that differ only by case ("david apel" + "David Apel")
     const m = new Map();
@@ -3193,28 +3205,28 @@ function PostCard({ p, frag, onOpenProfile, onOpenFrag, onChanged, inThread }) {
   async function report() { const { error } = await supabase.rpc("report_post", { p_id: p.id }); setNote(error ? postError(error) : "Reported. Thank you."); }
   const rc = Number(p.reply_count) || 0;
   return (
-    <article style={{ background:T.white, border:`1px solid ${T.rule}`, borderRadius:16, padding:"14px 16px", marginBottom:12 }}>
+    <article style={{ background:"var(--tangerine)", border:"1px solid var(--tangerine)", color:"var(--on-tang)", borderRadius:16, padding:"14px 16px", marginBottom:12 }}>
       <div style={{ display:"flex", alignItems:"center", gap:10, marginBottom:10 }}>
-        <button onClick={() => onOpenProfile(p.username)} aria-label={"Open @" + p.username} style={{ ...AVATAR_COMMUNITY, width:36, height:36, cursor:"pointer", fontSize:13 }}>{String(p.username).slice(0, 2).toUpperCase()}</button>
+        <button onClick={() => onOpenProfile(p.username)} aria-label={"Open @" + p.username} style={{ ...AVATAR_COMMUNITY, background:"var(--on-tang)", color:"var(--tangerine)", width:36, height:36, cursor:"pointer", fontSize:13 }}>{String(p.username).slice(0, 2).toUpperCase()}</button>
         <div style={{ minWidth:0, flex:1 }}>
-          <button onClick={() => onOpenProfile(p.username)} style={{ background:"none", border:"none", padding:0, cursor:"pointer", fontFamily:serif, fontSize:15, color:T.black }}>@{p.username}</button>
+          <button onClick={() => onOpenProfile(p.username)} style={{ background:"none", border:"none", padding:0, cursor:"pointer", fontFamily:serif, fontSize:15, color:"var(--on-tang)" }}>@{p.username}</button>
           {p.country && <span style={{ marginLeft:6, fontSize:13 }}>{countryFlag(p.country)}</span>}
-          <p style={{ fontFamily:sans, fontSize:12, color:T.faint, margin:"1px 0 0" }}>{p.kind === "share" ? "Shared a fragrance" : "Shared a thought"} · {reqAgo(p.created_at)}{p.audience === "followers" ? " · Followers" : ""}</p>
+          <p style={{ fontFamily:sans, fontSize:12, color:"var(--on-tang)", opacity:0.8, margin:"1px 0 0" }}>{p.kind === "share" ? "Shared a fragrance" : "Shared a thought"} · {reqAgo(p.created_at)}{p.audience === "followers" ? " · Followers" : ""}</p>
         </div>
       </div>
-      <p style={{ fontFamily:sans, fontSize:15, color:T.ink, lineHeight:1.65, margin:0, whiteSpace:"pre-wrap", overflowWrap:"anywhere" }}>{p.body}</p>
+      <p style={{ fontFamily:sans, fontSize:15, lineHeight:1.65, margin:0, color:"var(--on-tang)", whiteSpace:"pre-wrap", overflowWrap:"anywhere" }}>{p.body}</p>
       {p.fragrance_id && frag && (
-        <button onClick={() => onOpenFrag(frag.id)} style={{ display:"flex", alignItems:"center", gap:10, marginTop:10, padding:"10px 12px", background:T.lift, border:`1px solid ${T.rule}`, borderRadius:12, cursor:"pointer", textAlign:"left", maxWidth:"100%" }}>
-          <span><span style={{ display:"block", fontFamily:serif, fontSize:15, color:T.black }}>{frag.name}</span><span style={{ display:"block", fontFamily:sans, fontSize:12, color:T.mid }}>{frag.house}</span></span>
+        <button onClick={() => onOpenFrag(frag.id)} style={{ display:"flex", alignItems:"center", gap:10, marginTop:10, padding:"10px 12px", background:"rgba(255,255,255,0.22)", border:"1px solid rgba(255,255,255,0.4)", borderRadius:12, cursor:"pointer", textAlign:"left", maxWidth:"100%" }}>
+          <span><span style={{ display:"block", fontFamily:serif, fontSize:15, color:"var(--on-tang)" }}>{frag.name}</span><span style={{ display:"block", fontFamily:sans, fontSize:12, color:"var(--on-tang)", opacity:0.85 }}>{frag.house}</span></span>
         </button>
       )}
       <div style={{ display:"flex", gap:14, alignItems:"center", marginTop:6, flexWrap:"wrap" }}>
-        {!inThread && <button onClick={() => setThread(true)} style={{ ...POST_BTN, color:"var(--tangerine)", fontWeight:600 }}>{rc > 0 ? rc + (rc === 1 ? " reply" : " replies") : "Reply"}</button>}
-        {p.can_delete && !confirm && <button onClick={() => setConfirm(true)} style={POST_BTN}>Delete</button>}
-        {p.can_delete && confirm && <span style={{ fontFamily:sans, fontSize:12, color:T.mid }}>Delete this post? <button onClick={del} style={{ ...POST_BTN, color:T.bad, display:"inline", padding:"0 6px" }}>Yes</button><button onClick={() => setConfirm(false)} style={{ ...POST_BTN, display:"inline", padding:"0 6px" }}>No</button></span>}
-        {!p.mine && <button onClick={report} style={POST_BTN}>Report</button>}
-        {Number(p.report_count) > 0 && <span style={{ fontFamily:sans, fontSize:12, color:T.bad }}>Reported by {Number(p.report_count)}</span>}
-        {note && <span style={{ fontFamily:sans, fontSize:12, color:T.mid }}>{note}</span>}
+        {!inThread && <button onClick={() => setThread(true)} style={{ ...POST_BTN, color:"var(--on-tang)", fontWeight:700, textDecoration:"underline" }}>{rc > 0 ? rc + (rc === 1 ? " reply" : " replies") : "Reply"}</button>}
+        {p.can_delete && !confirm && <button onClick={() => setConfirm(true)} style={{ ...POST_BTN, color:"var(--on-tang)" }}>Delete</button>}
+        {p.can_delete && confirm && <span style={{ fontFamily:sans, fontSize:12, color:"var(--on-tang)" }}>Delete this post? <button onClick={del} style={{ ...POST_BTN, color:"var(--on-tang)", fontWeight:700, textDecoration:"underline", display:"inline", padding:"0 6px" }}>Yes</button><button onClick={() => setConfirm(false)} style={{ ...POST_BTN, display:"inline", padding:"0 6px" }}>No</button></span>}
+        {!p.mine && <button onClick={report} style={{ ...POST_BTN, color:"var(--on-tang)" }}>Report</button>}
+        {Number(p.report_count) > 0 && <span style={{ fontFamily:sans, fontSize:12, color:"var(--on-tang)", fontWeight:700 }}>Reported by {Number(p.report_count)}</span>}
+        {note && <span style={{ fontFamily:sans, fontSize:12, color:"var(--on-tang)" }}>{note}</span>}
       </div>
       {thread && <PostThread postId={p.id} onClose={() => setThread(false)} onChanged={onChanged} onOpenProfile={onOpenProfile} onOpenFrag={onOpenFrag}/>}
     </article>
