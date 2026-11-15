@@ -6339,28 +6339,6 @@ export default function SillageApp() {
   const [modalFragId, setModalFragId] = useState(null);
   const [showSuggest, setShowSuggest] = useState(false);
   const [importOpen, setImportOpen] = useState(false);
-  // Members who ticked "I have a list to bring in" at sign-up get the import sheet once, in their collection.
-  useEffect(() => {
-    if (!uid || appScreen !== "app") return;
-    try { if (localStorage.getItem("mos_open_import") === "1") { localStorage.removeItem("mos_open_import"); setActiveTab("Collection"); setImportOpen(true); } } catch (e) {}
-  }, [uid, appScreen]);
-  async function applyImport(items) {
-    let added = 0, already = 0; const rowsOut = []; const nextSets = { ...statusSets }; const nextSt = { ...userStatuses };
-    items.forEach(({ frag, status }) => {
-      const before = nextSets[frag.id] || [];
-      if (before.includes(status)) { already++; return; }
-      const after = toggleStatus(before, status), prim = primaryStatus(after);
-      nextSets[frag.id] = after; nextSt[frag.id] = prim; added++;
-      rowsOut.push({ user_id: uid, fragrance_id: frag.id, status: prim, statuses: after, updated_at: new Date().toISOString() });
-    });
-    setStatusSets(nextSets); setUserStatuses(nextSt);
-    if (uid) for (let i = 0; i < rowsOut.length; i += 200) {
-      const { error } = await supabase.from("user_fragrances").upsert(rowsOut.slice(i, i + 200).filter(r => isUuid(r.fragrance_id)), { onConflict: "user_id,fragrance_id" });
-      if (error) { flagSave(error); break; }
-    }
-    trackEvent("collection_import", { source: "import", detail: String(added) });
-    return { added, already };
-  }
   const [profileUsername, setProfileUsername] = useState(null);
   const [peopleOpen, setPeopleOpen] = useState(false);
   const [peopleQ, setPeopleQ] = useState("");
@@ -6601,6 +6579,28 @@ export default function SillageApp() {
     if (!uid || !isUuid(fragId)) return;
     const { error } = await supabase.from("user_fragrances").upsert({ user_id: uid, fragrance_id: fragId, ...patch, updated_at: new Date().toISOString() }, { onConflict: "user_id,fragrance_id" });
     if (error) flagSave(error);
+  }
+  // Members who ticked "I have a list to bring in" at sign-up get the import sheet once, in their collection.
+  useEffect(() => {
+    if (!uid || appScreen !== "app") return;
+    try { if (localStorage.getItem("mos_open_import") === "1") { localStorage.removeItem("mos_open_import"); setActiveTab("Collection"); setImportOpen(true); } } catch (e) {}
+  }, [uid, appScreen]);
+  async function applyImport(items) {
+    let added = 0, already = 0; const rowsOut = []; const nextSets = { ...statusSets }; const nextSt = { ...userStatuses };
+    items.forEach(({ frag, status }) => {
+      const before = nextSets[frag.id] || [];
+      if (before.includes(status)) { already++; return; }
+      const after = toggleStatus(before, status), prim = primaryStatus(after);
+      nextSets[frag.id] = after; nextSt[frag.id] = prim; added++;
+      rowsOut.push({ user_id: uid, fragrance_id: frag.id, status: prim, statuses: after, updated_at: new Date().toISOString() });
+    });
+    setStatusSets(nextSets); setUserStatuses(nextSt);
+    if (uid) for (let i = 0; i < rowsOut.length; i += 200) {
+      const { error } = await supabase.from("user_fragrances").upsert(rowsOut.slice(i, i + 200).filter(r => isUuid(r.fragrance_id)), { onConflict: "user_id,fragrance_id" });
+      if (error) { flagSave(error); break; }
+    }
+    trackEvent("collection_import", { source: "import", detail: String(added) });
+    return { added, already };
   }
   useEffect(() => {
     setUserStatuses({}); setStatusSets({}); setFinishes({}); setReactions({}); setPrivateNotes({}); setJournalEntries([]); setLayers([]); setWears([]);
