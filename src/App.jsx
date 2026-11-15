@@ -972,17 +972,49 @@ function FooterLinks({ dark = false }) {
 
 // ─── SUGGEST MODAL ────────────────────────────────────────────────────────────
 function SuggestModal({ onClose, currentUser }) {
-  const blank={name:"",house:"",year:"",concentration:"",perfumer:"",family:"",priceTier:"",website:"",country:"",ownershipStatus:"",ownershipParent:"",ownershipYear:"",top:"",heart:"",base:"",accords:"",story:"",why:"",sampleWhere:"",imageUrl:"",sourceUrl:"",firstReview:""};
+  const blank={name:"",house:"",year:"",concentration:"",perfumer:"",family:"",priceTier:"",website:"",country:"",ownershipStatus:"",ownershipParent:"",ownershipYear:"",top:"",heart:"",base:"",accords:"",story:"",why:"",sampleWhere:"",imagePath:"",sourceUrl:"",firstReview:""};
+  const [photo,setPhoto]=useState(null); // {blob, url}
+  const [ownPhoto,setOwnPhoto]=useState(false);
   const [form,setForm]=useState(blank);
   const [submitted,setSubmitted]=useState(false);
   const [busy,setBusy]=useState(false);
   const [err,setErr]=useState("");
   function set(k,v){setForm(f=>({...f,[k]:v}));}
+  // Resize and re-encode as JPEG: keeps uploads small and strips location data from the photo.
+  async function pickPhoto(file){
+    if(!file)return;
+    setErr("");
+    try{
+      const url=URL.createObjectURL(file);
+      const img=await new Promise((res,rej)=>{const i=new Image();i.onload=()=>res(i);i.onerror=rej;i.src=url;});
+      const max=1600,sc=Math.min(1,max/Math.max(img.width,img.height));
+      const c=document.createElement("canvas");c.width=Math.round(img.width*sc);c.height=Math.round(img.height*sc);
+      const x=c.getContext("2d");x.fillStyle="#fff";x.fillRect(0,0,c.width,c.height);x.drawImage(img,0,0,c.width,c.height);
+      URL.revokeObjectURL(url);
+      const blob=await new Promise(r=>c.toBlob(r,"image/jpeg",0.85));
+      if(!blob)throw new Error("encode");
+      if(photo&&photo.url)URL.revokeObjectURL(photo.url);
+      setPhoto({blob,url:URL.createObjectURL(blob)});
+    }catch(e){setErr("We couldn't read that photo. Try a JPG or PNG.");}
+  }
   async function submit(){
-    if(!form.name.trim()||!form.house.trim()){setErr("Add the fragrance name and the house first.");return;}
+    const miss=[];
+    if(!form.name.trim())miss.push("fragrance name");
+    if(!form.house.trim())miss.push("house");
+    if(!/\S+\.\S+/.test(form.website.trim()))miss.push("house website");
+    if(!form.country.trim())miss.push("country");
+    if(!(form.top.trim()||form.heart.trim()||form.base.trim()))miss.push("at least one note");
+    if(!photo)miss.push("a bottle photo");
+    else if(!ownPhoto)miss.push("confirmation that the photo is your own");
+    if(miss.length){setErr("Still needed: "+miss.join(", ")+".");return;}
     setBusy(true);setErr("");
     try{
-      const { error } = await supabase.from("suggestions").insert({ user_id:(currentUser&&currentUser.id)||null, payload:form });
+      const uid=(currentUser&&currentUser.id)||null;
+      if(!uid) throw new Error("not signed in");
+      const path=`${uid}/${Date.now()}.jpg`;
+      const up=await supabase.storage.from("suggestion-images").upload(path,photo.blob,{contentType:"image/jpeg",upsert:false});
+      if(up.error) throw up.error;
+      const { error } = await supabase.from("suggestions").insert({ user_id:uid, payload:{...form,imagePath:path,ownPhotoConfirmed:true} });
       if(error) throw error;
       setSubmitted(true);
     }catch(e){
@@ -1022,14 +1054,14 @@ function SuggestModal({ onClose, currentUser }) {
           <BackBtn onBack={onClose}/>
           <p style={{ fontFamily:sans, fontSize:11, fontWeight:600, textTransform:"uppercase", letterSpacing:"0.18em", color:T.accent, margin:"0 0 6px" }}>Community</p>
           <h2 style={{ fontFamily:serif, fontSize:"clamp(30px, 3vw, 46px)", fontWeight:400, letterSpacing:-0.6, color:T.black, margin:0, paddingRight:40 }}>Suggest a fragrance</h2>
-          <p style={{ fontFamily:sans, fontSize:"clamp(14px, 1.1vw, 16px)", color:T.mid, lineHeight:1.65, margin:"10px 0 0", maxWidth:640 }}>Can't find it? Tell us what you know. Only the name and house are required, and every extra detail saves us a search. A person reviews each suggestion before it goes in.</p>
+          <p style={{ fontFamily:sans, fontSize:"clamp(14px, 1.1vw, 16px)", color:T.mid, lineHeight:1.65, margin:"10px 0 0", maxWidth:640 }}>Can't find it? Tell us what you know. The name, house, house website, country, at least one note and a bottle photo are required, and every extra detail saves us a search. A person reviews each suggestion before it goes in.</p>
         </div>
         {submitted ? (
           <div className="mos-pad" style={{ padding:"56px 24px 72px", textAlign:"center" }}>
             <h3 style={{ fontFamily:serif, fontSize:"clamp(26px, 2.4vw, 36px)", fontWeight:400, color:T.black, margin:"0 0 10px" }}>Thank you</h3>
             <p style={{ fontFamily:sans, fontSize:15, color:T.mid, lineHeight:1.65, margin:"0 auto 28px", maxWidth:440 }}><strong style={{ color:T.ink }}>{form.name}</strong> by {form.house} is in the queue for review.</p>
             <div style={{ display:"flex", gap:10, justifyContent:"center", flexWrap:"wrap" }}>
-              <button onClick={()=>{setForm(blank);setSubmitted(false);}} style={{ minHeight:48, padding:"0 24px", borderRadius:10, background:T.white, border:`1px solid ${T.rule}`, color:T.ink, fontSize:14, fontFamily:sans, cursor:"pointer" }}>Suggest another</button>
+              <button onClick={()=>{setForm(blank);setPhoto(null);setOwnPhoto(false);setSubmitted(false);}} style={{ minHeight:48, padding:"0 24px", borderRadius:10, background:T.white, border:`1px solid ${T.rule}`, color:T.ink, fontSize:14, fontFamily:sans, cursor:"pointer" }}>Suggest another</button>
               <button onClick={onClose} style={{ minHeight:48, padding:"0 28px", borderRadius:10, background:T.black, border:"none", color:T.white, fontSize:14, fontFamily:sans, cursor:"pointer" }}>Done</button>
             </div>
           </div>
@@ -1054,8 +1086,8 @@ function SuggestModal({ onClose, currentUser }) {
                   <Field label="Price tier">{choice("priceTier",[{val:"Mass-market",label:"Mass-market"},{val:"Prestige",label:"Prestige"},{val:"Luxury",label:"Luxury"}])}</Field>
                 </Sec>
                 <div style={{height:34}}/>
-                <Sec title="Notes and accords" sub="Separate each with a comma. Leave blank what you don't know.">
-                  <Field label="Top notes">{input("top","e.g. Bergamot, Saffron")}</Field>
+                <Sec title="Notes and accords" sub="Separate each with a comma. At least one note is required; leave blank what you don't know.">
+                  <Field label="Top notes" req hint="Add at least one note in top, heart or base.">{input("top","e.g. Bergamot, Saffron")}</Field>
                   <Field label="Heart notes">{input("heart","e.g. Rose, Iris")}</Field>
                   <Field label="Base notes">{input("base","e.g. Sandalwood, Musk")}</Field>
                   <Field label="Main accords" hint="Up to five, strongest first. e.g. Woody, Floral, Powdery.">{input("accords","Woody, Floral, Powdery")}</Field>
@@ -1063,8 +1095,8 @@ function SuggestModal({ onClose, currentUser }) {
               </div>
               <div>
                 <Sec title="The house" sub="Shown next to the house name on the card.">
-                  <Field label="House website">{input("website","maisonexample.com",{inputMode:"url",autoCapitalize:"none"})}</Field>
-                  <Field label="Country">{input("country","Where the house is based")}</Field>
+                  <Field label="House website" req>{input("website","maisonexample.com",{inputMode:"url",autoCapitalize:"none"})}</Field>
+                  <Field label="Country" req>{input("country","Where the house is based")}</Field>
                   <Field label="Ownership">{choice("ownershipStatus",[{val:"independent",label:"Independent"},{val:"conglomerate",label:"Conglomerate-owned"}])}</Field>
                   {form.ownershipStatus==="conglomerate"&&(
                     <div style={{display:"grid",gridTemplateColumns:"1.6fr 1fr",gap:12}}>
@@ -1082,7 +1114,14 @@ function SuggestModal({ onClose, currentUser }) {
                 <Sec title="Samples and sources" sub="Helps us fill in the rest of the card.">
                   <Field label="Where can people get a sample?" hint="A retailer or the house's own shop, if you know one.">{input("sampleWhere","Retailer name or link")}</Field>
                   <Field label="Link to the fragrance">{input("sourceUrl","Brand page or reference link",{inputMode:"url",autoCapitalize:"none"})}</Field>
-                  <Field label="Link to a bottle photo">{input("imageUrl","Image link, if you have one",{inputMode:"url",autoCapitalize:"none"})}</Field>
+                  <Field label="Bottle photo" req hint="Upload your own photo of the bottle. Please don't use images from the brand's website or anywhere else online: they're protected by copyright. Brands can send us approved images directly.">
+                    <input type="file" accept="image/*" onChange={e=>pickPhoto(e.target.files&&e.target.files[0])} style={{fontFamily:sans,fontSize:14,color:T.ink,maxWidth:"100%"}}/>
+                  </Field>
+                  {photo&&<img src={photo.url} alt="Your bottle photo" style={{width:"100%",maxWidth:240,borderRadius:12,border:`1px solid ${T.rule}`,display:"block",margin:"0 0 12px"}}/>}
+                  <label style={{display:"flex",gap:10,alignItems:"flex-start",margin:"0 0 18px",fontFamily:sans,fontSize:13,color:T.mid,lineHeight:1.5,cursor:"pointer"}}>
+                    <input type="checkbox" checked={ownPhoto} onChange={e=>setOwnPhoto(e.target.checked)} style={{marginTop:3,width:18,height:18,flex:"none"}}/>
+                    <span>This is my own photo. It isn't copied from the brand's website or anywhere else.</span>
+                  </label>
                   <Field label="Your first review"><textarea className="mos-in" rows={3} value={form.firstReview} onChange={e=>set("firstReview",e.target.value)} placeholder="Optional. How does it open and dry down?" style={{resize:"vertical",lineHeight:1.6}}/></Field>
                 </Sec>
               </div>
