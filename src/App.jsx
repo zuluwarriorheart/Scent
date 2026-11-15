@@ -909,7 +909,7 @@ const LEGAL_CONTENT = {
     updated: "Last updated: November 2026",
     sections: [
       { heading: "What we collect", body: "We collect your name, email address, username, and country when you register. We collect fragrance interactions, statuses, reactions, journal entries, and reviews, to power your personal experience." },
-      { heading: "Profiles and following", body: "Other signed-in members can see your username, country flag, bio, and how many people follow you and how many you follow. Only you can see the lists of who you follow and who follows you. People can find you by username only: your name and email are never searchable or shown to other members. You can switch off search, and edit your bio and country, at any time under Edit profile. Your collection, wears, journal and private notes stay private unless you choose to share them." },
+      { heading: "Profiles and following", body: "Other signed-in members can see your username, country flag, bio, and how many people follow you and how many you follow. Only you can see the lists of who you follow and who follows you. People can find you by username only: your name and email are never searchable or shown to other members. You can switch off search, and edit your bio and country, at any time under Edit profile. Your collection, wears, journal and private notes stay private unless you choose to share them. Other members can also see one taste-match percentage between you and them, worked out from your collection and ratings. It never reveals what is in them, and you can switch it off in Edit profile." },
       { heading: "What we never do", body: "We do not sell your data. We do not share your personal information with advertisers. Private notes are encrypted and never accessible to the Memoir on Skin team." },
       { heading: "How we use your data", body: "Your data is used to provide the Memoir on Skin service, personalise your discovery experience, and improve the platform. Aggregate, anonymised data may be used to identify fragrance trends." },
       { heading: "Journal entries and private notes", body: "Private notes and journal entries marked as private are stored securely and are visible only to you. Publishing a journal entry or review makes that content visible to the community." },
@@ -5861,12 +5861,13 @@ function ProfileEditor({ user, onCancel, onSaved }) {
   const [bio, setBio] = useState(user.bio || "");
   const [country, setCountry] = useState(user.country || "");
   const [disc, setDisc] = useState(user.discoverable !== false);
+  const [shareMatch, setShareMatch] = useState(user.shareMatch !== false);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState("");
   async function save() {
     setBusy(true); setErr("");
-    const fields = { bio: bio.trim(), country: country || "", discoverable: disc };
-    const { error } = await supabase.from("profiles").update({ bio: fields.bio || null, country: country || null, discoverable: disc }).eq("id", user.id);
+    const fields = { bio: bio.trim(), country: country || "", discoverable: disc, shareMatch };
+    const { error } = await supabase.from("profiles").update({ bio: fields.bio || null, country: country || null, discoverable: disc, share_match: shareMatch }).eq("id", user.id);
     setBusy(false);
     if (error) { setErr("That didn't go through. Try again in a moment."); return; }
     onSaved(fields);
@@ -5882,6 +5883,12 @@ function ProfileEditor({ user, onCancel, onSaved }) {
         <input type="checkbox" checked={disc} onChange={e => setDisc(e.target.checked)} style={{ width:20, height:20, marginTop:1, accentColor:"var(--accent)", flexShrink:0 }}/>
         <span style={{ fontFamily:sans, fontSize:14, color:T.ink, lineHeight:1.5 }}>Let people find me by username
           <span style={{ display:"block", fontSize:12, color:T.mid, marginTop:2 }}>Your name and email are never searchable. Turning this off hides you from People search; anyone you share a post or link with can still open your profile.</span>
+        </span>
+      </label>
+      <label style={{ display:"flex", alignItems:"flex-start", gap:12, padding:"12px 14px", border:`1px solid ${T.rule}`, borderRadius:12, cursor:"pointer", marginBottom:6 }}>
+        <input type="checkbox" checked={shareMatch} onChange={e => setShareMatch(e.target.checked)} style={{ width:20, height:20, marginTop:1, accentColor:"var(--accent)", flexShrink:0 }}/>
+        <span style={{ fontFamily:sans, fontSize:14, color:T.ink, lineHeight:1.5 }}>Show a taste match on my profile
+          <span style={{ display:"block", fontSize:12, color:T.mid, marginTop:2 }}>Other members see one percentage comparing your taste with theirs. Never your collection, ratings, journal or wear log.</span>
         </span>
       </label>
       <p style={{ fontFamily:sans, fontSize:12, color:T.faint, margin:"0 0 16px" }}>Your username is permanent: it is how your posts and combinations are credited.</p>
@@ -5985,6 +5992,16 @@ function ProfileModal({ username, onClose, onBack, currentUser, userStatuses, on
   const [loaded, setLoaded] = useState(isSillage);
   const [list, setList] = useState(null);   // people shown on the Following / Followers tabs
   const [editing, setEditing] = useState(false);
+  const [match, setMatch] = useState(null);
+  const [matchInfo, setMatchInfo] = useState(false);
+
+  useEffect(() => {
+    setMatch(null); setMatchInfo(false);
+    if (isSillage || isSelf) return;
+    let live = true;
+    supabase.rpc("taste_match", { p_username: username }).then(({ data, error }) => { if (live && !error && data && data[0]) setMatch(data[0]); });
+    return () => { live = false; };
+  }, [username]);
 
   useEffect(() => {
     if (isSillage) return;
@@ -6111,6 +6128,27 @@ function ProfileModal({ username, onClose, onBack, currentUser, userStatuses, on
                   </svg>
                   <span style={{ fontFamily:sans, fontSize:12, color:T.mid, whiteSpace:"nowrap" }}>{commonFrags.length} in common</span>
                 </div>
+              )}
+            </div>
+          )}
+
+          {!isSelf && !isSillage && real && match && match.reason !== "none" && (
+            <div style={{ marginBottom:18 }}>
+              <div style={{ display:"flex", alignItems:"center", gap:10, flexWrap:"wrap" }}>
+                {match.reason === "ok"
+                  ? <span style={{ fontFamily:sans, fontSize:14, fontWeight:700, padding:"7px 14px", borderRadius:20, background:"var(--tang-soft)", border:"1px solid var(--tang-line)", color:"var(--tang-ink)" }}>{match.score}% taste match</span>
+                  : <span style={{ fontFamily:sans, fontSize:13, padding:"7px 14px", borderRadius:20, background:T.lift, border:`1px solid ${T.rule}`, color:T.mid }}>Taste match not available</span>}
+                <button onClick={() => setMatchInfo(v => !v)} aria-expanded={matchInfo} style={{ background:"none", border:"none", padding:0, fontFamily:sans, fontSize:13, color:T.mid, textDecoration:"underline", cursor:"pointer" }}>Match info</button>
+              </div>
+              {matchInfo && (
+                <p style={{ fontFamily:sans, fontSize:13, color:T.mid, lineHeight:1.65, margin:"10px 0 0" }}>
+                  {match.reason === "ok" && "This compares the notes, accords and fragrances in your collections and ratings with theirs. It is one number, never a verdict on anyone's nose. "}
+                  {match.reason === "me_few" && "Add at least three fragrances you own, love or like to your collection and you'll see how your taste compares. "}
+                  {match.reason === "them_few" && "This could be because they haven't added enough fragrances yet. "}
+                  {match.reason === "hidden" && "This member has chosen not to show a taste match. "}
+                  {match.reason === "ok" && "Scores update as either of you adds to your collection. "}
+                  We never show anyone's collection, ratings, journal or wear log, and you can switch your own match off in Edit profile.
+                </p>
               )}
             </div>
           )}
@@ -6389,6 +6427,7 @@ export default function SillageApp() {
         country: profile.country || "",
         bio: profile.bio || "",
         discoverable: profile.discoverable !== false,
+        shareMatch: profile.share_match !== false,
         regionOverride: profile.region_override || "",
         isFounder: profile.member_number != null && profile.member_number <= 1000,
         memberNumber: profile.member_number,
