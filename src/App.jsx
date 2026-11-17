@@ -4986,39 +4986,47 @@ const NOTE_FAMILIES = [
 ];
 const NOTE_FAMILY_OF = (() => { const m = {}; NOTE_FAMILIES.forEach(([f, ks]) => ks.split("|").forEach(k => { m[k] = f; })); return m; })();
 const LEARN_NOTE_FALLBACK = ["rose","jasmine","saffron","oud","vanilla","amber","bergamot","patchouli","vetiver","sandalwood","incense","musk","cardamom"];
+const NOTE_FAMILY_BLURBS = {
+  "Florals":"Petals at every stage, from dewy to heady.",
+  "Citrus":"Bright peel and zest. The opening of countless fragrances.",
+  "Fruits":"Juicy, ripe and sometimes jammy.",
+  "Spices":"Warm, sharp or sweet. A pinch changes everything.",
+  "Woods and moss":"Dry cedar, creamy sandalwood, damp forest floor.",
+  "Resins and balsams":"Sticky, glowing and warm. The base of amber.",
+  "Gourmand":"Vanilla, cocoa, caramel and sugar. Soft and edible.",
+  "Drinks":"Tea, coffee and the contents of a glass.",
+  "Herbs and greens":"Fresh-cut leaves, kitchen herbs and lavender.",
+  "Musk, leather and smoke":"Skin-close, animal and dark.",
+  "Fresh and mineral":"Salt, sand, sea air and clean stone.",
+};
 function NotesBrowser({ onOpen }) {
-  const [fam, setFam] = useState("All");
   const cap = k => k.replace(/(^|[\s-])([a-z])/g, (m, p, c) => p + c.toUpperCase());
   const all = NOTE_PHOTO_PREVIEW ? NOTE_PHOTO_GALLERY : LEARN_NOTE_FALLBACK;
-  const shown = fam === "All" ? all : all.filter(k => (NOTE_FAMILY_OF[k] || "More") === fam);
   const guides = Object.keys(INGREDIENTS);
-  const heading = (t, b) => (<div style={{ marginBottom:14 }}>
-    <h3 style={{ fontFamily:serif, fontSize:"clamp(24px, 2.2vw, 34px)", fontWeight:400, letterSpacing:-0.5, color:T.black, margin:0, lineHeight:1.1 }}>{t}</h3>
-    {b && <p style={{ fontFamily:sans, fontSize:14, color:T.mid, margin:"6px 0 0", lineHeight:1.5 }}>{b}</p>}
-  </div>);
-  const tile = (k, withGuide) => {
+  const tile = k => {
     const guide = INGREDIENTS[cap(k)] ? cap(k) : null;
-    const inner = (<><NoteIllustration name={k} tile/><span style={{ display:"block", height:16, marginTop:0, fontFamily:sans, fontSize:11, fontWeight:600, letterSpacing:"0.14em", textTransform:"uppercase", color:T.accent }}>{guide ? "Guide" : ""}</span></>);
+    const inner = (<><NoteIllustration name={k} tile/><span style={{ display:"block", height:16, fontFamily:sans, fontSize:11, fontWeight:600, letterSpacing:"0.14em", textTransform:"uppercase", color:T.accent }}>{guide ? "Guide" : ""}</span></>);
     const st = { flex:"none", width:TILE_W, textAlign:"left", fontFamily:sans, scrollSnapAlign:"start" };
     return guide
       ? <button key={k} onClick={() => onOpen(guide)} aria-label={`Open the ${guide} guide`} style={{ ...st, background:"none", border:"none", padding:0, cursor:"pointer" }}>{inner}</button>
       : <div key={k} style={st}>{inner}</div>;
   };
-  const chip = (on, label) => (<button key={label} onClick={() => setFam(label)} aria-pressed={on} style={{ fontFamily:sans, fontSize:14, fontWeight:on?600:500, padding:"0 18px", minHeight:40, borderRadius:20, whiteSpace:"nowrap", border:`1px solid ${on?T.black:T.rule}`, background:on?T.black:T.white, color:on?T.white:T.ink, cursor:"pointer", flexShrink:0 }}>{label}</button>);
-  const fams = [...NOTE_FAMILIES.map(f => f[0])];
-  return (
-    <div>
-      <section style={{ marginBottom:36 }}>
-        {heading("Start with a guide", "The ingredients we have written up in full: where they grow, how they are made, and where you have smelled them.")}
-        <div className="mos-shelf" style={{ display:"flex", alignItems:"flex-start", gap:14, overflowX:"auto", paddingBottom:6, scrollSnapType:"x proximity", WebkitOverflowScrolling:"touch" }}>{guides.map(g => tile(g.toLowerCase(), true))}</div>
-      </section>
-      <section>
-        {heading("Browse every note", `${all.length} ingredients, grouped by family. More guides are on the way.`)}
-        <div style={{ display:"flex", gap:8, overflowX:"auto", paddingBottom:10, marginBottom:8 }} className="mos-shelf">{chip(fam === "All", "All")}{fams.map(f => chip(fam === f, f))}</div>
-        <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill, var(--cover-w))", gap:"22px 14px", justifyContent:"start" }}>{shown.map(k => tile(k))}</div>
-      </section>
-    </div>
+  const shelf = (title, blurb, keys, tinted) => (
+    <section key={title} className={"mos-bleed" + (tinted ? " mos-band" : "")} style={{ padding:"26px 0 22px" }}>
+      <div className="mos-bleed-pad" style={{ marginBottom:16 }}>
+        <h3 style={{ fontFamily:serif, fontSize:"clamp(26px, 2.3vw, 38px)", fontWeight:400, letterSpacing:-0.6, color:T.black, margin:0, lineHeight:1.1 }}>{title}</h3>
+        <p style={{ fontFamily:sans, fontSize:"clamp(14px, 1.1vw, 17px)", color:T.mid, margin:"6px 0 0", lineHeight:1.5 }}>{blurb}</p>
+      </div>
+      <div className="mos-shelf mos-bleed-pad" style={{ display:"flex", alignItems:"flex-start", gap:14, overflowX:"auto", paddingTop:2, paddingBottom:14, scrollSnapType:"x proximity", WebkitOverflowScrolling:"touch" }}>{keys.map(tile)}</div>
+    </section>
   );
+  const sections = [shelf("Start with a guide", "The ingredients we have written up in full: where they grow, how they are made, and where you have smelled them.", guides.map(g => g.toLowerCase()), true)];
+  let n = 1;
+  NOTE_FAMILIES.forEach(([fam]) => {
+    const keys = all.filter(k => NOTE_FAMILY_OF[k] === fam);
+    if (keys.length) sections.push(shelf(fam, NOTE_FAMILY_BLURBS[fam] || "", keys, n++ % 2 === 1));
+  });
+  return <div>{sections}</div>;
 }
 
 function LearnTab({ fragrances, onOpenFrag, onOpenBrand }) {
