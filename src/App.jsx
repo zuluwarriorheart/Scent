@@ -1314,8 +1314,8 @@ function brandTypeLabel(bo) {
   const b = String(bo || "").toLowerCase();
   if (b === "indie" || b === "independent") return "Indie";
   if (b === "niche") return "Niche";
-  if (b === "designer") return "Designer";
-  if (b === "celebrity") return "Designer · Celebrity";
+  if (b === "designer") return "Heritage";
+  if (b === "celebrity") return "Heritage · Celebrity";
   return "";
 }
 function BrandTypePill({ type, size = "normal" }) {
@@ -3119,7 +3119,7 @@ const HOUSE_GROUPS = [
   { key:"all", label:"All" },
   { key:"independent", label:"Indie" },
   { key:"niche", label:"Niche" },
-  { key:"designer", label:"Designer" },
+  { key:"designer", label:"Heritage" },
 ];
 // TEMPORARY: show this house under "New to the shelf" so the look can be judged. Set to "" to restore real new releases.
 const PREVIEW_NEW_HOUSES = ["a-n-other", "jijide"]; // newest uploads first
@@ -3133,14 +3133,13 @@ function buildShelves(list) {
   add("neo", "Neo gourmand", NEO_BLURB, list.filter(f => f.neoGourmand), 12);
   add("indie", "Indie houses", "Made by houses that answer to no conglomerate.", list.filter(f => f.ownership && f.ownership.status === "independent"));
   add("niche", "Niche houses", "Small, independent houses where fragrance is the whole point.", list.filter(f => houseGroups(f).includes("niche")));
-  add("designer", "Designer houses", "The fashion and heritage names most people meet first.", list.filter(f => houseGroups(f).includes("designer")));
+  add("designer", "Heritage houses", "The long-established names most people meet first.", list.filter(f => houseGroups(f).includes("designer")));
   const counts = {};
   list.forEach(f => (f.accords||[]).slice(0,3).forEach(a => { const k=String(a.n).toLowerCase(); counts[k]=(counts[k]||0)+1; }));
   Object.entries(counts).filter(([,c])=>c>=3).sort((a,b)=>b[1]-a[1]).slice(0,4).forEach(([k]) => {
     const label = k.replace(/\b\w/g, c => c.toUpperCase());
     add("acc-"+k, label, ACCORD_BLURBS[k] || `Fragrances built around ${k}.`, list.filter(f => (f.accords||[]).slice(0,3).some(a => String(a.n).toLowerCase()===k)));
   });
-  add("classics", "Classics", "Where it started. The older bottles still worth knowing.", [...withYear].filter(f=>f.year<=2010).sort((a,b)=>a.year-b.year));
   return shelves.slice(0, 9);
 }
 
@@ -4885,7 +4884,7 @@ function LearnTab({ fragrances, onOpenFrag, onOpenBrand }) {
       </>}
       {tab==="articles"&&<>
       <Lbl>Learning Paths</Lbl>
-      {[{icon:"△",name:"The Fragrance Pyramid",sub:"How scents evolve on skin over time",progress:0},{icon:"◈",name:"The 7 Fragrance Families",sub:"From florals to amber, the full map",progress:33},{icon:"◇",name:"Niche vs. Designer",sub:"What separates a $50 from a $500 bottle",progress:0},{icon:"◎",name:"The Art of Sampling",sub:"How to get the most from a 2ml vial",progress:0}].map(p=>(
+      {[{icon:"△",name:"The Fragrance Pyramid",sub:"How scents evolve on skin over time",progress:0},{icon:"◈",name:"The 7 Fragrance Families",sub:"From florals to amber, the full map",progress:33},{icon:"◇",name:"Niche vs. Heritage",sub:"What separates a $50 from a $500 bottle",progress:0},{icon:"◎",name:"The Art of Sampling",sub:"How to get the most from a 2ml vial",progress:0}].map(p=>(
         <div key={p.name} style={{background:T.white,border:`1px solid ${T.rule}`,borderRadius:12,padding:14,display:"flex",alignItems:"center",gap:12,cursor:"pointer",marginBottom:8}}>
           <div style={{width:40,height:40,borderRadius:10,background:T.lift,border:`1px solid ${T.rule}`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:16,color:T.mid,flexShrink:0}}>{p.icon}</div>
           <div style={{flex:1}}><p style={{fontFamily:sans,fontSize:13,fontWeight:500,color:T.ink,margin:0}}>{p.name}</p><p style={{fontFamily:sans,fontSize:11,color:T.mid,margin:"2px 0 0"}}>{p.sub}</p>{p.progress>0&&<div style={{marginTop:8,height:2,background:T.press,borderRadius:2,overflow:"hidden"}}><div style={{height:"100%",width:`${p.progress}%`,background:T.black,borderRadius:2}}/></div>}</div>
@@ -5471,7 +5470,7 @@ function BrandSubmitPage() {
           </div>
           <input className="mos-in" style={{ marginTop:10 }} value={h.diversityOther} onChange={e => setHF("diversityOther", e.target.value)} placeholder="Other (please describe)"/>
         </FormField>
-        <FormField label="Brand type">{choice(h.brandType, [{ val:"Indie", label:"Indie" }, { val:"Niche", label:"Niche" }, { val:"Designer", label:"Designer" }], v => setHF("brandType", v))}</FormField>
+        <FormField label="Brand type">{choice(h.brandType, [{ val:"Indie", label:"Indie" }, { val:"Niche", label:"Niche" }, { val:"Designer", label:"Heritage" }], v => setHF("brandType", v))}</FormField>
         <FormField label="Price tier">{choice(h.priceTier, [{ val:"Mass-market", label:"Mass-market" }, { val:"Prestige", label:"Prestige" }, { val:"Luxury", label:"Luxury" }], v => setHF("priceTier", v))}</FormField>
         <FormField label="Your story"><textarea className="mos-in" rows={4} value={h.story} onChange={e => setHF("story", e.target.value)} placeholder="A few lines about the house, in your own words" style={{ resize:"vertical", lineHeight:1.6 }}/></FormField>
       </FormSec>
@@ -6681,12 +6680,11 @@ export default function SillageApp() {
       new: ["New to the shelf", "The most recent releases in the library."],
       indie: ["Indie houses", "Made by houses that answer to no conglomerate."],
       niche: ["Niche houses", "Small houses where fragrance is the whole point."],
-      designer: ["Designer houses", "The fashion and heritage names most people meet first."],
+      designer: ["Heritage houses", "The long-established names most people meet first."],
       "acc-woody": ["Woody", ACCORD_BLURBS.woody || "Fragrances built around woody."],
       "acc-floral": ["Floral", ACCORD_BLURBS.floral || "Fragrances built around floral."],
       "acc-citrus": ["Citrus", ACCORD_BLURBS.citrus || "Fragrances built around citrus."],
       "acc-sweet": ["Gourmand", ACCORD_BLURBS.gourmand],
-      classics: ["Classics", "Where it started. The older bottles still worth knowing."],
     };
     async function loadFragrances() {
       setFragLoading(true);
