@@ -537,19 +537,20 @@ function noteFallback(name) {
   let h = 0; for (const ch of String(name).toLowerCase()) h = (h * 31 + ch.charCodeAt(0)) >>> 0;
   return NOTE_FALLBACK_PAL[h % NOTE_FALLBACK_PAL.length];
 }
-// Note photos (Midjourney, uncut). PREVIEW ONLY: switched on by opening the site with ?noteimages=1 (remembered for the tab); off for everyone else.
+// Note photos (Midjourney, uncut). PREVIEW ONLY: switched on by opening the site with ?noteimages=1 (remembered on this device); off for everyone else.
 const NOTE_PHOTO_PREVIEW = (() => {
   try {
     const q = new URLSearchParams(window.location.search).get("noteimages");
-    if (q === "1") sessionStorage.setItem("noteimages", "1");
-    if (q === "0") sessionStorage.removeItem("noteimages");
-    return sessionStorage.getItem("noteimages") === "1";
+    if (q === "1") localStorage.setItem("noteimages", "1");
+    if (q === "0") localStorage.removeItem("noteimages");
+    return localStorage.getItem("noteimages") === "1";
   } catch { return false; }
 })();
 const NOTE_PHOTO_ALIASES = {
   "lemongrass":"lemongrass", "litchi":"lychee", "lychee":"lychee", "maple":"maple", "olive tree":"olive-tree", "oregano":"oregano", "marjoram":"oregano",
   "papaya":"papaya", "paprika":"paprika", "passion flower":"passion-flower", "peach blossom":"peach-blossom", "peony":"pink-peony", "pink peony":"pink-peony",
   "truffle":"truffle", "black truffle":"truffle", "sesame":"sesame", "shiso":"shiso", "turmeric":"turmeric", "wisteria":"wisteria",
+  "solar notes":"family-solar", "solar":"family-solar",
   "animalic notes":"family-animalic", "animalic":"family-animalic",
   "floral notes":"family-floral", "flowers":"family-floral",
   "fruity notes":"family-fruit", "fruits":"family-fruit",
@@ -559,6 +560,7 @@ const NOTE_PHOTO_ALIASES = {
   "mineral notes":"family-mineral", "mineral":"family-mineral",
   "woody notes":"family-wood", "woods":"family-wood", "wood":"family-wood",
 };
+const NOTE_PHOTO_GALLERY = ["lemongrass","lychee","maple","olive tree","oregano","papaya","paprika","passion flower","peach blossom","pink peony","truffle","sesame","shiso","turmeric","wisteria","floral notes","fruity notes","woody notes","herbal notes","gourmand notes","animalic notes","marine notes","mineral notes","solar notes"];
 function notePhotoFor(rawName) {
   if (!NOTE_PHOTO_PREVIEW) return null;
   const key = NOTE_PHOTO_ALIASES[String(rawName || "").trim().toLowerCase()];
@@ -4776,6 +4778,11 @@ function LearnTab({ fragrances, onOpenFrag, onOpenBrand }) {
       {tab==="ingredients"&&<>
       <Lbl>Ingredient guide</Lbl>
       <p style={{fontFamily:sans,fontSize:13,color:T.mid,lineHeight:1.6,margin:"0 0 14px"}}>Where each ingredient comes from, how it is made, and where you have smelled it. Tap one marked Guide.</p>
+      {NOTE_PHOTO_PREVIEW&&<div style={{marginBottom:28}}>
+        <Lbl>Note photos preview</Lbl>
+        <p style={{fontFamily:sans,fontSize:13,color:T.mid,lineHeight:1.6,margin:"0 0 14px"}}>Uncut Midjourney photos, only visible with the preview switched on. Add ?noteimages=0 to the address to turn it off.</p>
+        <div className="mos-tiles">{NOTE_PHOTO_GALLERY.map(n=><NoteIllustration key={n} name={n} big/>)}</div>
+      </div>}
       <div className="mos-tiles" style={{marginBottom:28}}>
         {["Rose","Jasmine","Saffron","Oud","Vanilla","Amber","Bergamot","Patchouli","Vetiver","Sandalwood","Incense","Musk","Cardamom"].map(n=>{const has=!!INGREDIENTS[n];return (
           <button key={n} onClick={()=>has&&setOpenNote(n)} style={{background:"none",border:"none",padding:0,cursor:has?"pointer":"default",textAlign:"left",opacity:has?1:0.5,fontFamily:sans,minWidth:0,alignSelf:"start",display:"block"}}>
