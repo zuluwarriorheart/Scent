@@ -3748,6 +3748,80 @@ function KitsShelf({ onOpenBrand, tinted }) {
   );
 }
 
+// ─── DISCOVER > NOTES: pick a note, see every fragrance that has it ──────────
+function NotesFinder({ fragrances, onOpenFrag, userStatuses, onSearch }) {
+  const [guideOpen, setGuideOpen] = useState(null);
+  const [q, setQ] = useState("");
+  const [fam, setFam] = useState("All");
+  const [sel, setSel] = useState(null);
+  const [items, setItems] = useState([]);
+  const [total, setTotal] = useState(0);
+  const [busy, setBusy] = useState(false);
+  const cap = k => k.replace(/(^|[\s-])([a-z])/g, (m, p, c) => p + c.toUpperCase());
+  const all = NOTE_PHOTO_PREVIEW ? NOTE_PHOTO_GALLERY : LEARN_NOTE_FALLBACK;
+  const ql = q.trim().toLowerCase();
+  const names = all.filter(k => (fam === "All" || (NOTE_FAMILY_OF[k] || "More") === fam) && (!ql || k.includes(ql)));
+  const localMatch = n => (fragrances || []).filter(f => f.notes && allNoteList(f.notes).some(x => String(x.n).toLowerCase().includes(n.toLowerCase())));
+  async function pick(n) {
+    setSel(n); setItems([]); setTotal(0); setBusy(true);
+    try {
+      if (onSearch) { const r = await onSearch(n, "all", 0); setItems(r.items); setTotal(r.total); }
+      else { const r = localMatch(n); setItems(r); setTotal(r.length); }
+    } catch (e) { console.error("Note search failed:", e); }
+    setBusy(false);
+  }
+  async function more() {
+    setBusy(true);
+    try { const r = await onSearch(sel, "all", items.length); setItems(p => [...p, ...r.items]); } catch (e) { console.error(e); }
+    setBusy(false);
+  }
+  const chip = (on, label, fn) => (<button key={label} onClick={fn} aria-pressed={on} style={{ fontFamily:sans, fontSize:14, fontWeight:on?600:500, padding:"0 18px", minHeight:40, borderRadius:20, whiteSpace:"nowrap", border:`1px solid ${on?T.black:T.rule}`, background:on?T.black:T.white, color:on?T.white:T.ink, cursor:"pointer", flexShrink:0 }}>{label}</button>);
+  const grid = { display:"grid", gridTemplateColumns:"repeat(auto-fill, var(--cover-w))", gap:"22px 14px", justifyContent:"start" };
+  if (guideOpen) return <IngredientGuide name={guideOpen} onBack={() => setGuideOpen(null)} backLabel="Back to notes" fragrances={fragrances} onOpenFrag={onOpenFrag}/>;
+  if (sel) {
+    const guide = INGREDIENTS[cap(sel)] ? cap(sel) : null;
+    return (
+      <div>
+        <BackBtn onBack={() => setSel(null)} label="All notes"/>
+        <div style={{ display:"flex", gap:"20px 28px", alignItems:"flex-start", flexWrap:"wrap", marginBottom:24 }}>
+          <div style={{ flex:"1 1 240px", minWidth:0 }}>
+            <h3 style={{ fontFamily:serif, fontSize:"clamp(28px, 3vw, 44px)", fontWeight:400, letterSpacing:-0.6, color:T.black, margin:0, lineHeight:1.1 }}>{cap(sel)}</h3>
+            <p style={{ fontFamily:sans, fontSize:14, color:T.mid, margin:"8px 0 0", lineHeight:1.5 }}>{busy && !items.length ? "Looking…" : `${total} fragrance${total === 1 ? "" : "s"} with this note.`}</p>
+            {guide && <button onClick={() => setGuideOpen(guide)} style={{ marginTop:12, fontFamily:sans, fontSize:12, fontWeight:600, letterSpacing:"0.14em", textTransform:"uppercase", color:T.accent, background:"none", border:`1px solid ${T.accent}`, borderRadius:20, padding:"8px 16px", cursor:"pointer" }}>Read the {guide} guide</button>}
+          </div>
+        </div>
+        {items.length > 0 && <div style={grid}>{items.map(f => <CoverTile key={f.id} frag={f} onClick={onOpenFrag} userStatus={userStatuses && userStatuses[f.id]}/>)}</div>}
+        {!busy && !items.length && <p style={{ fontFamily:sans, fontSize:14, color:T.mid, lineHeight:1.6, margin:0 }}>No fragrance in the library lists this note yet.</p>}
+        {onSearch && items.length < total && <div style={{ marginTop:24 }}><button onClick={more} disabled={busy} style={ghostBtn}>{busy ? "Loading…" : "Show more"}</button></div>}
+      </div>
+    );
+  }
+  return (
+    <div>
+      <div style={{ position:"relative", maxWidth:760, marginBottom:12 }}>
+        <span style={{ position:"absolute", left:14, top:"50%", transform:"translateY(-50%)", pointerEvents:"none" }}><Icon name="search" size={15} color={T.faint}/></span>
+        <input value={q} onChange={e => setQ(e.target.value)} onKeyDown={e => { if (e.key === "Enter" && ql.length > 1) pick(ql); }} placeholder="Search a note: vetiver, oud, fig…" aria-label="Search notes"
+          style={{ width:"100%", background:T.white, border:`1.5px solid ${q ? T.accent : T.rule}`, borderRadius:14, padding:"14px 44px", fontSize:14, color:T.black, outline:"none", boxSizing:"border-box", fontFamily:serif }}/>
+        {q && <button onClick={() => setQ("")} aria-label="Clear" style={{ position:"absolute", right:14, top:"50%", transform:"translateY(-50%)", background:"none", border:"none", fontSize:14, color:T.mid, cursor:"pointer" }}>✕</button>}
+      </div>
+      <div className="mos-shelf" role="group" aria-label="Note family" style={{ display:"flex", gap:8, overflowX:"auto", padding:"4px 0 12px", marginBottom:6 }}>
+        {chip(fam === "All", "All", () => setFam("All"))}{NOTE_FAMILIES.map(f => chip(fam === f[0], f[0], () => setFam(f[0])))}
+      </div>
+      <div style={grid}>
+        {names.map(k => (
+          <button key={k} onClick={() => pick(k)} aria-label={`Fragrances with ${k}`} style={{ flex:"none", width:TILE_W, background:"none", border:"none", padding:0, cursor:"pointer", textAlign:"left", fontFamily:sans }}><NoteIllustration name={k} tile/></button>
+        ))}
+      </div>
+      {!names.length && (
+        <div style={{ padding:"8px 0" }}>
+          <p style={{ fontFamily:sans, fontSize:14, color:T.mid, margin:"0 0 12px" }}>No picture for that note yet, but you can still search the library for it.</p>
+          {ql.length > 1 && <button onClick={() => pick(ql)} style={ctaBtn(true)}>Find fragrances with “{q.trim()}”</button>}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function DiscoverTab({ onOpenFrag, onOpenBrand, onOpenPerfumer, onOpenProfile, following, userStatuses, reactions, onReaction, onSuggest, fragrances, serverShelves, onSearch }) {
   const [mode,setMode]=useState("browse");
   const [messages,setMessages]=useState([{role:"ai",text:"Tell me what you're in the mood for: a memory, a mood, an aesthetic. I'll find your next fragrance."}]);
@@ -3797,7 +3871,7 @@ function DiscoverTab({ onOpenFrag, onOpenBrand, onOpenPerfumer, onOpenProfile, f
   function send(text){const msg=text||input;if(!msg.trim())return;setMessages(m=>[...m,{role:"user",text:msg}]);setInput("");setTyping(true);setTimeout(()=>{const r=getResp(msg);const frag=FRAGRANCES.find(f=>f.id===r.fragId);setTyping(false);setMessages(m=>[...m,{role:"ai",text:r.text,frag}]);},1300);}
 
   const modeBtn=(key,label)=>(
-    <button key={key} role="tab" aria-selected={mode===key} onClick={()=>setMode(key)} style={{position:"relative",padding:"0 2px 13px",marginRight:24,background:"none",border:"none",cursor:"pointer",fontFamily:sans,fontSize:15,fontWeight:600,color:mode===key?T.black:T.mid}}>
+    <button key={key} role="tab" aria-selected={mode===key} onClick={()=>setMode(mode===key?"browse":key)} style={{position:"relative",padding:"0 2px 13px",marginRight:24,background:"none",border:"none",cursor:"pointer",fontFamily:sans,fontSize:15,fontWeight:600,color:mode===key?T.black:T.mid}}>
       {label}
       {mode===key&&<span style={{position:"absolute",left:0,right:0,bottom:-1,height:2,background:T.black}}/>}
     </button>
@@ -3807,11 +3881,11 @@ function DiscoverTab({ onOpenFrag, onOpenBrand, onOpenPerfumer, onOpenProfile, f
     <div>
       <div style={{marginBottom:20}}>
         <p style={{fontFamily:sans,fontSize:10,fontWeight:600,textTransform:"uppercase",letterSpacing:"0.18em",color:T.accent,margin:"0 0 6px"}}>Discover</p>
-        <h2 style={{fontFamily:serif,fontSize:"clamp(32px, 3.2vw, 50px)",color:T.black,letterSpacing:-0.8,margin:0,fontWeight:400}}>{mode==="browse"?"Sample. Wear. Repeat.":mode==="brands"?"Brands":mode==="perfumers"?"Perfumers":mode==="community"?"Community":mode==="requests"?"Requests":"The Nose"}</h2>
-        <p style={{fontFamily:sans,fontSize:"clamp(13px, 1.1vw, 17px)",color:T.mid,margin:"6px 0 0"}}>{mode==="browse"?"Search by name, or browse by category.":mode==="brands"?"Every house in the library, with who owns it and what it makes.":mode==="perfumers"?"The noses behind the bottles. Find a perfumer, then everything they have made.":mode==="community"?"Posts, thoughts and requests from members, newest first.":mode==="requests"?"Ask what to smell like. Members answer.":"Describe a memory, a mood or a place."}</p>
+        <h2 style={{fontFamily:serif,fontSize:"clamp(32px, 3.2vw, 50px)",color:T.black,letterSpacing:-0.8,margin:0,fontWeight:400}}>{mode==="browse"?"Sample. Wear. Repeat.":mode==="notes"?"Notes":mode==="brands"?"Brands":mode==="perfumers"?"Perfumers":mode==="community"?"Community":mode==="requests"?"Requests":"The Nose"}</h2>
+        <p style={{fontFamily:sans,fontSize:"clamp(13px, 1.1vw, 17px)",color:T.mid,margin:"6px 0 0"}}>{mode==="browse"?"Search by name, or browse by category.":mode==="notes"?"Pick a note to see every fragrance that has it.":mode==="brands"?"Every house in the library, with who owns it and what it makes.":mode==="perfumers"?"The noses behind the bottles. Find a perfumer, then everything they have made.":mode==="community"?"Posts, thoughts and requests from members, newest first.":mode==="requests"?"Ask what to smell like. Members answer.":"Describe a memory, a mood or a place."}</p>
       </div>
       <div role="tablist" aria-label="Discover" style={{display:"flex",overflowX:"auto",whiteSpace:"nowrap",borderBottom:`1px solid ${T.rule}`,marginBottom:22}}>
-        {modeBtn("browse","Browse")}
+        {modeBtn("notes","Notes")}
         {modeBtn("brands","Brands")}
         {modeBtn("perfumers","Perfumers")}
         {NOSE_ENABLED&&modeBtn("nose","Nose")}
@@ -3877,6 +3951,7 @@ function DiscoverTab({ onOpenFrag, onOpenBrand, onOpenPerfumer, onOpenProfile, f
       {mode==="brands"&&<BrandsDirectory onOpenBrand={onOpenBrand}/>}
       {mode==="perfumers"&&<PerfumersDirectory onOpenPerfumer={onOpenPerfumer}/>}
 
+      {mode==="notes"&&<NotesFinder fragrances={LIST} onOpenFrag={onOpenFrag} userStatuses={userStatuses} onSearch={serverMode?onSearch:null}/>}
       {mode==="community"&&<CommunityFeed onOpenProfile={onOpenProfile} onOpenFrag={onOpenFrag} onSearch={serverMode?onSearch:null} following={following}/>}
       {mode==="requests"&&<RequestsBoard onOpenFrag={onOpenFrag} onSearch={serverMode?onSearch:null}/>}
 
