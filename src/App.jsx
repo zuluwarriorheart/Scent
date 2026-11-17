@@ -2413,7 +2413,8 @@ const SHARE_FORMATS = [
   { id:"portrait", label:"Portrait", sub:"1080 × 1350 · feed", w:1080, h:1350 },
   { id:"story", label:"Story", sub:"1080 × 1920 · stories", w:1080, h:1920 },
 ];
-const SHARE_BG = [ ["cream","Cream","#FAF7F5","#1A1420"], ["white","White","#FFFFFF","#1A1420"] ];
+const SHARE_BG = [ ["cream","Cream","#FAF7F5","#1A1420"], ["white","White","#FFFFFF","#1A1420"], ["blush","Blush","#F6E6EA","#1A1420"], ["sage","Sage","#E6ECE3","#1A1420"], ["lavender","Lavender","#ECE8F3","#1A1420"], ["butter","Butter","#F7F0DC","#1A1420"], ["auto","Auto","",""] ];
+const AUTO_TINTS = { pink:"blush", peony:"blush", peach:"blush", blossom:"blush", rose:"blush", lychee:"blush", litchi:"blush", papaya:"butter", turmeric:"butter", sesame:"butter", maple:"butter", lemongrass:"sage", oregano:"sage", shiso:"sage", olive:"sage", fern:"sage", wisteria:"lavender", passion:"lavender", lavender:"lavender", iris:"lavender", violet:"lavender" };
 function loadShareImg(src) { return new Promise((res, rej) => { const i = new Image(); i.onload = () => res(i); i.onerror = rej; i.src = src; }); }
 async function renderNotesCard(frag, fmt, bg) {
   const names = [];
@@ -2473,7 +2474,9 @@ function ShareNotesButton({ frag }) {
   const [err, setErr] = useState("");
   const has = [frag.notes.top, frag.notes.mid, frag.notes.base].some(a => (a || []).some(x => notePhotoFor(x.n)));
   if (!has) return null;
-  const fmt = SHARE_FORMATS.find(f => f.id === fmtId), bg = SHARE_BG.find(b => b[0] === bgId);
+  const fmt = SHARE_FORMATS.find(f => f.id === fmtId);
+  const autoId = (() => { const c = {}; [frag.notes.top, frag.notes.mid, frag.notes.base].forEach(a => (a || []).forEach(x => { if (!notePhotoFor(x.n)) return; const w = String(x.n).toLowerCase().split(/\s+/).find(t => AUTO_TINTS[t]); if (w) c[AUTO_TINTS[w]] = (c[AUTO_TINTS[w]] || 0) + 1; })); return Object.keys(c).sort((a, b) => c[b] - c[a])[0] || "cream"; })();
+  const bg = SHARE_BG.find(b => b[0] === (bgId === "auto" ? autoId : bgId));
   const fname = `${String(frag.name).toLowerCase().replace(/[^a-z0-9]+/g, "-")}-notes-${fmt.id}.png`;
   async function go(mode) {
     setBusy(true); setErr("");
@@ -2497,7 +2500,7 @@ function ShareNotesButton({ frag }) {
           </div>
           <Lbl mb={8}>Background</Lbl>
           <div style={{ display:"flex", flexWrap:"wrap", gap:8, marginBottom:16 }}>
-            {SHARE_BG.map(b => <button key={b[0]} onClick={() => setBgId(b[0])} style={{ ...selBtn(bgId === b[0]), minHeight:44 }}><span style={{ width:14, height:14, borderRadius:7, background:b[2], border:"1px solid #bbb", display:"inline-block" }}/>{b[1]}</button>)}
+            {SHARE_BG.map(b => <button key={b[0]} onClick={() => setBgId(b[0])} style={{ ...selBtn(bgId === b[0]), minHeight:44 }}><span style={{ width:14, height:14, borderRadius:7, background:b[0]==="auto"?"conic-gradient(#F6E6EA,#E6ECE3,#ECE8F3,#F7F0DC,#F6E6EA)":b[2], border:"1px solid #bbb", display:"inline-block" }}/>{b[1]}</button>)}
           </div>
           <div style={{ display:"flex", flexWrap:"wrap", gap:8 }}>
             <button disabled={busy} onClick={() => go("download")} style={{ ...selBtn(true), minHeight:48, padding:"10px 20px" }}>{busy ? "Making…" : "Download image"}</button>
