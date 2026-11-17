@@ -537,7 +537,51 @@ function noteFallback(name) {
   let h = 0; for (const ch of String(name).toLowerCase()) h = (h * 31 + ch.charCodeAt(0)) >>> 0;
   return NOTE_FALLBACK_PAL[h % NOTE_FALLBACK_PAL.length];
 }
+// Note photos (Midjourney, uncut). PREVIEW ONLY: switched on by opening the site with ?noteimages=1 (remembered for the tab); off for everyone else.
+const NOTE_PHOTO_PREVIEW = (() => {
+  try {
+    const q = new URLSearchParams(window.location.search).get("noteimages");
+    if (q === "1") sessionStorage.setItem("noteimages", "1");
+    if (q === "0") sessionStorage.removeItem("noteimages");
+    return sessionStorage.getItem("noteimages") === "1";
+  } catch { return false; }
+})();
+const NOTE_PHOTO_ALIASES = {
+  "lemongrass":"lemongrass", "litchi":"lychee", "lychee":"lychee", "maple":"maple", "olive tree":"olive-tree", "oregano":"oregano", "marjoram":"oregano",
+  "papaya":"papaya", "paprika":"paprika", "passion flower":"passion-flower", "peach blossom":"peach-blossom", "peony":"pink-peony", "pink peony":"pink-peony",
+  "truffle":"truffle", "black truffle":"truffle", "sesame":"sesame", "shiso":"shiso", "turmeric":"turmeric", "wisteria":"wisteria",
+  "animalic notes":"family-animalic", "animalic":"family-animalic",
+  "floral notes":"family-floral", "flowers":"family-floral",
+  "fruity notes":"family-fruit", "fruits":"family-fruit",
+  "gourmand notes":"family-gourmand", "gourmand":"family-gourmand",
+  "herbal notes":"family-herb", "herbs":"family-herb",
+  "marine notes":"family-marine", "marine":"family-marine",
+  "mineral notes":"family-mineral", "mineral":"family-mineral",
+  "woody notes":"family-wood", "woods":"family-wood", "wood":"family-wood",
+};
+function notePhotoFor(rawName) {
+  if (!NOTE_PHOTO_PREVIEW) return null;
+  const key = NOTE_PHOTO_ALIASES[String(rawName || "").trim().toLowerCase()];
+  return key ? `/note-images/${key}.webp` : null;
+}
 function NoteIllustration({ name: rawName, size = 72, big = false }) {
+  const photo = notePhotoFor(rawName);
+  if (photo) {
+    const label = String(rawName || "").replace(/(^|[\s-])([a-z])/g, (m, p, ch) => p + ch.toUpperCase());
+    const img = <img src={photo} alt={label} loading="lazy" draggable={false} style={{ width:"100%", height:"100%", objectFit:"contain", mixBlendMode:"multiply", filter:"drop-shadow(0 4px 6px rgba(0,0,0,0.12))", display:"block" }}/>;
+    if (big) return (
+      <div style={{ display:"flex", flexDirection:"column", alignItems:"flex-start", gap:10, width:"100%" }}>
+        <div style={{ width:"100%", aspectRatio:"1", borderRadius:16, background:T.lift, border:`1px solid ${T.rule}`, overflow:"hidden", padding:"6%", boxSizing:"border-box" }}>{img}</div>
+        <span style={{ fontFamily:serif, fontSize:20, color:T.black, lineHeight:1.15 }}>{label}</span>
+      </div>
+    );
+    return (
+      <div style={{ display:"flex", flexDirection:"column", alignItems:"center", gap:5 }}>
+        <div style={{ width:size, height:size, borderRadius:12, background:T.lift, border:`1px solid ${T.rule}`, overflow:"hidden", flexShrink:0, padding:4, boxSizing:"border-box" }}>{img}</div>
+        <span style={{ fontFamily:sans, fontSize:10, color:T.mid, textAlign:"center", lineHeight:1.3, maxWidth:size }}>{label}</span>
+      </div>
+    );
+  }
   const name = String(rawName || "").replace(/(^|[\s-])([a-z])/g, (m, p, ch) => p + ch.toUpperCase());
   const c = NOTE_COLORS[name] || noteFallback(name);
   const arts = {
