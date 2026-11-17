@@ -1815,20 +1815,32 @@ function BrandsDirectory({ onOpenBrand }) {
       {rows === null && <p style={{ fontFamily:sans, fontSize:13, color:T.mid }}>Loading</p>}
       {rows !== null && failed && <p style={{ fontFamily:sans, fontSize:14, color:T.mid }}>The brand list is not available right now.</p>}
       {rows !== null && !failed && <p style={{ fontFamily:sans, fontSize:12, color:T.mid, margin:"0 0 6px" }}>{list.length} {list.length === 1 ? "brand" : "brands"}</p>}
-      {keys.map(k => (
-        <section key={k} style={{ borderTop:`1px solid ${T.rule}`, padding:"18px 0 8px" }}>
-          <h3 style={{ fontFamily:serif, fontSize:26, fontWeight:400, color:T.black, margin:"0 0 12px" }}>{k}</h3>
-          <div className="mos-samples">
-            {letters[k].map(h => (
-              <button key={h.id || h.slug} onClick={() => onOpenBrand({ slug: h.slug, name: h.name })} style={{ textAlign:"left", cursor:"pointer", border:`1px solid ${T.rule}`, borderRadius:12, padding:"14px 16px", background:T.white, fontFamily:sans }}>
+      {rows !== null && !failed && (() => {
+        const bcard = SH => (h => (
+              <button key={h.id || h.slug} onClick={() => onOpenBrand({ slug: h.slug, name: h.name })} style={{ textAlign:"left", cursor:"pointer", border:`1px solid ${T.rule}`, borderRadius:12, padding:"14px 16px", background:T.white, fontFamily:sans, ...(SH ? { flex:"0 0 220px", width:220, boxSizing:"border-box", scrollSnapAlign:"start" } : null) }}>
                 <span style={{ display:"block", fontFamily:serif, fontSize:17, color:T.black, lineHeight:1.25 }}>{h.name}</span>
                 <span style={{ display:"block", fontSize:12, color:T.mid, margin:"4px 0 0" }}>{[h.country, brandOriginLabel(h)].filter(Boolean).join(" · ")}</span>
                 {h.frag_count != null && <span style={{ display:"block", fontSize:11, color:T.accent, margin:"6px 0 0" }}>{h.frag_count} {Number(h.frag_count) === 1 ? "fragrance" : "fragrances"}</span>}
               </button>
-            ))}
-          </div>
-        </section>
-      ))}
+            ));
+        if (needle) return keys.map(k => (
+          <section key={k} style={{ borderTop:`1px solid ${T.rule}`, padding:"18px 0 8px" }}>
+            <h3 style={{ fontFamily:serif, fontSize:26, fontWeight:400, color:T.black, margin:"0 0 12px" }}>{k}</h3>
+            <div className="mos-samples">{letters[k].map(bcard(false))}</div>
+          </section>
+        ));
+        const top = [...list].filter(h => Number(h.frag_count) > 0).sort((a, b) => (Number(b.frag_count) || 0) - (Number(a.frag_count) || 0) || String(a.name).localeCompare(String(b.name))).slice(0, 24);
+        const secs = [["Most fragrances", "The houses with the biggest catalogues in the library.", top], ...keys.map(k => ["Brands " + k, null, letters[k]])];
+        return secs.map(([title, blurb, items], i) => items.length > 0 && (
+          <section key={title} className={"mos-bleed" + (i % 2 === 0 ? " mos-band" : "")} style={{ padding:"26px 0 22px" }}>
+            <div className="mos-bleed-pad" style={{ marginBottom:16 }}>
+              <h3 style={{ fontFamily:serif, fontSize:"clamp(26px, 2.3vw, 38px)", fontWeight:400, letterSpacing:-0.6, color:T.black, margin:0, lineHeight:1.1 }}>{title}</h3>
+              {blurb && <p style={{ fontFamily:sans, fontSize:"clamp(14px, 1.1vw, 17px)", color:T.mid, margin:"6px 0 0", lineHeight:1.5 }}>{blurb}</p>}
+            </div>
+            <div className="mos-shelf mos-bleed-pad" style={{ display:"flex", alignItems:"stretch", gap:12, overflowX:"auto", paddingTop:2, paddingBottom:14, scrollSnapType:"x proximity", WebkitOverflowScrolling:"touch" }}>{items.map(bcard(true))}</div>
+          </section>
+        ));
+      })()}
       {rows !== null && !failed && list.length === 0 && <p style={{ fontFamily:sans, fontSize:14, color:T.mid, margin:"20px 0" }}>No brands match that search.</p>}
     </div>
   );
