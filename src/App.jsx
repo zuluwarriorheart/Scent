@@ -1,6 +1,7 @@
 import { useState, useEffect, useId, useRef, useMemo, useSyncExternalStore, Fragment } from "react";
 import { createPortal } from "react-dom";
 import { createClient } from "@supabase/supabase-js";
+import MORE_INGREDIENTS from "./ingredients/index.js";
 
 // ─── SUPABASE CLIENT ──────────────────────────────────────────────────────────
 const supabase = createClient(
@@ -594,8 +595,7 @@ const NOTE_PHOTO_ALIASES = {"absinthe":"absinthe", "allspice":"allspice", "almon
 const NOTE_PHOTO_GALLERY = ["absinthe", "allspice", "almond blossom", "almond", "amber", "ambergris", "animalic notes", "apple blossom", "apple", "apricot", "bamboo", "banana", "basil", "benzoin", "bergamot", "bitter orange blossom", "bitter orange leaf", "black pepper", "black tea", "blackcurrant", "blood orange", "blueberry", "broom", "butter", "cacao pod", "cannabis", "cantaloupe", "caramel", "cardamom", "carnation", "carrot seeds", "carrot", "cashmere", "cedarwood", "champaca", "champagne", "cherry blossom", "cherry", "chestnut", "chili", "cinnamon", "cistus", "citrus", "clary sage", "clove", "clover", "coconut", "coffee", "coriander", "cotton candy", "cotton flower", "cranberry", "cream glass", "cucumber", "cypress", "dark chocolate", "dates", "dried fruits", "ebony", "fennel", "fenugreek", "fern", "fig", "floral notes", "frankincense", "freesia", "fruity notes", "galbanum", "gardenia", "gin glass", "ginger", "golden glass", "gourmand notes", "grapefruit", "grapes", "guaiac", "guava", "gurjan balsam", "hawthorn", "hazelnut", "heliotrope", "herbal notes", "hibiscus", "honeycomb", "iris", "jasmine sambac", "jasmine", "juniper", "kiwi", "kumquat", "labdanum", "lavender", "leather", "lemon", "lemongrass", "licorice", "lily of the valley", "lily", "lime", "linden blossom", "lychee", "mace", "magnolia", "mahogany", "mandarin", "mango", "maple", "marigold", "marine notes", "marshmallow", "mastic", "milk splash", "mimosa", "mineral notes", "myrrh", "myrtle", "nectarine", "nutmeg", "oakmoss", "olive tree", "orange blossom", "orchid", "oregano", "osmanthus", "oud", "palo santo", "papaya", "paprika", "passion flower", "passionfruit", "patchouli", "peach blossom", "peach", "pear", "pineapple", "pink peony", "pink peppercorn", "pistachio", "pitahaya", "plum", "pomelo", "popcorn", "praline", "quince", "raspberry", "red currant", "rhubarb", "rice", "rose geranium", "rose hip", "rose", "rosemary", "rum tumbler", "saffron", "sage", "salt", "sand", "sandalwood", "seaweed", "sesame", "shiso", "spearmint", "strawberry", "suede", "sugar", "sugarcane", "solar notes", "sweet orange", "sweet pea", "teak", "tobacco", "toffee", "tomato leaf", "tonka", "truffle", "tuberose", "turmeric", "vanilla", "vetiver", "violet flower", "violet leaf", "watermelon", "wheat", "wisteria", "woody notes", "ylang ylang", "yuzu"];
 // Extra names that share an existing card (regional / variant spellings)
 Object.assign(NOTE_PHOTO_ALIASES, {"ylang-ylang":"ylang-ylang", "lily-of-the-valley":"lily-of-the-valley", "agarwood (oud)":"oud", "agarwood":"oud", "cambodian oud":"oud", "laotian oud":"oud", "thai oud":"oud", "orris":"iris", "orris butter":"iris", "geranium":"rose-geranium", "bourbon geranium":"rose-geranium", "guaiac wood":"guaiac", "guaiacwood":"guaiac", "virginian cedar":"cedarwood", "white cedar extract":"cedarwood", "cedar":"cedarwood", "mint":"spearmint", "peppermint":"spearmint", "moss":"oakmoss", "bulgarian rose":"rose", "turkish rose":"rose", "damask rose":"rose", "may rose":"rose", "taif rose":"rose", "moroccan rose":"rose", "grasse rose":"rose", "rose de mai":"rose", "rose water":"rose", "white rose":"rose", "red rose":"rose", "rose absolute":"rose", "rose oil":"rose", "tincture of rose":"rose", "amalfi lemon":"lemon", "sicilian lemon":"lemon", "italian lemon":"lemon", "lemon zest":"lemon", "calabrian bergamot":"bergamot", "sicilian bergamot":"bergamot", "italian bergamot":"bergamot", "green mandarin":"mandarin", "sicilian mandarin":"mandarin", "italian mandarin":"mandarin", "clementine":"mandarin", "bitter orange":"sweet-orange", "brazilian orange":"sweet-orange", "african orange flower":"orange-blossom", "tunisian neroli":"orange-blossom", "madagascar vanilla":"vanilla", "bourbon vanilla":"vanilla", "vanilla absolute":"vanilla", "vanilla bean":"vanilla", "tahitian vanilla":"vanilla", "vanilla orchid":"vanilla", "haitian vetiver":"vetiver", "pink grapefruit":"grapefruit", "white peach":"peach", "green apple":"apple", "red apple":"apple", "granny smith apple":"apple", "sour cherry":"cherry", "passion fruit":"passionfruit", "egyptian jasmine":"jasmine", "indian jasmine":"jasmine", "jasmine absolute":"jasmine", "indian tuberose":"tuberose", "green tea":"black-tea", "white tea":"black-tea", "white honey":"honeycomb", "fig leaf":"fig", "teak wood":"teak", "australian sandalwood":"sandalwood", "mysore sandalwood":"sandalwood", "sandalowood":"sandalwood", "patchouli leaf":"patchouli", "indonesian patchouli":"patchouli", "indonesian patchouli leaf":"patchouli", "carrot seed":"carrot-seeds", "sea notes":"family-marine", "sea water":"family-marine", "water notes":"family-marine", "dry wood":"family-wood", "dry woods":"family-wood", "white woods":"family-wood", "white wood":"family-wood", "precious woods":"family-wood", "green notes":"family-herb", "green leaves":"family-herb", "sweet notes":"family-gourmand", "white flowers":"family-floral", "red berries":"family-fruit", "red fruits":"family-fruit", "wild berries":"family-fruit", "animal notes":"family-animalic", "white pepper":"black-pepper", "sichuan pepper":"black-pepper", "ceylon cinnamon":"cinnamon", "cassia":"cinnamon", "guatemalan cardamom":"cardamom", "juniper berry":"juniper", "lime (linden) blossom":"linden-blossom", "coconut milk":"coconut", "coconut water":"coconut", "almond milk":"milk-splash", "whipped cream":"cream-glass", "brown sugar":"sugar", "sugar cane":"sugarcane", "bitter almond":"almond", "melon":"cantaloupe", "tobacco leaf":"tobacco", "ylang ylang":"ylang-ylang", "tangerine":"mandarin", "musk":"cashmere", "white musk":"cashmere", "white musks":"cashmere", "musks":"cashmere", "black musk":"cashmere", "musk accord":"cashmere", "siberian musk":"cashmere", "deer musk accord":"cashmere", "vanila":"vanilla", "vanilla pod":"vanilla", "rhuburb":"rhubarb", "wild strawberry":"strawberry", "iris flower":"iris", "white iris":"iris", "tuscan iris":"iris", "orange peel":"sweet-orange", "pelargonium":"rose-geranium", "tobacco blossom":"tobacco", "black currant leaf":"blackcurrant", "raspberry leaf":"raspberry", "fig tree":"fig", "brandy":"golden-glass", "barley":"wheat", "copahu balm":"gurjan-balsam", "vodka":"gin-glass", "roasted coffee beans":"coffee", "white lily":"lily", "black orchid":"orchid", "water lily":"lily", "pink lotus":"lily", "chocolate":"dark-chocolate", "white chocolate":"dark-chocolate", "milk chocolate":"dark-chocolate", "mint leaf":"spearmint", "spearmint leaf":"spearmint", "cacao absolute":"cacao-pod", "cocoa bean":"cacao-pod"});
-function notePhotoFor(rawName) {
-  if (!NOTE_PHOTO_PREVIEW) return null;
+function noteImageKey(rawName) {
   let n = String(rawName || "").trim().toLowerCase().replace(/\s+/g, " ");
   let key = NOTE_PHOTO_ALIASES[n];
   if (!key) {
@@ -604,6 +604,11 @@ function notePhotoFor(rawName) {
     const w = t.split(" ");
     for (let i = 0; i < Math.min(4, w.length) && !key; i++) key = NOTE_PHOTO_ALIASES[w.slice(i).join(" ")];
   }
+  return key || null;
+}
+function notePhotoFor(rawName) {
+  if (!NOTE_PHOTO_PREVIEW) return null;
+  const key = noteImageKey(rawName);
   return key ? `/note-images/${key}.webp` : null;
 }
 const TILE_W = "calc(var(--cover-w) / var(--zoom, 1))"; // same on-screen width as a Discover cover, even inside the zoomed fragrance page
@@ -2717,7 +2722,7 @@ function WearLog({ frag, wears, onLogWear, onDeleteWear }) {
 }
 // Opens from a note on a fragrance page: the ingredient guide when we have one, otherwise a short note card.
 function NoteSheet({ name, tier, house, onClose }) {
-  const has = !!INGREDIENTS[name];
+  const has = !!guideKey(name);
   useEffect(() => { const h = e => { if (e.key === "Escape") onClose(); }; window.addEventListener("keydown", h); return () => window.removeEventListener("keydown", h); }, [onClose]);
   return (
     <div onClick={e => { e.stopPropagation(); onClose(); }} style={{ position:"fixed", inset:0, zIndex:70, background:T.scrim, display:"flex", alignItems:"flex-end", justifyContent:"center" }}>
@@ -3835,7 +3840,7 @@ function NotesFinder({ fragrances, onOpenFrag, userStatuses, onSearch }) {
   const grid = { display:"grid", gridTemplateColumns:"repeat(auto-fill, var(--cover-w))", gap:"22px 14px", justifyContent:"start" };
   if (guideOpen) return <IngredientGuide name={guideOpen} onBack={() => setGuideOpen(null)} backLabel="Back to notes" fragrances={fragrances} onOpenFrag={onOpenFrag}/>;
   if (sel) {
-    const guide = INGREDIENTS[cap(sel)] ? cap(sel) : null;
+    const guide = guideKey(sel);
     return (
       <div>
         <BackBtn onBack={() => setSel(null)} label="All notes"/>
@@ -4828,15 +4833,16 @@ const FRAGRANCE_EXPOS = [
 // ─── LEARN ────────────────────────────────────────────────────────────────────
 // ─── INGREDIENT GUIDE ─────────────────────────────────────────────────────────
 const INGREDIENTS = {
+  ...MORE_INGREDIENTS,
   Vetiver: { latin:"Chrysopogon zizanioides", family:"Grasses (Poaceae)", native:"India", part:"Roots, dried", process:"Steam distillation, around 15 to 18 hours", found:"A large share of modern perfumes, from fresh to woody",
     blurb:"The oil comes from the roots alone. They are dried, then distilled slowly, which is why vetiver smells so earthy and dense.",
     origins:[{p:"Haiti",n:"The largest source. Earthy, smoky, a little roasted."},{p:"Indonesia (Java)",n:"Darker and smokier."},{p:"Réunion",n:"Rare today. Softer, rosier and prized."},{p:"India",n:"Where the plant comes from. Wild ‘khus’ is balsamic and sweeter."},{p:"Brazil",n:"A newer, smaller source."}],
     smelled:[{n:"Encre Noire",h:"Lalique",y:2006},{n:"Vétiver",h:"Guerlain",y:1959},{n:"Terre d’Hermès",h:"Hermès",y:2006},{n:"Sycomore",h:"Chanel",y:2008}] },
-  Sandalwood: { latin:"Santalum album", family:"Sandalwood family (Santalaceae)", native:"Southern India", part:"Heartwood of mature trees", process:"Steam distillation of the heartwood", found:"Woody, creamy and oriental perfumes",
+  Sandalwood: { latin:"Santalum album", family:"Sandalwood family (Santalaceae)", native:"Southern India", part:"Heartwood of mature trees", process:"Steam distillation of the heartwood", found:"Woody, creamy and amber perfumes",
     blurb:"The oil builds up in the heartwood and only develops as the tree matures, which takes decades. That is why true sandalwood is scarce and costly.",
     origins:[{p:"India (Mysore)",n:"The classic source, now tightly controlled."},{p:"Western Australia",n:"Plantation grown, a main supply today."},{p:"Indonesia",n:"Timor and neighbouring islands."}],
     smelled:[{n:"Santal 33",h:"Le Labo",y:2011},{n:"Samsara",h:"Guerlain",y:1989},{n:"Bois des Îles",h:"Chanel",y:1926}] },
-  Patchouli: { latin:"Pogostemon cablin", family:"Mint (Lamiaceae)", native:"Tropical Asia", part:"Leaves, dried", process:"Steam distillation of dried leaves", found:"Chypres, orientals and woody perfumes",
+  Patchouli: { latin:"Pogostemon cablin", family:"Mint (Lamiaceae)", native:"Tropical Asia", part:"Leaves, dried", process:"Steam distillation of dried leaves", found:"Chypres, amber and woody perfumes",
     blurb:"Leaves, not flowers. Patchouli oil deepens with age, and well-aged oil is darker and smoother.",
     origins:[{p:"Indonesia",n:"Sumatra, Java and Sulawesi supply most of the world’s oil."},{p:"India",n:"Grown and distilled in smaller volumes."},{p:"Madagascar",n:"A smaller source."}],
     smelled:[{n:"Angel",h:"Mugler",y:1992},{n:"Aromatics Elixir",h:"Clinique",y:1971},{n:"Coco Mademoiselle",h:"Chanel",y:2001}] },
@@ -4844,11 +4850,11 @@ const INGREDIENTS = {
     blurb:"Oud is not the wood itself. It forms when a fungus infects the tree and the heartwood fills with dark resin. Wild trees are protected, so much oud now comes from plantations.",
     origins:[{p:"India (Assam)",n:"A traditional source of fine oud."},{p:"Cambodia and Vietnam",n:"Rare and highly prized."},{p:"Indonesia and Malaysia",n:"Large producers, wild and cultivated."}],
     smelled:[{n:"Oud Wood",h:"Tom Ford",y:2007},{n:"Oud Ispahan",h:"Dior",y:2012}] },
-  Rose: { latin:"Rosa damascena, Rosa × centifolia", family:"Rose (Rosaceae)", native:"Western and Central Asia", part:"Petals", process:"Steam distillation for rose otto, solvent extraction for absolute", found:"Florals, chypres and orientals",
+  Rose: { latin:"Rosa damascena, Rosa × centifolia", family:"Rose (Rosaceae)", native:"Western and Central Asia", part:"Petals", process:"Steam distillation for rose otto, solvent extraction for absolute", found:"Florals, chypres and amber perfumes",
     blurb:"Thousands of petals go into a single kilogram of oil, so real rose is among the costliest materials in perfumery.",
     origins:[{p:"Bulgaria",n:"The Valley of the Roses, known for rose otto."},{p:"Turkey",n:"Isparta, a major source of oil and absolute."},{p:"Grasse, France",n:"Rose de mai (centifolia), picked in May."},{p:"Morocco",n:"Damask and centifolia roses from the Dades valley."}],
     smelled:[{n:"No. 5",h:"Chanel",y:1921},{n:"Portrait of a Lady",h:"Frédéric Malle",y:2010},{n:"Rose 31",h:"Le Labo",y:2006}] },
-  Jasmine: { latin:"Jasminum grandiflorum, J. sambac", family:"Olive (Oleaceae)", native:"South and Southeast Asia", part:"Flowers, picked by hand", process:"Solvent extraction into an absolute", found:"White florals, chypres and classic feminine perfumes",
+  Jasmine: { latin:"Jasminum grandiflorum, J. sambac", family:"Olive (Oleaceae)", native:"South and Southeast Asia", part:"Flowers, picked by hand", process:"Solvent extraction into an absolute", found:"White florals, chypres and classic floral perfumes",
     blurb:"The flowers are too delicate for distillation. They are picked by hand, usually before sunrise when the scent is strongest, and processed quickly.",
     origins:[{p:"India",n:"A large producer, including sambac."},{p:"Egypt",n:"A major source of grandiflorum absolute."},{p:"Grasse, France",n:"The historic home of jasmine, now in small volumes."}],
     smelled:[{n:"Joy",h:"Jean Patou",y:1930},{n:"No. 5",h:"Chanel",y:1921},{n:"A la Nuit",h:"Serge Lutens",y:2000}] },
@@ -4856,15 +4862,29 @@ const INGREDIENTS = {
     blurb:"A small citrus with a floral, faintly bitter peel. The oil is pressed from the rind, not distilled, which keeps its freshness.",
     origins:[{p:"Calabria, Italy",n:"Most perfumery bergamot grows along this coast."},{p:"Ivory Coast",n:"A smaller, newer source."}],
     smelled:[{n:"Colonia",h:"Acqua di Parma",y:1916},{n:"Eau Sauvage",h:"Dior",y:1966},{n:"Aventus",h:"Creed",y:2010}] },
-  Vanilla: { latin:"Vanilla planifolia", family:"Orchid (Orchidaceae)", native:"Mexico", part:"Seed pods, cured", process:"Pods are picked green, then cured for weeks before extraction", found:"Gourmands, orientals and amber accords",
+  Vanilla: { latin:"Vanilla planifolia", family:"Orchid (Orchidaceae)", native:"Mexico", part:"Seed pods, cured", process:"Pods are picked green, then cured for weeks before extraction", found:"Gourmands and amber accords",
     blurb:"Outside Mexico every flower is pollinated by hand, and the pods take months to ripen and weeks to cure. Real vanilla is slow work.",
     origins:[{p:"Madagascar",n:"The largest source. Rich, creamy and sweet."},{p:"Mexico",n:"Where vanilla began."},{p:"Tahiti",n:"A separate species, more floral and fruity."}],
     smelled:[{n:"Shalimar",h:"Guerlain",y:1925},{n:"Tobacco Vanille",h:"Tom Ford",y:2007}] },
 };
+// Finds the guide for a note name, following the same aliases the note photos use (neroli opens orange blossom, musk opens the musk guide).
+function guideKey(name) {
+  if (!name) return null;
+  if (INGREDIENTS[name]) return name;
+  const capK = k => String(k).replace(/(^|[\s-])([a-z])/g, (m, p, c) => p + c.toUpperCase());
+  const direct = capK(String(name).trim().toLowerCase().replace(/\s+/g, " "));
+  if (INGREDIENTS[direct]) return direct;
+  const img = noteImageKey(name);
+  if (img) { const k = capK(img.replace(/-/g, " ")); if (INGREDIENTS[k]) return k; }
+  return null;
+}
 function IngredientGuide({ name, onBack, fragrances, onOpenFrag, backLabel = "Back to Learn" }) {
-  const g = INGREDIENTS[name];
+  const gk = guideKey(name);
+  const g = gk && INGREDIENTS[gk];
   if (!g) return null;
-  const noteRe = new RegExp("(^|[^a-z])" + name.toLowerCase().replace(/[^a-z ]/g, "") + "([^a-z]|$)");
+  const title = g.title || gk;
+  const words = [...new Set([g.match || gk.toLowerCase(), String(name).toLowerCase()].map(w => w.replace(/[^a-z| ]/g, "")).filter(Boolean))].join("|");
+  const noteRe = new RegExp("(^|[^a-z])(?:" + words + ")([^a-z]|$)");
   const lib = (fragrances || []).filter(f => f.notes && allNoteList(f.notes).some(n => noteRe.test(String(n.n).toLowerCase()))).slice(0, 12);
   const eyebrow = (num, text) => (
     <p style={{ fontFamily:sans, fontSize:11, letterSpacing:"0.2em", textTransform:"uppercase", color:T.mid, margin:"0 0 14px" }}><span style={{ color:T.accent, fontWeight:600 }}>{num}</span>&nbsp;&nbsp;{text}</p>
@@ -4885,7 +4905,7 @@ function IngredientGuide({ name, onBack, fragrances, onOpenFrag, backLabel = "Ba
       <div style={{ display:"flex", gap:"clamp(16px, 3vw, 40px)", alignItems:"flex-start", marginBottom:30 }}>
         <div style={{ flex:1, minWidth:0 }}>
           {eyebrow("01", "The plant")}
-          <h3 style={{ fontFamily:serif, fontSize:"clamp(28px, 5vw, 64px)", letterSpacing:"0.02em", textTransform:"uppercase", fontWeight:500, color:T.black, margin:"0 0 6px", lineHeight:1.05, overflowWrap:"anywhere" }}>{name}</h3>
+          <h3 style={{ fontFamily:serif, fontSize:"clamp(28px, 5vw, 64px)", letterSpacing:"0.02em", textTransform:"uppercase", fontWeight:500, color:T.black, margin:"0 0 6px", lineHeight:1.05, overflowWrap:"anywhere" }}>{title}</h3>
           <p style={{ fontFamily:serif, fontStyle:"italic", fontSize:"clamp(15px, 1.4vw, 20px)", color:T.mid, margin:"0 0 18px" }}>{g.latin}</p>
           <p style={{ fontFamily:sans, fontSize:"clamp(14px, 1.2vw, 17px)", color:T.ink, lineHeight:1.7, margin:0, maxWidth:560 }}>{g.blurb}</p>
         </div>
@@ -4918,7 +4938,7 @@ function IngredientGuide({ name, onBack, fragrances, onOpenFrag, backLabel = "Ba
           ? <div className="mos-shelf" style={{ display:"flex", alignItems:"flex-start", gap:14, overflowX:"auto", paddingBottom:10, scrollSnapType:"x proximity", WebkitOverflowScrolling:"touch" }}>
               {lib.map(f => <CoverTile key={f.id} frag={f} onClick={id => onOpenFrag && onOpenFrag(id)}/>)}
             </div>
-          : <p style={{ fontFamily:sans, fontSize:14, color:T.mid, margin:0, lineHeight:1.6 }}>No fragrances in the library list {name.toLowerCase()} yet. As we add more, they will appear here.</p>}
+          : <p style={{ fontFamily:sans, fontSize:14, color:T.mid, margin:0, lineHeight:1.6 }}>No fragrances in the library list {title.toLowerCase()} yet. As we add more, they will appear here.</p>}
       </div>}
       <p style={{ fontFamily:sans, fontSize:11, color:T.faint, margin:"30px 0 0", lineHeight:1.6 }}>General reference. Sourcing and quality vary by producer and by year.</p>
     </div>
@@ -5061,7 +5081,7 @@ const NOTE_FAMILY_BLURBS = {
 function NotesBrowser({ onOpen, onTile }) {
   const cap = k => k.replace(/(^|[\s-])([a-z])/g, (m, p, c) => p + c.toUpperCase());
   const all = NOTE_PHOTO_PREVIEW ? NOTE_PHOTO_GALLERY : LEARN_NOTE_FALLBACK;
-  const guides = Object.keys(INGREDIENTS);
+  const guides = ["Vetiver","Sandalwood","Patchouli","Oud","Rose","Jasmine","Bergamot","Vanilla","Iris","Tonka","Amber","Cashmere"].filter(k => INGREDIENTS[k]);
   const tile = k => {
     const guide = INGREDIENTS[cap(k)] ? cap(k) : null;
     if (onTile) return <button key={k} onClick={() => onTile(k)} aria-label={`Fragrances with ${k}`} style={{ flex:"none", width:TILE_W, background:"none", border:"none", padding:0, cursor:"pointer", textAlign:"left", fontFamily:sans, scrollSnapAlign:"start" }}><NoteIllustration name={k} tile/></button>;
@@ -5080,7 +5100,7 @@ function NotesBrowser({ onOpen, onTile }) {
       <div className="mos-shelf mos-bleed-pad" style={{ display:"flex", alignItems:"flex-start", gap:14, overflowX:"auto", paddingTop:2, paddingBottom:14, scrollSnapType:"x proximity", WebkitOverflowScrolling:"touch" }}>{keys.map(tile)}</div>
     </section>
   );
-  const sections = onTile ? [] : [shelf("Start with a guide", "The ingredients we have written up in full: where they grow, how they are made, and where you have smelled them.", guides.map(g => g.toLowerCase()), true)];
+  const sections = onTile ? [] : [shelf("Start with a guide", "Twelve ingredients to begin with. Every one below has a guide too: where it grows, how it is made, and where you have smelled it.", guides.map(g => g.toLowerCase()), true)];
   let n = onTile ? 0 : 1;
   [...NOTE_FAMILIES].sort((a, b) => a[0].localeCompare(b[0])).forEach(([fam]) => {
     const keys = all.filter(k => NOTE_FAMILY_OF[k] === fam).sort((a, b) => a.localeCompare(b));
