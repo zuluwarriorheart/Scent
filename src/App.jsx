@@ -2084,10 +2084,11 @@ function PerfumersDirectory({ onOpenPerfumer }) {
   const chip = (on, label, fn) => (
     <button key={label} onClick={fn} aria-pressed={on} style={{ fontFamily:sans, fontSize:14, fontWeight:on?600:500, padding:"0 20px", minHeight:42, borderRadius:22, whiteSpace:"nowrap", border:`1px solid ${on?T.black:T.rule}`, background:on?T.black:T.white, color:on?T.white:T.ink, cursor:"pointer", flexShrink:0 }}>{label}</button>
   );
-  const card = (r, shelfCard) => (
-    <button key={r.name} onClick={() => onOpenPerfumer(r.name)} style={{ textAlign:"left", cursor:"pointer", border:`1px solid ${T.rule}`, borderRadius:12, padding:"14px 16px", background:T.white, fontFamily:sans, ...(shelfCard === true ? { flex:"0 0 220px", width:220, boxSizing:"border-box", scrollSnapAlign:"start" } : null) }}>
-      <span style={{ display:"block", fontFamily:serif, fontSize:17, color:T.black, lineHeight:1.25 }}>{r.name}</span>
-      {r.frag_count != null && <span style={{ display:"block", fontSize:12, color:T.mid, margin:"4px 0 0" }}>{r.frag_count} {Number(r.frag_count) === 1 ? "fragrance" : "fragrances"}{r.house_count != null ? ` · ${r.house_count} ${Number(r.house_count) === 1 ? "house" : "houses"}` : ""}</span>}
+  const card = r => (
+    <button key={r.name} onClick={() => onOpenPerfumer(r.name)} style={{ flex:"0 0 132px", width:132, background:"none", border:"none", padding:0, cursor:"pointer", textAlign:"center", fontFamily:sans, scrollSnapAlign:"start" }}>
+      <PerfumerPortrait name={r.name} photo={PERFUMERS[r.name] && PERFUMERS[r.name].photo} size={132}/>
+      <span style={{ display:"block", marginTop:10, fontFamily:serif, fontSize:16, lineHeight:1.2, color:T.black }}>{r.name}</span>
+      {r.frag_count != null && <span style={{ display:"block", fontSize:12, color:T.mid, margin:"4px 0 0" }}>{r.frag_count} {Number(r.frag_count) === 1 ? "fragrance" : "fragrances"}</span>}
     </button>
   );
   return (
@@ -2116,7 +2117,7 @@ function PerfumersDirectory({ onOpenPerfumer }) {
                 <h3 style={{ fontFamily:serif, fontSize:"clamp(26px, 2.3vw, 38px)", fontWeight:400, letterSpacing:-0.6, color:T.black, margin:0, lineHeight:1.1 }}>{title}</h3>
                 {blurb && <p style={{ fontFamily:sans, fontSize:"clamp(14px, 1.1vw, 17px)", color:T.mid, margin:"6px 0 0", lineHeight:1.5 }}>{blurb}</p>}
               </div>
-              <div className="mos-shelf mos-bleed-pad" style={{ display:"flex", alignItems:"stretch", gap:12, overflowX:"auto", paddingTop:2, paddingBottom:14, scrollSnapType:"x proximity", WebkitOverflowScrolling:"touch" }}>{items.map(r => card(r, true))}</div>
+              <div className="mos-shelf mos-bleed-pad" style={{ display:"flex", alignItems:"flex-start", gap:22, overflowX:"auto", paddingTop:2, paddingBottom:14, scrollSnapType:"x proximity", WebkitOverflowScrolling:"touch" }}>{items.map(card)}</div>
             </section>
           ))}
         </div>
@@ -2125,7 +2126,7 @@ function PerfumersDirectory({ onOpenPerfumer }) {
       {needle && keys.map(k => (
         <section key={k} style={{ borderTop:`1px solid ${T.rule}`, padding:"18px 0 8px" }}>
           {k !== "all" && <h3 style={{ fontFamily:serif, fontSize:26, fontWeight:400, color:T.black, margin:"0 0 12px" }}>{k}</h3>}
-          <div className="mos-samples">{(groups[k] || []).map(card)}</div>
+          <div style={{ display:"flex", flexWrap:"wrap", gap:"22px 22px" }}>{(groups[k] || []).map(card)}</div>
         </section>
       ))}
       {rows !== null && list.length === 0 && <p style={{ fontFamily:sans, fontSize:14, color:T.mid, margin:"20px 0" }}>No perfumers match that search. Run 08_perfumers.sql if the list is empty.</p>}
