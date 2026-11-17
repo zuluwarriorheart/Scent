@@ -2530,14 +2530,14 @@ async function renderNotesCard(frag, fmt, bg) {
   const g = c.getContext("2d");
   g.fillStyle = bg[2]; g.fillRect(0, 0, fmt.w, fmt.h);
   const ink = bg[3], dark = bg[0] === "night", pad = 80, tall = fmt.h > fmt.w;
-  g.textAlign = "center"; g.fillStyle = ink;
+  g.textAlign = "left"; g.fillStyle = ink;
   const top = tall ? (fmt.h > 1500 ? 200 : 110) : 90;
   g.globalAlpha = 0.6; g.font = "500 26px 'DM Sans Variable', sans-serif";
-  g.fillText(String(frag.house || "").toUpperCase().split("").join(String.fromCharCode(8202)), fmt.w/2, top); g.globalAlpha = 1;
+  g.fillText(String(frag.house || "").toUpperCase().split("").join(String.fromCharCode(8202)), pad, top); g.globalAlpha = 1;
   g.font = "600 66px 'Fraunces Variable', Georgia, serif";
   let title = frag.name; while (g.measureText(title).width > fmt.w - pad*2 && title.length > 4) title = title.slice(0, -2);
   if (title !== frag.name) title += "…";
-  g.fillText(title, fmt.w/2, top + 78);
+  g.fillText(title, pad, top + 78);
   const n = imgs.length, cols = n <= 1 ? 1 : n <= 4 ? 2 : (tall ? 2 : 3), rows = Math.ceil(n / cols);
   const areaTop = top + 140, areaBot = fmt.h - (fmt.h > 1500 ? 320 : 170), areaH = areaBot - areaTop, areaW = fmt.w - pad*2;
   const gap = 24, labelH = 54;
@@ -2562,7 +2562,7 @@ async function renderNotesCard(frag, fmt, bg) {
   g.fillStyle = ink; g.textAlign = "left";
   g.font = "500 46px 'Fraunces Variable', Georgia, serif"; const w1 = g.measureText("memoir").width, sp = 12;
   g.font = "italic 400 46px 'Fraunces Variable', Georgia, serif"; const w2 = g.measureText("on skin").width;
-  const wx = (fmt.w - (w1 + sp + w2)) / 2;
+  const wx = pad;
   g.font = "500 46px 'Fraunces Variable', Georgia, serif"; g.fillText("memoir", wx, fy);
   g.font = "italic 400 46px 'Fraunces Variable', Georgia, serif"; g.fillStyle = dark ? "#FF5C9D" : "#C9206B"; g.fillText("on skin", wx + w1 + sp, fy);
   const blob = await new Promise(r => c.toBlob(r, "image/png"));
