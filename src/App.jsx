@@ -53,6 +53,7 @@ const THEME_CSS = `
   --glow:radial-gradient(70% 42% at 6% 0%,rgba(242,102,28,0.11),transparent 70%),radial-gradient(55% 40% at 100% 4%,rgba(230,57,127,0.08),transparent 70%),radial-gradient(70% 45% at 100% 100%,rgba(106,63,196,0.10),transparent 70%);
   --blob-o:0.55;
 }
+html[data-theme="dark"] .note-photo { mix-blend-mode:normal !important; filter:none !important; border-radius:10px; }
 html[data-theme="dark"] {
   color-scheme: dark;
   --bg:#0F0B14; --surface:#181220; --lift:#211A2B; --press:#2A2236; --rule:#2E2539;
@@ -570,7 +571,7 @@ function NoteIllustration({ name: rawName, size = 72, big = false }) {
   const photo = notePhotoFor(rawName);
   if (photo) {
     const label = String(rawName || "").replace(/(^|[\s-])([a-z])/g, (m, p, ch) => p + ch.toUpperCase());
-    const img = <img src={photo} alt={label} loading="lazy" draggable={false} style={{ width:"100%", height:"100%", objectFit:"contain", mixBlendMode:"multiply", filter:"drop-shadow(0 4px 6px rgba(0,0,0,0.12))", display:"block" }}/>;
+    const img = <img className="note-photo" src={photo} alt={label} loading="lazy" draggable={false} style={{ width:"100%", height:"100%", objectFit:"contain", mixBlendMode:"multiply", filter:"drop-shadow(0 4px 6px rgba(0,0,0,0.12))", display:"block" }}/>;
     if (big) return (
       <div style={{ display:"flex", flexDirection:"column", alignItems:"flex-start", gap:10, width:"100%" }}>
         <div style={{ width:"100%", aspectRatio:"1", borderRadius:16, background:T.lift, border:`1px solid ${T.rule}`, overflow:"hidden", padding:"6%", boxSizing:"border-box" }}>{img}</div>
