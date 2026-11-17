@@ -1465,6 +1465,7 @@ function splitNotes(notes, pos) {
   }));
   return out;
 }
+const allNoteList = n => [].concat((n && n.top) || [], (n && n.mid) || [], (n && n.base) || [], (n && n.all) || []);
 function mapFrag(f) {
   const own = f.ownership || (f.house && f.house.ownership) || "";
   const notes = f.notes || [];
@@ -1496,6 +1497,7 @@ function mapFrag(f) {
       top: splitNotes(notes, "top"),
       mid: splitNotes(notes, "mid"),
       base: splitNotes(notes, "base"),
+      all: splitNotes(notes, "all"),   // notes the house does not break into top / heart / base
     },
     accords: [...accords].sort((x, y) => x.rank - y.rank).map(x => ({ n: /^sweet$/i.test(String(x.accord_name).trim()) ? "Gourmand" : x.accord_name, v: 80 - (x.rank - 1) * 10 })).filter((a, i, arr) => arr.findIndex(b => String(b.n).toLowerCase() === String(a.n).toLowerCase()) === i),
     longevity: null, sillage: null, seasons: {}, occasions: [], rating: null, votes: 0,
@@ -2405,7 +2407,7 @@ const AUTO_TINTS = { pink:"mist", peony:"mist", peach:"mist", blossom:"mist", ro
 function loadShareImg(src) { return new Promise((res, rej) => { const i = new Image(); i.onload = () => res(i); i.onerror = rej; i.src = src; }); }
 async function renderNotesCard(frag, fmt, bg) {
   const names = [];
-  [frag.notes.top, frag.notes.mid, frag.notes.base].forEach(a => (a || []).forEach(x => { const u = notePhotoFor(x.n); if (u && !names.find(m => m.u === u)) names.push({ n:x.n, u }); }));
+  [allNoteList(frag.notes)].forEach(a => (a || []).forEach(x => { const u = notePhotoFor(x.n); if (u && !names.find(m => m.u === u)) names.push({ n:x.n, u }); }));
   const list = names.slice(0, 6);
   try { await document.fonts.load("600 64px 'Fraunces Variable'"); await document.fonts.load("500 28px 'DM Sans Variable'"); } catch {}
   const imgs = await Promise.all(list.map(m => loadShareImg(m.u)));
@@ -2455,10 +2457,10 @@ function ShareNotesButton({ frag }) {
   const [bgId, setBgId] = useState("cream");
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState("");
-  const has = [frag.notes.top, frag.notes.mid, frag.notes.base].some(a => (a || []).some(x => notePhotoFor(x.n)));
+  const has = [allNoteList(frag.notes)].some(a => (a || []).some(x => notePhotoFor(x.n)));
   if (!has) return null;
   const fmt = SHARE_FORMATS.find(f => f.id === fmtId);
-  const autoId = (() => { const c = {}; [frag.notes.top, frag.notes.mid, frag.notes.base].forEach(a => (a || []).forEach(x => { if (!notePhotoFor(x.n)) return; const w = String(x.n).toLowerCase().split(/\s+/).find(t => AUTO_TINTS[t]); if (w) c[AUTO_TINTS[w]] = (c[AUTO_TINTS[w]] || 0) + 1; })); return Object.keys(c).sort((a, b) => c[b] - c[a])[0] || "cream"; })();
+  const autoId = (() => { const c = {}; [allNoteList(frag.notes)].forEach(a => (a || []).forEach(x => { if (!notePhotoFor(x.n)) return; const w = String(x.n).toLowerCase().split(/\s+/).find(t => AUTO_TINTS[t]); if (w) c[AUTO_TINTS[w]] = (c[AUTO_TINTS[w]] || 0) + 1; })); return Object.keys(c).sort((a, b) => c[b] - c[a])[0] || "cream"; })();
   const bg = SHARE_BG.find(b => b[0] === (bgId === "auto" ? autoId : bgId));
   const fname = `${String(frag.name).toLowerCase().replace(/[^a-z0-9]+/g, "-")}-notes-${fmt.id}.png`;
   async function go(mode) {
@@ -2499,15 +2501,17 @@ function ShareNotesButton({ frag }) {
 function NotesPyramid({ notes, onOpenNote }) {
   return (
     <div>
-              {[
+              {(((notes.all||[]).length && !(notes.top||[]).length && !(notes.mid||[]).length && !(notes.base||[]).length)
+                ? [{tier:"all", label:"Notes", time:"", notes:notes.all, desc:"As listed by the house."}]
+                : [
                 {tier:"top", label:"Top Notes",   time:"0 – 30 min",     notes:notes.top,  desc:"Vivid but fleeting."},
                 {tier:"mid", label:"Heart Notes", time:"30 min – 4 hrs", notes:notes.mid,  desc:"The true character."},
                 {tier:"base",label:"Base Notes",  time:"4+ hours",       notes:notes.base, desc:"The foundation that lingers."},
-              ].map(({tier,label,time,notes:ns,desc},si)=>(
-                <div key={tier} style={{marginBottom:si<2?28:0}}>
+              ]).map(({tier,label,time,notes:ns,desc},si,arr)=>(
+                <div key={tier} style={{marginBottom:si<arr.length-1?28:0}}>
                   <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:14,padding:"10px 14px",borderRadius:10,background:T.lift,border:`1px solid ${T.rule}`}}>
-                    <div style={{width:22,height:22,borderRadius:6,fontSize:10,fontWeight:700,fontFamily:sans,display:"flex",alignItems:"center",justifyContent:"center",background:tier==="top"?"#F2883A":tier==="mid"?"#E2639B":"#8E52D6",color:"#FFFFFF"}}>
-                      {tier==="top"?"T":tier==="mid"?"H":"B"}
+                    <div style={{width:22,height:22,borderRadius:6,fontSize:10,fontWeight:700,fontFamily:sans,display:"flex",alignItems:"center",justifyContent:"center",background:tier==="top"?"#F2883A":tier==="mid"?"#E2639B":tier==="all"?"#17788F":"#8E52D6",color:"#FFFFFF"}}>
+                      {tier==="top"?"T":tier==="mid"?"H":tier==="all"?"N":"B"}
                     </div>
                     <div style={{flex:1}}>
                       <span style={{fontFamily:sans,fontSize:12,fontWeight:600,color:T.ink}}>{label}</span>
@@ -2951,7 +2955,7 @@ function JournalInsights({ entries, userStatuses, reactions, fragrances, wears, 
   FR.forEach(f => {
     if (reactions[f.id] !== "love") return; loved++;
     const seen = new Set();
-    [].concat((f.notes && f.notes.top) || [], (f.notes && f.notes.mid) || [], (f.notes && f.notes.base) || []).forEach(x => { const k = String(x.n || "").trim().toLowerCase(); if (k && !seen.has(k)) { seen.add(k); loveNotes[k] = (loveNotes[k] || 0) + 1; } });
+    allNoteList(f.notes).forEach(x => { const k = String(x.n || "").trim().toLowerCase(); if (k && !seen.has(k)) { seen.add(k); loveNotes[k] = (loveNotes[k] || 0) + 1; } });
   });
   const accs = Object.entries(accTally).sort((a, b) => b[1] - a[1]).slice(0, 5);
   const accTotal = accs.reduce((s, [, c]) => s + c, 0) || 1;
@@ -3726,7 +3730,7 @@ function DiscoverTab({ onOpenFrag, onOpenBrand, onOpenPerfumer, onOpenProfile, f
     if (!search.trim()) return true;
     const q = search.trim().toLowerCase();
     return f.name.toLowerCase().includes(q) || f.house.toLowerCase().includes(q) || (f.family||"").toLowerCase().includes(q) ||
-      f.notes.top.concat(f.notes.mid, f.notes.base).some(n => n.n.toLowerCase().includes(q)) ||
+      allNoteList(f.notes).some(n => n.n.toLowerCase().includes(q)) ||
       (f.occasions||[]).some(o => o.toLowerCase().includes(q));
   }) : [];
 
@@ -4167,7 +4171,7 @@ function CollectionTab({ onImport, onOpenFrag, statuses:userStatuses, statusSets
   const counts={};STATUSES.forEach(s=>{counts[s.key]=FR.filter(f=>has(f.id,s.key)).length;});counts.finished=FR.filter(f=>isFinishedSet((sets||{})[f.id])).length;
   const rCounts={love:0,like:0,dislike:0};Object.values(reactions).forEach(r=>{if(r)rCounts[r]++;});
   const chipCount=k=>k==="all"?FR.filter(x=>userStatuses[x.id]||reactions[x.id]).length:(rCounts[k]!==undefined?rCounts[k]:(counts[k]||0));
-  const filtered=FR.filter(f=>{const rf=["love","like","dislike"];const ms=activeFilter==="all"?!!(userStatuses[f.id]||reactions[f.id]):(rf.includes(activeFilter)?reactions[f.id]===activeFilter:(activeFilter==="finished"?isFinishedSet((sets||{})[f.id]):has(f.id,activeFilter)));const q=search.toLowerCase();const mq=!search||String(f.name||"").toLowerCase().includes(q)||String(f.house||"").toLowerCase().includes(q)||String(f.family||"").toLowerCase().includes(q)||(f.accords||[]).some(a=>String(a.n||"").toLowerCase().includes(q))||(((f.notes&&f.notes.top)||[]).concat((f.notes&&f.notes.mid)||[],(f.notes&&f.notes.base)||[])).some(n=>String((n&&n.n)||"").toLowerCase().includes(q));return ms&&mq;});
+  const filtered=FR.filter(f=>{const rf=["love","like","dislike"];const ms=activeFilter==="all"?!!(userStatuses[f.id]||reactions[f.id]):(rf.includes(activeFilter)?reactions[f.id]===activeFilter:(activeFilter==="finished"?isFinishedSet((sets||{})[f.id]):has(f.id,activeFilter)));const q=search.toLowerCase();const mq=!search||String(f.name||"").toLowerCase().includes(q)||String(f.house||"").toLowerCase().includes(q)||String(f.family||"").toLowerCase().includes(q)||(f.accords||[]).some(a=>String(a.n||"").toLowerCase().includes(q))||(allNoteList(f.notes)).some(n=>String((n&&n.n)||"").toLowerCase().includes(q));return ms&&mq;});
   return (
     <div>
       <div className="mos-pagehead">
@@ -4667,7 +4671,7 @@ const INGREDIENTS = {
 function IngredientGuide({ name, onBack, fragrances, onOpenFrag, backLabel = "Back to Learn" }) {
   const g = INGREDIENTS[name];
   if (!g) return null;
-  const lib = (fragrances || []).filter(f => f.notes && f.notes.top.concat(f.notes.mid, f.notes.base).some(n => String(n.n).toLowerCase() === name.toLowerCase())).slice(0, 8);
+  const lib = (fragrances || []).filter(f => f.notes && allNoteList(f.notes).some(n => String(n.n).toLowerCase() === name.toLowerCase())).slice(0, 8);
   const eyebrow = (num, text) => (
     <p style={{ fontFamily:sans, fontSize:11, letterSpacing:"0.2em", textTransform:"uppercase", color:T.mid, margin:"0 0 14px" }}><span style={{ color:T.accent, fontWeight:600 }}>{num}</span>&nbsp;&nbsp;{text}</p>
   );
