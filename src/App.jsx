@@ -106,7 +106,7 @@ button, a, summary, [role="tab"] { touch-action:manipulation; }
 @media (min-width:760px) {
   .mos-pad { padding-left:max(32px, calc((100% - 1120px) / 2)) !important; padding-right:max(32px, calc((100% - 1120px) / 2)) !important; }
   .mos-dtabs { overflow-x:visible !important; }
-  .mos-zoom { zoom:1.3; }
+  .mos-zoom { zoom:1.3; --zoom:1.3; }
   .mos-dtabs > button { letter-spacing:0.1em !important; }
   .mos-dtabs > button { flex:1 1 0 !important; margin-right:0 !important; text-align:center !important; font-size:15px !important; padding-top:20px !important; padding-bottom:18px !important; }
   .mos-close { right:max(28px, calc((100% - 1120px) / 2)) !important; }
@@ -563,11 +563,18 @@ function notePhotoFor(rawName) {
   }
   return key ? `/note-images/${key}.webp` : null;
 }
-function NoteIllustration({ name: rawName, size = 72, big = false }) {
+const TILE_W = "calc(var(--cover-w) / var(--zoom, 1))"; // same on-screen width as a Discover cover, even inside the zoomed fragrance page
+function NoteIllustration({ name: rawName, size = 72, big = false, tile = false }) {
   const photo = notePhotoFor(rawName);
   if (photo) {
     const label = String(rawName || "").replace(/(^|[\s-])([a-z])/g, (m, p, ch) => p + ch.toUpperCase());
     const img = <img className="note-photo" src={photo} alt={label} loading="lazy" draggable={false} style={{ width:"100%", height:"100%", objectFit:"contain", mixBlendMode:"multiply", filter:"drop-shadow(0 4px 6px rgba(0,0,0,0.12))", display:"block" }}/>;
+    if (tile) return (
+      <div style={{ width:TILE_W, textAlign:"left" }}>
+        <div style={{ position:"relative", width:"100%", aspectRatio:"0.8", borderRadius:12, overflow:"hidden", background:T.white, border:`1px solid ${T.rule}`, padding:"8%", boxSizing:"border-box" }}>{img}</div>
+        <span style={{ display:"block", marginTop:10, fontFamily:serif, fontSize:16, lineHeight:1.2, letterSpacing:-0.2, color:T.black }}>{label}</span>
+      </div>
+    );
     if (big) return (
       <div style={{ display:"flex", flexDirection:"column", alignItems:"flex-start", gap:10, width:"100%" }}>
         <div style={{ width:"100%", aspectRatio:"1", borderRadius:16, background:T.lift, border:`1px solid ${T.rule}`, overflow:"hidden", padding:"6%", boxSizing:"border-box" }}>{img}</div>
@@ -621,6 +628,14 @@ function NoteIllustration({ name: rawName, size = 72, big = false }) {
     "Cocoa": <svg viewBox="0 0 60 60" fill="none"><path d="M16 26 C16 18 22 14 30 14 C38 14 44 18 44 26 C44 38 36 48 30 50 C24 48 16 38 16 26Z" fill={c.fill} stroke={c.stroke} strokeWidth="1.2"/><ellipse cx="30" cy="30" rx="8" ry="6" fill={c.accent} opacity="0.3"/></svg>,
   };
   const art = arts[name] || <svg viewBox="0 0 60 60" fill="none"><circle cx="30" cy="30" r="20" fill={c.fill} stroke={c.stroke} strokeWidth="1.2"/><text x="30" y="38.5" textAnchor="middle" fontFamily={serif} fontSize="24" fill={c.accent}>{String(name).charAt(0).toUpperCase()}</text></svg>;
+  if (tile) return (
+    <div style={{ width:TILE_W, textAlign:"left" }}>
+      <div style={{ position:"relative", width:"100%", aspectRatio:"0.8", borderRadius:12, overflow:"hidden", background:c.bg, border:`1px solid ${c.stroke}22`, display:"flex", alignItems:"center", justifyContent:"center" }}>
+        <div style={{ width:"58%", aspectRatio:"1" }}>{art}</div>
+      </div>
+      <span style={{ display:"block", marginTop:10, fontFamily:serif, fontSize:16, lineHeight:1.2, letterSpacing:-0.2, color:T.black }}>{name}</span>
+    </div>
+  );
   if (big) return (
     <div style={{ display:"flex", flexDirection:"column", alignItems:"flex-start", gap:10, width:"100%" }}>
       <div style={{ width:"100%", aspectRatio:"1", borderRadius:16, background:c.bg, border:`1px solid ${c.stroke}22`, overflow:"hidden", display:"flex", alignItems:"center", justifyContent:"center" }}>
@@ -1618,24 +1633,13 @@ function SimilarScents({ frag, onOpenFrag }) {
     <div style={{ marginBottom: 36 }}>
       <Lbl mb={6}>Similar scents</Lbl>
       <p style={{ fontFamily: sans, fontSize: 12, color: T.mid, lineHeight: 1.6, margin: "0 0 12px" }}>Matched on shared notes, with rarer notes counting for more.</p>
-      <div style={{ border: `1px solid ${T.rule}`, borderRadius: 16, overflow: "hidden", background: T.lift }}>
-        {rows.map((r, i) => (
-          <div key={r.f.id} onClick={() => onOpenFrag(r.f.id, "similar")}
-            style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 14px", cursor: "pointer", borderTop: i ? `1px solid ${T.rule}` : "none", transition: "background 0.15s" }}
-            onMouseEnter={e => e.currentTarget.style.background = T.white}
-            onMouseLeave={e => e.currentTarget.style.background = "transparent"}>
-            <div style={{ width: 44, height: 44, borderRadius: 10, background: T.white, border: `1px solid ${T.rule}`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, overflow: "hidden" }}>
-              {r.f.image
-                ? <img src={r.f.image} alt="" loading="lazy" style={{ width: "100%", height: "100%", objectFit: "contain", padding: 3 }}/>
-                : <span style={{ fontFamily: serif, fontSize: 13, color: T.ink }}>{r.f.name.split(" ").map(w => w[0]).join("").slice(0, 2).toUpperCase()}</span>}
-            </div>
-            <div style={{ minWidth: 0, flex: 1 }}>
-              <p style={{ fontFamily: serif, fontSize: 16, color: T.black, margin: 0, lineHeight: 1.2 }}>{r.f.name}</p>
-              <p style={{ fontFamily: sans, fontSize: 11, color: T.mid, margin: "2px 0 0" }}>{r.f.house}</p>
-              <p style={{ fontFamily: sans, fontSize: 12, color: T.ink, margin: "5px 0 0", lineHeight: 1.45 }}>
-                Shares {r.count} note{r.count === 1 ? "" : "s"}: {r.notes.slice(0, 4).map(cap).join(", ")}{r.count > 4 ? ` and ${r.count - 4} more` : ""}
-              </p>
-            </div>
+      <div className="mos-shelf" style={{ display: "flex", alignItems: "flex-start", gap: 14, overflowX: "auto", paddingTop: 4, paddingBottom: 10, scrollSnapType: "x proximity", WebkitOverflowScrolling: "touch" }}>
+        {rows.map(r => (
+          <div key={r.f.id} style={{ flex: "0 0 auto", width: TILE_W }}>
+            <CoverTile frag={r.f} fit onClick={id => onOpenFrag(id, "similar")} userStatus={null}/>
+            <p style={{ fontFamily: sans, fontSize: 12, color: T.ink, margin: "6px 0 0", lineHeight: 1.45 }}>
+              Shares {r.count} note{r.count === 1 ? "" : "s"}: {r.notes.slice(0, 3).map(cap).join(", ")}{r.count > 3 ? ` and ${r.count - 3} more` : ""}
+            </p>
           </div>
         ))}
       </div>
@@ -2532,8 +2536,8 @@ function NotesPyramid({ notes, onOpenNote }) {
                     </div>
                     <span style={{fontFamily:sans,fontSize:9,color:T.faint}}>{time}</span>
                   </div>
-                  <div style={{display:"flex",flexWrap:"wrap",gap:10}}>
-                    {ns.map(note=><button key={note.n} onClick={()=>onOpenNote&&onOpenNote(note.n,label)} aria-label={`About ${note.n}`} style={{background:"none",border:"none",padding:0,cursor:onOpenNote?"pointer":"default",textAlign:"left",font:"inherit",color:"inherit"}}><NoteIllustration name={note.n} size={72}/></button>)}
+                  <div style={{display:"flex",flexWrap:"wrap",gap:"18px 14px"}}>
+                    {ns.map(note=><button key={note.n} onClick={()=>onOpenNote&&onOpenNote(note.n,label)} aria-label={`About ${note.n}`} style={{background:"none",border:"none",padding:0,cursor:onOpenNote?"pointer":"default",textAlign:"left",font:"inherit",color:"inherit"}}><NoteIllustration name={note.n} tile/></button>)}
                   </div>
                 </div>
               ))}
@@ -3059,12 +3063,12 @@ function getResp(msg){const l=msg.toLowerCase();if(l.includes("library")||l.incl
 
 // ─── SHELVES: large cover tiles, Fable-style ─────────────────────────────────
 // Tiles are neutral on purpose: each one holds the bottle photo (frag.image) once images exist.
-function CoverTile({ frag, onClick, userStatus }) {
+function CoverTile({ frag, onClick, userStatus, fit }) {
   const owned = userStatus === "bottle_owned";
   const ini = frag.name.split(" ").map(w => w[0]).join("").slice(0, 2).toUpperCase();
   return (
     <button onClick={() => onClick(frag.id)} className="mos-cover" aria-label={`${frag.name} by ${frag.house}`}
-      style={{ flex:"0 0 auto", width:"var(--cover-w)", padding:0, border:"none", background:"none", cursor:"pointer", textAlign:"left", scrollSnapAlign:"start", fontFamily:sans }}>
+      style={{ flex:"0 0 auto", width:fit ? TILE_W : "var(--cover-w)", padding:0, border:"none", background:"none", cursor:"pointer", textAlign:"left", scrollSnapAlign:"start", fontFamily:sans }}>
       <span style={{ display:"block", position:"relative", width:"100%", aspectRatio:"0.8", borderRadius:12, overflow:"hidden", background:T.white, border:`1px solid ${T.rule}` }}>
         {frag.image
           ? <img src={frag.image} alt="" loading="lazy" style={{ position:"absolute", inset:0, width:"100%", height:"100%", objectFit:"contain", padding:"8%" }}/>
