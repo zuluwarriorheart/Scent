@@ -7039,8 +7039,9 @@ export default function SillageApp() {
                     if (items.length >= 12) break;
                   }
                   if (items.length >= 4) {
+                    const hix = shelves.findIndex(x => x.key === "designer");
                     const dix = shelves.findIndex(x => x.key === "diversity");
-                    const aix = dix >= 0 ? dix : (shelves.findIndex(x => x.key === "neo") >= 0 ? shelves.findIndex(x => x.key === "neo") : shelves.findIndex(x => x.key === "new"));
+                    const aix = hix >= 0 ? hix : (dix >= 0 ? dix : (shelves.findIndex(x => x.key === "neo") >= 0 ? shelves.findIndex(x => x.key === "neo") : shelves.findIndex(x => x.key === "new")));
                     shelves.splice(aix + 1, 0, { key: "shared", title: "Most shared notes", blurb: "Pairs from different houses that share the most notes. Each pair sits side by side. Open one to see what they have in common.", items });
                   }
                 }
