@@ -538,7 +538,7 @@ function noteFallback(name) {
   let h = 0; for (const ch of String(name).toLowerCase()) h = (h * 31 + ch.charCodeAt(0)) >>> 0;
   return NOTE_FALLBACK_PAL[h % NOTE_FALLBACK_PAL.length];
 }
-// Note photos (Midjourney, cut out on transparent). PREVIEW ONLY: switched on by opening the site with ?noteimages=1 (remembered on this device); off for everyone else.
+// Note photos (Midjourney, uncut, white background). PREVIEW ONLY: switched on by opening the site with ?noteimages=1 (remembered on this device); off for everyone else.
 const NOTE_PHOTO_PREVIEW = (() => {
   try {
     const q = new URLSearchParams(window.location.search).get("noteimages");
@@ -2435,8 +2435,12 @@ async function renderNotesCard(frag, fmt, bg) {
     const inRow = r === rows-1 ? n - r*cols : cols;
     const rowW = inRow*cell + gap*(inRow-1);
     const x = (fmt.w - rowW)/2 + k*(cell+gap), y = y0 + r*(cell+labelH+gap);
-    const sc = Math.min(cell / im.width, cell / im.height), dw = im.width * sc, dh = im.height * sc;
-    g.drawImage(im, x + (cell - dw)/2, y + (cell - dh)/2, dw, dh);
+    const oc = document.createElement("canvas"); oc.width = oc.height = Math.round(cell);
+    const o = oc.getContext("2d");
+    o.filter = "brightness(1.05)"; o.drawImage(im, 0, 0, oc.width, oc.height); o.filter = "none";
+    o.globalCompositeOperation = "destination-in"; o.filter = "blur(" + Math.round(cell*0.035) + "px)";
+    const ins = cell*0.035; o.fillStyle = "#000"; o.beginPath(); o.roundRect(ins, ins, cell-ins*2, cell-ins*2, cell*0.2); o.fill();
+    g.save(); g.globalCompositeOperation = dark ? "source-over" : "multiply"; g.drawImage(oc, x, y); g.restore();
     g.fillStyle = ink; g.font = "500 30px 'Fraunces Variable', Georgia, serif"; g.textAlign = "center";
     g.fillText(list[i].n, x + cell/2, y + cell + 40);
   });
