@@ -2560,11 +2560,11 @@ async function renderNotesCard(frag, fmt, bg) {
   });
   const fy = fmt.h - (fmt.h > 1500 ? 230 : 84);
   g.fillStyle = ink; g.textAlign = "left";
-  g.font = "500 46px 'Fraunces Variable', Georgia, serif"; const w1 = g.measureText("memoir").width, sp = 12;
-  g.font = "italic 400 46px 'Fraunces Variable', Georgia, serif"; const w2 = g.measureText("on skin").width;
+  g.font = "500 28px 'Fraunces Variable', Georgia, serif"; const w1 = g.measureText("memoir").width, sp = 8;
+  g.font = "italic 400 28px 'Fraunces Variable', Georgia, serif"; const w2 = g.measureText("on skin").width;
   const wx = pad;
-  g.font = "500 46px 'Fraunces Variable', Georgia, serif"; g.fillText("memoir", wx, fy);
-  g.font = "italic 400 46px 'Fraunces Variable', Georgia, serif"; g.fillStyle = dark ? "#FF5C9D" : "#C9206B"; g.fillText("on skin", wx + w1 + sp, fy);
+  g.font = "500 28px 'Fraunces Variable', Georgia, serif"; g.fillText("memoir", wx, fy);
+  g.font = "italic 400 28px 'Fraunces Variable', Georgia, serif"; g.fillStyle = dark ? "#FF5C9D" : "#C9206B"; g.fillText("on skin", wx + w1 + sp, fy);
   const blob = await new Promise(r => c.toBlob(r, "image/png"));
   return blob;
 }
