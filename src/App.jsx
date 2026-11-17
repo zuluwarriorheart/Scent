@@ -610,7 +610,7 @@ function NoteIllustration({ name: rawName, size = 72, big = false, tile = false 
     const img = <img className="note-photo" src={photo} alt={label} loading="lazy" draggable={false} style={{ width:"100%", height:"100%", objectFit:"contain", mixBlendMode:"multiply", filter:"drop-shadow(0 4px 6px rgba(0,0,0,0.12))", display:"block" }}/>;
     if (tile) return (
       <div style={{ width:TILE_W, flex:"none", boxSizing:"border-box", textAlign:"left" }}>
-        <div style={{ position:"relative", width:"100%", aspectRatio:"0.8", borderRadius:12, overflow:"hidden", background:T.white, border:`1px solid ${T.rule}`, padding:"8%", boxSizing:"border-box" }}>{img}</div>
+        <div style={{ position:"relative", width:"100%", aspectRatio:"0.8", borderRadius:12, overflow:"hidden", background:"#FFFFFF", border:`1px solid ${T.rule}`, padding:"8%", boxSizing:"border-box" }}>{img}</div>
         <span style={{ display:"block", marginTop:10, minHeight:"2.4em", fontFamily:serif, fontSize:16, lineHeight:1.2, letterSpacing:-0.2, color:T.black }}>{label}</span>
       </div>
     );
@@ -4899,6 +4899,57 @@ function StoreFinder({ onBack, onOpenBrand }) {
   );
 }
 
+// ─── LEARN: notes browser, grouped by family ─────────────────────────────────
+const NOTE_FAMILIES = [
+  ["Florals", "almond blossom|apple blossom|bitter orange blossom|broom|carnation|champaca|cherry blossom|clover|cotton flower|floral notes|freesia|gardenia|hawthorn|heliotrope|hibiscus|iris|jasmine|jasmine sambac|lily|lily of the valley|linden blossom|magnolia|marigold|mimosa|orange blossom|orchid|osmanthus|passion flower|peach blossom|pink peony|rose|rose geranium|rose hip|sweet pea|tuberose|violet flower|violet leaf|wisteria|ylang ylang"],
+  ["Citrus", "bergamot|bitter orange leaf|blood orange|citrus|grapefruit|kumquat|lemon|lemongrass|lime|mandarin|pomelo|sweet orange|yuzu"],
+  ["Fruits", "apple|apricot|banana|blackcurrant|blueberry|cantaloupe|cherry|coconut|cranberry|dates|dried fruits|fig|fruity notes|grapes|guava|kiwi|lychee|mango|nectarine|papaya|passionfruit|peach|pear|pineapple|pitahaya|plum|quince|raspberry|red currant|rhubarb|strawberry|watermelon"],
+  ["Spices", "allspice|black pepper|cardamom|chili|cinnamon|clove|coriander|fennel|fenugreek|ginger|mace|nutmeg|paprika|pink peppercorn|saffron|turmeric"],
+  ["Woods and moss", "bamboo|cedarwood|cypress|ebony|guaiac|juniper|mahogany|myrtle|oakmoss|olive tree|oud|palo santo|sandalwood|teak|vetiver|woody notes"],
+  ["Resins and balsams", "amber|ambergris|benzoin|cistus|frankincense|gurjan balsam|labdanum|mastic|myrrh"],
+  ["Gourmand", "almond|butter|cacao pod|caramel|chestnut|cotton candy|cream glass|dark chocolate|gourmand notes|hazelnut|honeycomb|licorice|maple|marshmallow|milk splash|pistachio|popcorn|praline|rice|sesame|sugar|sugarcane|toffee|tonka|vanilla|wheat"],
+  ["Drinks", "absinthe|black tea|champagne|coffee|gin glass|golden glass|rum tumbler"],
+  ["Herbs and greens", "basil|carrot|carrot seeds|clary sage|fern|galbanum|herbal notes|lavender|oregano|rosemary|sage|shiso|spearmint|tomato leaf|truffle"],
+  ["Musk, leather and smoke", "animalic notes|cannabis|cashmere|leather|suede|tobacco"],
+  ["Fresh and mineral", "cucumber|marine notes|mineral notes|salt|sand|seaweed|solar notes"],
+];
+const NOTE_FAMILY_OF = (() => { const m = {}; NOTE_FAMILIES.forEach(([f, ks]) => ks.split("|").forEach(k => { m[k] = f; })); return m; })();
+const LEARN_NOTE_FALLBACK = ["rose","jasmine","saffron","oud","vanilla","amber","bergamot","patchouli","vetiver","sandalwood","incense","musk","cardamom"];
+function NotesBrowser({ onOpen }) {
+  const [fam, setFam] = useState("All");
+  const cap = k => k.replace(/(^|[\s-])([a-z])/g, (m, p, c) => p + c.toUpperCase());
+  const all = NOTE_PHOTO_PREVIEW ? NOTE_PHOTO_GALLERY : LEARN_NOTE_FALLBACK;
+  const shown = fam === "All" ? all : all.filter(k => (NOTE_FAMILY_OF[k] || "More") === fam);
+  const guides = Object.keys(INGREDIENTS);
+  const heading = (t, b) => (<div style={{ marginBottom:14 }}>
+    <h3 style={{ fontFamily:serif, fontSize:"clamp(24px, 2.2vw, 34px)", fontWeight:400, letterSpacing:-0.5, color:T.black, margin:0, lineHeight:1.1 }}>{t}</h3>
+    {b && <p style={{ fontFamily:sans, fontSize:14, color:T.mid, margin:"6px 0 0", lineHeight:1.5 }}>{b}</p>}
+  </div>);
+  const tile = (k, withGuide) => {
+    const guide = INGREDIENTS[cap(k)] ? cap(k) : null;
+    const inner = (<><NoteIllustration name={k} tile/><span style={{ display:"block", height:16, marginTop:0, fontFamily:sans, fontSize:11, fontWeight:600, letterSpacing:"0.14em", textTransform:"uppercase", color:T.accent }}>{guide ? "Guide" : ""}</span></>);
+    const st = { flex:"none", width:TILE_W, textAlign:"left", fontFamily:sans, scrollSnapAlign:"start" };
+    return guide
+      ? <button key={k} onClick={() => onOpen(guide)} aria-label={`Open the ${guide} guide`} style={{ ...st, background:"none", border:"none", padding:0, cursor:"pointer" }}>{inner}</button>
+      : <div key={k} style={st}>{inner}</div>;
+  };
+  const chip = (on, label) => (<button key={label} onClick={() => setFam(label)} aria-pressed={on} style={{ fontFamily:sans, fontSize:14, fontWeight:on?600:500, padding:"0 18px", minHeight:40, borderRadius:20, whiteSpace:"nowrap", border:`1px solid ${on?T.black:T.rule}`, background:on?T.black:T.white, color:on?T.white:T.ink, cursor:"pointer", flexShrink:0 }}>{label}</button>);
+  const fams = [...NOTE_FAMILIES.map(f => f[0])];
+  return (
+    <div>
+      <section style={{ marginBottom:36 }}>
+        {heading("Start with a guide", "The ingredients we have written up in full: where they grow, how they are made, and where you have smelled them.")}
+        <div className="mos-shelf" style={{ display:"flex", alignItems:"flex-start", gap:14, overflowX:"auto", paddingBottom:6, scrollSnapType:"x proximity", WebkitOverflowScrolling:"touch" }}>{guides.map(g => tile(g.toLowerCase(), true))}</div>
+      </section>
+      <section>
+        {heading("Browse every note", `${all.length} ingredients, grouped by family. More guides are on the way.`)}
+        <div style={{ display:"flex", gap:8, overflowX:"auto", paddingBottom:10, marginBottom:8 }} className="mos-shelf">{chip(fam === "All", "All")}{fams.map(f => chip(fam === f, f))}</div>
+        <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill, var(--cover-w))", gap:"22px 14px", justifyContent:"start" }}>{shown.map(k => tile(k))}</div>
+      </section>
+    </div>
+  );
+}
+
 function LearnTab({ fragrances, onOpenFrag, onOpenBrand }) {
   const [openTerm,setOpenTerm]=useState(null);
   const [openExpo,setOpenExpo]=useState(null);
@@ -4927,21 +4978,7 @@ function LearnTab({ fragrances, onOpenFrag, onOpenBrand }) {
       </div>
       {tab==="stores"&&<StoreFinder onOpenBrand={onOpenBrand}/>}
       {tab==="ingredients"&&<>
-      <Lbl>Ingredient guide</Lbl>
-      <p style={{fontFamily:sans,fontSize:13,color:T.mid,lineHeight:1.6,margin:"0 0 14px"}}>Where each ingredient comes from, how it is made, and where you have smelled it. Tap one marked Guide.</p>
-      {NOTE_PHOTO_PREVIEW&&<div style={{marginBottom:28}}>
-        <Lbl>Note photos preview</Lbl>
-        <p style={{fontFamily:sans,fontSize:13,color:T.mid,lineHeight:1.6,margin:"0 0 14px"}}>Uncut Midjourney photos, only visible with the preview switched on. Add ?noteimages=0 to the address to turn it off.</p>
-        <div className="mos-tiles">{NOTE_PHOTO_GALLERY.map(n=><NoteIllustration key={n} name={n} big/>)}</div>
-      </div>}
-      <div className="mos-tiles" style={{marginBottom:28}}>
-        {["Rose","Jasmine","Saffron","Oud","Vanilla","Amber","Bergamot","Patchouli","Vetiver","Sandalwood","Incense","Musk","Cardamom"].map(n=>{const has=!!INGREDIENTS[n];return (
-          <button key={n} onClick={()=>has&&setOpenNote(n)} style={{background:"none",border:"none",padding:0,cursor:has?"pointer":"default",textAlign:"left",opacity:has?1:0.5,fontFamily:sans,minWidth:0,alignSelf:"start",display:"block"}}>
-            <NoteIllustration name={n} big/>
-            {has&&<span style={{display:"block",fontSize:12,letterSpacing:"0.14em",textTransform:"uppercase",color:T.accent,marginTop:4}}>Guide</span>}
-          </button>
-        );})}
-      </div>
+      <NotesBrowser onOpen={setOpenNote}/>
       </>}
       {tab==="articles"&&<>
       <Lbl>Learning Paths</Lbl>
