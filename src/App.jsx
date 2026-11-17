@@ -263,6 +263,7 @@ function Icon({ name, size=18, color=T.mid }) {
   const icons = {
     finished: <svg viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="9"/><path d="M8 12.5l2.7 2.7L16 9.5"/></svg>,
     bottle: <svg viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M9 3h6M8 3v2.5c0 .5-.5 1-1 1.5L6 8.5C5.5 9 5 9.5 5 10v10a1 1 0 001 1h12a1 1 0 001-1V10c0-.5-.5-1-1-1.5l-1-1.5c-.5-.5-1-1-1-1.5V3"/><path d="M5 13h14"/></svg>,
+    travel: <svg viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M10 3h4v3h-4z"/><rect x="7" y="6" width="10" height="15" rx="2.5"/><path d="M7 12h10"/></svg>,
     sample: <svg viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M10 3h4M9 3v1.5a1 1 0 01-.3.7L7 7v12a1 1 0 001 1h8a1 1 0 001-1V7l-1.7-1.8a1 1 0 01-.3-.7V3"/><path d="M7 11h10"/><circle cx="12" cy="15" r="1" fill={color} stroke="none"/></svg>,
     flame: <svg viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2c0 0-5 4-5 9a5 5 0 0010 0c0-2-1.5-4-2.5-5 0 2-1.5 3-2.5 3-1 0-1.5-1-1.5-2 0-1.5 1.5-5 1.5-5z"/></svg>,
     thumbsup: <svg viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M14 9V5a3 3 0 00-3-3l-4 9v11h11.28a2 2 0 002-1.7l1.38-9a2 2 0 00-2-2.3H14z"/><path d="M7 22H4a2 2 0 01-2-2v-7a2 2 0 012-2h3"/></svg>,
@@ -799,6 +800,9 @@ const STATUSES = [
   { key:"bottle_owned",    label:"Bottle, owned",    iconName:"bottle",   group:"bottle" },
   { key:"bottle_wishlist", label:"Bottle, wishlist", iconName:"wishstar", group:"bottle" },
   { key:"bottle_finished", label:"Bottle, finished", iconName:"finished", group:"bottle" },
+  { key:"travel_have",     label:"Travel size, own", iconName:"travel",   group:"travel" },
+  { key:"travel_wishlist", label:"Travel size, wishlist", iconName:"wishstar", group:"travel" },
+  { key:"travel_finished", label:"Travel size, finished", iconName:"finished", group:"travel" },
   { key:"sample_have",     label:"Sample, in hand",  iconName:"sample",   group:"sample" },
   { key:"sample_wishlist", label:"Sample, wishlist", iconName:"bookmark", group:"sample" },
   { key:"sample_finished", label:"Sample, finished", iconName:"finished", group:"sample" },
@@ -807,9 +811,9 @@ const STATUSES = [
 ];
 // A fragrance can hold several statuses at once (e.g. own the sample, wishlist the bottle, smelled on a blotter).
 // Bottle and Sample each hold one status at a time; Smelled can hold both. `primaryStatus` is the single status the cards and badges show.
-const STATUS_PRIORITY = ["bottle_owned","bottle_finished","sample_have","sample_finished","bottle_wishlist","sample_wishlist","tried_skin","smelled"];
+const STATUS_PRIORITY = ["bottle_owned","bottle_finished","travel_have","travel_finished","sample_have","sample_finished","bottle_wishlist","travel_wishlist","sample_wishlist","tried_skin","smelled"];
 const primaryStatus = arr => STATUS_PRIORITY.find(k => (arr || []).includes(k)) || null;
-const isFinishedSet = arr => (arr || []).some(k => k === "bottle_finished" || k === "sample_finished");
+const isFinishedSet = arr => (arr || []).some(k => k === "bottle_finished" || k === "travel_finished" || k === "sample_finished");
 function toggleStatus(arr, key) {
   const cur = arr || [], def = STATUSES.find(x => x.key === key);
   if (!def) return cur;
@@ -820,14 +824,15 @@ function toggleStatus(arr, key) {
 function StatusSelector({ value, onChange }) {
   const groups = [
     { title:"Bottle", items:STATUSES.filter(s=>s.group==="bottle") },
+    { title:"Travel size", items:STATUSES.filter(s=>s.group==="travel") },
     { title:"Sample", items:STATUSES.filter(s=>s.group==="sample") },
     { title:"Smelled",items:STATUSES.filter(s=>s.group==="tried")  },
   ];
-  const SHORT = { bottle_owned:"Own", bottle_wishlist:"Wishlist", sample_have:"Own", sample_wishlist:"Wishlist", bottle_finished:"Finished", sample_finished:"Finished", smelled:"On blotter", tried_skin:"Tried on skin" };
+  const SHORT = { bottle_owned:"Own", bottle_wishlist:"Wishlist", sample_have:"Own", sample_wishlist:"Wishlist", travel_have:"Own", travel_wishlist:"Wishlist", travel_finished:"Finished", bottle_finished:"Finished", sample_finished:"Finished", smelled:"On blotter", tried_skin:"Tried on skin" };
   return (
     <div>
       {groups.map((g,gi) => (
-        <div key={g.title} style={{ marginBottom:gi<2?22:0 }}>
+        <div key={g.title} style={{ marginBottom:gi<groups.length-1?22:0 }}>
           <p style={{ fontFamily:sans, fontSize:11, textTransform:"uppercase", letterSpacing:"0.14em", color:T.mid, margin:"0 0 10px" }}>{g.title}</p>
           <div style={{ display:"grid", gridTemplateColumns:`repeat(${g.items.length >= 3 ? 3 : 2}, minmax(0, 1fr))`, gap:10 }}>
             {g.items.map(s => {
@@ -849,9 +854,9 @@ function StatusSelector({ value, onChange }) {
 
 // Shown under the status buttons once a bottle or sample is marked Finished.
 function FinishedPanel({ status: statusSet, finish, onChange }) {
-  const status = (statusSet || []).includes("bottle_finished") ? "bottle_finished" : (statusSet || []).includes("sample_finished") ? "sample_finished" : null;
-  if (status !== "bottle_finished" && status !== "sample_finished") return null;
-  const what = status === "bottle_finished" ? "bottle" : "sample";
+  const status = (statusSet || []).includes("bottle_finished") ? "bottle_finished" : (statusSet || []).includes("travel_finished") ? "travel_finished" : (statusSet || []).includes("sample_finished") ? "sample_finished" : null;
+  if (!status) return null;
+  const what = status === "bottle_finished" ? "bottle" : status === "travel_finished" ? "travel size" : "sample";
   const f = finish || {};
   const opts = [["yes", "Yes"], ["maybe", "Maybe"], ["no", "No"]];
   return (
@@ -3052,7 +3057,7 @@ function JournalInsights({ entries, userStatuses, reactions, fragrances, wears, 
   const words = Object.entries(wordTally).sort((a, b) => b[1] - a[1]).slice(0, 14);
 
   // accords across what you own, have sampled or love (not dated, so not year-filtered)
-  const LIKE = new Set(["bottle_owned","bottle_wishlist","sample_have","tried_skin","bottle_finished","sample_finished"]);
+  const LIKE = new Set(["bottle_owned","bottle_wishlist","sample_have","tried_skin","bottle_finished","sample_finished","travel_have","travel_finished"]);
   const accTally = {}, loveNotes = {}; let loved = 0;
   FR.forEach(f => {
     const st = userStatuses[f.id], rx = reactions[f.id];
@@ -4177,9 +4182,11 @@ function impParseDelimited(text) {
 function impStatusFrom(txt) {
   const t = String(txt || "").toLowerCase();
   if (!t.trim()) return null;
-  const smp = /sample|decant|vial|mini|travel|split/.test(t);
-  if (/wish|want|desire|\bwl\b|to buy|interested|seeking|crave/.test(t)) return smp ? "sample_wishlist" : "bottle_wishlist";
-  if (/finish|empty|used up|killed|gone|sold|passed/.test(t)) return smp ? "sample_finished" : "bottle_finished";
+  const trv = /travel/.test(t);
+  const smp = /sample|decant|vial|mini|split/.test(t);
+  if (/wish|want|desire|\bwl\b|to buy|interested|seeking|crave/.test(t)) return trv ? "travel_wishlist" : smp ? "sample_wishlist" : "bottle_wishlist";
+  if (/finish|empty|used up|killed|gone|sold|passed/.test(t)) return trv ? "travel_finished" : smp ? "sample_finished" : "bottle_finished";
+  if (trv) return "travel_have";
   if (smp) return "sample_have";
   if (/own|have|bottle|collection|full|shelf|keep|current/.test(t)) return "bottle_owned";
   if (/tried|worn|wear|tested|skin/.test(t)) return "tried_skin";
@@ -4341,11 +4348,13 @@ function CollectionTab({ onImport, onOpenFrag, statuses:userStatuses, statusSets
   const filters=[
     {key:"all",label:"All",iconName:null},
     {key:"bottle_owned",label:"Bottles",iconName:"bottle"},
+    {key:"travel_have",label:"Travel size",iconName:"travel"},
     {key:"sample_have",label:"Samples",iconName:"sample"},
     {key:"finished",label:"Finished",iconName:"finished"},
     {key:"tried_skin",label:"Tried",iconName:"skin"},
     {key:"smelled",label:"Smelled",iconName:"nose"},
     {key:"bottle_wishlist",label:"Bottle WL",iconName:"wishstar"},
+    {key:"travel_wishlist",label:"Travel WL",iconName:"wishstar"},
     {key:"sample_wishlist",label:"Sample WL",iconName:"bookmark"},
     {key:"love",label:"Love",iconName:"flame"},
     {key:"like",label:"Like",iconName:"thumbsup"},
@@ -4608,7 +4617,7 @@ function LayeringPlanner({ fragrances, statusSets, onSaveLayer }) {
   const [saved, setSaved] = useState({});
   const [img, setImg] = useState(null); // {url, blob, name}
   const [busy, setBusy] = useState(false);
-  const mine = useMemo(() => (fragrances || []).filter(f => { const st = (statusSets && statusSets[f.id]) || []; return st.includes("bottle_owned") || st.includes("sample_have"); }), [fragrances, statusSets]);
+  const mine = useMemo(() => (fragrances || []).filter(f => { const st = (statusSets && statusSets[f.id]) || []; return st.includes("bottle_owned") || st.includes("sample_have") || st.includes("travel_have"); }), [fragrances, statusSets]);
   const start = weekStart(offset), label = weekLabel(start);
   const key = start.toISOString().slice(0, 10);
   const plan = useMemo(() => mine.length >= 2 ? planLayering(mine, key + ":" + shuffle) : [], [mine, key, shuffle]);
