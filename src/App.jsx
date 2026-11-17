@@ -609,9 +609,9 @@ function NoteIllustration({ name: rawName, size = 72, big = false, tile = false 
     const label = String(rawName || "").replace(/(^|[\s-])([a-z])/g, (m, p, ch) => p + ch.toUpperCase());
     const img = <img className="note-photo" src={photo} alt={label} loading="lazy" draggable={false} style={{ width:"100%", height:"100%", objectFit:"contain", mixBlendMode:"multiply", filter:"drop-shadow(0 4px 6px rgba(0,0,0,0.12))", display:"block" }}/>;
     if (tile) return (
-      <div style={{ width:TILE_W, textAlign:"left" }}>
+      <div style={{ width:TILE_W, flex:"none", boxSizing:"border-box", textAlign:"left" }}>
         <div style={{ position:"relative", width:"100%", aspectRatio:"0.8", borderRadius:12, overflow:"hidden", background:T.white, border:`1px solid ${T.rule}`, padding:"8%", boxSizing:"border-box" }}>{img}</div>
-        <span style={{ display:"block", marginTop:10, fontFamily:serif, fontSize:16, lineHeight:1.2, letterSpacing:-0.2, color:T.black }}>{label}</span>
+        <span style={{ display:"block", marginTop:10, minHeight:"2.4em", fontFamily:serif, fontSize:16, lineHeight:1.2, letterSpacing:-0.2, color:T.black }}>{label}</span>
       </div>
     );
     if (big) return (
@@ -668,11 +668,11 @@ function NoteIllustration({ name: rawName, size = 72, big = false, tile = false 
   };
   const art = arts[name] || <svg viewBox="0 0 60 60" fill="none"><circle cx="30" cy="30" r="20" fill={c.fill} stroke={c.stroke} strokeWidth="1.2"/><text x="30" y="38.5" textAnchor="middle" fontFamily={serif} fontSize="24" fill={c.accent}>{String(name).charAt(0).toUpperCase()}</text></svg>;
   if (tile) return (
-    <div style={{ width:TILE_W, textAlign:"left" }}>
-      <div style={{ position:"relative", width:"100%", aspectRatio:"0.8", borderRadius:12, overflow:"hidden", background:c.bg, border:`1px solid ${c.stroke}22`, display:"flex", alignItems:"center", justifyContent:"center" }}>
-        <div style={{ width:"58%", aspectRatio:"1" }}>{art}</div>
+    <div style={{ width:TILE_W, flex:"none", boxSizing:"border-box", textAlign:"left" }}>
+      <div style={{ position:"relative", width:"100%", aspectRatio:"0.8", borderRadius:12, overflow:"hidden", background:c.bg, border:`1px solid ${T.rule}`, boxSizing:"border-box", display:"flex", alignItems:"center", justifyContent:"center" }}>
+        <div style={{ width:"66%", aspectRatio:"1" }}>{art}</div>
       </div>
-      <span style={{ display:"block", marginTop:10, fontFamily:serif, fontSize:16, lineHeight:1.2, letterSpacing:-0.2, color:T.black }}>{name}</span>
+      <span style={{ display:"block", marginTop:10, minHeight:"2.4em", fontFamily:serif, fontSize:16, lineHeight:1.2, letterSpacing:-0.2, color:T.black }}>{name}</span>
     </div>
   );
   if (big) return (
@@ -2576,7 +2576,7 @@ function NotesPyramid({ notes, onOpenNote }) {
                     <span style={{fontFamily:sans,fontSize:9,color:T.faint}}>{time}</span>
                   </div>
                   <div style={{display:"flex",flexWrap:"wrap",gap:"18px 14px"}}>
-                    {ns.map(note=><button key={note.n} onClick={()=>onOpenNote&&onOpenNote(note.n,label)} aria-label={`About ${note.n}`} style={{background:"none",border:"none",padding:0,cursor:onOpenNote?"pointer":"default",textAlign:"left",font:"inherit",color:"inherit"}}><NoteIllustration name={note.n} tile/></button>)}
+                    {ns.map(note=><button key={note.n} onClick={()=>onOpenNote&&onOpenNote(note.n,label)} aria-label={`About ${note.n}`} style={{background:"none",border:"none",padding:0,flex:"none",width:TILE_W,cursor:onOpenNote?"pointer":"default",textAlign:"left",font:"inherit",color:"inherit"}}><NoteIllustration name={note.n} tile/></button>)}
                   </div>
                 </div>
               ))}
