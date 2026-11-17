@@ -2407,6 +2407,100 @@ function SamplesSection({ defaultRegion, onVisit, frag }) {
   );
 }
 
+
+const SHARE_FORMATS = [
+  { id:"square", label:"Square", sub:"1080 × 1080 · posts", w:1080, h:1080 },
+  { id:"portrait", label:"Portrait", sub:"1080 × 1350 · feed", w:1080, h:1350 },
+  { id:"story", label:"Story", sub:"1080 × 1920 · stories", w:1080, h:1920 },
+];
+const SHARE_BG = [ ["cream","Cream","#FAF7F5","#1A1420"], ["white","White","#FFFFFF","#1A1420"], ["night","Night","#0F0B14","#F6F0F7"] ];
+function loadShareImg(src) { return new Promise((res, rej) => { const i = new Image(); i.onload = () => res(i); i.onerror = rej; i.src = src; }); }
+async function renderNotesCard(frag, fmt, bg) {
+  const names = [];
+  [frag.notes.top, frag.notes.mid, frag.notes.base].forEach(a => (a || []).forEach(x => { const u = notePhotoFor(x.n); if (u && !names.find(m => m.u === u)) names.push({ n:x.n, u }); }));
+  const list = names.slice(0, 6);
+  try { await document.fonts.load("600 64px 'Fraunces Variable'"); await document.fonts.load("500 28px 'DM Sans Variable'"); } catch {}
+  const imgs = await Promise.all(list.map(m => loadShareImg(m.u)));
+  const c = document.createElement("canvas"); c.width = fmt.w; c.height = fmt.h;
+  const g = c.getContext("2d");
+  g.fillStyle = bg[2]; g.fillRect(0, 0, fmt.w, fmt.h);
+  const ink = bg[3], pad = 80, tall = fmt.h > fmt.w;
+  g.textAlign = "center"; g.fillStyle = ink;
+  const top = tall ? (fmt.h > 1500 ? 200 : 110) : 90;
+  g.globalAlpha = 0.6; g.font = "500 26px 'DM Sans Variable', sans-serif";
+  g.fillText(String(frag.house || "").toUpperCase().split("").join(String.fromCharCode(8202)), fmt.w/2, top); g.globalAlpha = 1;
+  g.font = "600 66px 'Fraunces Variable', Georgia, serif";
+  let title = frag.name; while (g.measureText(title).width > fmt.w - pad*2 && title.length > 4) title = title.slice(0, -2);
+  if (title !== frag.name) title += "…";
+  g.fillText(title, fmt.w/2, top + 78);
+  g.globalAlpha = 0.6; g.font = "italic 400 28px 'Fraunces Variable', Georgia, serif"; g.fillText("The notes", fmt.w/2, top + 126); g.globalAlpha = 1;
+  const n = imgs.length, cols = n <= 1 ? 1 : n <= 4 ? 2 : (tall ? 2 : 3), rows = Math.ceil(n / cols);
+  const areaTop = top + 180, areaBot = fmt.h - (fmt.h > 1500 ? 300 : 150), areaH = areaBot - areaTop, areaW = fmt.w - pad*2;
+  const gap = 24, labelH = 54;
+  const cell = Math.min((areaW - gap*(cols-1)) / cols, (areaH - gap*(rows-1)) / rows - labelH, 430);
+  const gridW = cols*cell + gap*(cols-1), gridH = rows*(cell+labelH) + gap*(rows-1);
+  const x0 = (fmt.w - gridW)/2, y0 = areaTop + Math.max(0, (areaH - gridH)/2);
+  imgs.forEach((im, i) => {
+    const r = Math.floor(i/cols), k = i % cols;
+    const inRow = r === rows-1 ? n - r*cols : cols;
+    const rowW = inRow*cell + gap*(inRow-1);
+    const x = (fmt.w - rowW)/2 + k*(cell+gap), y = y0 + r*(cell+labelH+gap);
+    g.save(); g.beginPath(); g.roundRect(x, y, cell, cell, 28); g.clip();
+    g.fillStyle = "#FFFFFF"; g.fillRect(x, y, cell, cell);
+    g.drawImage(im, x, y, cell, cell); g.restore();
+    g.fillStyle = ink; g.font = "500 30px 'Fraunces Variable', Georgia, serif"; g.textAlign = "center";
+    g.fillText(list[i].n, x + cell/2, y + cell + 40);
+  });
+  g.globalAlpha = 0.5; g.fillStyle = ink; g.font = "500 24px 'DM Sans Variable', sans-serif";
+  g.fillText("MEMOIR ON SKIN  \u00b7  memoironskin.com", fmt.w/2, fmt.h - (fmt.h > 1500 ? 220 : 70)); g.globalAlpha = 1;
+  const blob = await new Promise(r => c.toBlob(r, "image/png"));
+  return blob;
+}
+function ShareNotesButton({ frag }) {
+  const [open, setOpen] = useState(false);
+  const [fmtId, setFmtId] = useState("square");
+  const [bgId, setBgId] = useState("cream");
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState("");
+  const has = [frag.notes.top, frag.notes.mid, frag.notes.base].some(a => (a || []).some(x => notePhotoFor(x.n)));
+  if (!has) return null;
+  const fmt = SHARE_FORMATS.find(f => f.id === fmtId), bg = SHARE_BG.find(b => b[0] === bgId);
+  const fname = `${String(frag.name).toLowerCase().replace(/[^a-z0-9]+/g, "-")}-notes-${fmt.id}.png`;
+  async function go(mode) {
+    setBusy(true); setErr("");
+    try {
+      const blob = await renderNotesCard(frag, fmt, bg);
+      const file = new File([blob], fname, { type:"image/png" });
+      if (mode === "share" && navigator.canShare && navigator.canShare({ files:[file] })) { await navigator.share({ files:[file], title:`${frag.name} notes` }); }
+      else { const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = fname; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 4000); }
+    } catch (e) { if (e && e.name !== "AbortError") setErr("Could not make the image. Try again."); }
+    setBusy(false);
+  }
+  const canShare = typeof navigator !== "undefined" && !!navigator.canShare;
+  return (
+    <div style={{ marginTop:18 }}>
+      <button onClick={() => setOpen(o => !o)} style={{ minHeight:46, padding:"10px 18px", borderRadius:14, border:`1px solid ${T.rule}`, background:T.white, color:T.ink, fontFamily:sans, fontSize:14, fontWeight:600, cursor:"pointer" }}>Share these notes</button>
+      {open && (
+        <div style={{ marginTop:12, padding:16, borderRadius:14, background:T.lift, border:`1px solid ${T.rule}` }}>
+          <Lbl mb={8}>Size</Lbl>
+          <div style={{ display:"flex", flexWrap:"wrap", gap:8, marginBottom:14 }}>
+            {SHARE_FORMATS.map(f => <button key={f.id} onClick={() => setFmtId(f.id)} style={{ ...selBtn(fmtId === f.id), minHeight:52, flexDirection:"column", gap:2, padding:"8px 14px" }}><span>{f.label}</span><span style={{ fontSize:11, fontWeight:400, opacity:0.8 }}>{f.sub}</span></button>)}
+          </div>
+          <Lbl mb={8}>Background</Lbl>
+          <div style={{ display:"flex", flexWrap:"wrap", gap:8, marginBottom:16 }}>
+            {SHARE_BG.map(b => <button key={b[0]} onClick={() => setBgId(b[0])} style={{ ...selBtn(bgId === b[0]), minHeight:44 }}><span style={{ width:14, height:14, borderRadius:7, background:b[2], border:"1px solid #bbb", display:"inline-block" }}/>{b[1]}</button>)}
+          </div>
+          <div style={{ display:"flex", flexWrap:"wrap", gap:8 }}>
+            <button disabled={busy} onClick={() => go("download")} style={{ ...selBtn(true), minHeight:48, padding:"10px 20px" }}>{busy ? "Making…" : "Download image"}</button>
+            {canShare && <button disabled={busy} onClick={() => go("share")} style={{ ...selBtn(false), minHeight:48, padding:"10px 20px" }}>Share…</button>}
+          </div>
+          {err && <p style={{ fontFamily:sans, fontSize:12, color:T.mid, margin:"10px 0 0" }}>{err}</p>}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function NotesPyramid({ notes, onOpenNote }) {
   return (
     <div>
@@ -2665,6 +2759,7 @@ function DetailModal({ frag, entries, onClose, userStatus, setUserStatus, finish
               <div style={{marginBottom:36}}>
                 <Lbl mb={14}>Fragrance Notes</Lbl>
                 <NotesPyramid notes={frag.notes} onOpenNote={(n,tier)=>setNoteSheet({name:n,tier})}/>
+                <ShareNotesButton frag={frag}/>
               </div>
               <SimilarScents frag={frag} onOpenFrag={onOpenFrag}/>
               {hasSeasons&&(<div style={{marginBottom:36}}><Lbl>Seasons</Lbl><SeasonHeat seasons={frag.seasons}/></div>)}
