@@ -603,7 +603,7 @@ function notePhotoFor(rawName) {
   return key ? `/note-images/${key}.webp` : null;
 }
 const TILE_W = "calc(var(--cover-w) / var(--zoom, 1))"; // same on-screen width as a Discover cover, even inside the zoomed fragrance page
-function NoteIllustration({ name: rawName, size = 72, big = false, tile = false }) {
+function NoteIllustration({ name: rawName, size = 72, big = false, tile = false, noLabel = false }) {
   const photo = notePhotoFor(rawName);
   if (photo) {
     const label = String(rawName || "").replace(/(^|[\s-])([a-z])/g, (m, p, ch) => p + ch.toUpperCase());
@@ -611,7 +611,7 @@ function NoteIllustration({ name: rawName, size = 72, big = false, tile = false 
     if (tile) return (
       <div style={{ width:TILE_W, flex:"none", boxSizing:"border-box", textAlign:"left" }}>
         <div style={{ position:"relative", width:"100%", aspectRatio:"0.8", borderRadius:12, overflow:"hidden", background:"#FFFFFF", border:`1px solid ${T.rule}`, padding:"8%", boxSizing:"border-box" }}>{img}</div>
-        <span style={{ display:"block", marginTop:10, minHeight:"2.4em", fontFamily:serif, fontSize:16, lineHeight:1.2, letterSpacing:-0.2, color:T.black }}>{label}</span>
+        {!noLabel&&<span style={{ display:"block", marginTop:10, minHeight:"2.4em", fontFamily:serif, fontSize:16, lineHeight:1.2, letterSpacing:-0.2, color:T.black }}>{label}</span>}
       </div>
     );
     if (big) return (
@@ -672,7 +672,7 @@ function NoteIllustration({ name: rawName, size = 72, big = false, tile = false 
       <div style={{ position:"relative", width:"100%", aspectRatio:"0.8", borderRadius:12, overflow:"hidden", background:c.bg, border:`1px solid ${T.rule}`, boxSizing:"border-box", display:"flex", alignItems:"center", justifyContent:"center" }}>
         <div style={{ width:"66%", aspectRatio:"1" }}>{art}</div>
       </div>
-      <span style={{ display:"block", marginTop:10, minHeight:"2.4em", fontFamily:serif, fontSize:16, lineHeight:1.2, letterSpacing:-0.2, color:T.black }}>{name}</span>
+      {!noLabel&&<span style={{ display:"block", marginTop:10, minHeight:"2.4em", fontFamily:serif, fontSize:16, lineHeight:1.2, letterSpacing:-0.2, color:T.black }}>{name}</span>}
     </div>
   );
   if (big) return (
@@ -4732,65 +4732,70 @@ function IngredientGuide({ name, onBack, fragrances, onOpenFrag, backLabel = "Ba
   const eyebrow = (num, text) => (
     <p style={{ fontFamily:sans, fontSize:11, letterSpacing:"0.2em", textTransform:"uppercase", color:T.mid, margin:"0 0 14px" }}><span style={{ color:T.accent, fontWeight:600 }}>{num}</span>&nbsp;&nbsp;{text}</p>
   );
-  const spec = (label, value) => (
-    <div key={label} style={{ padding:"14px 0", borderBottom:`1px solid ${T.rule}` }}>
-      <p style={{ fontFamily:sans, fontSize:11, letterSpacing:"0.16em", textTransform:"uppercase", color:T.mid, margin:"0 0 4px" }}>{label}</p>
-      <p style={{ fontFamily:serif, fontSize:"clamp(18px, 1.5vw, 22px)", color:T.black, margin:0, lineHeight:1.3 }}>{value}</p>
+  const fact = (label, value, wide) => (
+    <div key={label} style={{ gridColumn:wide?"1 / -1":"auto", background:T.white, border:`1px solid ${T.rule}`, borderRadius:12, padding:"14px 16px" }}>
+      <p style={{ fontFamily:sans, fontSize:11, letterSpacing:"0.16em", textTransform:"uppercase", color:T.mid, margin:"0 0 5px" }}>{label}</p>
+      <p style={{ fontFamily:serif, fontSize:"clamp(17px, 1.4vw, 20px)", color:T.black, margin:0, lineHeight:1.3 }}>{value}</p>
     </div>
   );
+  const card = { background:T.white, border:`1px solid ${T.rule}`, borderRadius:12, padding:"14px 16px" };
+  const cardTitle = { fontFamily:serif, fontSize:"clamp(18px, 1.5vw, 21px)", color:T.black, margin:0, lineHeight:1.25 };
+  const cardSub = { fontFamily:sans, fontSize:13, color:T.mid, margin:"4px 0 0", lineHeight:1.5 };
   return (
     <div>
       <BackBtn onBack={onBack} label={backLabel}/>
-      <div className="mos-guide">
-        <div>
+      {/* Hero: picture beside the name and the one-line story */}
+      <div style={{ display:"flex", flexWrap:"wrap", gap:"22px 28px", alignItems:"flex-start", marginBottom:30 }}>
+        <div style={{ flex:"none" }}><NoteIllustration name={name} tile noLabel/></div>
+        <div style={{ flex:"1 1 280px", minWidth:0 }}>
           {eyebrow("01", "The plant")}
-          <h3 style={{ fontFamily:serif, fontSize:"clamp(40px, 5vw, 68px)", letterSpacing:"0.02em", textTransform:"uppercase", fontWeight:500, color:T.black, margin:"0 0 6px", lineHeight:1 }}>{name}</h3>
-          <p style={{ fontFamily:serif, fontStyle:"italic", fontSize:"clamp(16px, 1.4vw, 20px)", color:T.mid, margin:"0 0 26px" }}>{g.latin}</p>
-          <div className="mos-spec">
-            <div style={{ background:T.lift, borderRadius:12, padding:16, display:"flex", alignItems:"center", justifyContent:"center", alignSelf:"start" }}><NoteIllustration name={name} size={140}/></div>
-            <div style={{ borderTop:`1px solid ${T.rule}` }}>
-              {spec("Family", g.family)}
-              {spec("Native to", g.native)}
-              {spec("Part used", g.part)}
-              {spec("Process", g.process)}
-              {spec("Found in", g.found)}
-            </div>
+          <h3 style={{ fontFamily:serif, fontSize:"clamp(38px, 5vw, 64px)", letterSpacing:"0.02em", textTransform:"uppercase", fontWeight:500, color:T.black, margin:"0 0 6px", lineHeight:1 }}>{name}</h3>
+          <p style={{ fontFamily:serif, fontStyle:"italic", fontSize:"clamp(16px, 1.4vw, 20px)", color:T.mid, margin:"0 0 18px" }}>{g.latin}</p>
+          <p style={{ fontFamily:sans, fontSize:"clamp(15px, 1.2vw, 17px)", color:T.ink, lineHeight:1.7, margin:0, maxWidth:560 }}>{g.blurb}</p>
+        </div>
+      </div>
+      {/* At a glance */}
+      <div style={{ marginBottom:34 }}>
+        {eyebrow("02", "At a glance")}
+        <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit, minmax(min(100%, 150px), 1fr))", gap:10 }}>
+          {fact("Family", g.family)}{fact("Native to", g.native)}{fact("Part used", g.part)}{fact("Process", g.process)}
+          {fact("Found in", g.found, true)}
+        </div>
+      </div>
+      {/* Origins and where it is smelled, side by side on wide screens */}
+      <div className="mos-guide" style={{ gap:"34px 40px" }}>
+        <div>
+          {eyebrow("03", "Where it comes from")}
+          <div style={{ display:"grid", gap:10 }}>
+            {g.origins.map(o => (
+              <div key={o.p} style={card}>
+                <p style={cardTitle}>{o.p}</p>
+                <p style={cardSub}>{o.n}</p>
+              </div>
+            ))}
           </div>
-          <p style={{ fontFamily:sans, fontSize:"clamp(14px, 1.1vw, 16px)", color:T.mid, lineHeight:1.75, margin:"22px 0 0", paddingLeft:14, borderLeft:`2px solid ${T.accent}` }}>{g.blurb}</p>
         </div>
         <div>
-          {eyebrow("02", "Origins")}
-          <ol style={{ listStyle:"none", margin:"0 0 40px", padding:0 }}>
-            {g.origins.map((o, i) => (
-              <li key={o.p} style={{ display:"flex", gap:14, padding:"13px 0", borderBottom:`1px solid ${T.rule}` }}>
-                <span style={{ width:24, height:24, borderRadius:"50%", background:T.black, color:T.white, fontFamily:sans, fontSize:12, fontWeight:600, display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0, marginTop:2 }}>{i + 1}</span>
-                <div>
-                  <p style={{ fontFamily:serif, fontSize:"clamp(18px, 1.5vw, 22px)", color:T.black, margin:0 }}>{o.p}</p>
-                  <p style={{ fontFamily:sans, fontSize:13, color:T.mid, margin:"3px 0 0", lineHeight:1.55 }}>{o.n}</p>
-                </div>
-              </li>
-            ))}
-          </ol>
-          {eyebrow("03", "Where have I smelled this?")}
-          <div style={{ borderTop:`1px solid ${T.rule}` }}>
-            {g.smelled.map(s => (
-              <div key={s.n + s.h} style={{ padding:"13px 0", borderBottom:`1px solid ${T.rule}` }}>
-                <p style={{ fontFamily:serif, fontSize:"clamp(18px, 1.5vw, 22px)", color:T.black, margin:0 }}>{s.n}</p>
-                <p style={{ fontFamily:sans, fontSize:13, color:T.mid, margin:"3px 0 0" }}>{s.h} · {s.y}</p>
+          {eyebrow("04", "Where have I smelled this?")}
+          <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit, minmax(min(100%, 150px), 1fr))", gap:10 }}>
+            {g.smelled.map(m => (
+              <div key={m.n + m.h} style={card}>
+                <p style={cardTitle}>{m.n}</p>
+                <p style={cardSub}>{m.h} · {m.y}</p>
               </div>
             ))}
           </div>
           {lib.length > 0 && (
-            <div style={{ marginTop:28 }}>
+            <div style={{ marginTop:26 }}>
               <p style={{ fontFamily:sans, fontSize:11, letterSpacing:"0.16em", textTransform:"uppercase", color:T.mid, margin:"0 0 10px" }}>In the library</p>
               <div style={{ display:"flex", flexWrap:"wrap", gap:8 }}>
-                {lib.map(f => <button key={f.id} onClick={() => onOpenFrag && onOpenFrag(f.id)} style={{ fontFamily:sans, fontSize:12, padding:"7px 14px", borderRadius:20, border:`1px solid ${T.rule}`, background:T.white, color:T.ink, cursor:"pointer" }}>{f.name}</button>)}
+                {lib.map(f => <button key={f.id} onClick={() => onOpenFrag && onOpenFrag(f.id)} style={{ fontFamily:sans, fontSize:13, padding:"8px 16px", borderRadius:20, border:`1px solid ${T.rule}`, background:T.white, color:T.ink, cursor:"pointer" }}>{f.name}</button>)}
               </div>
             </div>
           )}
-          <p style={{ fontFamily:sans, fontSize:11, color:T.faint, margin:"28px 0 0", lineHeight:1.6 }}>General reference. Sourcing and quality vary by producer and by year.</p>
         </div>
       </div>
+      <p style={{ fontFamily:sans, fontSize:11, color:T.faint, margin:"30px 0 0", lineHeight:1.6 }}>General reference. Sourcing and quality vary by producer and by year.</p>
     </div>
   );
 }
