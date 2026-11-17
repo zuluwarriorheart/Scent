@@ -57,9 +57,12 @@ const P = {
     bio: "Daniela Andrier was born in Heidelberg in 1964 and studied philosophy at the Sorbonne. An internship at Chanel led Jacques Polge to encourage her toward perfumery. She works at Givaudan and is best known for Prada, including Infusion d'Iris and Amber pour Homme. The Fragrance Foundation gave her its Lifetime Achievement Perfumer award in 2025." },
   "Jean-Claude Astier": { nationality: "French", active: "present",
     bio: "Jean-Claude Astier is a French perfumer and the senior nose at Parfums M. Micallef, where he works closely with Martine Micallef and Geoffrey Nejman. He also creates for other houses, including AJ Arabia." }
+  "Margaux Le Paih Guérin": { nationality: "French", active: "2010s – present",
+    bio: "Margaux Le Paih Guérin grew up in Vannes, in southern Brittany, in the shadow of her mother's independent perfume boutique. She trained at the École Supérieure du Parfum, interned as a perfumer analyst at Luzi in Zurich, then joined Firmenich as an assistant perfumer. She moved to Flair Paris as a junior perfumer and became known for work with niche houses, including Dee April and Sora Dora. She has since joined Symrise, where she is part of the fine fragrance team at its Paris creative center." },
 };
 P["Daniela (Roche) Andrier"] = P["Daniela Andrier"];
 P["Jacques Cavallier Belletrud"] = P["Jacques Cavallier"];
 P["Jerome Epinette"] = P["Jérôme Epinette"];
+for (const k of ["Margaux Le Paih Guerin","Margaux Le Paih-Guérin","Margaux Le Paih-Guerin","Margaux Le-Paih Guerin","Margaux Le Paih Guérin"]) P[k] = P["Margaux Le Paih Guérin"];
 Object.keys(P).forEach(k => { if (!P[k]) delete P[k]; });
 export default P;
