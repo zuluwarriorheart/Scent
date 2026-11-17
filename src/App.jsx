@@ -436,6 +436,45 @@ function AccordBars({ accords }) {
   );
 }
 
+// Thin one-line summary of a fragrance's accords, sized by strength (used under cover tiles)
+function AccordRibbon({ accords, height = 6, style }) {
+  const list = [...(accords || [])].sort((a, b) => b.v - a.v).slice(0, 6);
+  if (!list.length) return null;
+  return (
+    <span role="img" aria-label={"Main accords: " + list.map(a => a.n).join(", ")} style={{ display:"flex", height, borderRadius:height/2, overflow:"hidden", gap:1, ...style }}>
+      {list.map(a => <span key={a.n} style={{ flex:Math.max(1, a.v), background:accordColor(a.n) }}/>)}
+    </span>
+  );
+}
+// Flower view: one petal per accord, longer petal = stronger accord
+function AccordBloom({ accords }) {
+  const list = [...(accords || [])].sort((a, b) => b.v - a.v).slice(0, 8);
+  const n = list.length;
+  if (n < 3) return <AccordBars accords={accords}/>;
+  const W = 380, H = 300, cx = 190, cy = 150, maxLen = 104, lab = maxLen + 16;
+  const max = Math.max(...list.map(a => a.v)) || 1;
+  const rx = n <= 4 ? 30 : n <= 6 ? 25 : 20;
+  return (
+    <div style={{ width:"100%", maxWidth:420 }}>
+      <svg viewBox={`0 0 ${W} ${H}`} width="100%" role="img" aria-label={"Accord bloom: " + list.map(a => a.n).join(", ")} style={{ display:"block" }}>
+        {[0.34, 0.67, 1].map(r => <circle key={r} cx={cx} cy={cy} r={maxLen * r} fill="none" stroke={T.rule}/>)}
+        {list.map((a, i) => {
+          const L = Math.max(26, (a.v / max) * maxLen);
+          const deg = (360 / n) * i;
+          return <g key={a.n} transform={`translate(${cx} ${cy}) rotate(${deg})`}><ellipse cx="0" cy={-L/2} rx={rx} ry={L/2} fill={accordColor(a.n)} fillOpacity="0.92"/></g>;
+        })}
+        <circle cx={cx} cy={cy} r="5" fill={T.bg || "#fff"}/>
+        {list.map((a, i) => {
+          const rad = ((360 / n) * i) * Math.PI / 180;
+          const x = cx + Math.sin(rad) * lab, y = cy - Math.cos(rad) * lab;
+          const anchor = Math.abs(Math.sin(rad)) < 0.25 ? "middle" : Math.sin(rad) > 0 ? "start" : "end";
+          return <text key={a.n} x={x} y={y + (Math.cos(rad) > 0.25 ? 12 : Math.cos(rad) < -0.25 ? -2 : 4)} textAnchor={anchor} fontFamily={sans} fontSize="13" fontWeight="600" fill={T.ink} style={{ textTransform:"capitalize" }}>{a.n}</text>;
+        })}
+      </svg>
+    </div>
+  );
+}
+
 // ─── SEASON HEAT MAP — colored per season with season illustrations ───────────
 function SeasonHeat({ seasons }) {
   const order = ["spring", "summer", "fall", "winter"];
@@ -2771,7 +2810,7 @@ function DetailModal({ frag, entries, onClose, userStatus, setUserStatus, finish
                   )}
                 </div>
               )}
-              {sortedAcc.length>0&&(<div style={{marginBottom:36}}><Lbl mb={12}>Scent Accords</Lbl><AccordBars accords={frag.accords}/></div>)}
+              {sortedAcc.length>0&&(<div style={{marginBottom:36}}><Lbl mb={12}>Scent Accords</Lbl><AccordBloom accords={frag.accords}/></div>)}
               <div style={{marginBottom:36}}>
                 <Lbl mb={14}>Fragrance Notes</Lbl>
                 <NotesPyramid notes={frag.notes} onOpenNote={(n,tier)=>setNoteSheet({name:n,tier})}/>
@@ -3081,6 +3120,7 @@ function CoverTile({ frag, onClick, userStatus, fit }) {
       </span>
       <span style={{ display:"-webkit-box", WebkitLineClamp:2, WebkitBoxOrient:"vertical", overflow:"hidden", marginTop:10, fontFamily:serif, fontSize:16, lineHeight:1.2, letterSpacing:-0.2, color:T.black }}>{frag.name}</span>
       <span style={{ display:"block", marginTop:3, fontSize:12, color:T.mid, whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis" }}>{frag.house}</span>
+      <AccordRibbon accords={frag.accords} style={{ marginTop:8 }}/>
     </button>
   );
 }
