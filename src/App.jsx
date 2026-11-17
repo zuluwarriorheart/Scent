@@ -2,6 +2,7 @@ import { useState, useEffect, useId, useRef, useMemo, useSyncExternalStore, Frag
 import { createPortal } from "react-dom";
 import { createClient } from "@supabase/supabase-js";
 import MORE_INGREDIENTS from "./ingredients/index.js";
+import MORE_PERFUMERS from "./perfumers-more.js";
 
 // ─── SUPABASE CLIENT ──────────────────────────────────────────────────────────
 const supabase = createClient(
@@ -1989,6 +1990,7 @@ function BrandModal({ brand, onClose, onBack, onOpenFrag }) {
 
 // ─── PERFUMERS ────────────────────────────────────────────────────────────────
 const PERFUMERS = {
+  ...MORE_PERFUMERS,
   "Olivier Creed & Erwin Creed": { bio: "Olivier Creed built the house's modern reputation across five decades of bespoke commissions before handing creative leadership to his son Erwin. Aventus, created together in 2010, remains one of the most studied and imitated fragrances of the century. The Creeds have always worked with a deliberately closed process, raw materials sourced personally, formulas held privately.", nationality: "French / British", active: "1969 – present" },
   "David Apel": { bio: "David Apel is an American perfumer at Symrise whose work spans commercial and niche commissions. Black Orchid remains his most discussed creation, a fragrance built around an accord that doesn't exist in nature. He has spoken about the brief asking for something 'opulent and dark without being heavy.'", nationality: "American", active: "1990s – present" },
   "Pierre Negrin": { bio: "Pierre Negrin is a French perfumer who spent much of his career at Givaudan before moving to independent work. Oud Wood was an early commission that helped define what a Western interpretation of oud could be, restrained, papyrus-tinged, and accessible without being diluted.", nationality: "French", active: "1990s – present" },
