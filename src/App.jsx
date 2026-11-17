@@ -2072,8 +2072,8 @@ function PerfumersDirectory({ onOpenPerfumer }) {
   const chip = (on, label, fn) => (
     <button key={label} onClick={fn} aria-pressed={on} style={{ fontFamily:sans, fontSize:14, fontWeight:on?600:500, padding:"0 20px", minHeight:42, borderRadius:22, whiteSpace:"nowrap", border:`1px solid ${on?T.black:T.rule}`, background:on?T.black:T.white, color:on?T.white:T.ink, cursor:"pointer", flexShrink:0 }}>{label}</button>
   );
-  const card = r => (
-    <button key={r.name} onClick={() => onOpenPerfumer(r.name)} style={{ textAlign:"left", cursor:"pointer", border:`1px solid ${T.rule}`, borderRadius:12, padding:"14px 16px", background:T.white, fontFamily:sans }}>
+  const card = (r, shelfCard) => (
+    <button key={r.name} onClick={() => onOpenPerfumer(r.name)} style={{ textAlign:"left", cursor:"pointer", border:`1px solid ${T.rule}`, borderRadius:12, padding:"14px 16px", background:T.white, fontFamily:sans, ...(shelfCard === true ? { flex:"0 0 220px", width:220, boxSizing:"border-box", scrollSnapAlign:"start" } : null) }}>
       <span style={{ display:"block", fontFamily:serif, fontSize:17, color:T.black, lineHeight:1.25 }}>{r.name}</span>
       {r.frag_count != null && <span style={{ display:"block", fontSize:12, color:T.mid, margin:"4px 0 0" }}>{r.frag_count} {Number(r.frag_count) === 1 ? "fragrance" : "fragrances"}{r.house_count != null ? ` · ${r.house_count} ${Number(r.house_count) === 1 ? "house" : "houses"}` : ""}</span>}
     </button>
@@ -2083,10 +2083,6 @@ function PerfumersDirectory({ onOpenPerfumer }) {
       <div style={{ position:"relative", marginBottom:10, maxWidth:760 }}>
         <span style={{ position:"absolute", left:14, top:"50%", transform:"translateY(-50%)", pointerEvents:"none" }}><Icon name="search" size={15} color={T.faint}/></span>
         <input value={q} onChange={e => setQ(e.target.value)} placeholder="Search perfumers by name" style={{ width:"100%", background:T.white, border:`1.5px solid ${q?T.accent:T.rule}`, borderRadius:14, padding:"14px 16px 14px 44px", fontSize:14, color:T.black, outline:"none", boxSizing:"border-box", fontFamily:serif }}/>
-      </div>
-      <div style={{ display:"flex", gap:8, overflowX:"auto", padding:"6px 0 12px" }}>
-        {chip(sort === "az", "A to Z", () => setSort("az"))}
-        {chip(sort === "most", "Most fragrances", () => setSort("most"))}
       </div>
       {rows === null && <p style={{ fontFamily:sans, fontSize:13, color:T.mid }}>Loading</p>}
       {spot && !needle && (
@@ -2099,8 +2095,22 @@ function PerfumersDirectory({ onOpenPerfumer }) {
           <PerfumerPortrait name={spot.name} photo={PERFUMERS[spot.name] && PERFUMERS[spot.name].photo} size={110}/>
         </button>
       )}
-      {rows !== null && <p style={{ fontFamily:sans, fontSize:12, color:T.mid, margin:"0 0 6px" }}>{list.length} {list.length === 1 ? "perfumer" : "perfumers"}{sort === "most" && list.length > 200 ? ", showing the top 200" : ""}</p>}
-      {keys.map(k => (
+      {rows !== null && !needle && (
+        <div>
+          {[["Most fragrances", "The noses with the biggest bodies of work in the library.", [...(rows || [])].filter(r => Number(r.frag_count) > 0).sort((a, b) => (Number(b.frag_count) || 0) - (Number(a.frag_count) || 0) || a.name.localeCompare(b.name)).slice(0, 24)],
+            ...keys.map(k => ["Perfumers " + k, null, groups[k] || []])].map(([title, blurb, items], i) => items.length > 0 && (
+            <section key={title} className={"mos-bleed" + (i % 2 === 0 ? " mos-band" : "")} style={{ padding:"26px 0 22px" }}>
+              <div className="mos-bleed-pad" style={{ marginBottom:16 }}>
+                <h3 style={{ fontFamily:serif, fontSize:"clamp(26px, 2.3vw, 38px)", fontWeight:400, letterSpacing:-0.6, color:T.black, margin:0, lineHeight:1.1 }}>{title}</h3>
+                {blurb && <p style={{ fontFamily:sans, fontSize:"clamp(14px, 1.1vw, 17px)", color:T.mid, margin:"6px 0 0", lineHeight:1.5 }}>{blurb}</p>}
+              </div>
+              <div className="mos-shelf mos-bleed-pad" style={{ display:"flex", alignItems:"stretch", gap:12, overflowX:"auto", paddingTop:2, paddingBottom:14, scrollSnapType:"x proximity", WebkitOverflowScrolling:"touch" }}>{items.map(r => card(r, true))}</div>
+            </section>
+          ))}
+        </div>
+      )}
+      {rows !== null && needle && <p style={{ fontFamily:sans, fontSize:12, color:T.mid, margin:"0 0 6px" }}>{list.length} {list.length === 1 ? "perfumer" : "perfumers"}</p>}
+      {needle && keys.map(k => (
         <section key={k} style={{ borderTop:`1px solid ${T.rule}`, padding:"18px 0 8px" }}>
           {k !== "all" && <h3 style={{ fontFamily:serif, fontSize:26, fontWeight:400, color:T.black, margin:"0 0 12px" }}>{k}</h3>}
           <div className="mos-samples">{(groups[k] || []).map(card)}</div>
@@ -3832,15 +3842,14 @@ function NotesFinder({ fragrances, onOpenFrag, userStatuses, onSearch }) {
           style={{ width:"100%", background:T.white, border:`1.5px solid ${q ? T.accent : T.rule}`, borderRadius:14, padding:"14px 44px", fontSize:14, color:T.black, outline:"none", boxSizing:"border-box", fontFamily:serif }}/>
         {q && <button onClick={() => setQ("")} aria-label="Clear" style={{ position:"absolute", right:14, top:"50%", transform:"translateY(-50%)", background:"none", border:"none", fontSize:14, color:T.mid, cursor:"pointer" }}>✕</button>}
       </div>
-      <div className="mos-shelf" role="group" aria-label="Note family" style={{ display:"flex", gap:8, overflowX:"auto", padding:"4px 0 12px", marginBottom:6 }}>
-        {chip(fam === "All", "All", () => setFam("All"))}{NOTE_FAMILIES.map(f => chip(fam === f[0], f[0], () => setFam(f[0])))}
-      </div>
-      <div style={grid}>
-        {names.map(k => (
-          <button key={k} onClick={() => pick(k)} aria-label={`Fragrances with ${k}`} style={{ flex:"none", width:TILE_W, background:"none", border:"none", padding:0, cursor:"pointer", textAlign:"left", fontFamily:sans }}><NoteIllustration name={k} tile/></button>
-        ))}
-      </div>
-      {!names.length && (
+      {ql
+        ? <div style={grid}>
+            {names.map(k => (
+              <button key={k} onClick={() => pick(k)} aria-label={`Fragrances with ${k}`} style={{ flex:"none", width:TILE_W, background:"none", border:"none", padding:0, cursor:"pointer", textAlign:"left", fontFamily:sans }}><NoteIllustration name={k} tile/></button>
+            ))}
+          </div>
+        : <NotesBrowser onTile={pick}/>}
+      {ql && !names.length && (
         <div style={{ padding:"8px 0" }}>
           <p style={{ fontFamily:sans, fontSize:14, color:T.mid, margin:"0 0 12px" }}>No picture for that note yet, but you can still search the library for it.</p>
           {ql.length > 1 && <button onClick={() => pick(ql)} style={ctaBtn(true)}>Find fragrances with “{q.trim()}”</button>}
@@ -5027,12 +5036,13 @@ const NOTE_FAMILY_BLURBS = {
   "Musk, leather and smoke":"Skin-close, animal and dark.",
   "Fresh and mineral":"Salt, sand, sea air and clean stone.",
 };
-function NotesBrowser({ onOpen }) {
+function NotesBrowser({ onOpen, onTile }) {
   const cap = k => k.replace(/(^|[\s-])([a-z])/g, (m, p, c) => p + c.toUpperCase());
   const all = NOTE_PHOTO_PREVIEW ? NOTE_PHOTO_GALLERY : LEARN_NOTE_FALLBACK;
   const guides = Object.keys(INGREDIENTS);
   const tile = k => {
     const guide = INGREDIENTS[cap(k)] ? cap(k) : null;
+    if (onTile) return <button key={k} onClick={() => onTile(k)} aria-label={`Fragrances with ${k}`} style={{ flex:"none", width:TILE_W, background:"none", border:"none", padding:0, cursor:"pointer", textAlign:"left", fontFamily:sans, scrollSnapAlign:"start" }}><NoteIllustration name={k} tile/></button>;
     const inner = (<><NoteIllustration name={k} tile/><span style={{ display:"block", height:16, fontFamily:sans, fontSize:11, fontWeight:600, letterSpacing:"0.14em", textTransform:"uppercase", color:T.accent }}>{guide ? "Guide" : ""}</span></>);
     const st = { flex:"none", width:TILE_W, textAlign:"left", fontFamily:sans, scrollSnapAlign:"start" };
     return guide
@@ -5048,8 +5058,8 @@ function NotesBrowser({ onOpen }) {
       <div className="mos-shelf mos-bleed-pad" style={{ display:"flex", alignItems:"flex-start", gap:14, overflowX:"auto", paddingTop:2, paddingBottom:14, scrollSnapType:"x proximity", WebkitOverflowScrolling:"touch" }}>{keys.map(tile)}</div>
     </section>
   );
-  const sections = [shelf("Start with a guide", "The ingredients we have written up in full: where they grow, how they are made, and where you have smelled them.", guides.map(g => g.toLowerCase()), true)];
-  let n = 1;
+  const sections = onTile ? [] : [shelf("Start with a guide", "The ingredients we have written up in full: where they grow, how they are made, and where you have smelled them.", guides.map(g => g.toLowerCase()), true)];
+  let n = onTile ? 0 : 1;
   NOTE_FAMILIES.forEach(([fam]) => {
     const keys = all.filter(k => NOTE_FAMILY_OF[k] === fam);
     if (keys.length) sections.push(shelf(fam, NOTE_FAMILY_BLURBS[fam] || "", keys, n++ % 2 === 1));
