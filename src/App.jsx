@@ -2413,7 +2413,7 @@ const SHARE_FORMATS = [
   { id:"portrait", label:"Portrait", sub:"1080 × 1350 · feed", w:1080, h:1350 },
   { id:"story", label:"Story", sub:"1080 × 1920 · stories", w:1080, h:1920 },
 ];
-const SHARE_BG = [ ["cream","Cream","#FAF7F5","#1A1420"], ["white","White","#FFFFFF","#1A1420"], ["night","Night","#0F0B14","#F6F0F7"] ];
+const SHARE_BG = [ ["cream","Cream","#FAF7F5","#1A1420"], ["white","White","#FFFFFF","#1A1420"] ];
 function loadShareImg(src) { return new Promise((res, rej) => { const i = new Image(); i.onload = () => res(i); i.onerror = rej; i.src = src; }); }
 async function renderNotesCard(frag, fmt, bg) {
   const names = [];
@@ -2424,7 +2424,7 @@ async function renderNotesCard(frag, fmt, bg) {
   const c = document.createElement("canvas"); c.width = fmt.w; c.height = fmt.h;
   const g = c.getContext("2d");
   g.fillStyle = bg[2]; g.fillRect(0, 0, fmt.w, fmt.h);
-  const ink = bg[3], pad = 80, tall = fmt.h > fmt.w;
+  const ink = bg[3], dark = bg[0] === "night", pad = 80, tall = fmt.h > fmt.w;
   g.textAlign = "center"; g.fillStyle = ink;
   const top = tall ? (fmt.h > 1500 ? 200 : 110) : 90;
   g.globalAlpha = 0.6; g.font = "500 26px 'DM Sans Variable', sans-serif";
@@ -2435,7 +2435,7 @@ async function renderNotesCard(frag, fmt, bg) {
   g.fillText(title, fmt.w/2, top + 78);
   g.globalAlpha = 0.6; g.font = "italic 400 28px 'Fraunces Variable', Georgia, serif"; g.fillText("The notes", fmt.w/2, top + 126); g.globalAlpha = 1;
   const n = imgs.length, cols = n <= 1 ? 1 : n <= 4 ? 2 : (tall ? 2 : 3), rows = Math.ceil(n / cols);
-  const areaTop = top + 180, areaBot = fmt.h - (fmt.h > 1500 ? 300 : 150), areaH = areaBot - areaTop, areaW = fmt.w - pad*2;
+  const areaTop = top + 180, areaBot = fmt.h - (fmt.h > 1500 ? 320 : 170), areaH = areaBot - areaTop, areaW = fmt.w - pad*2;
   const gap = 24, labelH = 54;
   const cell = Math.min((areaW - gap*(cols-1)) / cols, (areaH - gap*(rows-1)) / rows - labelH, 430);
   const gridW = cols*cell + gap*(cols-1), gridH = rows*(cell+labelH) + gap*(rows-1);
@@ -2445,14 +2445,23 @@ async function renderNotesCard(frag, fmt, bg) {
     const inRow = r === rows-1 ? n - r*cols : cols;
     const rowW = inRow*cell + gap*(inRow-1);
     const x = (fmt.w - rowW)/2 + k*(cell+gap), y = y0 + r*(cell+labelH+gap);
-    g.save(); g.beginPath(); g.roundRect(x, y, cell, cell, 28); g.clip();
-    g.fillStyle = "#FFFFFF"; g.fillRect(x, y, cell, cell);
-    g.drawImage(im, x, y, cell, cell); g.restore();
+    const oc = document.createElement("canvas"); oc.width = oc.height = Math.round(cell);
+    const o = oc.getContext("2d");
+    o.filter = "brightness(1.05)"; o.drawImage(im, 0, 0, oc.width, oc.height); o.filter = "none";
+    o.globalCompositeOperation = "destination-in"; o.filter = "blur(" + Math.round(cell*0.035) + "px)";
+    const ins = cell*0.035; o.fillStyle = "#000"; o.beginPath(); o.roundRect(ins, ins, cell-ins*2, cell-ins*2, cell*0.2); o.fill();
+    g.save(); g.globalCompositeOperation = dark ? "source-over" : "multiply"; g.drawImage(oc, x, y); g.restore();
     g.fillStyle = ink; g.font = "500 30px 'Fraunces Variable', Georgia, serif"; g.textAlign = "center";
     g.fillText(list[i].n, x + cell/2, y + cell + 40);
   });
-  g.globalAlpha = 0.5; g.fillStyle = ink; g.font = "500 24px 'DM Sans Variable', sans-serif";
-  g.fillText("MEMOIR ON SKIN  \u00b7  memoironskin.com", fmt.w/2, fmt.h - (fmt.h > 1500 ? 220 : 70)); g.globalAlpha = 1;
+  const fy = fmt.h - (fmt.h > 1500 ? 230 : 84);
+  g.fillStyle = ink; g.textAlign = "left";
+  g.font = "500 46px 'Fraunces Variable', Georgia, serif"; const w1 = g.measureText("memoir").width, sp = 12;
+  g.font = "italic 400 46px 'Fraunces Variable', Georgia, serif"; const w2 = g.measureText("on skin").width;
+  const wx = (fmt.w - (w1 + sp + w2)) / 2;
+  g.font = "500 46px 'Fraunces Variable', Georgia, serif"; g.fillText("memoir", wx, fy);
+  g.font = "italic 400 46px 'Fraunces Variable', Georgia, serif"; g.fillStyle = dark ? "#FF5C9D" : "#C9206B"; g.fillText("on skin", wx + w1 + sp, fy);
+  g.textAlign = "center"; g.fillStyle = ink; g.globalAlpha = 0.5; g.font = "500 20px 'DM Sans Variable', sans-serif"; g.fillText("memoironskin.com", fmt.w/2, fy + 36); g.globalAlpha = 1;
   const blob = await new Promise(r => c.toBlob(r, "image/png"));
   return blob;
 }
