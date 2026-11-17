@@ -5073,8 +5073,8 @@ function NotesBrowser({ onOpen, onTile }) {
   );
   const sections = onTile ? [] : [shelf("Start with a guide", "The ingredients we have written up in full: where they grow, how they are made, and where you have smelled them.", guides.map(g => g.toLowerCase()), true)];
   let n = onTile ? 0 : 1;
-  NOTE_FAMILIES.forEach(([fam]) => {
-    const keys = all.filter(k => NOTE_FAMILY_OF[k] === fam);
+  [...NOTE_FAMILIES].sort((a, b) => a[0].localeCompare(b[0])).forEach(([fam]) => {
+    const keys = all.filter(k => NOTE_FAMILY_OF[k] === fam).sort((a, b) => a.localeCompare(b));
     if (keys.length) sections.push(shelf(fam, NOTE_FAMILY_BLURBS[fam] || "", keys, n++ % 2 === 1));
   });
   return <div>{sections}</div>;
