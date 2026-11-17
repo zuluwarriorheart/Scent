@@ -4745,15 +4745,15 @@ function IngredientGuide({ name, onBack, fragrances, onOpenFrag, backLabel = "Ba
   return (
     <div>
       <BackBtn onBack={onBack} label={backLabel}/>
-      {/* Hero: picture beside the name and the one-line story */}
-      <div style={{ display:"flex", flexWrap:"wrap", gap:"22px 28px", alignItems:"flex-start", marginBottom:30 }}>
-        <div style={{ flex:"none" }}><NoteIllustration name={name} tile noLabel/></div>
-        <div style={{ flex:"1 1 280px", minWidth:0 }}>
+      {/* Hero: text on the left, picture on the right, like the fragrance page */}
+      <div style={{ display:"flex", gap:"clamp(16px, 3vw, 40px)", alignItems:"flex-start", marginBottom:30 }}>
+        <div style={{ flex:1, minWidth:0 }}>
           {eyebrow("01", "The plant")}
-          <h3 style={{ fontFamily:serif, fontSize:"clamp(38px, 5vw, 64px)", letterSpacing:"0.02em", textTransform:"uppercase", fontWeight:500, color:T.black, margin:"0 0 6px", lineHeight:1 }}>{name}</h3>
-          <p style={{ fontFamily:serif, fontStyle:"italic", fontSize:"clamp(16px, 1.4vw, 20px)", color:T.mid, margin:"0 0 18px" }}>{g.latin}</p>
-          <p style={{ fontFamily:sans, fontSize:"clamp(15px, 1.2vw, 17px)", color:T.ink, lineHeight:1.7, margin:0, maxWidth:560 }}>{g.blurb}</p>
+          <h3 style={{ fontFamily:serif, fontSize:"clamp(28px, 5vw, 64px)", letterSpacing:"0.02em", textTransform:"uppercase", fontWeight:500, color:T.black, margin:"0 0 6px", lineHeight:1.05, overflowWrap:"anywhere" }}>{name}</h3>
+          <p style={{ fontFamily:serif, fontStyle:"italic", fontSize:"clamp(15px, 1.4vw, 20px)", color:T.mid, margin:"0 0 18px" }}>{g.latin}</p>
+          <p style={{ fontFamily:sans, fontSize:"clamp(14px, 1.2vw, 17px)", color:T.ink, lineHeight:1.7, margin:0, maxWidth:560 }}>{g.blurb}</p>
         </div>
+        <div style={{ flex:"none", "--cover-w":"clamp(120px, 26vw, 340px)" }}><NoteIllustration name={name} tile noLabel/></div>
       </div>
       {/* At a glance */}
       <div style={{ marginBottom:34 }}>
