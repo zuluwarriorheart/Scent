@@ -455,7 +455,7 @@ function AccordBloom({ accords }) {
   const max = Math.max(...list.map(a => a.v)) || 1;
   const rx = n <= 4 ? 30 : n <= 6 ? 25 : 20;
   return (
-    <div style={{ width:"100%", maxWidth:420 }}>
+    <div style={{ width:"100%", maxWidth:420, margin:"0 auto" }}>
       <svg viewBox={`0 0 ${W} ${H}`} width="100%" role="img" aria-label={"Accord bloom: " + list.map(a => a.n).join(", ")} style={{ display:"block" }}>
         {[0.34, 0.67, 1].map(r => <circle key={r} cx={cx} cy={cy} r={maxLen * r} fill="none" stroke={T.rule}/>)}
         {list.map((a, i) => {
@@ -3118,7 +3118,7 @@ function CoverTile({ frag, onClick, userStatus, fit }) {
           </span>
         )}
       </span>
-      <span style={{ display:"-webkit-box", WebkitLineClamp:2, WebkitBoxOrient:"vertical", overflow:"hidden", marginTop:10, fontFamily:serif, fontSize:16, lineHeight:1.2, letterSpacing:-0.2, color:T.black }}>{frag.name}</span>
+      <span style={{ display:"-webkit-box", WebkitLineClamp:2, WebkitBoxOrient:"vertical", overflow:"hidden", marginTop:10, minHeight:"2.4em", fontFamily:serif, fontSize:16, lineHeight:1.2, letterSpacing:-0.2, color:T.black }}>{frag.name}</span>
       <span style={{ display:"block", marginTop:3, fontSize:12, color:T.mid, whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis" }}>{frag.house}</span>
       <AccordRibbon accords={frag.accords} style={{ marginTop:8 }}/>
     </button>
