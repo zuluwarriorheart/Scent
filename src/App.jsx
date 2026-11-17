@@ -92,6 +92,7 @@ body { overflow-x:clip; }
 .mos-shelf { scroll-padding-left:max(var(--gutter), calc((100vw - var(--page-w)) / 2 + var(--gutter))); }
 .mos-prose { max-width:1040px; }
 .mos-grid { display:grid; grid-template-columns:1fr; gap:10px; }
+@media (max-width:520px) { .mos-spot-third { display:none !important; } }
 .mos-tiles { display:grid; grid-template-columns:repeat(2, minmax(0,1fr)); gap:20px 14px; }
 @media (min-width:640px) { .mos-tiles { grid-template-columns:repeat(3, minmax(0,1fr)); } }
 @media (min-width:1100px) { .mos-tiles { grid-template-columns:repeat(5, minmax(0,1fr)); } }
@@ -1775,6 +1776,21 @@ function BrandsDirectory({ onOpenBrand }) {
   const letters = {};
   list.forEach(h => { const L = (String(h.name || "#")[0] || "#").toUpperCase(); const k = /[A-Z]/.test(L) ? L : "#"; (letters[k] = letters[k] || []).push(h); });
   const keys = Object.keys(letters).sort((a, b) => a === "#" ? 1 : b === "#" ? -1 : a.localeCompare(b));
+  // Brand spotlight: one house a day, picked from houses with at least 5 fragrances in the library
+  const pool = (rows || []).filter(h => Number(h.frag_count) >= 5 && h.slug).sort((a, b) => String(a.slug).localeCompare(String(b.slug)));
+  const spot = pool.length ? pool[Math.floor((Date.now() - new Date().getTimezoneOffset() * 60000) / 86400000) % pool.length] : null;
+  const [spotFrags, setSpotFrags] = useState([]);
+  useEffect(() => {
+    if (!spot || !spot.id) { setSpotFrags([]); return; }
+    let off = false;
+    (async () => {
+      try {
+        const r = await fetchFragRows(sel => supabase.from("fragrances").select(sel).eq("house_id", spot.id).not("image_url", "is", null).order("year", { ascending: false, nullsFirst: false }).order("slug", { ascending: true }).limit(3));
+        if (!off && !r.error && r.data) setSpotFrags(r.data.map(mapFrag));
+      } catch (e) {}
+    })();
+    return () => { off = true; };
+  }, [spot && spot.id]);
   return (
     <div>
       <div style={{ position:"relative", marginBottom:10, maxWidth:760 }}>
@@ -1786,6 +1802,16 @@ function BrandsDirectory({ onOpenBrand }) {
           <button key={g.key} onClick={() => setGroup(g.key)} aria-pressed={on} style={{ fontFamily:sans, fontSize:14, fontWeight:on?600:500, padding:"0 20px", minHeight:42, borderRadius:22, whiteSpace:"nowrap", border:`1px solid ${on?T.black:T.rule}`, background:on?T.black:T.white, color:on?T.white:T.ink, cursor:"pointer", flexShrink:0 }}>{g.label}</button>
         ); })}
       </div>
+      {spot && !needle && group === "all" && (
+        <button onClick={() => onOpenBrand({ slug: spot.slug, name: spot.name })} aria-label={`Brand spotlight: ${spot.name}`} style={{ display:"flex", alignItems:"center", justifyContent:"space-between", gap:20, width:"100%", textAlign:"left", cursor:"pointer", background:T.lift, border:`1px solid ${T.rule}`, borderRadius:18, padding:"22px 22px", margin:"4px 0 22px", fontFamily:sans }}>
+          <span style={{ minWidth:0 }}>
+            <span style={{ display:"block", fontSize:10, fontWeight:600, letterSpacing:"0.18em", textTransform:"uppercase", color:T.accent, marginBottom:10 }}>Brand spotlight</span>
+            <span style={{ display:"block", fontFamily:serif, fontSize:"clamp(32px, 4.4vw, 60px)", letterSpacing:-1, lineHeight:1, color:T.black, overflowWrap:"anywhere" }}>{String(spot.name).replace(/\s*\(now .*\)$/, "")}</span>
+            <span style={{ display:"block", fontSize:13, color:T.mid, margin:"12px 0 0" }}>{[spot.country, brandOriginLabel(spot)].filter(Boolean).join(" · ")}{spot.country || brandOriginLabel(spot) ? " · " : ""}{spot.frag_count} fragrances &rsaquo;</span>
+          </span>
+          {spotFrags.length > 0 && <span style={{ display:"flex", gap:8, flexShrink:0 }}>{spotFrags.slice(0, 3).map((f, i) => <span key={f.id} className={i === 2 ? "mos-spot-third" : ""} style={{ display:"block" }}><Thumb frag={f} w="clamp(64px, 9vw, 120px)"/></span>)}</span>}
+        </button>
+      )}
       {rows === null && <p style={{ fontFamily:sans, fontSize:13, color:T.mid }}>Loading</p>}
       {rows !== null && failed && <p style={{ fontFamily:sans, fontSize:14, color:T.mid }}>The brand list is not available right now.</p>}
       {rows !== null && !failed && <p style={{ fontFamily:sans, fontSize:12, color:T.mid, margin:"0 0 6px" }}>{list.length} {list.length === 1 ? "brand" : "brands"}</p>}
