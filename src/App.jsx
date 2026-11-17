@@ -2666,7 +2666,7 @@ function NoteSheet({ name, tier, house, onClose }) {
   return (
     <div onClick={e => { e.stopPropagation(); onClose(); }} style={{ position:"fixed", inset:0, zIndex:70, background:T.scrim, display:"flex", alignItems:"flex-end", justifyContent:"center" }}>
       <div onClick={e => e.stopPropagation()} role="dialog" aria-label={name} style={{ background:T.bg, width:"100%", maxWidth:has?1000:460, maxHeight:"93vh", overflowY:"auto", borderRadius:"24px 24px 0 0", border:`1px solid ${T.rule}`, borderBottom:"none", padding:"22px 24px 34px", boxSizing:"border-box" }}>
-        {has ? <IngredientGuide name={name} onBack={onClose} fragrances={[]} backLabel="Back"/> : (
+        {has ? <IngredientGuide name={name} onBack={onClose} backLabel="Back"/> : (
           <div>
             <BackBtn onBack={onClose}/>
             <div style={{ display:"flex", gap:18, alignItems:"center", margin:"4px 0 18px" }}>
@@ -4728,7 +4728,8 @@ const INGREDIENTS = {
 function IngredientGuide({ name, onBack, fragrances, onOpenFrag, backLabel = "Back to Learn" }) {
   const g = INGREDIENTS[name];
   if (!g) return null;
-  const lib = (fragrances || []).filter(f => f.notes && allNoteList(f.notes).some(n => String(n.n).toLowerCase() === name.toLowerCase())).slice(0, 8);
+  const noteRe = new RegExp("(^|[^a-z])" + name.toLowerCase().replace(/[^a-z ]/g, "") + "([^a-z]|$)");
+  const lib = (fragrances || []).filter(f => f.notes && allNoteList(f.notes).some(n => noteRe.test(String(n.n).toLowerCase()))).slice(0, 12);
   const eyebrow = (num, text) => (
     <p style={{ fontFamily:sans, fontSize:11, letterSpacing:"0.2em", textTransform:"uppercase", color:T.mid, margin:"0 0 14px" }}><span style={{ color:T.accent, fontWeight:600 }}>{num}</span>&nbsp;&nbsp;{text}</p>
   );
@@ -4762,39 +4763,27 @@ function IngredientGuide({ name, onBack, fragrances, onOpenFrag, backLabel = "Ba
           {fact("Found in", g.found, true)}
         </div>
       </div>
-      {/* Origins and where it is smelled, side by side on wide screens */}
-      <div className="mos-guide" style={{ gap:"34px 40px" }}>
-        <div>
-          {eyebrow("03", "Where it comes from")}
-          <div style={{ display:"grid", gap:10 }}>
-            {g.origins.map(o => (
-              <div key={o.p} style={card}>
-                <p style={cardTitle}>{o.p}</p>
-                <p style={cardSub}>{o.n}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-        <div>
-          {eyebrow("04", "Where have I smelled this?")}
-          <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit, minmax(min(100%, 150px), 1fr))", gap:10 }}>
-            {g.smelled.map(m => (
-              <div key={m.n + m.h} style={card}>
-                <p style={cardTitle}>{m.n}</p>
-                <p style={cardSub}>{m.h} · {m.y}</p>
-              </div>
-            ))}
-          </div>
-          {lib.length > 0 && (
-            <div style={{ marginTop:26 }}>
-              <p style={{ fontFamily:sans, fontSize:11, letterSpacing:"0.16em", textTransform:"uppercase", color:T.mid, margin:"0 0 10px" }}>In the library</p>
-              <div style={{ display:"flex", flexWrap:"wrap", gap:8 }}>
-                {lib.map(f => <button key={f.id} onClick={() => onOpenFrag && onOpenFrag(f.id)} style={{ fontFamily:sans, fontSize:13, padding:"8px 16px", borderRadius:20, border:`1px solid ${T.rule}`, background:T.white, color:T.ink, cursor:"pointer" }}>{f.name}</button>)}
-              </div>
+      {/* Origins */}
+      <div style={{ marginBottom:34 }}>
+        {eyebrow("03", "Where it comes from")}
+        <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit, minmax(min(100%, 260px), 1fr))", gap:10 }}>
+          {g.origins.map(o => (
+            <div key={o.p} style={card}>
+              <p style={cardTitle}>{o.p}</p>
+              <p style={cardSub}>{o.n}</p>
             </div>
-          )}
+          ))}
         </div>
       </div>
+      {/* Only fragrances that are in the library */}
+      {Array.isArray(fragrances) && <div>
+        {eyebrow("04", "Where have I smelled this?")}
+        {lib.length > 0
+          ? <div className="mos-shelf" style={{ display:"flex", alignItems:"flex-start", gap:14, overflowX:"auto", paddingBottom:10, scrollSnapType:"x proximity", WebkitOverflowScrolling:"touch" }}>
+              {lib.map(f => <CoverTile key={f.id} frag={f} onClick={id => onOpenFrag && onOpenFrag(id)}/>)}
+            </div>
+          : <p style={{ fontFamily:sans, fontSize:14, color:T.mid, margin:0, lineHeight:1.6 }}>No fragrances in the library list {name.toLowerCase()} yet. As we add more, they will appear here.</p>}
+      </div>}
       <p style={{ fontFamily:sans, fontSize:11, color:T.faint, margin:"30px 0 0", lineHeight:1.6 }}>General reference. Sourcing and quality vary by producer and by year.</p>
     </div>
   );
