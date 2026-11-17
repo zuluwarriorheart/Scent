@@ -3756,7 +3756,7 @@ async function loadKits() {
   if (_kitsCache) return _kitsCache;
   const out = [];
   for (let from = 0; from < 2000; from += 100) {
-    const r = await supabase.from("houses").select("id, name, slug, country, brand_origin, kit_name, kit_price, kit_url, website").eq("has_discovery_kit", true).order("name").range(from, from + 99);
+    const r = await supabase.from("houses").select("id, name, slug, country, brand_origin, kit_name, kit_price, kit_url, kit_image_url, kit_image_credit, website").eq("has_discovery_kit", true).order("name").range(from, from + 99);
     if (r.error) throw r.error;
     out.push(...(r.data || []));
     if ((r.data || []).length < 100) break;
@@ -3782,6 +3782,10 @@ function KitsShelf({ onOpenBrand, tinted }) {
   const shown = all ? rows.filter(h => !needle || [h.name, h.country].some(v => String(v || "").toLowerCase().includes(needle))) : featured;
   const card = h => (
     <div key={h.id} style={{ flex:all ? "1 1 240px" : "0 0 252px", maxWidth:all ? "none" : 252, boxSizing:"border-box", background:T.white, border:`1px solid ${T.rule}`, borderRadius:16, padding:"16px 16px 14px", display:"flex", flexDirection:"column", scrollSnapAlign:"start" }}>
+      {h.kit_image_url && <div style={{ margin:"-4px -4px 12px" }}>
+        <img src={h.kit_image_url} alt={(h.kit_name || "Discovery set") + " by " + h.name} loading="lazy" style={{ display:"block", width:"100%", aspectRatio:"1 / 1", objectFit:"contain", background:"#fff", borderRadius:10 }} onError={e => { e.currentTarget.parentNode.style.display = "none"; }}/>
+        {h.kit_image_credit && <span style={{ display:"block", fontFamily:sans, fontSize:11, color:T.mid, marginTop:4, textAlign:"center" }}>{h.kit_image_credit}</span>}
+      </div>}
       <button onClick={() => onOpenBrand && onOpenBrand({ slug:h.slug, name:h.name })} style={{ textAlign:"left", background:"none", border:"none", padding:0, cursor:"pointer" }}>
         <span style={{ display:"block", fontFamily:serif, fontSize:20, color:T.black, lineHeight:1.2 }}>{String(h.name).replace(/\s*\(now .*\)$/, "")}</span>
         <span style={{ display:"block", fontFamily:sans, fontSize:12, color:T.mid, margin:"4px 0 0" }}>{[h.country, h.brand_origin].filter(Boolean).join(" · ")}{h.n ? (h.country || h.brand_origin ? " · " : "") + h.n + " fragrance" + (h.n === 1 ? "" : "s") : ""}</span>
