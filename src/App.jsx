@@ -3857,7 +3857,9 @@ function DiscoverTab({ onOpenFrag, onOpenBrand, onOpenPerfumer, onOpenProfile, f
   const CHIPS=[{label:"Library in autumn",query:"something that smells like a library in autumn"},{label:"Quiet luxury",query:"expensive but quiet, not loud"},{label:"Cold winter nights",query:"cold winter nights by a fire"},{label:"Office fresh",query:"fresh and clean for the office"}];
 
   const LIST = (fragrances && fragrances.length) ? fragrances : FRAGRANCES;
-  const shelves = serverMode ? serverShelves : buildShelves(LIST);
+  // Hidden for now (code kept): the Woody / Floral / Citrus / Gourmand accord shelves and the Neo gourmand shelf
+  const HIDDEN_SHELVES = s => s.key === "neo" || String(s.key).startsWith("acc-");
+  const shelves = (serverMode ? serverShelves : buildShelves(LIST)).filter(s => !HIDDEN_SHELVES(s));
   const searchResults = (search.trim().length > 0 || group !== "all") ? LIST.filter(f => {
     if (group !== "all" && !houseGroups(f).includes(group)) return false;
     if (!search.trim()) return true;
