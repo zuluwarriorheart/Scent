@@ -1123,6 +1123,154 @@ function FormSec({ title, sub, children, gap = 40 }) {
   );
 }
 
+// ─── SUGGEST: stores, events and businesses ───────────────────────────────────
+const STORE_KINDS = ["Multi-brand store", "House boutique", "Department store counter", "Online only", "Other"];
+const STORE_BRAND_TYPES = ["Niche", "Indie", "Heritage", "Artisan & natural", "Middle Eastern & oud", "Vintage & discontinued"];
+const STORE_EXTRAS = ["Samples or decants", "Discovery sets", "Travel sizes", "Ships internationally"];
+const EVENT_TYPES = ["Fair or expo", "Launch or release party", "Scent walk or store tour", "Workshop or class", "Pop-up or market", "Talk or panel", "Other event"];
+const BIZ_TYPES = ["Perfume school or studio", "Custom or bespoke perfumer", "Sample or discovery service", "Decant seller", "Refillery", "Blog, podcast or creator", "Supplies or materials", "Other business"];
+// Chips for one choice (string value) or several (array value).
+function ChipChoice({ value, onChange, options, multi }) {
+  const on = o => multi ? (value || []).includes(o) : value === o;
+  const click = o => multi ? onChange(on(o) ? value.filter(x => x !== o) : [...(value || []), o]) : onChange(on(o) ? "" : o);
+  return (
+    <div style={{ display:"flex", gap:8, flexWrap:"wrap" }}>
+      {options.map(o => (
+        <button type="button" key={o} onClick={() => click(o)} aria-pressed={on(o)} style={{ flex:"1 1 auto", minHeight:46, padding:"0 16px", borderRadius:10, border:`1px solid ${on(o) ? T.black : T.rule}`, background:on(o) ? T.black : T.white, color:on(o) ? T.white : T.ink, fontFamily:sans, fontSize:14, fontWeight:on(o) ? 600 : 400, cursor:"pointer" }}>{o}</button>
+      ))}
+    </div>
+  );
+}
+const SUG_SEND_BTN = busy => ({ width:"100%", minHeight:52, borderRadius:12, background:T.black, border:"none", color:T.white, fontSize:15, fontWeight:500, fontFamily:sans, cursor:busy ? "default" : "pointer", opacity:busy ? 0.6 : 1 });
+async function sendSuggestion(currentUser, kind, payload) {
+  const uid = (currentUser && currentUser.id) || null;
+  if (!uid) throw new Error("not signed in");
+  const { error } = await supabase.from("suggestions").insert({ user_id:uid, kind, payload });
+  if (error) throw error;
+}
+function SuggestStoreForm({ currentUser, onSent }) {
+  const [f, setF] = useState({ name:"", kind:"", house:"", website:"", country:"", city:"", address:"", brandTypes:[], brands:"", extras:[], notes:"", relation:"", email:"" });
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState("");
+  const set = (k, v) => setF(x => ({ ...x, [k]:v }));
+  const input = (k, ph, props = {}) => <input className="mos-in" value={f[k]} onChange={e => set(k, e.target.value)} placeholder={ph} {...props}/>;
+  const online = f.kind === "Online only";
+  async function submit() {
+    const miss = [];
+    if (!f.name.trim()) miss.push("store name");
+    if (!f.kind) miss.push("the kind of store");
+    if (!/\S+\.\S+/.test(f.website.trim())) miss.push("website");
+    if (!f.country.trim()) miss.push("country");
+    if (!online && !f.city.trim()) miss.push("city");
+    if (!online && !f.address.trim()) miss.push("street address");
+    if (!f.brandTypes.length && !f.brands.trim()) miss.push("the types of brands they sell");
+    if (f.email.trim() && !/^\S+@\S+\.\S+$/.test(f.email.trim())) miss.push("a valid email, or leave it blank");
+    if (miss.length) { setErr("Still needed: " + miss.join(", ") + "."); return; }
+    setBusy(true); setErr("");
+    try { await sendSuggestion(currentUser, "store", { ...f, name:f.name.trim() }); onSent(f.name.trim()); }
+    catch (e) { console.error("Store suggestion failed:", e); setErr("That did not send. Please try again, or email team@memoironskin.com."); }
+    setBusy(false);
+  }
+  return (
+    <div className="mos-pad" style={{ padding:"28px 24px 56px" }}>
+      <div className="mos-formgrid">
+        <div>
+          <FormSec gap={0} title="The store" sub="How it will appear on the stores list.">
+            <FormField label="Store name" req>{input("name", "e.g. Maison Example Paris")}</FormField>
+            <FormField label="Kind of store" req><ChipChoice value={f.kind} onChange={v => set("kind", v)} options={STORE_KINDS}/></FormField>
+            {f.kind === "House boutique" && <FormField label="Which house?" hint="The brand this boutique belongs to.">{input("house", "e.g. Maison Example")}</FormField>}
+            <FormField label="Website" req>{input("website", "maisonexample.com", { inputMode:"url", autoCapitalize:"none" })}</FormField>
+          </FormSec>
+          <div style={{ height:34 }}/>
+          <FormSec gap={0} title="Where it is" sub={online ? "Where the business is based." : "Please give the full street address so people can find it."}>
+            <FormField label="Country" req>{input("country", "e.g. France")}</FormField>
+            {!online && <FormField label="City" req>{input("city", "e.g. Paris")}</FormField>}
+            {!online && <FormField label="Street address" req>{input("address", "Street, number, postal code")}</FormField>}
+          </FormSec>
+        </div>
+        <div>
+          <FormSec gap={0} title="What they sell" sub="Pick every type that fits, then list a few brands if you can.">
+            <FormField label="Types of brands" req hint="Choose at least one, or list brands below."><ChipChoice multi value={f.brandTypes} onChange={v => set("brandTypes", v)} options={STORE_BRAND_TYPES}/></FormField>
+            <FormField label="Brands they carry" hint="Separate with commas. A few is plenty."><textarea className="mos-in" rows={3} value={f.brands} onChange={e => set("brands", e.target.value)} placeholder="e.g. Maison Example, Atelier Sample, House of Test" style={{ resize:"vertical", lineHeight:1.6 }}/></FormField>
+            <FormField label="Also offers"><ChipChoice multi value={f.extras} onChange={v => set("extras", v)} options={STORE_EXTRAS}/></FormField>
+            <FormField label="Anything else we should know?"><textarea className="mos-in" rows={2} value={f.notes} onChange={e => set("notes", e.target.value)} placeholder="Optional. Opening hours, appointment only, languages spoken" style={{ resize:"vertical", lineHeight:1.6 }}/></FormField>
+          </FormSec>
+          <div style={{ height:34 }}/>
+          <FormSec gap={0} title="About you" sub="Optional. It helps us check the details.">
+            <FormField label="Your connection"><ChipChoice value={f.relation} onChange={v => set("relation", v)} options={["I own or work here", "I'm a customer"]}/></FormField>
+            <FormField label="Email" hint="Only used if we need to confirm something. It is never shown.">{input("email", "you@example.com", { inputMode:"email", autoCapitalize:"none" })}</FormField>
+          </FormSec>
+        </div>
+      </div>
+      <div style={{ marginTop:36, maxWidth:420 }}>
+        {err && <p role="alert" style={{ fontFamily:sans, fontSize:13, color:T.bad, margin:"0 0 12px", lineHeight:1.5 }}>{err}</p>}
+        <button onClick={submit} disabled={busy} style={SUG_SEND_BTN(busy)}>{busy ? "Sending" : "Send store"}</button>
+      </div>
+    </div>
+  );
+}
+function SuggestEventForm({ currentUser, onSent }) {
+  const [f, setF] = useState({ entry:"", type:"", name:"", website:"", description:"", mode:"", country:"", city:"", venue:"", when:"", price:"", relation:"", email:"" });
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState("");
+  const set = (k, v) => setF(x => ({ ...x, [k]:v }));
+  const input = (k, ph, props = {}) => <input className="mos-in" value={f[k]} onChange={e => set(k, e.target.value)} placeholder={ph} {...props}/>;
+  const isEvent = f.entry === "Event";
+  const inPerson = f.mode && f.mode !== "Online";
+  async function submit() {
+    const miss = [];
+    if (!f.entry) miss.push("whether it is an event or a business");
+    if (f.entry && !f.type) miss.push("what kind it is");
+    if (!f.name.trim()) miss.push("name");
+    if (!/\S+\.\S+/.test(f.website.trim())) miss.push("website or link");
+    if (f.description.trim().length < 10) miss.push("a short description");
+    if (!f.mode) miss.push("in person or online");
+    if (inPerson && !f.country.trim()) miss.push("country");
+    if (inPerson && !f.city.trim()) miss.push("city");
+    if (isEvent && !f.when.trim()) miss.push("the date or dates");
+    if (f.email.trim() && !/^\S+@\S+\.\S+$/.test(f.email.trim())) miss.push("a valid email, or leave it blank");
+    if (miss.length) { setErr("Still needed: " + miss.join(", ") + "."); return; }
+    setBusy(true); setErr("");
+    try { await sendSuggestion(currentUser, "event", { ...f, name:f.name.trim() }); onSent(f.name.trim()); }
+    catch (e) { console.error("Event suggestion failed:", e); setErr("That did not send. Please try again, or email team@memoironskin.com."); }
+    setBusy(false);
+  }
+  return (
+    <div className="mos-pad" style={{ padding:"28px 24px 56px" }}>
+      <div className="mos-formgrid">
+        <div>
+          <FormSec gap={0} title="What is it?" sub="An event happens on a date. A business is something people can use any time.">
+            <FormField label="Event or business" req><ChipChoice value={f.entry} onChange={v => setF(x => ({ ...x, entry:v, type:"" }))} options={["Event", "Business"]}/></FormField>
+            {f.entry && <FormField label="Kind" req><ChipChoice value={f.type} onChange={v => set("type", v)} options={isEvent ? EVENT_TYPES : BIZ_TYPES}/></FormField>}
+            <FormField label="Name" req>{input("name", isEvent ? "e.g. Perfume Market Lyon" : "e.g. Atelier Example")}</FormField>
+            <FormField label="Website or link" req hint={isEvent ? "Tickets, programme or the organiser's page." : "The business's own site or page."}>{input("website", "example.com", { inputMode:"url", autoCapitalize:"none" })}</FormField>
+            <FormField label="What is it, and who is it for?" req><textarea className="mos-in" rows={3} value={f.description} onChange={e => set("description", e.target.value)} placeholder="A line or two in your own words" style={{ resize:"vertical", lineHeight:1.6 }}/></FormField>
+          </FormSec>
+        </div>
+        <div>
+          <FormSec gap={0} title="Where and when" sub="So people nearby can find it.">
+            <FormField label="Where" req><ChipChoice value={f.mode} onChange={v => set("mode", v)} options={["In person", "Online", "Both"]}/></FormField>
+            {inPerson && <FormField label="Country" req>{input("country", "e.g. Italy")}</FormField>}
+            {inPerson && <FormField label="City" req>{input("city", "e.g. Florence")}</FormField>}
+            {inPerson && <FormField label="Venue or address">{input("venue", "Optional")}</FormField>}
+            {isEvent && <FormField label="Date or dates" req hint="e.g. 14 to 16 March 2027, or every first Saturday.">{input("when", "When does it happen?")}</FormField>}
+            <FormField label="Price or booking">{input("price", "Optional. Free, from 25 EUR, booking link")}</FormField>
+          </FormSec>
+          <div style={{ height:34 }}/>
+          <FormSec gap={0} title="About you" sub="Optional. It helps us check the details.">
+            <FormField label="Your connection"><ChipChoice value={f.relation} onChange={v => set("relation", v)} options={["I run it", "I've been", "I'd like to go"]}/></FormField>
+            <FormField label="Email" hint="Only used if we need to confirm something. It is never shown.">{input("email", "you@example.com", { inputMode:"email", autoCapitalize:"none" })}</FormField>
+          </FormSec>
+        </div>
+      </div>
+      <div style={{ marginTop:36, maxWidth:420 }}>
+        {err && <p role="alert" style={{ fontFamily:sans, fontSize:13, color:T.bad, margin:"0 0 12px", lineHeight:1.5 }}>{err}</p>}
+        <button onClick={submit} disabled={busy} style={SUG_SEND_BTN(busy)}>{busy ? "Sending" : isEvent ? "Send event" : f.entry === "Business" ? "Send business" : "Send"}</button>
+      </div>
+    </div>
+  );
+}
+
 // ─── SUGGEST MODAL ────────────────────────────────────────────────────────────
 function SuggestModal({ onClose, currentUser }) {
   const blank={name:"",house:"",year:"",concentration:"",perfumer:"",family:"",priceTier:"",website:"",country:"",ownershipStatus:"",ownershipParent:"",ownershipYear:"",top:"",heart:"",base:"",accords:"",story:"",why:"",sampleWhere:"",imagePath:"",sourceUrl:"",firstReview:""};
@@ -1132,6 +1280,9 @@ function SuggestModal({ onClose, currentUser }) {
   const [submitted,setSubmitted]=useState(false);
   const [busy,setBusy]=useState(false);
   const [err,setErr]=useState("");
+  const [kind,setKind]=useState("fragrance"); // fragrance | store | event
+  const [sentName,setSentName]=useState("");
+  const [formKey,setFormKey]=useState(0);
   function set(k,v){setForm(f=>({...f,[k]:v}));}
   // Resize and re-encode as JPEG: keeps uploads small and strips location data from the photo.
   async function pickPhoto(file){
@@ -1191,18 +1342,29 @@ function SuggestModal({ onClose, currentUser }) {
           <button className="mos-close" onClick={onClose} aria-label="Close" style={{ position:"absolute", top:16, right:16, width:34, height:34, borderRadius:"50%", border:`1px solid ${T.rule}`, background:T.white, cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", fontSize:14, color:T.mid }}>✕</button>
           <BackBtn onBack={onClose}/>
           <p style={{ fontFamily:sans, fontSize:11, fontWeight:600, textTransform:"uppercase", letterSpacing:"0.18em", color:T.accent, margin:"0 0 6px" }}>Community</p>
-          <h2 style={{ fontFamily:serif, fontSize:"clamp(30px, 3vw, 46px)", fontWeight:400, letterSpacing:-0.6, color:T.black, margin:0, paddingRight:40 }}>Suggest a fragrance</h2>
-          <p style={{ fontFamily:sans, fontSize:"clamp(14px, 1.1vw, 16px)", color:T.mid, lineHeight:1.65, margin:"10px 0 0", maxWidth:640 }}>Can't find it? Tell us what you know. The name, house, house website, country, at least one note and a bottle photo are required, and every extra detail saves us a search. A person reviews each suggestion before it goes in. <a href="/brands" style={{ color:T.ink }}>Are you a brand? Submit your whole house here.</a></p>
+          <h2 style={{ fontFamily:serif, fontSize:"clamp(30px, 3vw, 46px)", fontWeight:400, letterSpacing:-0.6, color:T.black, margin:0, paddingRight:40 }}>{kind==="store"?"Add a store":kind==="event"?"Add an event or business":"Suggest a fragrance"}</h2>
+          <div style={{display:"flex",gap:8,flexWrap:"wrap",margin:"16px 0 0"}}>
+            {[["fragrance","A fragrance"],["store","A store"],["event","An event or business"]].map(([k,l])=>(
+              <button key={k} onClick={()=>{setKind(k);setSubmitted(false);setErr("");}} aria-pressed={kind===k} style={{fontFamily:sans,fontSize:14,fontWeight:kind===k?600:500,padding:"0 18px",minHeight:40,borderRadius:20,whiteSpace:"nowrap",border:`1px solid ${kind===k?T.black:T.rule}`,background:kind===k?T.black:T.white,color:kind===k?T.white:T.ink,cursor:"pointer"}}>{l}</button>
+            ))}
+          </div>
+          {kind==="store"&&<p style={{ fontFamily:sans, fontSize:"clamp(14px, 1.1vw, 16px)", color:T.mid, lineHeight:1.65, margin:"12px 0 0", maxWidth:640 }}>Run a fragrance store, or know a good one? Tell us where it is and what it sells. A person checks each store before it goes on the stores list.</p>}
+          {kind==="event"&&<p style={{ fontFamily:sans, fontSize:"clamp(14px, 1.1vw, 16px)", color:T.mid, lineHeight:1.65, margin:"12px 0 0", maxWidth:640 }}>Know a fragrance event, class, workshop or small business that people should find? Tell us about it. A person checks each one before it is shared.</p>}
+          {kind==="fragrance"&&<p style={{ fontFamily:sans, fontSize:"clamp(14px, 1.1vw, 16px)", color:T.mid, lineHeight:1.65, margin:"12px 0 0", maxWidth:640 }}>Can't find it? Tell us what you know. The name, house, house website, country, at least one note and a bottle photo are required, and every extra detail saves us a search. A person reviews each suggestion before it goes in. <a href="/brands" style={{ color:T.ink }}>Are you a brand? Submit your whole house here.</a></p>}
         </div>
         {submitted ? (
           <div className="mos-pad" style={{ padding:"56px 24px 72px", textAlign:"center" }}>
             <h3 style={{ fontFamily:serif, fontSize:"clamp(26px, 2.4vw, 36px)", fontWeight:400, color:T.black, margin:"0 0 10px" }}>Thank you</h3>
-            <p style={{ fontFamily:sans, fontSize:15, color:T.mid, lineHeight:1.65, margin:"0 auto 28px", maxWidth:440 }}><strong style={{ color:T.ink }}>{form.name}</strong> by {form.house} is in the queue for review.</p>
+            <p style={{ fontFamily:sans, fontSize:15, color:T.mid, lineHeight:1.65, margin:"0 auto 28px", maxWidth:440 }}>{kind==="fragrance"?<><strong style={{ color:T.ink }}>{form.name}</strong> by {form.house}</>:<strong style={{ color:T.ink }}>{sentName}</strong>} is in the queue for review.</p>
             <div style={{ display:"flex", gap:10, justifyContent:"center", flexWrap:"wrap" }}>
-              <button onClick={()=>{setForm(blank);setPhoto(null);setOwnPhoto(false);setSubmitted(false);}} style={{ minHeight:48, padding:"0 24px", borderRadius:10, background:T.white, border:`1px solid ${T.rule}`, color:T.ink, fontSize:14, fontFamily:sans, cursor:"pointer" }}>Suggest another</button>
+              <button onClick={()=>{setForm(blank);setPhoto(null);setOwnPhoto(false);setSubmitted(false);setFormKey(k=>k+1);}} style={{ minHeight:48, padding:"0 24px", borderRadius:10, background:T.white, border:`1px solid ${T.rule}`, color:T.ink, fontSize:14, fontFamily:sans, cursor:"pointer" }}>{kind==="fragrance"?"Suggest another":"Add another"}</button>
               <button onClick={onClose} style={{ minHeight:48, padding:"0 28px", borderRadius:10, background:T.black, border:"none", color:T.white, fontSize:14, fontFamily:sans, cursor:"pointer" }}>Done</button>
             </div>
           </div>
+        ) : kind==="store" ? (
+          <SuggestStoreForm key={formKey} currentUser={currentUser} onSent={n=>{setSentName(n);setSubmitted(true);}}/>
+        ) : kind==="event" ? (
+          <SuggestEventForm key={formKey} currentUser={currentUser} onSent={n=>{setSentName(n);setSubmitted(true);}}/>
         ) : (
           <div className="mos-pad" style={{ padding:"28px 24px 56px" }}>
             <div className="mos-formgrid">
@@ -5804,7 +5966,9 @@ function BrandSubmissionsAdmin() {
   const [open, setOpen] = useState(null);
   const [urls, setUrls] = useState({});
   const [msg, setMsg] = useState("");
-  async function load() { const r = await supabase.rpc("admin_list_brand_submissions"); if (r.error) { setMsg("Not available for this account."); setRows([]); return; } setRows(r.data || []); }
+  const [sugs, setSugs] = useState([]);
+  const [sugOpen, setSugOpen] = useState(null);
+  async function load() { const r = await supabase.rpc("admin_list_brand_submissions"); if (r.error) { setMsg("Not available for this account."); setRows([]); return; } setRows(r.data || []); const g = await supabase.rpc("admin_list_suggestions"); if (!g.error) setSugs(g.data || []); }
   useEffect(() => { load(); }, []);
   async function expand(s) {
     setOpen(o => o === s.id ? null : s.id);
@@ -5813,6 +5977,10 @@ function BrandSubmissionsAdmin() {
     const r = await supabase.storage.from("brand-submissions").createSignedUrls(paths, 3600);
     if (r.data) setUrls(u => { const n = { ...u }; r.data.forEach(x => { if (x.signedUrl) n[x.path] = x.signedUrl; }); return n; });
   }
+  async function setSugStatus(id, status) { const r = await supabase.rpc("admin_set_suggestion", { p_id: id, p_status: status }); if (r.error) { setMsg(r.error.message); return; } load(); }
+  const SUG_LABEL = { fragrance:"Fragrance", store:"Store", event:"Event or business" };
+  const SUG_SKIP = ["imagePath", "ownPhotoConfirmed"];
+  const sugTitle = g => (g.payload && (g.payload.name || g.payload.house)) || "Untitled";
   async function setStatus(id, status) { const r = await supabase.rpc("admin_set_brand_submission", { p_id: id, p_status: status }); if (r.error) { setMsg(r.error.message); return; } load(); }
   const row = { background:T.white, border:`1px solid ${T.rule}`, borderRadius:14, padding:16, marginBottom:10, fontFamily:sans };
   const kv = (k, v) => v ? <p style={{ fontSize:13, color:T.ink, margin:"3px 0", lineHeight:1.5 }}><span style={{ color:T.mid }}>{k}: </span>{Array.isArray(v) ? v.join(", ") : String(v)}</p> : null;
@@ -5850,6 +6018,28 @@ function BrandSubmissionsAdmin() {
               ))}
               <div style={{ display:"flex", gap:8, flexWrap:"wrap", marginTop:12 }}>
                 {["reviewing", "accepted", "declined"].map(st => <button key={st} onClick={() => setStatus(s.id, st)} style={{ ...ghostBtn, minHeight:38, fontSize:13, padding:"0 16px" }}>Mark {st}</button>)}
+              </div>
+            </div>
+          )}
+        </div>
+      ))}
+      <h1 style={{ fontFamily:serif, fontSize:32, fontWeight:400, color:T.black, margin:"44px 0 6px" }}>Member suggestions</h1>
+      <p style={{ fontFamily:sans, fontSize:13, color:T.mid, margin:"0 0 20px" }}>Fragrances, stores, events and businesses sent from the Suggest button.</p>
+      {sugs.length === 0 && <p style={{ fontFamily:sans, color:T.mid }}>Nothing yet.</p>}
+      {sugs.map(g => (
+        <div key={g.id} style={row}>
+          <div style={{ display:"flex", justifyContent:"space-between", gap:10, alignItems:"baseline", flexWrap:"wrap" }}>
+            <p style={{ fontFamily:serif, fontSize:18, color:T.ink, margin:0 }}>{sugTitle(g)}</p>
+            <span style={{ fontSize:11, letterSpacing:"0.12em", textTransform:"uppercase", color:g.status === "new" ? "var(--accent)" : T.mid, fontWeight:600 }}>{g.status}</span>
+          </div>
+          <p style={{ fontSize:12, color:T.mid, margin:"4px 0 10px" }}>{SUG_LABEL[g.kind] || g.kind}{g.payload && g.payload.entry ? " · " + g.payload.entry : ""} · {new Date(g.created_at).toLocaleString()}{g.username ? " · @" + g.username : ""}</p>
+          <button onClick={() => setSugOpen(o => o === g.id ? null : g.id)} style={{ ...ghostBtn, minHeight:38, fontSize:13, padding:"0 16px" }}>{sugOpen === g.id ? "Hide details" : "View details"}</button>
+          {sugOpen === g.id && (
+            <div style={{ marginTop:14 }}>
+              {Object.entries(g.payload || {}).filter(([k, v]) => !SUG_SKIP.includes(k) && v && !(Array.isArray(v) && !v.length)).map(([k, v]) => <Fragment key={k}>{kv(k.replace(/([A-Z])/g, " $1").replace(/^./, c => c.toUpperCase()), v)}</Fragment>)}
+              {g.payload && g.payload.imagePath && <p style={{ fontSize:12, color:T.mid, margin:"6px 0" }}>Bottle photo is in the suggestion-images storage bucket.</p>}
+              <div style={{ display:"flex", gap:8, flexWrap:"wrap", marginTop:12 }}>
+                {["reviewing", "accepted", "declined"].map(st => <button key={st} onClick={() => setSugStatus(g.id, st)} style={{ ...ghostBtn, minHeight:38, fontSize:13, padding:"0 16px" }}>Mark {st}</button>)}
               </div>
             </div>
           )}
@@ -7310,7 +7500,7 @@ export default function SillageApp() {
           <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", padding:"14px 0 12px", gap:10 }}>
             <Logo fluid/>
             <div style={{ display:"flex", alignItems:"center", gap:6, flexShrink:0 }}>
-              <button className="mos-suggest" onClick={() => setShowSuggest(true)} aria-label="Suggest a fragrance" title="Suggest a fragrance" style={{ fontFamily:sans, fontSize:"var(--ctl-fs)", fontWeight:500, height:"var(--ctl)", padding:"0 16px", borderRadius:20, border:`1px solid ${T.rule}`, background:T.white, color:T.mid, cursor:"pointer", whiteSpace:"nowrap" }}>+<span className="mos-suggest-label"> Suggest</span></button>
+              <button className="mos-suggest" onClick={() => setShowSuggest(true)} aria-label="Suggest a fragrance, store or event" title="Suggest a fragrance, store or event" style={{ fontFamily:sans, fontSize:"var(--ctl-fs)", fontWeight:500, height:"var(--ctl)", padding:"0 16px", borderRadius:20, border:`1px solid ${T.rule}`, background:T.white, color:T.mid, cursor:"pointer", whiteSpace:"nowrap" }}>+<span className="mos-suggest-label"> Suggest</span></button>
               <span className="mos-hide-sm" style={{ display:"contents" }}><ThemeToggle size="var(--ctl)"/></span>
               <button onClick={openPeople} title="Find people" aria-label="Find people" style={{ width:"var(--ctl)", height:"var(--ctl)", borderRadius:"50%", padding:0, background:T.white, border:`1px solid ${T.rule}`, cursor:"pointer", flexShrink:0, display:"flex", alignItems:"center", justifyContent:"center" }}>
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" style={{ color:T.ink, display:"block" }}><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c0-3.6 2.9-6 6.5-6 1.5 0 2.8.4 3.9 1.1"/><circle cx="17" cy="16.5" r="3"/><path d="M19.2 18.7L21.5 21"/></svg>
