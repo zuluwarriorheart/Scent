@@ -3198,7 +3198,7 @@ function StreakCalendar({ entries, yearSel }) {
   const fmt = n => new Date(n * 86400000 + 43200000).toLocaleDateString("en-US", { month:"long", day:"numeric" });
   return (
     <InsightCard label="Best journal streak" headline={String(st.longest)} sub={`${st.longest === 1 ? "day" : "days"} ${yearSel === "all" ? "all time" : "in " + year}${st.current > 0 ? ` · current streak ${st.current}` : ""}`}
-      hint={st.total === 0 ? "Write a journal entry on a fragrance page and your days light up here. Log on consecutive days to build a streak." : null}>
+      hint={st.total === 0 ? "Write an entry above or on a fragrance page and your days light up here. Log on consecutive days to build a streak." : null}>
       <div style={{ display:"flex", gap:8, overflowX:"auto", paddingBottom:6, marginBottom:10 }}>
         {MN.map((m, i) => <button key={m} onClick={() => setMonth(i)} style={{ fontFamily:sans, fontSize:13, fontWeight:month === i ? 600 : 500, padding:"8px 16px", borderRadius:20, border:"none", background:month === i ? "var(--accent)" : T.lift, color:month === i ? "#fff" : T.mid, cursor:"pointer", flexShrink:0 }}>{m}</button>)}
       </div>
@@ -5116,7 +5116,9 @@ function CollectionTab({ onEvents, onImport, onOpenFrag, statuses:userStatuses, 
 }
 
 // ─── JOURNAL ──────────────────────────────────────────────────────────────────
-function JournalTab({ entries, userStatuses, reactions, fragrances, wears, onOpenFrag }) {
+function JournalTab({ entries, userStatuses, reactions, fragrances, wears, onOpenFrag, onSearch, onAddJournalEntry }) {
+  const [writing, setWriting] = useState(false);
+  const [wFrag, setWFrag] = useState(null);
   const FR = (fragrances && fragrances.length) ? fragrances : FRAGRANCES;
   const all = [...(entries||[])];
 
@@ -5135,6 +5137,28 @@ function JournalTab({ entries, userStatuses, reactions, fragrances, wears, onOpe
         <p style={{fontFamily:sans,fontSize:9,textTransform:"uppercase",letterSpacing:"0.18em",color:T.mid,margin:"0 0 4px"}}>Personal record</p>
         <h2 style={{fontFamily:serif,fontSize:"clamp(32px, 3.2vw, 50px)",color:T.black,letterSpacing:-0.8,margin:0,fontWeight:400}}>Scent Journal</h2>
         <p style={{fontFamily:sans,fontSize:"clamp(13px, 1.1vw, 17px)",color:T.mid,margin:"6px 0 0"}}>What you reach for, and why. A record that becomes a mirror.</p>
+      </div>
+
+      <div style={{background:T.white,border:`1px solid ${T.rule}`,borderRadius:16,padding:"16px 18px",marginBottom:20}}>
+        {!writing ? (
+          <div style={{display:"flex",alignItems:"center",gap:12,flexWrap:"wrap"}}>
+            <div style={{flex:"1 1 200px"}}>
+              <p style={{fontFamily:serif,fontSize:20,color:T.black,margin:"0 0 2px"}}>Write an entry</p>
+              <p style={{fontFamily:sans,fontSize:13,color:T.mid,margin:0}}>Feelings, memories, colours and sounds for a fragrance you have tried.</p>
+            </div>
+            <button onClick={()=>setWriting(true)} style={{...ctaBtn(true),width:"auto",flex:"0 0 auto",whiteSpace:"nowrap",padding:"0 20px"}}>Start</button>
+          </div>
+        ) : (
+          <div>
+            <div style={{display:"flex",alignItems:"center",marginBottom:10}}>
+              <p style={{fontFamily:serif,fontSize:20,color:T.black,margin:0,flex:1}}>Write an entry</p>
+              <button onClick={()=>{setWriting(false);setWFrag(null);}} style={{...ghostBtn,minHeight:36,padding:"0 14px",fontSize:13}}>Close</button>
+            </div>
+            <Lbl>Which fragrance?</Lbl>
+            <FragPicker key="jw" value="" onPick={(t,f)=>setWFrag(f||null)} onSearch={onSearch} placeholder="Search for a fragrance"/>
+            {wFrag && <div style={{marginTop:16}}><JournalComposer key={wFrag.id} frag={wFrag} entries={entries} onAddJournalEntry={onAddJournalEntry}/></div>}
+          </div>
+        )}
       </div>
 
       <JournalInsights entries={all} userStatuses={userStatuses||{}} reactions={reactions||{}} fragrances={FR} wears={wears} onOpenFrag={onOpenFrag}/>
@@ -5214,7 +5238,7 @@ function FragPicker({ value, onPick, onSearch, placeholder }) {
         <div style={{ position:"absolute", left:0, right:0, top:"calc(100% + 6px)", zIndex:20, background:T.white, border:`1px solid ${T.rule}`, borderRadius:14, boxShadow:"0 12px 28px rgba(0,0,0,0.4)", maxHeight:300, overflowY:"auto" }}>
           {res.length === 0 && <p style={{ fontFamily:sans, fontSize:14, color:T.faint, margin:0, padding:"14px 16px" }}>{busy ? "Searching…" : "No match. Keep typing."}</p>}
           {res.map(f => (
-            <button key={f.id} onClick={() => { picked.current = true; setQ(f.name + " · " + f.house); setOpen(false); onPick(f.name + " · " + f.house); }}
+            <button key={f.id} onClick={() => { picked.current = true; setQ(f.name + " · " + f.house); setOpen(false); onPick(f.name + " · " + f.house, f); }}
               style={{ display:"flex", alignItems:"center", gap:12, width:"100%", textAlign:"left", background:"none", border:"none", borderBottom:`1px solid ${T.lift}`, padding:"10px 14px", cursor:"pointer", fontFamily:sans }}>
               <Thumb frag={f} w={34}/>
               <span style={{ minWidth:0 }}>
@@ -8202,7 +8226,7 @@ export default function SillageApp() {
         {activeTab==="Discover"   && <DiscoverTab   onOpenBrand={openBrand} onOpenPerfumer={openPerfumer} onOpenProfile={openProfile} following={following} fragrances={fragrances} serverShelves={serverShelves} onSearch={serverShelves ? searchFrags : null} onOpenFrag={openFrag} userStatuses={userStatuses} reactions={reactions} onReaction={onReaction} onSuggest={() => setShowSuggest(true)} currentUser={currentUser}/>}
         {activeTab==="Collection" && <CollectionTab onEvents={EVENTS_PREVIEW ? () => setEventsOpen(true) : null} onImport={() => setImportOpen(true)} fragrances={fragrances} onOpenFrag={openFrag} statuses={userStatuses} statusSets={statusSets} reactions={reactions} onReaction={onReaction} onSuggest={() => setShowSuggest(true)} wears={wears} onOpenJournal={() => setActiveTab("Journal")}/>}
         {activeTab==="Layering"   && <div className="mos-prose"><LayeringTab layers={layers} onSaveLayer={saveLayer} onSearch={searchFrags} fragrances={fragrances} statusSets={statusSets}/></div>}
-        {activeTab==="Journal"    && <div className="mos-prose"><JournalTab entries={journalEntries} userStatuses={userStatuses} reactions={reactions} fragrances={fragrances} wears={wears} onOpenFrag={openFrag}/></div>}
+        {activeTab==="Journal"    && <div className="mos-prose"><JournalTab entries={journalEntries} userStatuses={userStatuses} reactions={reactions} fragrances={fragrances} wears={wears} onOpenFrag={openFrag} onSearch={searchFrags} onAddJournalEntry={addJournalEntry}/></div>}
         {activeTab==="Learn"      && <div className="mos-prose"><LearnTab fragrances={fragrances} onOpenFrag={openFrag} onOpenBrand={openBrand}/></div>}
         <FooterLinks/>
       </main>
