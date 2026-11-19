@@ -3572,7 +3572,7 @@ const HOUSE_GROUPS = [
   { key:"designer", label:"Heritage" },
 ];
 // TEMPORARY: show this house under "New to the shelf" so the look can be judged. Set to "" to restore real new releases.
-const PREVIEW_NEW_HOUSES = ["new-notes", "thoo", "alloy-studio", "rite-of-way", "a-n-other", "jijide"]; // newest uploads first
+const PREVIEW_NEW_HOUSES = ["conde-parfum", "new-notes", "thoo", "alloy-studio", "rite-of-way", "a-n-other", "jijide"]; // newest uploads first
 const PREVIEW_NEW_HOUSE = PREVIEW_NEW_HOUSES[0];
 const NEO_BLURB = "Gourmand with an edge. Grain, salt, smoke and savory notes alongside the sweet.";
 function buildShelves(list) {
