@@ -4147,7 +4147,7 @@ function KitsShelf({ onOpenBrand, tinted }) {
     <section className={"mos-bleed" + (tinted ? " mos-band" : "")} style={{ padding:"26px 0 22px" }}>
       <div className="mos-bleed-pad" style={{ marginBottom:16 }}>
         <h3 style={{ fontFamily:serif, fontSize:"clamp(26px, 2.3vw, 38px)", fontWeight:400, letterSpacing:-0.6, color:T.black, margin:0, lineHeight:1.1 }}>Discovery kits</h3>
-        <p style={{ fontFamily:sans, fontSize:"clamp(14px, 1.1vw, 17px)", color:T.mid, margin:"6px 0 0", lineHeight:1.5 }}>Sample first. {rows.length} houses sell a discovery set or samples on their own site. Links go straight to the brand, so check the contents and price there.</p>
+        <p style={{ fontFamily:sans, fontSize:"clamp(14px, 1.1vw, 17px)", color:T.mid, margin:"6px 0 0", lineHeight:1.5 }}>Sample first. Houses that sell a discovery set or samples on their own site. Links go straight to the brand, so check the contents and price there.</p>
         {all && <div style={{ position:"relative", marginTop:14, maxWidth:520 }}>
           <input value={q} onChange={e => setQ(e.target.value)} placeholder="Search kits by brand or country" style={{ ...FIELD, width:"100%", boxSizing:"border-box" }}/>
         </div>}
@@ -4156,7 +4156,7 @@ function KitsShelf({ onOpenBrand, tinted }) {
         ? <div className="mos-bleed-pad" style={{ display:"flex", flexWrap:"wrap", gap:14 }}>{shown.map(card)}{shown.length === 0 && <p style={{ fontFamily:sans, fontSize:14, color:T.mid }}>No kits match that.</p>}</div>
         : <div className="mos-shelf mos-bleed-pad" style={{ display:"flex", alignItems:"stretch", gap:14, overflowX:"auto", paddingTop:2, paddingBottom:14, scrollSnapType:"x proximity", WebkitOverflowScrolling:"touch" }}>{shown.map(card)}</div>}
       <div className="mos-bleed-pad" style={{ marginTop:6 }}>
-        <button onClick={() => { setAll(v => !v); setQ(""); }} style={{ ...ghostBtn, minHeight:42, fontSize:14, padding:"0 20px" }}>{all ? "Show fewer" : "See all " + rows.length + " kits"}</button>
+        <button onClick={() => { setAll(v => !v); setQ(""); }} style={{ ...ghostBtn, minHeight:42, fontSize:14, padding:"0 20px" }}>{all ? "Show fewer" : "See all kits"}</button>
       </div>
     </section>
   );
