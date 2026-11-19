@@ -5523,16 +5523,33 @@ function LayeringTab({ layers, onSaveLayer, onSearch, fragrances, statusSets }) 
 
 // ─── FRAGRANCE EXPOS DATA ─────────────────────────────────────────────────────
 const FRAGRANCE_EXPOS = [
-  { name:"Esxence", city:"Milan, Italy", month:"March", description:"The world's premier niche fragrance fair. Over 300 exhibitors from 40+ countries presenting artistic perfumery." },
-  { name:"Fragrance Foundation Awards", city:"New York, USA", month:"June", description:"The fragrance industry's most prestigious awards, the 'Oscars' of perfumery." },
-  { name:"World Perfumery Congress", city:"Rotating cities", month:"June", description:"Biennial gathering of the fragrance industry's scientists, perfumers, and technologists." },
-  { name:"Beautyworld Middle East", city:"Dubai, UAE", month:"May", description:"Largest beauty trade fair in the Middle East, major fragrance component." },
-  { name:"Luxe Pack Monaco", city:"Monte Carlo, Monaco", month:"October", description:"High-end packaging and luxury goods fair with significant fragrance presence." },
-  { name:"ScentXplore", city:"Rotating cities", month:"Varies", description:"Community-driven fragrance discovery event. More accessible than trade fairs, focused on enthusiasts." },
-  { name:"The Scent Event", city:"Various European cities", month:"Varies", description:"Boutique fragrance events connecting niche houses directly with consumers." },
-  { name:"Sniffapalooza", city:"New York, USA", month:"April / Fall", description:"Legendary enthusiast-led fragrance tours through department stores and boutiques in NYC." },
-  { name:"Pitti Fragranze", city:"Florence, Italy", month:"September", description:"Elegant sister event to Esxence, focused on artistic perfumery against Florence's backdrop." },
-  { name:"Beautyworld Japan", city:"Tokyo, Japan", month:"May", description:"Asia's largest beauty and fragrance industry expo with strong niche presence." },
+  // start/end (YYYY-MM-DD) make an event sortable; events without them sit under "Dates to be announced".
+  { name:"The London Niche Show", city:"London", country:"United Kingdom", venue:"Marylebone (The Bomb Factory Art Gallery)", start:"2026-11-20", end:"2026-11-22", url:"https://www.niche.show/", description:"Niche and indie perfume houses showing to the public in London." },
+  { name:"Polaris Olfactive Week", city:"Stockholm", country:"Sweden", venue:"Downtown Camper by Scandic", start:"2026-11-28", end:"2026-11-29", url:"https://polarisolfactive.com/", description:"Independent perfumers and niche houses, mostly from the Nordics and across Europe." },
+  { name:"Notes Dubai", city:"Dubai", country:"United Arab Emirates", venue:"Dubai Mall Exhibition Center", start:"2027-01-21", end:"2027-01-23", url:"https://notes-dubai.ae.messefrankfurt.com/dubai/en.html", description:"A niche fragrance show for the Gulf, from the Beautyworld organisers." },
+  { name:"Scent & Soul", city:"Helsinki", country:"Finland", venue:"Korjaamo", start:"2027-03-20", end:"2027-03-20", url:"https://scentandsoul.fi/", description:"A one-day Nordic fragrance event for people who love niche and indie perfume." },
+  { name:"Enhala", city:"Bucharest", country:"Romania", venue:"The Marmorosch", start:"2027-03-26", end:"2027-03-28", url:"https://enhala.com/", description:"An artistic perfumery event in Bucharest." },
+  { name:"Paris Perfume Week", city:"Paris", country:"France", venue:"Palais Brongniart", start:"2027-04-15", end:"2027-04-17", url:"https://www.perfume-week.com/paris-perfume-week/", description:"Niche and independent houses together in Paris." },
+  { name:"Art Niche Expo", city:"Timișoara", country:"Romania", venue:"Congress Hall, Iulius Town", start:"2027-05-07", end:"2027-05-09", url:"https://artnicheexpo.com/event-details/", description:"A niche perfumery expo in western Romania." },
+  { name:"Simppar", city:"Paris", country:"France", venue:"Espace Champeret", start:"2027-06-01", end:"2027-06-03", url:"https://www.simppar.fr/en/", description:"A trade show for perfumery raw materials and the people who make them." },
+  { name:"Scent Fest SF", city:"San Francisco", country:"United States", venue:"San Francisco Cruise Terminal, Pier 27", start:"2027-06-04", end:"2027-06-06", url:"https://scentfestsf.com/", description:"A fragrance festival on the San Francisco waterfront." },
+  { name:"Fragranze (Pitti)", city:"Florence", country:"Italy", venue:"Stazione Leopolda", start:"2027-09-10", end:"2027-09-12", url:"https://fragranze.pittimmagine.com/", description:"Artistic perfumery in Florence, from the Pitti Immagine team." },
+  { name:"TFWA World Exhibition & Conference", city:"Cannes", country:"France", venue:"", start:"2027-10-03", end:"2027-10-07", url:"https://www.tfwa.com/tfwa-world-exhibition-conference-2026", description:"The global travel retail trade show. Fragrance is a large part of it. Trade only." },
+  { name:"UAE Perfume Show", city:"Sharjah", country:"United Arab Emirates", venue:"Expo Centre Sharjah", start:"2027-10-08", end:"2027-10-17", url:"https://uaeperfumeshow.ae/en/", description:"A long-running perfume and oud show in the Emirates." },
+  { name:"Beautyworld Middle East", city:"Dubai", country:"United Arab Emirates", venue:"Dubai Exhibition Centre, Expo City", start:"2027-10-19", end:"2027-10-21", url:"https://beautyworld-dubai.ae.messefrankfurt.com/dubai/en.html", description:"The region's largest beauty trade fair, with a big fragrance hall." },
+  { name:"Toronto Scent Festival", city:"Toronto", country:"Canada", url:"https://www.instagram.com/torontoscentfestival/", description:"A fragrance festival in Toronto. Follow them for the next dates." },
+  { name:"Fumed", city:"Check the website", country:"", url:"https://fumedexpo.com/", description:"A fragrance expo. Check the website for place and dates." },
+  { name:"Notes Shanghai", city:"Shanghai", country:"China", note:"Held in spring and autumn", url:"https://notesshanghai.com/", description:"A niche and artistic fragrance show for the Chinese market." },
+  { name:"Asia Perfume Show", city:"Paris", country:"France", note:"Last held 23 to 25 September 2026", url:"https://www.perfume-week.com/asia-perfume-show/", description:"Perfume brands from Asia, shown in Paris." },
+  { name:"Grasse Perfume Week", city:"Grasse", country:"France", url:"https://www.perfume-week.com/grasse-perfume-week/", description:"Perfume week in the town where French perfumery began." },
+  { name:"MxScent", city:"Latin America", country:"", url:"https://mxscentpartners.com/", description:"A perfumery event for Latin America." },
+  { name:"Luxe Pack Monaco", city:"Monaco", country:"Monaco", note:"Last held 28 to 30 September 2026", url:"https://www.luxepackmonaco.com/", description:"Luxury packaging fair with a strong fragrance crowd." },
+  { name:"Esxence", city:"Milan", country:"Italy", note:"Usually March", url:"https://esxence.com/", description:"The art perfumery fair, with hundreds of niche and indie houses." },
+  { name:"World Perfumery Congress", city:"Rotating cities", country:"", note:"Every two years", description:"A gathering of perfumers, scientists and fragrance technologists." },
+  { name:"Beautyworld Japan", city:"Tokyo", country:"Japan", note:"Usually May", description:"A beauty and fragrance trade expo in Tokyo." },
+  { name:"Sniffapalooza", city:"New York", country:"United States", note:"Spring and fall", description:"Enthusiast-led fragrance outings to shops and boutiques." },
+  { name:"ScentXplore", city:"New York", country:"United States", note:"Check the dates each year", description:"A niche fragrance event where you can meet the houses and smell what they make." },
+  { name:"Fragrance Foundation Awards", city:"New York", country:"United States", note:"Usually June", description:"The industry's awards night." },
 ];
 
 // ─── LEARN ────────────────────────────────────────────────────────────────────
@@ -5854,25 +5871,35 @@ function LearnTab({ fragrances, onOpenFrag, onOpenBrand }) {
         </div>
       ))}
       </>}
-      {tab==="expos"&&<div>
-        <Lbl>Fragrance Expos & Events</Lbl>
-        <p style={{fontFamily:sans,fontSize:13,color:T.mid,lineHeight:1.65,margin:"0 0 18px"}}>Every major fragrance exhibition worldwide, from trade fairs to community events.</p>
-        <div style={{background:T.white,border:`1px solid ${T.rule}`,borderRadius:14,overflow:"hidden"}}>
-          {FRAGRANCE_EXPOS.map((expo,i)=>(
-            <div key={expo.name} style={{borderBottom:i<FRAGRANCE_EXPOS.length-1?`1px solid ${T.lift}`:"none"}}>
-              <div style={{padding:"16px 18px"}}>
-                <div style={{display:"flex",alignItems:"center",gap:8,flexWrap:"wrap"}}>
-                  <span style={{fontFamily:serif,fontSize:18,color:T.black}}>{expo.name}</span>
-                  <span style={{fontFamily:sans,fontSize:10,padding:"2px 8px",borderRadius:10,background:T.lift,color:T.mid,border:`1px solid ${T.rule}`}}>{expo.month}</span>
-                </div>
-                <p style={{fontFamily:sans,fontSize:12,color:T.mid,margin:"4px 0 8px"}}>{expo.city}</p>
-                <p style={{fontFamily:sans,fontSize:13,color:T.mid,lineHeight:1.65,margin:0}}>{expo.description}</p>
-              </div>
+      {tab==="expos"&&(()=>{
+        const today=new Date().toISOString().slice(0,10);
+        const fmt=d=>new Date(d+"T12:00:00").toLocaleDateString("en-GB",{day:"numeric",month:"short"});
+        const range=e=>e.start===e.end?fmt(e.start)+" "+e.start.slice(0,4):fmt(e.start)+" to "+fmt(e.end)+" "+e.end.slice(0,4);
+        const dated=FRAGRANCE_EXPOS.filter(e=>e.start&&e.end>=today).sort((a,b)=>a.start.localeCompare(b.start));
+        const undated=FRAGRANCE_EXPOS.filter(e=>!e.start||e.end<today).sort((a,b)=>a.name.localeCompare(b.name));
+        const card=(expo,i,arr)=>(
+          <div key={expo.name} style={{padding:"16px 18px",borderBottom:i<arr.length-1?`1px solid ${T.lift}`:"none"}}>
+            <div style={{display:"flex",alignItems:"center",gap:8,flexWrap:"wrap"}}>
+              <span style={{fontFamily:serif,fontSize:18,color:T.black}}>{expo.name}</span>
+              <span style={{fontFamily:sans,fontSize:11,padding:"2px 9px",borderRadius:10,background:T.lift,color:T.ink,border:`1px solid ${T.rule}`}}>{expo.start&&expo.end>=today?range(expo):(expo.note||"Dates to be announced")}</span>
             </div>
-          ))}
-        </div>
-        <p style={{fontFamily:sans,fontSize:10,color:T.faint,margin:"12px 0 0",lineHeight:1.5}}>Dates vary year to year. Always check official websites for current scheduling.</p>
-      </div>}
+            <p style={{fontFamily:sans,fontSize:13,color:T.ink,margin:"6px 0 0",fontWeight:500}}>{[expo.city,expo.country].filter(Boolean).join(", ")}</p>
+            {expo.venue&&<p style={{fontFamily:sans,fontSize:12,color:T.mid,margin:"2px 0 0"}}>{expo.venue}</p>}
+            {expo.start&&expo.note&&<p style={{fontFamily:sans,fontSize:12,color:T.mid,margin:"2px 0 0"}}>{expo.note}</p>}
+            <p style={{fontFamily:sans,fontSize:13,color:T.mid,lineHeight:1.65,margin:"8px 0 0"}}>{expo.description}</p>
+            {expo.url&&<a href={expo.url} target="_blank" rel="noopener noreferrer" style={{display:"inline-block",marginTop:10,fontFamily:sans,fontSize:13,color:"var(--accent)"}}>Visit website ↗</a>}
+          </div>
+        );
+        return <div>
+          <Lbl>Fragrance Expos & Events</Lbl>
+          <p style={{fontFamily:sans,fontSize:13,color:T.mid,lineHeight:1.65,margin:"0 0 18px"}}>Fairs, shows and festivals around the world, soonest first.</p>
+          <p style={{fontFamily:sans,fontSize:11,letterSpacing:"0.12em",textTransform:"uppercase",color:T.mid,margin:"0 0 8px"}}>Coming up</p>
+          <div style={{background:T.white,border:`1px solid ${T.rule}`,borderRadius:14,overflow:"hidden",marginBottom:22}}>{dated.map(card)}</div>
+          <p style={{fontFamily:sans,fontSize:11,letterSpacing:"0.12em",textTransform:"uppercase",color:T.mid,margin:"0 0 8px"}}>Dates to be announced</p>
+          <div style={{background:T.white,border:`1px solid ${T.rule}`,borderRadius:14,overflow:"hidden"}}>{undated.map(card)}</div>
+          <p style={{fontFamily:sans,fontSize:10,color:T.faint,margin:"12px 0 0",lineHeight:1.5}}>Dates and places can change. Check each event's website before you plan a trip.</p>
+        </div>;
+      })()}
 
       {tab==="articles"&&<div style={{borderTop:`2px solid ${T.black}`,marginTop:28,paddingTop:22}}>
         <Lbl>Who Owns Your Fragrance House?</Lbl>
