@@ -951,7 +951,7 @@ function AnswerChips({ answers }) {
     </div>
   );
 }
-function JournalComposer({ frag, entries, legacyNote, onAddJournalEntry }) {
+function JournalComposer({ frag, entries, legacyNote, onAddJournalEntry, picker }) {
   const [ans, setAns] = useState({});
   const [mine, setMine] = useState({});
   const [saved, setSaved] = useState(false);
@@ -964,7 +964,7 @@ function JournalComposer({ frag, entries, legacyNote, onAddJournalEntry }) {
   const picked = ["where","fabric","colour","sound","feel"].flatMap(k => ans[k] || []);
   const fresh = [...new Set(picked)].filter(w => VOCAB[w] && !known.has(w));
   function save() {
-    if (!any || !onAddJournalEntry) return;
+    if (!any || !frag || !onAddJournalEntry) return;
     const clean = {}; JKEYS.forEach(k => { if (has(k)) clean[k] = ans[k]; });
     onAddJournalEntry({ fragId:frag.id, fragName:frag.name, house:frag.house, family:frag.family, text:(clean.other && clean.other[0]) || "", prompt:null, where:(clean.where || []).join(", "), date, answers:clean, publishedAsReview:false, reviewRating:null, shared:false, id:Date.now() });
     setAns({}); setMine({}); setSaved(true); setTimeout(() => setSaved(false), 2200);
@@ -976,6 +976,7 @@ function JournalComposer({ frag, entries, legacyNote, onAddJournalEntry }) {
         <span style={{ fontFamily:sans, fontSize:11, textTransform:"uppercase", letterSpacing:"0.12em", color:T.mid }}>Private, only visible to you</span>
         <span style={{ fontFamily:sans, fontSize:11, color:T.faint, marginLeft:"auto" }}>{date}</span>
       </div>
+      {picker && <div style={{ margin:"10px 0 16px" }}>{picker}</div>}
       <p style={{ fontFamily:sans, fontSize:13, color:T.mid, lineHeight:1.6, margin:"0 0 18px" }}>Answer one or all. Tap a word or add your own. There are no wrong answers, and the words you choose build your scent vocabulary.</p>
       {JPROMPTS.map(pr => (
         <div key={pr.key} style={{ marginBottom:20 }}>
@@ -1002,7 +1003,7 @@ function JournalComposer({ frag, entries, legacyNote, onAddJournalEntry }) {
           {fresh.map(w => <p key={w} style={{ fontFamily:sans, fontSize:13, color:T.ink, lineHeight:1.55, margin:"0 0 6px" }}><span style={{ fontSize:10, fontWeight:600, textTransform:"uppercase", letterSpacing:"0.1em", color:"var(--accent)", marginRight:8 }}>New word</span><strong style={{ fontWeight:600 }}>{w}</strong>: {VOCAB[w]}</p>)}
         </div>
       )}
-      <button onClick={save} disabled={!any} style={ctaBtn(any)}>{saved ? "Saved to your journal ✓" : "Save to journal"}</button>
+      <button onClick={save} disabled={!any || !frag} style={ctaBtn(any && !!frag)}>{saved ? "Saved to your journal ✓" : (any && !frag ? "Choose a fragrance to save" : "Save to journal")}</button>
     </div>
   );
 }
@@ -5153,12 +5154,8 @@ function JournalTab({ entries, userStatuses, reactions, fragrances, wears, onOpe
       </div>
 
       {jtab==="write"&&<div>
-        <div style={{background:T.white,border:`1px solid ${T.rule}`,borderRadius:16,padding:"18px 18px 20px",marginBottom:20}}>
-          <p style={{fontFamily:serif,fontSize:22,color:T.black,margin:"0 0 2px"}}>Write an entry</p>
-          <p style={{fontFamily:sans,fontSize:13,color:T.mid,margin:"0 0 14px"}}>Feelings, memories, colours and sounds for a fragrance you have tried.</p>
-          <Lbl>Which fragrance?</Lbl>
-          <FragPicker key="jw" value="" onPick={(t,f)=>setWFrag(f||null)} onSearch={onSearch} placeholder="Search for a fragrance"/>
-          {wFrag && <div style={{marginTop:16}}><JournalComposer key={wFrag.id} frag={wFrag} entries={entries} onAddJournalEntry={onAddJournalEntry}/></div>}
+        <div style={{marginBottom:20}}>
+          <JournalComposer frag={wFrag} entries={entries} onAddJournalEntry={onAddJournalEntry} picker={<><Lbl>Which fragrance is this entry about?</Lbl><FragPicker key="jw" value="" onPick={(t,f)=>setWFrag(f||null)} onSearch={onSearch} placeholder="Search for a fragrance"/></>}/>
         </div>
 
       <div style={{background:T.white,border:`1px solid ${T.rule}`,borderRadius:12,padding:"13px 16px",marginBottom:22}}>
