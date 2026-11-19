@@ -4137,7 +4137,8 @@ function KitsShelf({ onOpenBrand, tinted }) {
         <span style={{ display:"block", fontFamily:serif, fontSize:20, color:T.black, lineHeight:1.2 }}>{String(h.name).replace(/\s*\(now .*\)$/, "")}</span>
         <span style={{ display:"block", fontFamily:sans, fontSize:12, color:T.mid, margin:"4px 0 0" }}>{[h.country, h.brand_origin].filter(Boolean).join(" · ")}{h.n ? (h.country || h.brand_origin ? " · " : "") + h.n + " fragrance" + (h.n === 1 ? "" : "s") : ""}</span>
       </button>
-      <p style={{ fontFamily:sans, fontSize:14, color:T.ink, margin:"12px 0 0", lineHeight:1.4 }}>{h.kit_name || "Discovery set or samples"}{h.kit_price && <span style={{ color:T.teal, fontWeight:600 }}> · {h.kit_price}</span>}</p>
+      <p style={{ fontFamily:sans, fontSize:14, color:T.ink, margin:"12px 0 0", lineHeight:1.4, flex:"1 1 auto" }}>{h.kit_name || "Discovery set or samples"}</p>
+      <p style={{ fontFamily:sans, fontSize:14, color:T.teal, fontWeight:600, margin:"6px 0 0", lineHeight:1.4, minHeight:20 }}>{h.kit_price || ""}</p>
       <KitChips status={mine[h.id] || null} onSet={st => trackKit(h, st)}/>
       <a href={h.url} target="_blank" rel="noopener noreferrer" onClick={() => trackEvent("brand_site_click", { houseSlug:h.slug, source:"kits", detail:"kit" })} style={{ ...ctaBtn(true), marginTop:"auto", display:"inline-flex", alignItems:"center", justifyContent:"center", textDecoration:"none", minHeight:40, fontSize:13, paddingTop:0, paddingBottom:0, marginBlockStart:14 }}>Get it from the brand ↗</a>
     </div>
