@@ -4624,6 +4624,33 @@ function EvFragAdd({ brand, onSearch, onAdd }) {
   );
 }
 
+
+// ─── OWNER outreach (admin only): met in person, contact, tier, questions to ask ───
+const OUTREACH_QUESTIONS = ["Who makes the fragrances, and where?", "Do you sell samples or discovery sets?", "Which fragrance should a newcomer start with?", "Do you ship to the US and EU?", "Can we list your samples on Memoir on Skin?", "Best email for follow-up"];
+function OwnerOutreach({ brand, onPatch }) {
+  const done = brand.questions_done || [];
+  const tiers = ["A", "B", "C"];
+  const inp = { ...FIELD, marginBottom:8 };
+  return (
+    <div style={{ border:`1px solid ${T.line || "#e6dfe0"}`, borderRadius:14, padding:"14px 16px", margin:"0 0 24px" }}>
+      <p style={{ ...FLABEL, margin:"0 0 10px" }}>Owner outreach (only you see this)</p>
+      <div style={{ display:"flex", gap:8, flexWrap:"wrap", marginBottom:12 }}>
+        <button onClick={() => onPatch({ met_in_person: !brand.met_in_person })} aria-pressed={!!brand.met_in_person} style={{ ...ghostBtn, ...(brand.met_in_person ? { background:T.black, color:"#fff" } : {}) }}>{brand.met_in_person ? "Met in person" : "Met in person?"}</button>
+        {tiers.map(t => <button key={t} onClick={() => onPatch({ tier: brand.tier === t ? null : t })} aria-pressed={brand.tier === t} style={{ ...ghostBtn, ...(brand.tier === t ? { background:T.black, color:"#fff" } : {}) }}>Tier {t}</button>)}
+      </div>
+      {[["contact_name","Contact name"],["contact_role","Role"],["contact_email","Email"]].map(([k, ph]) => (
+        <input key={k} defaultValue={brand[k] || ""} placeholder={ph} aria-label={ph} onBlur={e => { const v = e.target.value.trim() || null; if (v !== (brand[k] || null)) onPatch({ [k]: v }); }} style={inp}/>
+      ))}
+      <p style={{ ...FLABEL, margin:"8px 0 6px" }}>Questions to ask</p>
+      {OUTREACH_QUESTIONS.map(q => (
+        <label key={q} style={{ display:"flex", gap:10, alignItems:"center", padding:"6px 0", fontFamily:sans, fontSize:14 }}>
+          <input type="checkbox" checked={done.includes(q)} onChange={() => onPatch({ questions_done: done.includes(q) ? done.filter(x => x !== q) : [...done, q] })}/>
+          <span>{q}</span>
+        </label>
+      ))}
+    </div>
+  );
+}
 function EventsSheet({ uid, onClose, onSearch, onRate, onSmell }) {
   const [events, setEvents] = useState(null);
   const [evId, setEvId] = useState(null);
@@ -4787,6 +4814,8 @@ function EventsSheet({ uid, onClose, onSearch, onRate, onSmell }) {
     if (error) { flag(error); return; }
     setFrags(p => p.filter(f => !ids.includes(f.id))); setPicked([]); setTidy(false);
   }
+  const [isOwner, setIsOwner] = useState(false);
+  useEffect(() => { let on = true; supabase.rpc("is_admin").then(r => { if (on && !r.error && r.data === true) setIsOwner(true); }, () => {}); return () => { on = false; }; }, []);
   async function patchBrand(id, patch) {
     const before = brands.find(b => b.id === id); setBrands(p => p.map(b => b.id === id ? { ...b, ...patch } : b));
     const { error } = await supabase.from("member_event_brands").update(patch).eq("id", id).eq("user_id", uid);
@@ -4944,6 +4973,7 @@ function EventsSheet({ uid, onClose, onSearch, onRate, onSmell }) {
             <button onClick={() => patchBrand(brand.id, { interested:!brand.interested })} aria-pressed={brand.interested} style={toggle(brand.interested)}>{brand.interested ? "Marked to revisit" : "Mark to revisit"}</button>
             <button onClick={() => patchBrand(brand.id, { got_sample:!brand.got_sample })} aria-pressed={brand.got_sample} style={toggle(brand.got_sample)}>{brand.got_sample ? "Got a sample or kit" : "Got a sample or kit?"}</button>
           </div>
+          {isOwner && <OwnerOutreach brand={brand} onPatch={p => patchBrand(brand.id, p)}/>}
           <p style={{ ...FLABEL, margin:"0 0 6px" }}>Your notes on the brand</p>
           <EvNote value={brand.note} onSave={v => patchBrand(brand.id, { note:v || null })} placeholder="Who you spoke to, what they said, how the booth felt…"/>
 
