@@ -5234,7 +5234,7 @@ function JournalTab({ entries, userStatuses, reactions, fragrances, wears, onOpe
       </div>
 
       <div role="tablist" style={{display:"flex",gap:28,borderBottom:`1px solid ${T.rule}`,marginBottom:22,overflowX:"auto"}}>
-        {[["write","Write an entry"],["overview","Your scent overview"]].map(([k,l])=>(
+        {[["write","Write an entry"],["overview","Your taste profile"]].map(([k,l])=>(
           <button key={k} role="tab" aria-selected={jtab===k} onClick={()=>pickTab(k)} style={{padding:"12px 0",whiteSpace:"nowrap",fontFamily:sans,fontSize:"clamp(15px, 1.2vw, 17px)",fontWeight:jtab===k?600:400,color:jtab===k?T.black:T.mid,background:"none",border:"none",borderBottom:jtab===k?`2px solid ${T.black}`:"2px solid transparent",marginBottom:-1,cursor:"pointer"}}>{l}</button>
         ))}
       </div>
