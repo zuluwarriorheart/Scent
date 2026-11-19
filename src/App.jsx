@@ -1685,7 +1685,7 @@ function Mono({ name, year, size=52 }) {
 // ─── HOUSE STRIP — always visible below Occasions ────────────────────────────
 // ─── LIVE CATALOGUE HELPERS ───────────────────────────────────────────────────
 const FRAG_SELECT_DIV = `
-  id, slug, url, gender, year, perfumer, story, barcode, concentration, ownership, brand_origin, price_tier, line, image_url, image_credit,
+  id, slug, display_name, url, gender, year, perfumer, story, barcode, concentration, ownership, brand_origin, price_tier, line, image_url, image_credit,
   house:houses ( name, slug, country, ownership, brand_origin, price_tier, website, diversity ),
   notes ( note_name, position ),
   accords ( accord_name, rank )
@@ -1697,6 +1697,7 @@ const FRAG_SELECT_BASE = FRAG_SELECT_FULL.replace(", ownership, brand_origin, pr
 // Runs a query with the full column list, and again without the newer columns if they are not in the database yet.
 async function fetchFragRows(build) {
   let r = await build(FRAG_SELECT_KIT);
+  if (r.error && /display_name/i.test(r.error.message || "")) { const nd = q => build(q.replace("display_name, ", "")); r = await nd(FRAG_SELECT_KIT); if (r.error && /has_discovery_kit|kit_name|kit_price|kit_url|has_samples|has_travel_size|travel_size_url/i.test(r.error.message || "")) r = await nd(FRAG_SELECT_NEO); if (r.error && /neo_gourmand/i.test(r.error.message || "")) r = await nd(FRAG_SELECT_DIV); return r; }
   if (r.error && /has_discovery_kit|kit_name|kit_price|kit_url|has_samples|has_travel_size|travel_size_url/i.test(r.error.message || "")) r = await build(FRAG_SELECT_NEO);
   if (r.error && /neo_gourmand/i.test(r.error.message || "")) r = await build(FRAG_SELECT_DIV);
   if (r.error && /diversity/i.test(r.error.message || "")) r = await build(FRAG_SELECT_FULL);
@@ -1731,8 +1732,6 @@ function concFromSlug(slug) {
   if (!m) return "";
   return { "eau-de-parfum":"Eau de Parfum", edp:"Eau de Parfum", "eau-de-toilette":"Eau de Toilette", edt:"Eau de Toilette", "eau-de-cologne":"Eau de Cologne", cologne:"Cologne", extrait:"Extrait", parfum:"Parfum" }[m[1]] || "";
 }
-// Display names with accents and apostrophes (slugs cannot hold them).
-const CONDE_NAMES = { "ambre-beige":"Ambre Beige", "bois-d-orange":"Bois d'Orange", "boisee-rouge":"Boisée Rouge", "bouquet-lilas":"Bouquet Lilas", "caipi-d-argent":"Caipi d'Argent", "cappuccino":"Cappuccino", "chypre-clair":"Chypre Clair", "cologne-bleue":"Cologne Bleue", "cuir-vert":"Cuir Vert", "jardin-jaune":"Jardin Jaune", "l-eau-de-fruits":"L'Eau de Fruits", "tabac-d-or":"Tabac d'Or", "vanille-bourbon":"Vanille Bourbon" };
 function mapFrag(f) {
   const own = f.ownership || (f.house && f.house.ownership) || "";
   const notes = f.notes || [];
@@ -1740,7 +1739,7 @@ function mapFrag(f) {
   return {
     id: f.id,
     slug: f.slug,
-    name: (f.house && f.house.slug === "conde-parfum" && CONDE_NAMES[f.slug]) || ((f.house && f.house.slug === "a-n-other" && /^[a-z]{2}-\d{2,4}$/.test(f.slug)) ? f.slug.replace("-", " ").toUpperCase() : f.slug.replace(/-/g, " ").replace(/\b\w/g, c => c.toUpperCase()).replace(/\bEdp\b/g, "EDP").replace(/\bEdt\b/g, "EDT")),
+    name: f.display_name || ((f.house && f.house.slug === "a-n-other" && /^[a-z]{2}-\d{2,4}$/.test(f.slug)) ? f.slug.replace("-", " ").toUpperCase() : f.slug.replace(/-/g, " ").replace(/\b\w/g, c => c.toUpperCase()).replace(/\bEdp\b/g, "EDP").replace(/\bEdt\b/g, "EDT")),
     house: (f.house && f.house.name) || "",
     houseSlug: (f.house && f.house.slug) || "",
     country: (f.house && f.house.country) || "",
