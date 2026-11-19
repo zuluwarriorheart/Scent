@@ -161,8 +161,9 @@ button, a, summary, [role="tab"] { touch-action:manipulation; }
 const THEME_KEY = "mos-theme";
 const THEME_COLORS = { light:"#FAF7F5", dark:"#0F0B14" };
 function readThemePref() {
-  try { const v = window.localStorage.getItem(THEME_KEY); return v === "light" || v === "dark" ? v : "system"; }
-  catch (e) { return "system"; }
+  // RULE: people always land on the dark page. It only turns light when they choose Light (or Auto) themselves.
+  try { const v = window.localStorage.getItem(THEME_KEY); return v === "light" || v === "dark" || v === "system" ? v : "dark"; }
+  catch (e) { return "dark"; }
 }
 function systemTheme() {
   return typeof window !== "undefined" && window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
@@ -174,10 +175,10 @@ function paintTheme(pref) {
   const m = document.querySelector('meta[name="theme-color"]');
   if (m) m.setAttribute("content", THEME_COLORS[r]);
 }
-const themeStore = { pref:"system", subs:new Set() };
+const themeStore = { pref:"dark", subs:new Set() };
 function setThemePref(p) {
   themeStore.pref = p;
-  try { if (p === "system") window.localStorage.removeItem(THEME_KEY); else window.localStorage.setItem(THEME_KEY, p); } catch (e) { /* storage unavailable */ }
+  try { window.localStorage.setItem(THEME_KEY, p); } catch (e) { /* storage unavailable */ }
   paintTheme(p);
   themeStore.subs.forEach(f => f());
 }
@@ -200,7 +201,7 @@ function useTheme() {
   const snap = useSyncExternalStore(
     cb => { themeStore.subs.add(cb); return () => themeStore.subs.delete(cb); },
     () => themeStore.pref + "|" + resolveTheme(themeStore.pref),
-    () => "system|light"
+    () => "dark|dark"
   );
   const [pref, resolved] = snap.split("|");
   return { pref, resolved, setPref: setThemePref };
