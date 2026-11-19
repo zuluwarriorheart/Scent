@@ -3198,7 +3198,7 @@ function StreakCalendar({ entries, yearSel }) {
   const fmt = n => new Date(n * 86400000 + 43200000).toLocaleDateString("en-US", { month:"long", day:"numeric" });
   return (
     <InsightCard label="Best journal streak" headline={String(st.longest)} sub={`${st.longest === 1 ? "day" : "days"} ${yearSel === "all" ? "all time" : "in " + year}${st.current > 0 ? ` · current streak ${st.current}` : ""}`}
-      hint={st.total === 0 ? "Write an entry above or on a fragrance page and your days light up here. Log on consecutive days to build a streak." : null}>
+      hint={st.total === 0 ? "Write an entry on the first tab or on a fragrance page and your days light up here. Log on consecutive days to build a streak." : null}>
       <div style={{ display:"flex", gap:8, overflowX:"auto", paddingBottom:6, marginBottom:10 }}>
         {MN.map((m, i) => <button key={m} onClick={() => setMonth(i)} style={{ fontFamily:sans, fontSize:13, fontWeight:month === i ? 600 : 500, padding:"8px 16px", borderRadius:20, border:"none", background:month === i ? "var(--accent)" : T.lift, color:month === i ? "#fff" : T.mid, cursor:"pointer", flexShrink:0 }}>{m}</button>)}
       </div>
@@ -5117,7 +5117,8 @@ function CollectionTab({ onEvents, onImport, onOpenFrag, statuses:userStatuses, 
 
 // ─── JOURNAL ──────────────────────────────────────────────────────────────────
 function JournalTab({ entries, userStatuses, reactions, fragrances, wears, onOpenFrag, onSearch, onAddJournalEntry }) {
-  const [writing, setWriting] = useState(false);
+  const [jtab, setJtab] = useState(() => { try { return sessionStorage.getItem("mos-journal-tab") === "overview" ? "overview" : "write"; } catch (e) { return "write"; } });
+  const pickTab = t => { setJtab(t); try { sessionStorage.setItem("mos-journal-tab", t); } catch (e) {} };
   const [wFrag, setWFrag] = useState(null);
   const FR = (fragrances && fragrances.length) ? fragrances : FRAGRANCES;
   const all = [...(entries||[])];
@@ -5139,40 +5140,20 @@ function JournalTab({ entries, userStatuses, reactions, fragrances, wears, onOpe
         <p style={{fontFamily:sans,fontSize:"clamp(13px, 1.1vw, 17px)",color:T.mid,margin:"6px 0 0"}}>What you reach for, and why. A record that becomes a mirror.</p>
       </div>
 
-      <div style={{background:T.white,border:`1px solid ${T.rule}`,borderRadius:16,padding:"16px 18px",marginBottom:20}}>
-        {!writing ? (
-          <div style={{display:"flex",alignItems:"center",gap:12,flexWrap:"wrap"}}>
-            <div style={{flex:"1 1 200px"}}>
-              <p style={{fontFamily:serif,fontSize:20,color:T.black,margin:"0 0 2px"}}>Write an entry</p>
-              <p style={{fontFamily:sans,fontSize:13,color:T.mid,margin:0}}>Feelings, memories, colours and sounds for a fragrance you have tried.</p>
-            </div>
-            <button onClick={()=>setWriting(true)} style={{...ctaBtn(true),width:"auto",flex:"0 0 auto",whiteSpace:"nowrap",padding:"0 20px"}}>Start</button>
-          </div>
-        ) : (
-          <div>
-            <div style={{display:"flex",alignItems:"center",marginBottom:10}}>
-              <p style={{fontFamily:serif,fontSize:20,color:T.black,margin:0,flex:1}}>Write an entry</p>
-              <button onClick={()=>{setWriting(false);setWFrag(null);}} style={{...ghostBtn,minHeight:36,padding:"0 14px",fontSize:13}}>Close</button>
-            </div>
-            <Lbl>Which fragrance?</Lbl>
-            <FragPicker key="jw" value="" onPick={(t,f)=>setWFrag(f||null)} onSearch={onSearch} placeholder="Search for a fragrance"/>
-            {wFrag && <div style={{marginTop:16}}><JournalComposer key={wFrag.id} frag={wFrag} entries={entries} onAddJournalEntry={onAddJournalEntry}/></div>}
-          </div>
-        )}
+      <div role="tablist" style={{display:"flex",gap:28,borderBottom:`1px solid ${T.rule}`,marginBottom:22,overflowX:"auto"}}>
+        {[["write","Write an entry"],["overview","Your scent overview"]].map(([k,l])=>(
+          <button key={k} role="tab" aria-selected={jtab===k} onClick={()=>pickTab(k)} style={{padding:"12px 0",whiteSpace:"nowrap",fontFamily:sans,fontSize:"clamp(15px, 1.2vw, 17px)",fontWeight:jtab===k?600:400,color:jtab===k?T.black:T.mid,background:"none",border:"none",borderBottom:jtab===k?`2px solid ${T.black}`:"2px solid transparent",marginBottom:-1,cursor:"pointer"}}>{l}</button>
+        ))}
       </div>
 
-      <JournalInsights entries={all} userStatuses={userStatuses||{}} reactions={reactions||{}} fragrances={FR} wears={wears} onOpenFrag={onOpenFrag}/>
-      <CollectionMap items={FR.filter(f=>(userStatuses||{})[f.id])} onOpenFrag={onOpenFrag}/>
-
-      {dominant && previous && <div style={{background:T.lift,border:`1px solid ${T.rule}`,borderRadius:16,padding:18,marginBottom:16}}>
-        <Lbl>Taste this year</Lbl>
-        <p style={{fontFamily:sans,fontSize:13,color:T.mid,lineHeight:1.7,margin:"0 0 14px"}}>Your sampling is moving from <span style={{color:T.black,fontWeight:500}}>{previous}</span> toward <span style={{color:T.black,fontWeight:500}}>{dominant}</span>.</p>
-        <div style={{display:"flex",alignItems:"center",gap:8}}>
-          <div style={{flex:1,textAlign:"center",padding:"8px 0",borderRadius:8,background:T.white,border:`1px solid ${T.rule}`}}><p style={{fontFamily:sans,fontSize:11,color:T.mid,margin:0}}>{previous}</p></div>
-          <span style={{color:T.faint,fontSize:12}}>→</span>
-          <div style={{flex:1,textAlign:"center",padding:"8px 0",borderRadius:8,background:T.black}}><p style={{fontFamily:sans,fontSize:11,color:T.white,margin:0}}>{dominant}</p></div>
+      {jtab==="write"&&<div>
+        <div style={{background:T.white,border:`1px solid ${T.rule}`,borderRadius:16,padding:"18px 18px 20px",marginBottom:20}}>
+          <p style={{fontFamily:serif,fontSize:22,color:T.black,margin:"0 0 2px"}}>Write an entry</p>
+          <p style={{fontFamily:sans,fontSize:13,color:T.mid,margin:"0 0 14px"}}>Feelings, memories, colours and sounds for a fragrance you have tried.</p>
+          <Lbl>Which fragrance?</Lbl>
+          <FragPicker key="jw" value="" onPick={(t,f)=>setWFrag(f||null)} onSearch={onSearch} placeholder="Search for a fragrance"/>
+          {wFrag && <div style={{marginTop:16}}><JournalComposer key={wFrag.id} frag={wFrag} entries={entries} onAddJournalEntry={onAddJournalEntry}/></div>}
         </div>
-      </div>}
 
       <div style={{background:T.white,border:`1px solid ${T.rule}`,borderRadius:12,padding:"13px 16px",marginBottom:22}}>
         <p style={{fontFamily:sans,fontSize:9,textTransform:"uppercase",letterSpacing:"0.1em",color:T.faint,margin:"0 0 4px"}}>This month</p>
@@ -5208,6 +5189,22 @@ function JournalTab({ entries, userStatuses, reactions, fragrances, wears, onOpe
       {all.length===0&&(
         <p style={{fontFamily:sans,fontSize:11,color:T.faint,textAlign:"center",marginTop:4,lineHeight:1.6}}>Nothing here yet. Wear something today and write down how it feels. Open any fragrance, choose its Journal tab and answer one prompt.</p>
       )}
+      </div>}
+
+      {jtab==="overview"&&<div>
+      <JournalInsights entries={all} userStatuses={userStatuses||{}} reactions={reactions||{}} fragrances={FR} wears={wears} onOpenFrag={onOpenFrag}/>
+      <CollectionMap items={FR.filter(f=>(userStatuses||{})[f.id])} onOpenFrag={onOpenFrag}/>
+
+      {dominant && previous && <div style={{background:T.lift,border:`1px solid ${T.rule}`,borderRadius:16,padding:18,marginBottom:16}}>
+        <Lbl>Taste this year</Lbl>
+        <p style={{fontFamily:sans,fontSize:13,color:T.mid,lineHeight:1.7,margin:"0 0 14px"}}>Your sampling is moving from <span style={{color:T.black,fontWeight:500}}>{previous}</span> toward <span style={{color:T.black,fontWeight:500}}>{dominant}</span>.</p>
+        <div style={{display:"flex",alignItems:"center",gap:8}}>
+          <div style={{flex:1,textAlign:"center",padding:"8px 0",borderRadius:8,background:T.white,border:`1px solid ${T.rule}`}}><p style={{fontFamily:sans,fontSize:11,color:T.mid,margin:0}}>{previous}</p></div>
+          <span style={{color:T.faint,fontSize:12}}>→</span>
+          <div style={{flex:1,textAlign:"center",padding:"8px 0",borderRadius:8,background:T.black}}><p style={{fontFamily:sans,fontSize:11,color:T.white,margin:0}}>{dominant}</p></div>
+        </div>
+      </div>}
+      </div>}
     </div>
   );
 }
