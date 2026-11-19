@@ -581,6 +581,15 @@ function noteFallback(name) {
   let h = 0; for (const ch of String(name).toLowerCase()) h = (h * 31 + ch.charCodeAt(0)) >>> 0;
   return NOTE_FALLBACK_PAL[h % NOTE_FALLBACK_PAL.length];
 }
+// Events notebook: preview only. ?events=1 switches it on for this device, ?events=0 switches it off. Members without the flag never see it.
+const EVENTS_PREVIEW = (() => {
+  try {
+    const q = new URLSearchParams(window.location.search).get("events");
+    if (q === "1") localStorage.setItem("mos-events", "1");
+    if (q === "0") localStorage.removeItem("mos-events");
+    return localStorage.getItem("mos-events") === "1";
+  } catch { return false; }
+})();
 // Note photos (Midjourney, white background). Live for everyone.
 const NOTE_PHOTO_PREVIEW = (() => {
   // Note photos are live for everyone. ?noteimages=0 switches them off on this device (for checking the drawn fallbacks); ?noteimages=1 switches them back on.
@@ -4510,7 +4519,342 @@ function ImportSheet({ fragrances, existing, onApply, onClose }) {
     </div>, document.body);
 }
 
-function CollectionTab({ onImport, onOpenFrag, statuses:userStatuses, statusSets:sets, reactions, onReaction, onSuggest, fragrances, wears, onOpenJournal }) {
+// ─── EVENTS: a private notebook for fairs, expos and launch parties ───────────────
+// Each member keeps their own events, the brands they visited and the fragrances they tried there.
+// Nothing is shared and nothing goes to houses. Rating a library fragrance here also adds it to the
+// member's collection as Smelled and sets their reaction (love / like / dislike).
+const EVENT_RATINGS = [["love", "Love"], ["like", "Like"], ["dislike", "No"]];
+const evClean = s => String(s == null ? "" : s).replace(/[%_,()\\]/g, " ").replace(/\s+/g, " ").trim();
+const evSlug = s => evClean(s).toLowerCase().replace(/[^a-z0-9\s-]/g, "").replace(/\s+/g, "-");
+const evFragName = slug => String(slug || "").replace(/-/g, " ").replace(/\b\w/g, c => c.toUpperCase());
+async function evAll(build) {
+  let out = [];
+  for (let from = 0; ; from += 100) {
+    const { data, error } = await build().range(from, from + 99);
+    if (error) throw error;
+    out = out.concat(data || []);
+    if ((data || []).length < 100) break;
+  }
+  return out;
+}
+const EV_SMALL = { fontFamily:sans, fontSize:12, color:T.mid };
+const EV_LINK = { background:"none", border:"none", padding:0, fontFamily:sans, fontSize:12, color:T.mid, cursor:"pointer", textDecoration:"underline", textDecorationColor:T.rule, textUnderlineOffset:3, minHeight:32 };
+
+// A note that saves when you tap away from it.
+function EvNote({ value, onSave, placeholder, rows = 4 }) {
+  const [v, setV] = useState(value || "");
+  useEffect(() => { setV(value || ""); }, [value]);
+  return <textarea value={v} rows={rows} onChange={e => setV(e.target.value)} onBlur={() => { if ((v || "") !== (value || "")) onSave(v); }} placeholder={placeholder} maxLength={2000}
+    style={{ ...FIELD, padding:"12px 14px", resize:"vertical", lineHeight:1.5, fontSize:16 }}/>;
+}
+
+// Type to find a brand in the library, or add the name as you typed it.
+function EvBrandAdd({ onAdd }) {
+  const [q, setQ] = useState("");
+  const [res, setRes] = useState([]);
+  const [busy, setBusy] = useState(false);
+  useEffect(() => {
+    const t = evClean(q);
+    if (t.length < 2) { setRes([]); return; }
+    let off = false; setBusy(true);
+    const h = setTimeout(async () => {
+      const { data } = await supabase.from("houses").select("id, name").ilike("name", "%" + t + "%").order("name").limit(8);
+      if (!off) { setRes(data || []); setBusy(false); }
+    }, 250);
+    return () => { off = true; clearTimeout(h); };
+  }, [q]);
+  const t = q.trim();
+  const exact = res.some(r => r.name.toLowerCase() === t.toLowerCase());
+  async function pick(row) { setQ(""); setRes([]); await onAdd(row); }
+  return (
+    <div style={{ position:"relative" }}>
+      <input value={q} onChange={e => setQ(e.target.value)} placeholder="Add a brand from this event" autoComplete="off" aria-label="Add a brand" maxLength={120} style={FIELD}/>
+      {t.length >= 2 && (
+        <div style={{ marginTop:6, background:T.white, border:`1px solid ${T.rule}`, borderRadius:14, overflow:"hidden" }}>
+          {res.map(r => <button key={r.id} onClick={() => pick({ house_id:r.id, brand_name:r.name })} style={{ display:"block", width:"100%", textAlign:"left", background:"none", border:"none", borderBottom:`1px solid ${T.lift}`, padding:"12px 14px", minHeight:48, fontFamily:serif, fontSize:17, color:T.black, cursor:"pointer" }}>{r.name}</button>)}
+          {busy && !res.length && <p style={{ ...EV_SMALL, margin:0, padding:"12px 14px" }}>Searching…</p>}
+          {!exact && <button onClick={() => pick({ house_id:null, brand_name:t })} style={{ display:"block", width:"100%", textAlign:"left", background:T.lift, border:"none", padding:"12px 14px", minHeight:48, fontFamily:sans, fontSize:14, color:T.ink, cursor:"pointer" }}>Add “{t}” as typed{!busy && !res.length ? " (not in the library yet)" : ""}</button>}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// Find a fragrance to rate: this brand's own fragrances when it is in the library, otherwise a search of everything.
+function EvFragAdd({ brand, onSearch, onAdd }) {
+  const [q, setQ] = useState("");
+  const [res, setRes] = useState([]);
+  const [busy, setBusy] = useState(false);
+  useEffect(() => {
+    const t = evClean(q);
+    if (t.length < 2) { setRes([]); return; }
+    let off = false; setBusy(true);
+    const h = setTimeout(async () => {
+      try {
+        let items = [];
+        if (brand.house_id) {
+          const { data } = await supabase.from("fragrances").select("id, slug").eq("house_id", brand.house_id).ilike("slug", "%" + evSlug(t) + "%").or("hidden.is.null,hidden.eq.false").order("slug").limit(8);
+          items = (data || []).map(r => ({ id:r.id, name:evFragName(r.slug), house:brand.brand_name }));
+        } else if (onSearch) {
+          const r = await onSearch(t, "all", 0);
+          items = (r.items || []).slice(0, 8).map(f => ({ id:f.id, name:f.name, house:f.house }));
+        }
+        if (!off) setRes(items);
+      } catch (e) { if (!off) setRes([]); }
+      if (!off) setBusy(false);
+    }, 250);
+    return () => { off = true; clearTimeout(h); };
+  }, [q, brand.house_id]);
+  const t = q.trim();
+  async function pick(row) { setQ(""); setRes([]); await onAdd(row); }
+  return (
+    <div>
+      <input value={q} onChange={e => setQ(e.target.value)} placeholder={brand.house_id ? "Find a fragrance by " + brand.brand_name : "Find a fragrance you smelled"} autoComplete="off" aria-label="Add a fragrance" maxLength={160} style={FIELD}/>
+      {t.length >= 2 && (
+        <div style={{ marginTop:6, background:T.white, border:`1px solid ${T.rule}`, borderRadius:14, overflow:"hidden" }}>
+          {res.map(r => <button key={r.id} onClick={() => pick({ fragrance_id:r.id, frag_name:r.name })} style={{ display:"block", width:"100%", textAlign:"left", background:"none", border:"none", borderBottom:`1px solid ${T.lift}`, padding:"10px 14px", minHeight:48, cursor:"pointer" }}>
+            <span style={{ display:"block", fontFamily:serif, fontSize:17, color:T.black }}>{r.name}</span>
+            <span style={{ display:"block", fontFamily:sans, fontSize:12, color:T.mid }}>{r.house}</span>
+          </button>)}
+          {busy && !res.length && <p style={{ ...EV_SMALL, margin:0, padding:"12px 14px" }}>Searching…</p>}
+          <button onClick={() => pick({ fragrance_id:null, frag_name:t })} style={{ display:"block", width:"100%", textAlign:"left", background:T.lift, border:"none", padding:"12px 14px", minHeight:48, fontFamily:sans, fontSize:14, color:T.ink, cursor:"pointer" }}>Add “{t}” as typed{!busy && !res.length ? " (not in the library yet)" : ""}</button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function EventsSheet({ uid, onClose, onSearch, onRate }) {
+  const [events, setEvents] = useState(null);
+  const [evId, setEvId] = useState(null);
+  const [brands, setBrands] = useState([]);
+  const [frags, setFrags] = useState([]);
+  const [loadingEv, setLoadingEv] = useState(false);
+  const [brandId, setBrandId] = useState(null);
+  const [creating, setCreating] = useState(false);
+  const [form, setForm] = useState({ name:"", date:"", city:"" });
+  const [err, setErr] = useState("");
+  const [confirmDel, setConfirmDel] = useState("");
+  const errTimer = useRef(null);
+  const flag = (e) => { console.error("Events:", e); setErr("That didn't go through. Try again in a moment."); clearTimeout(errTimer.current); errTimer.current = setTimeout(() => setErr(""), 6000); };
+
+  useEffect(() => {
+    let off = false;
+    (async () => {
+      try {
+        const rows = await evAll(() => supabase.from("member_events").select("*").eq("user_id", uid).order("created_at", { ascending:false }).order("id"));
+        if (off) return; setEvents(rows); if (rows.length) setEvId(rows[0].id); else setCreating(true);
+      } catch (e) { if (!off) { setEvents([]); flag(e); } }
+    })();
+    return () => { off = true; };
+  }, [uid]);
+
+  useEffect(() => {
+    if (!evId) { setBrands([]); setFrags([]); return; }
+    let off = false; setLoadingEv(true); setBrandId(null);
+    (async () => {
+      try {
+        const [b, f] = await Promise.all([
+          evAll(() => supabase.from("member_event_brands").select("*").eq("event_id", evId).order("created_at").order("id")),
+          evAll(() => supabase.from("member_event_frags").select("*").eq("event_id", evId).order("created_at").order("id")),
+        ]);
+        if (!off) { setBrands(b); setFrags(f); }
+      } catch (e) { if (!off) flag(e); }
+      if (!off) setLoadingEv(false);
+    })();
+    return () => { off = true; };
+  }, [evId]);
+
+  const ev = (events || []).find(e => e.id === evId) || null;
+  const brand = brands.find(b => b.id === brandId) || null;
+
+  async function createEvent() {
+    const name = form.name.trim(); if (!name) return;
+    const { data, error } = await supabase.from("member_events").insert({ user_id:uid, name, event_date:form.date || null, city:form.city.trim() || null }).select("*").single();
+    if (error) { flag(error); return; }
+    setEvents(p => [data, ...(p || [])]); setEvId(data.id); setCreating(false); setForm({ name:"", date:"", city:"" });
+  }
+  async function deleteEvent(id) {
+    const { error } = await supabase.from("member_events").delete().eq("id", id).eq("user_id", uid);
+    if (error) { flag(error); return; }
+    const rest = (events || []).filter(e => e.id !== id); setEvents(rest); setConfirmDel("");
+    if (evId === id) { setEvId(rest[0] ? rest[0].id : null); if (!rest.length) setCreating(true); }
+  }
+  async function addBrand(row) {
+    const existing = row.house_id ? brands.find(b => b.house_id === row.house_id) : brands.find(b => !b.house_id && b.brand_name.toLowerCase() === row.brand_name.toLowerCase());
+    if (existing) { setBrandId(existing.id); return; }
+    const { data, error } = await supabase.from("member_event_brands").insert({ user_id:uid, event_id:evId, house_id:row.house_id, brand_name:row.brand_name }).select("*").single();
+    if (error) { flag(error); return; }
+    setBrands(p => [...p, data]); setBrandId(data.id);
+  }
+  async function patchBrand(id, patch) {
+    const before = brands.find(b => b.id === id); setBrands(p => p.map(b => b.id === id ? { ...b, ...patch } : b));
+    const { error } = await supabase.from("member_event_brands").update(patch).eq("id", id).eq("user_id", uid);
+    if (error) { setBrands(p => p.map(b => b.id === id ? before : b)); flag(error); }
+  }
+  async function deleteBrand(id) {
+    const { error } = await supabase.from("member_event_brands").delete().eq("id", id).eq("user_id", uid);
+    if (error) { flag(error); return; }
+    setBrands(p => p.filter(b => b.id !== id)); setFrags(p => p.filter(f => f.brand_id !== id)); setBrandId(null); setConfirmDel("");
+  }
+  async function addFrag(b, row) {
+    const existing = row.fragrance_id ? frags.find(f => f.brand_id === b.id && f.fragrance_id === row.fragrance_id) : frags.find(f => f.brand_id === b.id && !f.fragrance_id && f.frag_name.toLowerCase() === row.frag_name.toLowerCase());
+    if (existing) return;
+    const { data, error } = await supabase.from("member_event_frags").insert({ user_id:uid, event_id:evId, brand_id:b.id, fragrance_id:row.fragrance_id, frag_name:row.frag_name }).select("*").single();
+    if (error) { flag(error); return; }
+    setFrags(p => [...p, data]);
+  }
+  async function patchFrag(id, patch) {
+    const before = frags.find(f => f.id === id); setFrags(p => p.map(f => f.id === id ? { ...f, ...patch } : f));
+    const { error } = await supabase.from("member_event_frags").update(patch).eq("id", id).eq("user_id", uid);
+    if (error) { setFrags(p => p.map(f => f.id === id ? before : f)); flag(error); return false; }
+    return true;
+  }
+  async function rate(f, value) {
+    const next = f.rating === value ? null : value;
+    const ok = await patchFrag(f.id, { rating:next });
+    if (ok && f.fragrance_id && onRate) onRate(f.fragrance_id, next);
+  }
+  async function deleteFrag(id) {
+    const { error } = await supabase.from("member_event_frags").delete().eq("id", id).eq("user_id", uid);
+    if (error) { flag(error); return; }
+    setFrags(p => p.filter(f => f.id !== id));
+  }
+
+  const brandFrags = b => frags.filter(f => f.brand_id === b.id);
+  const toBuy = frags.filter(f => f.to_buy);
+  const ratedCount = frags.filter(f => f.rating).length;
+  const lovedCount = frags.filter(f => f.rating === "love").length;
+  const sortedBrands = [...brands].sort((a, b) => (b.interested ? 1 : 0) - (a.interested ? 1 : 0));
+  const when = e => [e.event_date ? new Date(e.event_date + "T12:00:00").toLocaleDateString("en-US", { month:"short", day:"numeric", year:"numeric" }) : "", e.city || ""].filter(Boolean).join(" · ");
+  const chip = on => ({ flexShrink:0, fontFamily:sans, fontSize:13, padding:"0 14px", minHeight:40, borderRadius:20, whiteSpace:"nowrap", border:`1px solid ${on ? T.black : T.rule}`, background:on ? T.black : T.white, color:on ? T.white : T.mid, cursor:"pointer" });
+  const toggle = on => ({ fontFamily:sans, fontSize:13, fontWeight:500, minHeight:44, padding:"0 14px", borderRadius:12, border:`1px solid ${on ? "var(--accent)" : T.rule}`, background:on ? "var(--accent)" : T.white, color:on ? "#fff" : T.mid, cursor:"pointer" });
+
+  return createPortal(
+    <div role="dialog" aria-modal="true" aria-label="Events" style={{ position:"fixed", inset:0, zIndex:3000, background:T.white, overflowY:"auto", WebkitOverflowScrolling:"touch" }}>
+      <div style={{ maxWidth:640, margin:"0 auto", padding:"18px 18px 60px", boxSizing:"border-box" }}>
+        {!brand && <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:4 }}>
+          <h2 style={{ fontFamily:serif, fontSize:"clamp(28px, 4vw, 38px)", fontWeight:400, color:T.black, margin:0, letterSpacing:-0.6 }}>Events</h2>
+          <button onClick={onClose} aria-label="Close" style={{ background:"none", border:"none", fontSize:22, color:T.mid, cursor:"pointer", minWidth:44, minHeight:44 }}>✕</button>
+        </div>}
+        {!brand && <p style={{ fontFamily:sans, fontSize:14, color:T.mid, lineHeight:1.6, margin:"0 0 16px" }}>A notebook for fairs, expos and launch parties. Note the brands you visit, rate what you smell, and it lands in your collection. Only you can see it.</p>}
+        {err && <p role="status" style={{ fontFamily:sans, fontSize:13, color:T.bad, margin:"0 0 12px" }}>{err}</p>}
+
+        {events === null && <p style={EV_SMALL}>Loading…</p>}
+
+        {events !== null && !brand && <>
+          <div style={{ display:"flex", gap:6, overflowX:"auto", paddingBottom:4, marginBottom:14 }}>
+            {events.map(e => <button key={e.id} onClick={() => { setEvId(e.id); setCreating(false); setConfirmDel(""); }} style={chip(evId === e.id && !creating)}>{e.name}</button>)}
+            <button onClick={() => setCreating(true)} style={chip(creating)}>+ New event</button>
+          </div>
+
+          {creating && <div style={{ background:T.lift, border:`1px solid ${T.rule}`, borderRadius:14, padding:16, marginBottom:18 }}>
+            <p style={{ fontFamily:serif, fontSize:20, color:T.black, margin:"0 0 10px" }}>Start an event</p>
+            <input value={form.name} onChange={e => setForm({ ...form, name:e.target.value })} placeholder="Event name, e.g. Esxence 2027" maxLength={120} aria-label="Event name" style={{ ...FIELD, marginBottom:8 }}/>
+            <div style={{ display:"flex", gap:8, marginBottom:12 }}>
+              <input type="date" value={form.date} onChange={e => setForm({ ...form, date:e.target.value })} aria-label="Date" style={{ ...FIELD, flex:1 }}/>
+              <input value={form.city} onChange={e => setForm({ ...form, city:e.target.value })} placeholder="City" maxLength={80} aria-label="City" style={{ ...FIELD, flex:1 }}/>
+            </div>
+            <div style={{ display:"flex", gap:8 }}>
+              {events.length > 0 && <button onClick={() => setCreating(false)} style={{ ...ghostBtn, flex:1 }}>Cancel</button>}
+              <button onClick={createEvent} disabled={!form.name.trim()} style={{ ...communityCta(!!form.name.trim()), flex:2 }}>Create event</button>
+            </div>
+          </div>}
+
+          {ev && !creating && <>
+            <p style={{ fontFamily:sans, fontSize:13, color:T.mid, margin:"0 0 14px" }}>{when(ev) ? when(ev) + " · " : ""}{brands.length} brand{brands.length === 1 ? "" : "s"} · {ratedCount} rated · {lovedCount} loved</p>
+            <EvBrandAdd onAdd={addBrand}/>
+            {loadingEv && <p style={{ ...EV_SMALL, margin:"14px 0" }}>Loading…</p>}
+            {!loadingEv && !brands.length && <p style={{ fontFamily:sans, fontSize:14, color:T.faint, textAlign:"center", margin:"28px 0" }}>No brands yet. Search for the first one you visit.</p>}
+            <div style={{ marginTop:8 }}>
+              {sortedBrands.map(b => {
+                const bf = brandFrags(b), r = bf.filter(f => f.rating).length, l = bf.filter(f => f.rating === "love").length;
+                return (
+                  <div key={b.id} style={{ display:"flex", alignItems:"stretch", borderBottom:`1px solid ${T.rule}` }}>
+                    <button onClick={() => setBrandId(b.id)} style={{ flex:1, minWidth:0, textAlign:"left", background:"none", border:"none", padding:"12px 0", minHeight:60, cursor:"pointer" }}>
+                      <span style={{ display:"block", fontFamily:serif, fontSize:19, color:T.black, overflowWrap:"anywhere" }}>{b.brand_name}</span>
+                      <span style={{ display:"block", fontFamily:sans, fontSize:12, color:T.mid, marginTop:2 }}>{bf.length ? r + " rated" + (l ? " · " + l + " loved" : "") : "Nothing noted yet"}{b.got_sample ? " · sample or kit" : ""}{!b.house_id ? " · not in the library" : ""}</span>
+                    </button>
+                    <button onClick={() => patchBrand(b.id, { interested:!b.interested })} aria-pressed={b.interested} aria-label={b.interested ? "Remove from the ones to revisit" : "Mark to revisit"} style={{ background:"none", border:"none", minWidth:48, cursor:"pointer", display:"grid", placeItems:"center" }}>
+                      <Icon name="wishstar" size={22} color={b.interested ? "var(--accent)" : T.faint}/>
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+
+            {toBuy.length > 0 && <div style={{ marginTop:26 }}>
+              <p style={{ ...FLABEL, margin:"0 0 6px" }}>To buy</p>
+              {toBuy.map(f => { const b = brands.find(x => x.id === f.brand_id); return (
+                <div key={f.id} style={{ display:"flex", justifyContent:"space-between", gap:10, borderBottom:`1px solid ${T.rule}`, padding:"10px 0", fontFamily:sans, fontSize:15, color:T.ink }}>
+                  <span style={{ minWidth:0, overflowWrap:"anywhere" }}>{f.frag_name}{b ? <span style={{ color:T.mid }}> · {b.brand_name}</span> : null}</span>
+                  {f.price && <span style={{ color:T.mid, flexShrink:0 }}>{f.price}</span>}
+                </div>); })}
+            </div>}
+
+            <div style={{ marginTop:30 }}>
+              {confirmDel === ev.id
+                ? <div style={{ display:"flex", gap:8 }}><button onClick={() => setConfirmDel("")} style={{ ...ghostBtn, flex:1 }}>Keep it</button><button onClick={() => deleteEvent(ev.id)} style={{ ...ghostBtn, flex:1, color:T.bad, borderColor:T.bad }}>Delete event and its notes</button></div>
+                : <button onClick={() => setConfirmDel(ev.id)} style={EV_LINK}>Delete this event</button>}
+              <p style={{ fontFamily:sans, fontSize:12, color:T.faint, lineHeight:1.6, margin:"10px 0 0" }}>Deleting an event removes its notes here. Fragrances already added to your collection stay.</p>
+            </div>
+          </>}
+        </>}
+
+        {brand && <>
+          <BackBtn onBack={() => { setBrandId(null); setConfirmDel(""); }} label={ev ? ev.name : "Back"}/>
+          <h2 style={{ fontFamily:serif, fontSize:"clamp(28px, 4vw, 36px)", fontWeight:400, color:T.black, margin:"0 0 4px", letterSpacing:-0.6, overflowWrap:"anywhere" }}>{brand.brand_name}</h2>
+          {!brand.house_id && <p style={{ ...EV_SMALL, margin:"0 0 6px" }}>Not in the library yet. You can still keep notes, and suggest it from Collection.</p>}
+          <div style={{ display:"flex", gap:8, flexWrap:"wrap", margin:"14px 0 20px" }}>
+            <button onClick={() => patchBrand(brand.id, { interested:!brand.interested })} aria-pressed={brand.interested} style={toggle(brand.interested)}>{brand.interested ? "Marked to revisit" : "Mark to revisit"}</button>
+            <button onClick={() => patchBrand(brand.id, { got_sample:!brand.got_sample })} aria-pressed={brand.got_sample} style={toggle(brand.got_sample)}>{brand.got_sample ? "Got a sample or kit" : "Got a sample or kit?"}</button>
+          </div>
+          <p style={{ ...FLABEL, margin:"0 0 6px" }}>Your notes on the brand</p>
+          <EvNote value={brand.note} onSave={v => patchBrand(brand.id, { note:v || null })} placeholder="Who you spoke to, what they said, how the booth felt…"/>
+
+          <p style={{ ...FLABEL, margin:"26px 0 6px" }}>What you smelled</p>
+          <EvFragAdd brand={brand} onSearch={onSearch} onAdd={row => addFrag(brand, row)}/>
+          <div style={{ marginTop:8 }}>
+            {brandFrags(brand).map(f => <EvFragRow key={f.id} f={f} onRate={v => rate(f, v)} onPatch={p => patchFrag(f.id, p)} onDelete={() => deleteFrag(f.id)}/>)}
+            {!brandFrags(brand).length && <p style={{ fontFamily:sans, fontSize:14, color:T.faint, margin:"14px 0 0" }}>Add the fragrances you try, then tap Love, Like or No.</p>}
+          </div>
+          {brandFrags(brand).some(f => f.fragrance_id) && <p style={{ fontFamily:sans, fontSize:12, color:T.faint, lineHeight:1.6, margin:"12px 0 0" }}>Rated fragrances from the library are added to your collection as Smelled.</p>}
+
+          <div style={{ marginTop:30 }}>
+            {confirmDel === brand.id
+              ? <div style={{ display:"flex", gap:8 }}><button onClick={() => setConfirmDel("")} style={{ ...ghostBtn, flex:1 }}>Keep it</button><button onClick={() => deleteBrand(brand.id)} style={{ ...ghostBtn, flex:1, color:T.bad, borderColor:T.bad }}>Remove brand and its notes</button></div>
+              : <button onClick={() => setConfirmDel(brand.id)} style={EV_LINK}>Remove this brand from the event</button>}
+          </div>
+        </>}
+      </div>
+    </div>, document.body);
+}
+
+function EvFragRow({ f, onRate, onPatch, onDelete }) {
+  const [open, setOpen] = useState(false);
+  const [confirm, setConfirm] = useState(false);
+  return (
+    <div style={{ borderBottom:`1px solid ${T.rule}`, padding:"10px 0" }}>
+      <div style={{ display:"flex", alignItems:"center", gap:8, flexWrap:"wrap" }}>
+        <span style={{ flex:"1 1 150px", minWidth:0, fontFamily:serif, fontSize:18, color:T.black, overflowWrap:"anywhere" }}>{f.frag_name}</span>
+        <div style={{ display:"flex", gap:6 }}>
+          {EVENT_RATINGS.map(([k, label]) => { const on = f.rating === k; return (
+            <button key={k} onClick={() => onRate(k)} aria-pressed={on} style={{ minWidth:52, minHeight:44, borderRadius:12, fontFamily:sans, fontSize:14, fontWeight:500, cursor:"pointer", border:`1px solid ${on ? REACTION_FILL[k] : T.rule}`, background:on ? REACTION_FILL[k] : T.white, color:on ? ON_ACCENT : T.mid }}>{label}</button>); })}
+        </div>
+      </div>
+      <div style={{ display:"flex", gap:14, alignItems:"center", marginTop:4, flexWrap:"wrap" }}>
+        <button onClick={() => setOpen(o => !o)} style={EV_LINK}>{f.note ? "Note ●" : "Add a note"}</button>
+        <button onClick={() => onPatch({ to_buy:!f.to_buy })} aria-pressed={f.to_buy} style={{ ...EV_LINK, color:f.to_buy ? "var(--accent)" : T.mid, fontWeight:f.to_buy ? 600 : 400 }}>{f.to_buy ? "On my buy list" : "Add to buy list"}</button>
+        {f.to_buy && <input defaultValue={f.price || ""} onBlur={e => { const v = e.target.value.trim(); if (v !== (f.price || "")) onPatch({ price:v || null }); }} placeholder="Price" maxLength={40} aria-label="Price" style={{ ...FIELD, width:100, minHeight:36, fontSize:14, padding:"0 10px" }}/>}
+        <span style={{ flex:1 }}/>
+        {confirm ? <span style={{ display:"flex", gap:12 }}><button onClick={onDelete} style={{ ...EV_LINK, color:T.bad }}>Remove</button><button onClick={() => setConfirm(false)} style={EV_LINK}>Keep</button></span> : <button onClick={() => setConfirm(true)} style={EV_LINK}>Remove</button>}
+      </div>
+      {open && <div style={{ marginTop:8 }}><EvNote value={f.note} rows={3} onSave={v => onPatch({ note:v || null })} placeholder="What it reminded you of, how it wore on skin…"/></div>}
+    </div>
+  );
+}
+
+function CollectionTab({ onEvents, onImport, onOpenFrag, statuses:userStatuses, statusSets:sets, reactions, onReaction, onSuggest, fragrances, wears, onOpenJournal }) {
   const FR = (fragrances && fragrances.length) ? fragrances : FRAGRANCES;
   const [activeFilter,setActiveFilter]=useState("all");
   const [search,setSearch]=useState("");
@@ -4542,6 +4886,7 @@ function CollectionTab({ onImport, onOpenFrag, statuses:userStatuses, statusSets
         <h2 style={{fontFamily:serif,fontSize:"clamp(32px, 3.2vw, 50px)",color:T.black,letterSpacing:-0.8,margin:0,fontWeight:400}}>My collection</h2>
         <p style={{fontFamily:sans,fontSize:"clamp(13px, 1.1vw, 17px)",color:T.mid,margin:"6px 0 0"}}>Bottles, samples, and everything in between.</p>
       </div>
+      {onEvents&&<button onClick={onEvents} style={{display:"block",background:"none",border:"none",padding:0,margin:"0 0 8px",fontFamily:sans,fontSize:12,color:T.black,cursor:"pointer",textDecoration:"underline",fontWeight:600}}>Events: your notebook for fairs and expos</button>}
       {onImport&&<button onClick={onImport} style={{display:"block",background:"none",border:"none",padding:0,margin:"0 0 8px",fontFamily:sans,fontSize:12,color:T.black,cursor:"pointer",textDecoration:"underline",fontWeight:600}}>Import from a spreadsheet or another site</button>}
       {onOpenJournal&&<button onClick={onOpenJournal} style={{display:"block",background:"none",border:"none",padding:0,margin:"0 0 14px",fontFamily:sans,fontSize:12,color:T.mid,cursor:"pointer",textDecoration:"underline",textDecorationColor:T.rule,textUnderlineOffset:3}}>See your taste profile in Journal →</button>}
       <div style={{display:"flex",gap:6,overflowX:"auto",paddingBottom:4,marginBottom:14}}>{filters.map(f=>(
@@ -7029,6 +7374,7 @@ export default function SillageApp() {
   const [modalFragId, setModalFragId] = useState(null);
   const [showSuggest, setShowSuggest] = useState(false);
   const [importOpen, setImportOpen] = useState(false);
+  const [eventsOpen, setEventsOpen] = useState(false);
   const [profileUsername, setProfileUsername] = useState(null);
   const [peopleOpen, setPeopleOpen] = useState(false);
   const [peopleQ, setPeopleQ] = useState("");
@@ -7464,6 +7810,22 @@ export default function SillageApp() {
   function openProfile(username) { goto({ t: "profile", username }); }
   function openPeople() { goto({ t: "people" }); }
   function onReaction(fragId, val) { setReactions(p => ({ ...p, [fragId]: val })); saveUserFrag(fragId, { reaction: val || null }); }
+  // A fragrance rated in the Events notebook: set the reaction, and add it to the collection as Smelled
+  // unless the member already has it as smelled or tried on skin. Clearing a rating only clears the reaction.
+  async function onEventRate(fragId, val) {
+    onReaction(fragId, val || null);
+    if (!val || !uid || !isUuid(fragId)) return;
+    const before = statusSets[fragId] || [];
+    if (!before.includes("smelled") && !before.includes("tried_skin")) {
+      const after = toggleStatus(before, "smelled");
+      setStatusSets(p => ({ ...p, [fragId]: after })); setUserStatuses(p => ({ ...p, [fragId]: primaryStatus(after) }));
+      saveUserFrag(fragId, { status: primaryStatus(after), statuses: after });
+    }
+    if (!fragrances.some(f => f.id === fragId)) {
+      const { data } = await fetchFragRows(sel => supabase.from("fragrances").select(sel).eq("id", fragId));
+      if (data) mergeFrags(data.map(mapFrag));
+    }
+  }
 
   function handleOnboardingComplete(fields) {
     setCurrentUser(p => ({ ...p, ...fields }));
@@ -7536,7 +7898,7 @@ export default function SillageApp() {
 
       <main className="mos-main mos-wrap" style={{ position:"relative", zIndex:1, paddingTop:28, paddingBottom:64 }}>
         {activeTab==="Discover"   && <DiscoverTab   onOpenBrand={openBrand} onOpenPerfumer={openPerfumer} onOpenProfile={openProfile} following={following} fragrances={fragrances} serverShelves={serverShelves} onSearch={serverShelves ? searchFrags : null} onOpenFrag={openFrag} userStatuses={userStatuses} reactions={reactions} onReaction={onReaction} onSuggest={() => setShowSuggest(true)} currentUser={currentUser}/>}
-        {activeTab==="Collection" && <CollectionTab onImport={() => setImportOpen(true)} fragrances={fragrances} onOpenFrag={openFrag} statuses={userStatuses} statusSets={statusSets} reactions={reactions} onReaction={onReaction} onSuggest={() => setShowSuggest(true)} wears={wears} onOpenJournal={() => setActiveTab("Journal")}/>}
+        {activeTab==="Collection" && <CollectionTab onEvents={EVENTS_PREVIEW ? () => setEventsOpen(true) : null} onImport={() => setImportOpen(true)} fragrances={fragrances} onOpenFrag={openFrag} statuses={userStatuses} statusSets={statusSets} reactions={reactions} onReaction={onReaction} onSuggest={() => setShowSuggest(true)} wears={wears} onOpenJournal={() => setActiveTab("Journal")}/>}
         {activeTab==="Layering"   && <div className="mos-prose"><LayeringTab layers={layers} onSaveLayer={saveLayer} onSearch={searchFrags} fragrances={fragrances} statusSets={statusSets}/></div>}
         {activeTab==="Journal"    && <div className="mos-prose"><JournalTab entries={journalEntries} userStatuses={userStatuses} reactions={reactions} fragrances={fragrances} wears={wears} onOpenFrag={openFrag}/></div>}
         {activeTab==="Learn"      && <div className="mos-prose"><LearnTab fragrances={fragrances} onOpenFrag={openFrag} onOpenBrand={openBrand}/></div>}
@@ -7592,6 +7954,7 @@ export default function SillageApp() {
       {perfumerRef && <PerfumerPage name={perfumerRef} onClose={closeAll} onBack={goBack} onOpenFrag={openFrag} onOpenBrand={openBrand}/>}
       {saveIssue && <div role="status" style={{ position:"fixed", left:16, right:16, bottom:"calc(84px + env(safe-area-inset-bottom))", zIndex:80, maxWidth:520, margin:"0 auto", background:T.black, color:T.white, borderRadius:14, padding:"12px 16px", fontFamily:sans, fontSize:13, lineHeight:1.5 }}>{saveIssue}</div>}
       {brandRef && <BrandModal brand={brandRef} onClose={closeAll} onBack={goBack} onOpenFrag={openFrag}/>}
+      {eventsOpen && uid && <EventsSheet uid={uid} onClose={() => setEventsOpen(false)} onSearch={searchFrags} onRate={onEventRate}/>}
       {importOpen && <ImportSheet fragrances={fragrances} existing={statusSets} onApply={applyImport} onClose={() => setImportOpen(false)}/>}
       {showSuggest && <SuggestModal onClose={() => setShowSuggest(false)} currentUser={currentUser}/>}
       {notifOpen && <NotificationsSheet onClose={() => setNotifOpen(false)} onOpen={openNotification} onRead={() => setBellCount(0)}/>}
