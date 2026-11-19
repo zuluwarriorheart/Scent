@@ -8049,17 +8049,22 @@ export default function SillageApp() {
                 const dr = await fetchFragRows(sel => supabase.from("fragrances").select(sel).in("house_id", divHouses.map(h => h.id)).order("image_url", { ascending: false, nullsFirst: false }).order("slug", { ascending: true }).limit(300));
                 if (!dr.error && dr.data && dr.data.length) {
                   const perHouse = {}, byCat = {};
+                  // Houses with approved photos come first (A.N. Other, Jijide), the rest keep their order.
+                  const DIV_FIRST = ["a-n-other", "jijide"], dprio = row => { const i = DIV_FIRST.indexOf(row.house && row.house.slug); return i < 0 ? 99 : i; };
+                  dr.data.sort((a, b) => dprio(a) - dprio(b));
                   dr.data.forEach(row => {
                     const hs = row.house && row.house.slug; const cs = slugCat.get(hs); if (!cs || !cs.length) return;
                     perHouse[hs] = (perHouse[hs] || 0) + 1;
                     if (perHouse[hs] > 4) return;
                     cs.forEach(c => { (byCat[c] = byCat[c] || []).push(row); });
                   });
-                  const cats = Object.keys(byCat).filter(c => c !== "Woman-owned" && byCat[c].length >= 2).sort((a, b) => byCat[b].length - byCat[a].length).slice(0, 6);
+                  const cats = Object.keys(byCat).filter(c => c !== "Woman-owned" && byCat[c].length >= 2).sort((a, b) => (byCat[b].some(r => dprio(r) < 99) - byCat[a].some(r => dprio(r) < 99)) || (byCat[b].length - byCat[a].length)).slice(0, 6);
                   if (byCat["Woman-owned"] && byCat["Woman-owned"].length >= 2) cats.push("Woman-owned");
                   const groups = {};
                   cats.forEach(c => { const m = byCat[c].slice(0, 12).map(mapFrag); mergeFrags(m); groups[c] = m; });
-                  const mixed = []; for (let i = 0; i < 12; i++) cats.forEach(c => { if (groups[c][i]) mixed.push(groups[c][i]); });
+                  const mixed = [], seenM = new Set(), pushM = f => { if (f && !seenM.has(f.id)) { seenM.add(f.id); mixed.push(f); } };
+                  const fc = {}; dr.data.filter(r => dprio(r) < 99 && slugCat.get(r.house && r.house.slug)).forEach(r => { const hs = r.house.slug; fc[hs] = (fc[hs] || 0) + 1; if (fc[hs] > 4) return; const f = mapFrag(r); mergeFrags([f]); pushM(f); });
+                  for (let i = 0; i < 12; i++) cats.forEach(c => { if (groups[c][i]) pushM(groups[c][i]); });
                   const divShelves = cats.length ? [{ key: "diversity", title: "Diversity", blurb: "Houses founded and owned by people the big names often overlook. Pick a group to filter.", items: mixed.slice(0, 18), groups }] : [];
                   if (divShelves.length) {
                     const anchor = shelves.findIndex(x => x.key === "neo") >= 0 ? shelves.findIndex(x => x.key === "neo") : shelves.findIndex(x => x.key === "new");
