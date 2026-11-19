@@ -4121,11 +4121,12 @@ function KitsShelf({ onOpenBrand, tinted }) {
     if (!rows) return [];
     const day = Math.floor(Date.now() / 86400000);
     const seeded = h => { let x = 0; const s = h.slug + day; for (let i = 0; i < s.length; i++) x = (x * 31 + s.charCodeAt(i)) >>> 0; return x; };
-    return [...rows].sort((a, b) => seeded(a) - seeded(b)).slice(0, 12);
+    // Kits with a photo come first; within each group the daily shuffle applies.
+    return [...rows].sort((a, b) => (!!b.kit_image_url - !!a.kit_image_url) || (seeded(a) - seeded(b))).slice(0, 12);
   }, [rows]);
   if (!rows || rows.length === 0) return null;
   const needle = q.trim().toLowerCase();
-  const shown = all ? rows.filter(h => !needle || [h.name, h.country].some(v => String(v || "").toLowerCase().includes(needle))) : featured;
+  const shown = all ? [...rows].sort((a, b) => (!!b.kit_image_url - !!a.kit_image_url) || String(a.name).localeCompare(String(b.name))).filter(h => !needle || [h.name, h.country].some(v => String(v || "").toLowerCase().includes(needle))) : featured;
   const card = h => (
     <div key={h.id} style={{ flex:all ? "1 1 240px" : "0 0 252px", maxWidth:all ? "none" : 252, boxSizing:"border-box", background:T.white, border:`1px solid ${T.rule}`, borderRadius:16, padding:"16px 16px 14px", display:"flex", flexDirection:"column", scrollSnapAlign:"start" }}>
       {h.kit_image_url && <div style={{ margin:"-4px -4px 12px" }}>
