@@ -581,14 +581,14 @@ function noteFallback(name) {
   let h = 0; for (const ch of String(name).toLowerCase()) h = (h * 31 + ch.charCodeAt(0)) >>> 0;
   return NOTE_FALLBACK_PAL[h % NOTE_FALLBACK_PAL.length];
 }
-// Events notebook: preview only. ?events=1 switches it on for this device, ?events=0 switches it off. Members without the flag never see it.
+// Events notebook: live for everyone. ?events=0 switches it off on this device, ?events=1 switches it back on.
 const EVENTS_PREVIEW = (() => {
   try {
     const q = new URLSearchParams(window.location.search).get("events");
-    if (q === "1") localStorage.setItem("mos-events", "1");
-    if (q === "0") localStorage.removeItem("mos-events");
-    return localStorage.getItem("mos-events") === "1";
-  } catch { return false; }
+    if (q === "0") localStorage.setItem("mos-events", "0");
+    if (q === "1") localStorage.removeItem("mos-events");
+    return localStorage.getItem("mos-events") !== "0";
+  } catch { return true; }
 })();
 // Note photos (Midjourney, white background). Live for everyone.
 const NOTE_PHOTO_PREVIEW = (() => {
@@ -5294,7 +5294,6 @@ function CollectionTab({ onEvents, onImport, onOpenBrand, onOpenFrag, statuses:u
         </button>}
       </div>}
       <BrandsToTry onOpenBrand={onOpenBrand}/>
-      {onOpenJournal&&<button onClick={onOpenJournal} style={{display:"block",background:"none",border:"none",padding:0,margin:"0 0 14px",fontFamily:sans,fontSize:12,color:T.mid,cursor:"pointer",textDecoration:"underline",textDecorationColor:T.rule,textUnderlineOffset:3}}>See your taste profile in Journal →</button>}
       <div role="tablist" style={{display:"flex",overflowX:"auto",borderBottom:`1px solid ${T.rule}`,marginBottom:14}}>
         {TABS.map(([k,l])=>(<button key={k} role="tab" aria-selected={ctab===k} onClick={()=>pickTab(k)} style={{position:"relative",padding:"0 2px 13px",marginRight:24,background:"none",border:"none",cursor:"pointer",fontFamily:sans,fontSize:15,fontWeight:600,whiteSpace:"nowrap",flexShrink:0,color:ctab===k?T.black:T.mid}}>{l}<span style={{fontWeight:400,opacity:0.6,marginLeft:6,fontSize:12}}>{tabCount(k)}</span>{ctab===k&&<span style={{position:"absolute",left:0,right:0,bottom:-1,height:2,background:T.black}}/>}</button>))}
       </div>
