@@ -4624,7 +4624,7 @@ function EvFragAdd({ brand, onSearch, onAdd }) {
   );
 }
 
-function EventsSheet({ uid, onClose, onSearch, onRate }) {
+function EventsSheet({ uid, onClose, onSearch, onRate, onSmell }) {
   const [events, setEvents] = useState(null);
   const [evId, setEvId] = useState(null);
   const [brands, setBrands] = useState([]);
@@ -4815,6 +4815,11 @@ function EventsSheet({ uid, onClose, onSearch, onRate }) {
     const ok = await patchFrag(f.id, { rating:next });
     if (ok && f.fragrance_id && onRate) onRate(f.fragrance_id, next);
   }
+  async function smell(f, how) {
+    const next = f.smelled_how === how ? null : how;
+    const ok = await patchFrag(f.id, { smelled_how:next });
+    if (ok && next && f.fragrance_id && onSmell) onSmell(f.fragrance_id, next);
+  }
   async function deleteFrag(id) {
     const { error } = await supabase.from("member_event_frags").delete().eq("id", id).eq("user_id", uid);
     if (error) { flag(error); return; }
@@ -4962,7 +4967,7 @@ function EventsSheet({ uid, onClose, onSearch, onRate }) {
                     <span style={{ flex:1, minWidth:0, fontFamily:serif, fontSize:18, color:T.black, overflowWrap:"anywhere" }}>{f.frag_name}</span>
                     {(f.rating || f.to_buy || f.note) && <span style={EV_SMALL}>{f.rating ? "rated" : "noted"}</span>}
                   </button>); })
-              : brandFrags(brand).map(f => <EvFragRow key={f.id} f={f} onRate={v => rate(f, v)} onPatch={p => patchFrag(f.id, p)} onDelete={() => deleteFrag(f.id)}/>)}
+              : brandFrags(brand).map(f => <EvFragRow key={f.id} f={f} onRate={v => rate(f, v)} onSmell={h => smell(f, h)} onPatch={p => patchFrag(f.id, p)} onDelete={() => deleteFrag(f.id)}/>)}
             {!seeding && !brandFrags(brand).length && <p style={{ fontFamily:sans, fontSize:14, color:T.faint, margin:"14px 0 0" }}>Add the fragrances you try, then tap Love, Like or No.</p>}
           </div>
           {brandFrags(brand).some(f => f.fragrance_id) && <p style={{ fontFamily:sans, fontSize:12, color:T.faint, lineHeight:1.6, margin:"12px 0 0" }}>Rated fragrances from the library are added to your collection as Smelled.</p>}
@@ -4977,7 +4982,7 @@ function EventsSheet({ uid, onClose, onSearch, onRate }) {
     </div>, document.body);
 }
 
-function EvFragRow({ f, onRate, onPatch, onDelete }) {
+function EvFragRow({ f, onRate, onSmell, onPatch, onDelete }) {
   const [open, setOpen] = useState(false);
   const [confirm, setConfirm] = useState(false);
   return (
@@ -4988,6 +4993,10 @@ function EvFragRow({ f, onRate, onPatch, onDelete }) {
           {EVENT_RATINGS.map(([k, label]) => { const on = f.rating === k; return (
             <button key={k} onClick={() => onRate(k)} aria-pressed={on} style={{ minWidth:52, minHeight:44, borderRadius:12, fontFamily:sans, fontSize:14, fontWeight:500, cursor:"pointer", border:`1px solid ${on ? REACTION_FILL[k] : T.rule}`, background:on ? REACTION_FILL[k] : T.white, color:on ? ON_ACCENT : T.mid }}>{label}</button>); })}
         </div>
+      </div>
+      <div style={{ display:"flex", gap:6, marginTop:8, flexWrap:"wrap" }}>
+        {[["blotter", "Smelled on blotter"], ["skin", "Smelled on skin"]].map(([k, label]) => { const on = f.smelled_how === k; return (
+          <button key={k} onClick={() => onSmell(k)} aria-pressed={on} style={{ minHeight:40, padding:"0 14px", borderRadius:20, fontFamily:sans, fontSize:13, fontWeight:on ? 600 : 500, cursor:"pointer", border:`1px solid ${on ? T.black : T.rule}`, background:on ? T.black : T.white, color:on ? T.white : T.mid }}>{label}</button>); })}
       </div>
       <div style={{ display:"flex", gap:14, alignItems:"center", marginTop:4, flexWrap:"wrap" }}>
         <button onClick={() => setOpen(o => !o)} style={EV_LINK}>{f.note ? "Note ●" : "Add a note"}</button>
@@ -7982,6 +7991,22 @@ export default function SillageApp() {
     }
   }
 
+  // Marked in the Events notebook as smelled on a blotter or on skin: add that status to the collection (never removes one).
+  async function onEventSmell(fragId, how) {
+    if (!how || !uid || !isUuid(fragId)) return;
+    const key = how === "skin" ? "tried_skin" : "smelled";
+    const before = statusSets[fragId] || [];
+    if (!before.includes(key)) {
+      const after = toggleStatus(before, key);
+      setStatusSets(p => ({ ...p, [fragId]: after })); setUserStatuses(p => ({ ...p, [fragId]: primaryStatus(after) }));
+      saveUserFrag(fragId, { status: primaryStatus(after), statuses: after });
+    }
+    if (!fragrances.some(f => f.id === fragId)) {
+      const { data } = await fetchFragRows(sel => supabase.from("fragrances").select(sel).eq("id", fragId));
+      if (data) mergeFrags(data.map(mapFrag));
+    }
+  }
+
   function handleOnboardingComplete(fields) {
     setCurrentUser(p => ({ ...p, ...fields }));
     setAppScreen("app");
@@ -8109,7 +8134,7 @@ export default function SillageApp() {
       {perfumerRef && <PerfumerPage name={perfumerRef} onClose={closeAll} onBack={goBack} onOpenFrag={openFrag} onOpenBrand={openBrand}/>}
       {saveIssue && <div role="status" style={{ position:"fixed", left:16, right:16, bottom:"calc(84px + env(safe-area-inset-bottom))", zIndex:80, maxWidth:520, margin:"0 auto", background:T.black, color:T.white, borderRadius:14, padding:"12px 16px", fontFamily:sans, fontSize:13, lineHeight:1.5 }}>{saveIssue}</div>}
       {brandRef && <BrandModal brand={brandRef} onClose={closeAll} onBack={goBack} onOpenFrag={openFrag}/>}
-      {eventsOpen && uid && <EventsSheet uid={uid} onClose={() => setEventsOpen(false)} onSearch={searchFrags} onRate={onEventRate}/>}
+      {eventsOpen && uid && <EventsSheet uid={uid} onClose={() => setEventsOpen(false)} onSearch={searchFrags} onRate={onEventRate} onSmell={onEventSmell}/>}
       {importOpen && <ImportSheet fragrances={fragrances} existing={statusSets} onApply={applyImport} onClose={() => setImportOpen(false)}/>}
       {showSuggest && <SuggestModal onClose={() => setShowSuggest(false)} currentUser={currentUser}/>}
       {notifOpen && <NotificationsSheet onClose={() => setNotifOpen(false)} onOpen={openNotification} onRead={() => setBellCount(0)}/>}
