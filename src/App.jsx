@@ -6499,6 +6499,64 @@ function BrandSubmitPage() {
   );
 }
 
+// ─── OWNER: Admin home (first screen after sign-in for admins) ───
+function AdminHome({ onEnterSite }) {
+  const [wl, setWl] = useState(null), [subs, setSubs] = useState(null), [sugs, setSugs] = useState(null);
+  useEffect(() => {
+    let on = true;
+    supabase.rpc("admin_list_waitlist").then(r => { if (on) setWl(r.error ? [] : (r.data || [])); }, () => on && setWl([]));
+    supabase.rpc("admin_list_brand_submissions").then(r => { if (on) setSubs(r.error ? [] : (r.data || [])); }, () => on && setSubs([]));
+    supabase.rpc("admin_list_suggestions").then(r => { if (on) setSugs(r.error ? [] : (r.data || [])); }, () => on && setSugs([]));
+    return () => { on = false; };
+  }, []);
+  const loading = wl === null || subs === null || sugs === null;
+  const newSugs = (sugs || []).filter(g => g.status === "new");
+  const byKind = k => newSugs.filter(g => g.kind === k).length;
+  const waiting = (wl || []).filter(w => w.status === "waiting").length;
+  const newSubs = (subs || []).filter(x => x.status === "new").length;
+  const cards = [
+    ["Beta sign-ups waiting", waiting, "/?admin=invites"],
+    ["Events and businesses suggested", byKind("event"), "/?admin=brands"],
+    ["Fragrances suggested", byKind("fragrance"), "/?admin=brands"],
+    ["Stores suggested", byKind("store"), "/?admin=brands"],
+    ["Brand submissions", newSubs, "/?admin=brands"],
+  ];
+  const total = cards.reduce((a, c) => a + c[1], 0);
+  const kindLabel = { fragrance:"Fragrance", store:"Store", event:"Event or business" };
+  const title = g => (g.payload && (g.payload.name || g.payload.house || g.payload.link)) || "Untitled";
+  const hr = new Date().getHours();
+  return (
+    <div style={{ maxWidth:760, margin:"0 auto", padding:"28px 20px 72px", fontFamily:sans }}>
+      <Wordmark size={24}/>
+      <h1 style={{ fontFamily:serif, fontSize:34, fontWeight:400, color:T.black, margin:"26px 0 6px", letterSpacing:-0.6 }}>{hr < 12 ? "Good morning" : hr < 18 ? "Good afternoon" : "Good evening"}, Sisi</h1>
+      <p style={{ fontSize:14, color:T.mid, margin:"0 0 18px" }}>{loading ? "Checking what's waiting…" : total ? `${total} thing${total === 1 ? "" : "s"} waiting for you.` : "All clear. Nothing waiting."}</p>
+      <button onClick={onEnterSite} style={{ ...ctaBtn(true), marginBottom:26 }}>Go to the site</button>
+      <p style={{ ...FLABEL, margin:"0 0 10px" }}>Needs you</p>
+      <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit, minmax(200px, 1fr))", gap:10, marginBottom:28 }}>
+        {cards.map(([label, n, href]) => (
+          <a key={label} href={href} style={{ textDecoration:"none", background:T.white, border:`1px solid ${n ? "var(--accent)" : T.rule}`, borderRadius:14, padding:"14px 16px", display:"block" }}>
+            <span style={{ fontFamily:serif, fontSize:34, color:n ? "var(--accent)" : T.mid, lineHeight:1 }}>{loading ? "–" : n}</span>
+            <span style={{ display:"block", fontSize:13, color:T.ink, marginTop:6 }}>{label}</span>
+          </a>
+        ))}
+      </div>
+      <p style={{ ...FLABEL, margin:"0 0 10px" }}>Newest suggestions</p>
+      {!loading && newSugs.length === 0 && <p style={{ fontSize:13, color:T.mid }}>Nothing new.</p>}
+      {newSugs.slice(0, 8).map(g => (
+        <a key={g.id} href="/?admin=brands" style={{ textDecoration:"none", display:"block", background:T.white, border:`1px solid ${T.rule}`, borderRadius:14, padding:"12px 16px", marginBottom:8 }}>
+          <span style={{ fontFamily:serif, fontSize:17, color:T.ink, overflowWrap:"anywhere" }}>{title(g)}</span>
+          <span style={{ display:"block", fontSize:12, color:T.mid, marginTop:3 }}>{kindLabel[g.kind] || g.kind} · {new Date(g.created_at).toLocaleDateString()}{g.username ? " · @" + g.username : ""}</span>
+        </a>
+      ))}
+      <p style={{ ...FLABEL, margin:"26px 0 10px" }}>Tools</p>
+      <div style={{ display:"flex", gap:8, flexWrap:"wrap" }}>
+        <a href="/?admin=invites" style={{ ...ghostBtn, textDecoration:"none", display:"inline-flex", alignItems:"center" }}>Invites and launch</a>
+        <a href="/?admin=brands" style={{ ...ghostBtn, textDecoration:"none", display:"inline-flex", alignItems:"center" }}>All suggestions and submissions</a>
+      </div>
+    </div>
+  );
+}
+
 // ─── OWNER: review brand submissions (?admin=brands, signed in as admin) ───
 function BrandSubmissionsAdmin() {
   const [rows, setRows] = useState(null);
@@ -6526,7 +6584,8 @@ function BrandSubmissionsAdmin() {
   return (
     <div style={{ maxWidth:760, margin:"0 auto", padding:"28px 20px 72px" }}>
       <a href="/" style={{ textDecoration:"none" }}><Wordmark size={24}/></a>
-      <h1 style={{ fontFamily:serif, fontSize:32, fontWeight:400, color:T.black, margin:"26px 0 6px" }}>Brand submissions</h1>
+      <p style={{ margin:"18px 0 0" }}><a href="/" style={{ fontFamily:sans, fontSize:14, color:T.mid }}>← Back to Admin</a></p>
+      <h1 style={{ fontFamily:serif, fontSize:32, fontWeight:400, color:T.black, margin:"14px 0 6px" }}>Brand submissions</h1>
       <p style={{ fontFamily:sans, fontSize:13, color:T.mid, margin:"0 0 20px" }}>Forms sent from memoironskin.com/brands. Photos open via private links that expire after an hour.</p>
       {msg && <p style={{ fontFamily:sans, fontSize:13, color:T.bad }}>{msg}</p>}
       {rows === null && <p style={{ fontFamily:sans, color:T.mid }}>Loading…</p>}
@@ -6635,6 +6694,7 @@ function InviteAdmin() {
   const btn = { padding:"8px 14px", borderRadius:10, border:`1px solid ${T.rule}`, background:T.white, color:T.ink, fontSize:12, fontFamily:sans, cursor:"pointer" };
   return (
     <div style={{ maxWidth:560, margin:"0 auto", padding:"32px 20px 80px", fontFamily:sans, color:T.ink }}>
+      <p style={{ margin:"0 0 14px" }}><a href="/" style={{ fontSize:14, color:T.mid }}>← Back to Admin</a></p>
       <p style={{ fontSize:10, letterSpacing:"0.14em", textTransform:"uppercase", color:T.mid, margin:"0 0 6px" }}>Owner</p>
       <h1 style={{ fontFamily:serif, fontSize:32, fontWeight:400, margin:"0 0 20px", color:T.black }}>Invite codes</h1>
       <div style={{ border:`1px solid ${T.rule}`, borderRadius:12, padding:"14px 16px", marginBottom:18, display:"flex", alignItems:"center", justifyContent:"space-between", gap:12, background:isOpen ? T.lift : "transparent" }}>
@@ -7565,6 +7625,9 @@ export default function SillageApp() {
   const [appScreen, setAppScreen] = useState("loading"); // loading | waitlist | login | onboarding | app
   const [currentUser, setCurrentUser] = useState(null);
   const [activeTab, setActiveTab] = useState("Discover");
+  const [isOwnerRoot, setIsOwnerRoot] = useState(false);
+  const [adminHome, setAdminHome] = useState(true);
+  useEffect(() => { if (appScreen !== "app") return; let on = true; supabase.rpc("is_admin").then(r => { if (on && !r.error && r.data === true) setIsOwnerRoot(true); }, () => {}); return () => { on = false; }; }, [appScreen]);
   const [modalFragId, setModalFragId] = useState(null);
   const [showSuggest, setShowSuggest] = useState(false);
   const [importOpen, setImportOpen] = useState(false);
@@ -8062,6 +8125,7 @@ export default function SillageApp() {
   if (appScreen === "login") return <LoginScreen onWaitlist={() => setAppScreen("waitlist")}/>;
   if (appScreen === "onboarding") return <OnboardingScreen onComplete={handleOnboardingComplete}/>;
   // Private invite-code page for the owner: add ?admin=invites to the site address (signed in).
+  if (appScreen === "app" && isOwnerRoot && adminHome && !/[?&]admin=/.test(window.location.search)) return <AdminHome onEnterSite={() => { setActiveTab("Discover"); setAdminHome(false); }}/>;
   if (appScreen === "app" && typeof window !== "undefined" && /[?&]admin=invites\b/.test(window.location.search)) return <InviteAdmin/>;
   if (appScreen === "app" && typeof window !== "undefined" && /[?&]admin=brands\b/.test(window.location.search)) return <BrandSubmissionsAdmin/>;
 
@@ -8072,6 +8136,7 @@ export default function SillageApp() {
           <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", padding:"14px 0 12px", gap:10 }}>
             <Logo fluid/>
             <div style={{ display:"flex", alignItems:"center", gap:6, flexShrink:0 }}>
+              {isOwnerRoot && <button onClick={() => setAdminHome(true)} style={{ ...ghostBtn, minHeight:"var(--ctl)", padding:"0 14px", fontSize:13 }}>Admin</button>}
               <button className="mos-suggest" onClick={() => setShowSuggest(true)} aria-label="Suggest a fragrance, store or event" title="Suggest a fragrance, store or event" style={{ fontFamily:sans, fontSize:"var(--ctl-fs)", fontWeight:500, height:"var(--ctl)", padding:"0 16px", borderRadius:20, border:`1px solid ${T.rule}`, background:T.white, color:T.mid, cursor:"pointer", whiteSpace:"nowrap" }}>+<span className="mos-suggest-label"> Suggest</span></button>
               <span className="mos-hide-sm" style={{ display:"contents" }}><ThemeToggle size="var(--ctl)"/></span>
               <button onClick={openPeople} title="Find people" aria-label="Find people" style={{ width:"var(--ctl)", height:"var(--ctl)", borderRadius:"50%", padding:0, background:T.white, border:`1px solid ${T.rule}`, cursor:"pointer", flexShrink:0, display:"flex", alignItems:"center", justifyContent:"center" }}>
