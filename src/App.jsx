@@ -3567,7 +3567,7 @@ const HOUSE_GROUPS = [
   { key:"designer", label:"Heritage" },
 ];
 // TEMPORARY: show this house under "New to the shelf" so the look can be judged. Set to "" to restore real new releases.
-const PREVIEW_NEW_HOUSES = ["a-n-other", "jijide"]; // newest uploads first
+const PREVIEW_NEW_HOUSES = ["alloy-studio", "rite-of-way", "a-n-other", "jijide"]; // newest uploads first
 const PREVIEW_NEW_HOUSE = PREVIEW_NEW_HOUSES[0];
 const NEO_BLURB = "Gourmand with an edge. Grain, salt, smoke and savory notes alongside the sweet.";
 function buildShelves(list) {
@@ -8024,7 +8024,7 @@ export default function SillageApp() {
                 for (const hs of PREVIEW_NEW_HOUSES) {
                   const { data: ph } = await supabase.from("houses").select("id, name").eq("slug", hs).maybeSingle();
                   if (!ph) continue;
-                  const pr = await fetchFragRows(sel => supabase.from("fragrances").select(sel).eq("house_id", ph.id).not("image_url", "is", null).order("created_at", { ascending: false }).order("slug", { ascending: true }).limit(9));
+                  const pr = await fetchFragRows(sel => supabase.from("fragrances").select(sel).eq("house_id", ph.id).not("image_url", "is", null).order("created_at", { ascending: false }).order("slug", { ascending: true }).limit(6));
                   if (!pr.error && pr.data) pm = pm.concat(pr.data.map(mapFrag));
                 }
                 if (pm.length >= 2) {
@@ -8036,7 +8036,7 @@ export default function SillageApp() {
               } catch (e) {}
             }
             try {
-              const nr = await fetchFragRows(sel => supabase.from("fragrances").select(sel).eq("neo_gourmand", true).limit(24));
+              const nr = await fetchFragRows(sel => supabase.from("fragrances").select(sel).eq("neo_gourmand", true).order("image_url", { ascending: false, nullsFirst: false }).limit(24));
               if (!nr.error && nr.data && nr.data.length) {
                 const nm = nr.data.map(mapFrag); mergeFrags(nm);
                 const nix = shelves.findIndex(x => x.key === "new");
@@ -8049,7 +8049,7 @@ export default function SillageApp() {
               const divHouses = (dh || []).filter(h => cleanDiversity(h.diversity) || isWomanOwned(h.diversity));
               const slugCat = new Map(divHouses.map(h => [h.slug, [cleanDiversity(h.diversity) ? catOf(h.diversity) : "", isWomanOwned(h.diversity) ? "Woman-owned" : ""].filter(Boolean)]));
               if (divHouses.length) {
-                const dr = await fetchFragRows(sel => supabase.from("fragrances").select(sel).in("house_id", divHouses.map(h => h.id)).order("slug", { ascending: true }).limit(300));
+                const dr = await fetchFragRows(sel => supabase.from("fragrances").select(sel).in("house_id", divHouses.map(h => h.id)).order("image_url", { ascending: false, nullsFirst: false }).order("slug", { ascending: true }).limit(300));
                 if (!dr.error && dr.data && dr.data.length) {
                   const perHouse = {}, byCat = {};
                   dr.data.forEach(row => {
