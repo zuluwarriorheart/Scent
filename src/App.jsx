@@ -836,7 +836,8 @@ function toggleStatus(arr, key) {
   const keep = def.group === "tried" ? cur : cur.filter(k => ((STATUSES.find(x => x.key === k) || {}).group) !== def.group);
   return [...keep, key];
 }
-function StatusSelector({ value, onChange }) {
+const SIZES_ML = [2,5,10,15,30,50,75,100];
+function StatusSelector({ value, onChange, size, onSize }) {
   const groups = [
     { title:"Bottle", items:STATUSES.filter(s=>s.group==="bottle") },
     { title:"Travel size", items:STATUSES.filter(s=>s.group==="travel") },
@@ -861,6 +862,14 @@ function StatusSelector({ value, onChange }) {
               );
             })}
           </div>
+          {g.title === "Smelled" && onSize && (
+            <div style={{ marginTop:14 }}>
+              <p style={{ fontFamily:sans, fontSize:12, color:T.faint, margin:"0 0 8px" }}>Size you smelled or tried (optional)</p>
+              <div style={{ display:"flex", flexWrap:"wrap", gap:7 }}>
+                {SIZES_ML.map(n => { const on = size === n; return <button key={n} onClick={() => onSize(on ? null : n)} aria-pressed={on} style={{ minHeight:38, padding:"0 14px", borderRadius:20, border:`1px solid ${on ? "transparent" : T.rule}`, background:on ? "var(--accent)" : T.white, color:on ? "#fff" : T.ink, fontFamily:sans, fontSize:14, fontWeight:on ? 600 : 400, cursor:"pointer" }}>{n} ml</button>; })}
+              </div>
+            </div>
+          )}
         </div>
       ))}
     </div>
@@ -2029,6 +2038,88 @@ function BrandsDirectory({ onOpenBrand }) {
   );
 }
 
+// ─── BRANDS TO TRY: houses you have never smelled or sampled and want to ─────
+function BrandsToTry({ onOpenBrand }) {
+  const [rows, setRows] = useState(null);
+  const [q, setQ] = useState("");
+  const [res, setRes] = useState([]);
+  const [err, setErr] = useState("");
+  const [open, setOpen] = useState(false);
+  const load = async () => {
+    try { const r = await supabase.from("brand_wishlist").select("id, house_id, name, created_at, houses(slug)").order("created_at", { ascending:false }).limit(500); setRows(r.error ? [] : (r.data || [])); } catch (e) { setRows([]); }
+  };
+  useEffect(() => { load(); }, []);
+  useEffect(() => {
+    const t = q.trim();
+    if (t.length < 2) { setRes([]); return; }
+    let off = false;
+    const h = setTimeout(async () => {
+      try { const { data } = await supabase.from("houses").select("id, name, slug").ilike("name", "%" + t + "%").order("name").limit(6); if (!off) setRes(data || []); } catch (e) { if (!off) setRes([]); }
+    }, 220);
+    return () => { off = true; clearTimeout(h); };
+  }, [q]);
+  async function add(name, houseId) {
+    const nm = String(name || "").trim(); if (!nm) return;
+    setErr("");
+    if ((rows || []).some(r => r.name.toLowerCase() === nm.toLowerCase())) { setQ(""); setRes([]); return; }
+    const { error } = await supabase.from("brand_wishlist").insert({ name:nm, house_id:houseId || null });
+    if (error) { setErr("That didn't save. Try again in a moment."); return; }
+    setQ(""); setRes([]); load();
+  }
+  async function remove(id) {
+    setRows(p => (p || []).filter(r => r.id !== id));
+    const { error } = await supabase.from("brand_wishlist").delete().eq("id", id);
+    if (error) { setErr("That didn't go through. Try again."); load(); }
+  }
+  const list = rows || [];
+  const typed = q.trim();
+  const exact = res.some(h => h.name.toLowerCase() === typed.toLowerCase());
+  return (
+    <div style={{ background:T.lift, borderRadius:16, border:`1px solid ${T.rule}`, padding:18, margin:"0 0 18px" }}>
+      <button onClick={() => setOpen(o => !o)} aria-expanded={open} style={{ display:"flex", width:"100%", alignItems:"center", justifyContent:"space-between", gap:12, background:"none", border:"none", padding:0, cursor:"pointer", textAlign:"left" }}>
+        <span>
+          <span style={{ display:"block", fontFamily:serif, fontSize:20, color:T.black }}>Brands to try</span>
+          <span style={{ display:"block", fontFamily:sans, fontSize:12, color:T.faint, marginTop:2 }}>Houses you have never smelled or sampled{list.length ? ` · ${list.length}` : ""}</span>
+        </span>
+        <span style={{ fontFamily:sans, fontSize:12, color:T.ink, background:T.white, border:`1px solid ${T.rule}`, borderRadius:20, minHeight:36, padding:"0 14px", display:"inline-flex", alignItems:"center", flexShrink:0 }}>{open ? "Hide" : "Open"}&nbsp;<span style={{ fontSize:10, display:"inline-block", transform:open ? "rotate(180deg)" : "none" }}>▾</span></span>
+      </button>
+      {open && <div style={{ marginTop:16 }}>
+        <div style={{ position:"relative" }}>
+          <input value={q} onChange={e => setQ(e.target.value)} onKeyDown={e => { if (e.key === "Enter") { e.preventDefault(); const m = res.find(h => h.name.toLowerCase() === typed.toLowerCase()); add(m ? m.name : typed, m && m.id); } }} placeholder="Search for a brand, or type a new one" style={{ ...FIELD, minHeight:44 }}/>
+          {typed.length >= 2 && (res.length > 0 || !exact) && <div style={{ marginTop:8, background:T.white, border:`1px solid ${T.rule}`, borderRadius:12, overflow:"hidden" }}>
+            {res.map(h => <button key={h.id} onClick={() => add(h.name, h.id)} style={{ display:"block", width:"100%", textAlign:"left", padding:"12px 14px", minHeight:44, background:"none", border:"none", borderBottom:`1px solid ${T.lift}`, fontFamily:sans, fontSize:14, color:T.ink, cursor:"pointer" }}>{h.name}</button>)}
+            {!exact && <button onClick={() => add(typed, null)} style={{ display:"block", width:"100%", textAlign:"left", padding:"12px 14px", minHeight:44, background:"none", border:"none", fontFamily:sans, fontSize:14, color:T.mid, cursor:"pointer" }}>Add "{typed}" to my list</button>}
+          </div>}
+        </div>
+        {err && <p role="alert" style={{ fontFamily:sans, fontSize:12, color:T.mid, margin:"8px 0 0" }}>{err}</p>}
+        <div style={{ display:"flex", flexWrap:"wrap", gap:7, marginTop:14 }}>
+          {rows === null && <span style={{ fontFamily:sans, fontSize:12, color:T.faint }}>Loading</span>}
+          {rows !== null && list.length === 0 && <span style={{ fontFamily:sans, fontSize:13, color:T.faint, lineHeight:1.6 }}>Nothing here yet. Add a house you are curious about and come back when you find a sample.</span>}
+          {list.map(r => { const slug = r.houses && r.houses.slug; return (
+            <span key={r.id} style={{ display:"inline-flex", alignItems:"center", minHeight:38, borderRadius:20, border:`1px solid ${T.rule}`, background:T.white, overflow:"hidden" }}>
+              <button onClick={() => slug && onOpenBrand && onOpenBrand({ slug, name:r.name })} style={{ background:"none", border:"none", padding:"0 6px 0 14px", minHeight:38, fontFamily:sans, fontSize:14, color:T.ink, cursor:slug ? "pointer" : "default" }}>{r.name}</button>
+              <button onClick={() => remove(r.id)} aria-label={"Remove " + r.name} style={{ background:"none", border:"none", padding:"0 12px 0 6px", minHeight:38, fontSize:14, color:T.faint, cursor:"pointer" }}>✕</button>
+            </span>); })}
+        </div>
+      </div>}
+    </div>
+  );
+}
+function BrandWishButton({ house }) {
+  const [id, setId] = useState(undefined);
+  useEffect(() => {
+    let off = false; setId(undefined);
+    (async () => { try { const r = await supabase.from("brand_wishlist").select("id").eq("house_id", house.id).limit(1); if (!off) setId(r.error ? null : ((r.data && r.data[0] && r.data[0].id) || null)); } catch (e) { if (!off) setId(null); } })();
+    return () => { off = true; };
+  }, [house.id]);
+  if (id === undefined) return null;
+  async function toggle() {
+    if (id) { const old = id; setId(null); const { error } = await supabase.from("brand_wishlist").delete().eq("id", old); if (error) setId(old); }
+    else { const { data, error } = await supabase.from("brand_wishlist").insert({ name:house.name, house_id:house.id }).select("id").single(); if (!error && data) setId(data.id); }
+  }
+  return <button onClick={toggle} aria-pressed={!!id} style={{ marginTop:12, minHeight:40, padding:"0 18px", borderRadius:20, border:`1px solid ${id ? "transparent" : T.rule}`, background:id ? "var(--accent)" : T.white, color:id ? "#fff" : T.ink, fontFamily:sans, fontSize:14, fontWeight:id ? 600 : 500, cursor:"pointer" }}>{id ? "On your brands to try ✓" : "Want to try this brand"}</button>;
+}
+
 function BrandModal({ brand, onClose, onBack, onOpenFrag }) {
   const PAGE = 24;
   const [house, setHouse] = useState(undefined);
@@ -2092,6 +2183,7 @@ function BrandModal({ brand, onClose, onBack, onOpenFrag }) {
             <>
               <div style={{ display:"flex", alignItems:"center", flexWrap:"wrap", gap:"6px 12px" }}><BrandTypePill type={h.brand_origin}/><span style={{ fontFamily:sans, fontSize:"clamp(14px, 1.1vw, 17px)", color:T.mid }}>{[h.country, h.price_tier].filter(Boolean).join(" · ")}</span></div>
               <div style={{ margin:"6px 0 0" }}>{own && <OwnershipBadge ownership={own} size="large"/>}</div>
+              <BrandWishButton house={h}/>
               {(cleanDiversity(h.diversity) || isWomanOwned(h.diversity)) && <p style={{ fontFamily:sans, fontSize:"clamp(14px, 1.1vw, 17px)", color:T.mid, margin:"8px 0 0", display:"flex", flexWrap:"wrap", alignItems:"baseline", gap:"2px 12px" }}>{cleanDiversity(h.diversity) && <span>Diversity <strong style={{ color:T.tangerine, fontWeight:600 }}>{cleanDiversity(h.diversity)}</strong></span>}{isWomanOwned(h.diversity) && <strong style={{ color:"var(--orchid)", fontWeight:600 }}>Woman-owned</strong>}</p>}
               {site && <a href={site} target="_blank" rel="noopener noreferrer" onClick={() => trackEvent("brand_site_click", { houseSlug: h.slug, source: "brand" })} style={{ display:"inline-flex", alignItems:"center", gap:6, margin:"12px 0 0", padding:"6px 14px", minHeight:34, boxSizing:"border-box", borderRadius:20, border:`1px solid ${T.rule}`, background:T.white, fontFamily:sans, fontSize:13, color:T.ink, textDecoration:"none" }}>Brand website<ExtArrow size={11}/></a>}
             </>
@@ -2917,7 +3009,7 @@ function NoteSheet({ name, tier, house, onClose }) {
     </div>
   );
 }
-function DetailModal({ frag, entries, onClose, userStatus, setUserStatus, finish, setFinish, privateNote, setPrivateNote, reaction, setReaction, onOpenFrag, onOpenProfile, onAddJournalEntry, currentUser, onOpenBrand, onOpenPerfumer, wears, onLogWear, onDeleteWear, onBack }) {
+function DetailModal({ frag, entries, onClose, userStatus, setUserStatus, finish, setFinish, size, setSize, privateNote, setPrivateNote, reaction, setReaction, onOpenFrag, onOpenProfile, onAddJournalEntry, currentUser, onOpenBrand, onOpenPerfumer, wears, onLogWear, onDeleteWear, onBack }) {
   const [tab,setTab]=useState("overview");
   const [showPerfumer, setShowPerfumer]=useState(false);
   const [noteSheet, setNoteSheet]=useState(null);
@@ -3069,7 +3161,7 @@ function DetailModal({ frag, entries, onClose, userStatus, setUserStatus, finish
           {tab==="tracker"&&(
             <div>
               <p style={{fontFamily:sans,fontSize:13,color:T.mid,lineHeight:1.65,margin:"0 0 18px"}}>The facts: where this fragrance sits in your life, and when you wear it.</p>
-              <StatusSelector value={userStatus} onChange={setUserStatus}/>
+              <StatusSelector value={userStatus} onChange={setUserStatus} size={size} onSize={setSize}/>
               <FinishedPanel status={userStatus} finish={finish} onChange={setFinish}/>
               <div style={{marginTop:36}}/>
               <WearLog frag={frag} wears={wears} onLogWear={onLogWear} onDeleteWear={onDeleteWear}/>
@@ -5040,7 +5132,7 @@ function EvFragRow({ f, onRate, onSmell, onPatch, onDelete }) {
   );
 }
 
-function CollectionTab({ onEvents, onImport, onOpenFrag, statuses:userStatuses, statusSets:sets, reactions, onReaction, onSuggest, fragrances, wears, onOpenJournal }) {
+function CollectionTab({ onEvents, onImport, onOpenBrand, onOpenFrag, statuses:userStatuses, statusSets:sets, reactions, onReaction, onSuggest, fragrances, wears, onOpenJournal }) {
   const FR = (fragrances && fragrances.length) ? fragrances : FRAGRANCES;
   const [activeFilter,setActiveFilter]=useState("all");
   const [search,setSearch]=useState("");
@@ -5082,6 +5174,7 @@ function CollectionTab({ onEvents, onImport, onOpenFrag, statuses:userStatuses, 
           <span style={{display:"block",fontFamily:sans,fontSize:13,color:T.mid,lineHeight:1.5,marginTop:2}}>Bring in a spreadsheet, a list, or a collection from another site.</span>
         </button>}
       </div>}
+      <BrandsToTry onOpenBrand={onOpenBrand}/>
       {onOpenJournal&&<button onClick={onOpenJournal} style={{display:"block",background:"none",border:"none",padding:0,margin:"0 0 14px",fontFamily:sans,fontSize:12,color:T.mid,cursor:"pointer",textDecoration:"underline",textDecorationColor:T.rule,textUnderlineOffset:3}}>See your taste profile in Journal →</button>}
       <div style={{display:"flex",gap:6,overflowX:"auto",paddingBottom:4,marginBottom:14}}>{filters.map(f=>(
         <button key={f.key} onClick={()=>setActiveFilter(f.key)} style={{fontFamily:sans,fontSize:10,padding:"5px 12px",borderRadius:20,whiteSpace:"nowrap",border:`1px solid ${activeFilter===f.key?T.black:T.rule}`,background:activeFilter===f.key?T.black:T.white,color:activeFilter===f.key?T.white:T.mid,cursor:"pointer",display:"flex",alignItems:"center",gap:5}}>
@@ -7685,6 +7778,7 @@ export default function SillageApp() {
   const [userStatuses, setUserStatuses] = useState({});
   const [statusSets, setStatusSets] = useState({});
   const [finishes, setFinishes] = useState({});
+  const [sizes, setSizes] = useState({});
   const [privateNotes, setPrivateNotes] = useState({});
   const [reactions, setReactions] = useState({});
   const [journalEntries, setJournalEntries] = useState([]);
@@ -7947,16 +8041,16 @@ export default function SillageApp() {
     (async () => {
       try {
         const [uf, je, ly, wr] = await Promise.all([
-          supabase.from("user_fragrances").select("fragrance_id, status, statuses, reaction, note, finished_on, rebuy").eq("user_id", uid).limit(5000),
+          supabase.from("user_fragrances").select("fragrance_id, status, statuses, reaction, note, finished_on, rebuy, size_ml").eq("user_id", uid).limit(5000),
           supabase.from("journal_entries").select("*").eq("user_id", uid).order("created_at", { ascending: false }).limit(2000),
           supabase.from("layerings").select("*").eq("user_id", uid).order("created_at", { ascending: false }).limit(1000),
           supabase.from("wears").select("id, fragrance_id, worn_on, occasion, weather, occasions, weathers, rating, moods").eq("user_id", uid).order("worn_on", { ascending: false }).limit(5000),
         ]);
         if (off) return;
         if (uf.error || je.error || ly.error) { console.error("Could not load your saved data:", uf.error || je.error || ly.error); return; }
-        const st = {}, sets = {}, rx = {}, nt = {}, fin = {};
-        (uf.data || []).forEach(r => { if (r.finished_on || r.rebuy) fin[r.fragrance_id] = { on: r.finished_on || null, rebuy: r.rebuy || null }; const set = (r.statuses && r.statuses.length) ? r.statuses : (r.status ? [r.status] : []); if (set.length) { sets[r.fragrance_id] = set; st[r.fragrance_id] = primaryStatus(set) || r.status; } if (r.reaction) rx[r.fragrance_id] = r.reaction; if (r.note) nt[r.fragrance_id] = r.note; });
-        setUserStatuses(st); setStatusSets(sets); setFinishes(fin); setReactions(rx); setPrivateNotes(nt);
+        const st = {}, sets = {}, rx = {}, nt = {}, fin = {}, szs = {};
+        (uf.data || []).forEach(r => { if (r.size_ml) szs[r.fragrance_id] = r.size_ml; if (r.finished_on || r.rebuy) fin[r.fragrance_id] = { on: r.finished_on || null, rebuy: r.rebuy || null }; const set = (r.statuses && r.statuses.length) ? r.statuses : (r.status ? [r.status] : []); if (set.length) { sets[r.fragrance_id] = set; st[r.fragrance_id] = primaryStatus(set) || r.status; } if (r.reaction) rx[r.fragrance_id] = r.reaction; if (r.note) nt[r.fragrance_id] = r.note; });
+        setUserStatuses(st); setStatusSets(sets); setFinishes(fin); setSizes(szs); setReactions(rx); setPrivateNotes(nt);
         if (!wr.error) setWears((wr.data || []).map(r => ({ id: r.id, fragId: r.fragrance_id, date: r.worn_on, occasion: r.occasion, weather: r.weather, occasions: (r.occasions && r.occasions.length) ? r.occasions : (r.occasion ? [r.occasion] : []), weathers: (r.weathers && r.weathers.length) ? r.weathers : (r.weather ? [r.weather] : []), rating: r.rating, moods: r.moods || [] })));
         setJournalEntries((je.data || []).map(r => ({ id: r.id, fragId: r.fragrance_id, fragName: r.frag_name, house: r.house, family: r.family, prompt: r.prompt, text: r.body, where: r.where_text, date: r.entry_date, shared: r.shared, publishedAsReview: r.published_as_review, reviewRating: r.review_rating, answers: r.answers || {} })));
         setLayers((ly.data || []).map(r => ({ id: r.id, name: r.name, frags: r.frags || [], ratio: r.ratio, layerWith: r.layer_with, note: r.note, rating: r.rating, isPublic: r.is_public, date: new Date(r.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) })));
@@ -8217,7 +8311,7 @@ export default function SillageApp() {
 
       <main className="mos-main mos-wrap" style={{ position:"relative", zIndex:1, paddingTop:28, paddingBottom:64 }}>
         {activeTab==="Discover"   && <DiscoverTab   onOpenBrand={openBrand} onOpenPerfumer={openPerfumer} onOpenProfile={openProfile} following={following} fragrances={fragrances} serverShelves={serverShelves} onSearch={serverShelves ? searchFrags : null} onOpenFrag={openFrag} userStatuses={userStatuses} reactions={reactions} onReaction={onReaction} onSuggest={() => setShowSuggest(true)} currentUser={currentUser}/>}
-        {activeTab==="Collection" && <CollectionTab onEvents={EVENTS_PREVIEW ? () => setEventsOpen(true) : null} onImport={() => setImportOpen(true)} fragrances={fragrances} onOpenFrag={openFrag} statuses={userStatuses} statusSets={statusSets} reactions={reactions} onReaction={onReaction} onSuggest={() => setShowSuggest(true)} wears={wears} onOpenJournal={() => setActiveTab("Journal")}/>}
+        {activeTab==="Collection" && <CollectionTab onOpenBrand={openBrand} onEvents={EVENTS_PREVIEW ? () => setEventsOpen(true) : null} onImport={() => setImportOpen(true)} fragrances={fragrances} onOpenFrag={openFrag} statuses={userStatuses} statusSets={statusSets} reactions={reactions} onReaction={onReaction} onSuggest={() => setShowSuggest(true)} wears={wears} onOpenJournal={() => setActiveTab("Journal")}/>}
         {activeTab==="Layering"   && <div className="mos-prose"><LayeringTab layers={layers} onSaveLayer={saveLayer} onSearch={searchFrags} fragrances={fragrances} statusSets={statusSets}/></div>}
         {activeTab==="Journal"    && <div className="mos-prose"><JournalTab entries={journalEntries} userStatuses={userStatuses} reactions={reactions} fragrances={fragrances} wears={wears} onOpenFrag={openFrag} onSearch={searchFrags} onAddJournalEntry={addJournalEntry}/></div>}
         {activeTab==="Learn"      && <div className="mos-prose"><LearnTab fragrances={fragrances} onOpenFrag={openFrag} onOpenBrand={openBrand}/></div>}
@@ -8245,6 +8339,8 @@ export default function SillageApp() {
           onBack={goBack}
           userStatus={statusSets[modalFrag.id] || []}
           finish={finishes[modalFrag.id]}
+          size={sizes[modalFrag.id] || null}
+          setSize={v => { setSizes(p => ({ ...p, [modalFrag.id]: v })); saveUserFrag(modalFrag.id, { size_ml: v }); }}
           setFinish={patch => { const cur = finishes[modalFrag.id] || {}; const next = { on: cur.on || null, rebuy: cur.rebuy || null, ...patch }; setFinishes(p => ({ ...p, [modalFrag.id]: next })); saveUserFrag(modalFrag.id, { finished_on: next.on, rebuy: next.rebuy }); }}
           setUserStatus={key => {
             const id = modalFrag.id, before = statusSets[id] || [], after = toggleStatus(before, key), prim = primaryStatus(after);
