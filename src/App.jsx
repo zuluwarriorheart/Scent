@@ -3287,28 +3287,21 @@ function JournalInsights({ entries, userStatuses, reactions, fragrances, wears, 
 
       <InsightCard label="Top accord" more="Accord mix" headline={accs[0] ? accs[0][0] : "None yet"} sub="across what you own, sample and love"
         hint={accs.length === 0 ? "Add fragrances to your collection or mark a few as Love, and your accord mix appears here." : null}>
-        {accs.length > 0 && <div style={{ display:"flex", alignItems:"center", gap:18 }}>
-          <svg viewBox="0 0 140 140" width="150" height="150" style={{ flexShrink:0 }}>
-            <g transform="rotate(-90 70 70)">
-              {accs.map(([l, c]) => { const len = (c / accTotal) * C; const el = <circle key={l} cx="70" cy="70" r={R} fill="none" stroke={accordColor(l)} strokeWidth="18" strokeDasharray={`${Math.max(0, len - 2)} ${C}`} strokeDashoffset={-off}/>; off += len; return el; })}
-            </g>
-          </svg>
-          <div style={{ flex:1, minWidth:0 }}>
-            {accs.map(([l, c]) => <div key={l} style={{ display:"flex", alignItems:"center", gap:8, marginBottom:8 }}><i style={{ width:10, height:10, borderRadius:3, background:accordColor(l), flexShrink:0 }}/><span style={{ fontFamily:sans, fontSize:13, color:T.ink, textTransform:"capitalize", flex:1 }}>{l}</span><span style={{ fontFamily:sans, fontSize:11, color:T.faint }}>{c}</span></div>)}
-          </div>
-        </div>}
+        {accs.length > 0 && <AccordBloom accords={accs.map(([n, c]) => ({ n, v:c }))}/>}
       </InsightCard>
 
       <InsightCard label="Most loved notes" more="All notes" headline={notes[0] ? notes[0][0] : "None yet"} sub={notes[0] ? `across the ${loved} fragrances you love` : "from the fragrances you love"}
         hint={notes.length === 0 ? "Mark 2 or more fragrances as Love, and we'll highlight the notes they share." : null}>
-        {notes.length > 0 && <div style={{ display:"flex", flexWrap:"wrap", gap:6 }}>
-          {notes.map(([n, c]) => <span key={n} style={{ fontFamily:sans, fontSize:12, padding:"5px 12px", borderRadius:20, border:`1px solid ${T.rule}`, background:T.white, color:T.ink, textTransform:"capitalize" }}>{n} <span style={{ color:T.faint }}>{c}</span></span>)}
+        {notes.length > 0 && <div style={{ display:"flex", flexWrap:"wrap", gap:14 }}>
+          {notes.map(([n, c]) => <div key={n} style={{ display:"flex", flexDirection:"column", alignItems:"center", gap:2 }}><NoteIllustration name={n} size={84}/><span style={{ fontFamily:sans, fontSize:11, color:T.faint }}>{c} fragrance{c !== 1 ? "s" : ""}</span></div>)}
         </div>}
       </InsightCard>
 
       <InsightCard label="Most worn perfumer" more="Top 3" headline={perfs[0] ? perfs[0][0] : "None yet"} sub={perfs[0] ? `${perfs[0][1]} wear${perfs[0][1] !== 1 ? "s" : ""} ${when}` : when}
         hint={perfs.length === 0 ? "Log a wear on a fragrance's Tracker tab, and your most worn perfumer shows here." : null}>
-        {perfs.length > 1 && perfs.slice(1).map(([n, c]) => <div key={n} style={{ display:"flex", justifyContent:"space-between", marginBottom:6 }}><span style={{ fontFamily:sans, fontSize:13, color:T.ink }}>{n}</span><span style={{ fontFamily:sans, fontSize:11, color:T.faint }}>{c} wear{c !== 1 ? "s" : ""}</span></div>)}
+        {perfs.length > 0 && <div style={{ display:"flex", flexDirection:"column", gap:12 }}>
+          {perfs.map(([n, c]) => <div key={n} style={{ display:"flex", alignItems:"center", gap:14 }}><PerfumerPortrait name={titleCaseName(n)} size={64}/><span style={{ fontFamily:serif, fontSize:18, color:T.black, flex:1, minWidth:0 }}>{n}</span><span style={{ fontFamily:sans, fontSize:12, color:T.faint, flexShrink:0 }}>{c} wear{c !== 1 ? "s" : ""}</span></div>)}
+        </div>}
       </InsightCard>
 
       <InsightCard label="Your words" more="All words" headline={words[0] ? words[0][0] : "None yet"} sub={words[0] ? `your most used word ${when}` : when}
