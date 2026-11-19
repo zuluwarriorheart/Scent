@@ -2095,7 +2095,6 @@ function BrandsToTry({ onOpenBrand }) {
   const [q, setQ] = useState("");
   const [res, setRes] = useState([]);
   const [err, setErr] = useState("");
-  const [open, setOpen] = useState(false);
   const load = async () => {
     try { const r = await supabase.from("brand_wishlist").select("id, house_id, name, created_at, houses(slug)").order("created_at", { ascending:false }).limit(500); setRows(r.error ? [] : (r.data || [])); } catch (e) { setRows([]); }
   };
@@ -2127,16 +2126,14 @@ function BrandsToTry({ onOpenBrand }) {
   const exact = res.some(h => h.name.toLowerCase() === typed.toLowerCase());
   return (
     <div style={{ background:T.lift, borderRadius:16, border:`1px solid ${T.rule}`, padding:18, margin:"0 0 18px" }}>
-      <button onClick={() => setOpen(o => !o)} aria-expanded={open} style={{ display:"flex", width:"100%", alignItems:"center", justifyContent:"space-between", gap:12, background:"none", border:"none", padding:0, cursor:"pointer", textAlign:"left" }}>
-        <span>
-          <span style={{ display:"block", fontFamily:serif, fontSize:20, color:T.black }}>Brands to try</span>
-          <span style={{ display:"block", fontFamily:sans, fontSize:12, color:T.faint, marginTop:2 }}>Houses you have never smelled or sampled{list.length ? ` · ${list.length}` : ""}</span>
-        </span>
-        <span style={{ fontFamily:sans, fontSize:12, color:T.ink, background:T.white, border:`1px solid ${T.rule}`, borderRadius:20, minHeight:36, padding:"0 14px", display:"inline-flex", alignItems:"center", flexShrink:0 }}>{open ? "Hide" : "Open"}&nbsp;<span style={{ fontSize:10, display:"inline-block", transform:open ? "rotate(180deg)" : "none" }}>▾</span></span>
-      </button>
-      {open && <div style={{ marginTop:16 }}>
+      <span style={{ display:"block", fontFamily:serif, fontSize:20, color:T.black }}>Brands to try</span>
+      <span style={{ display:"block", fontFamily:sans, fontSize:12, color:T.faint, margin:"2px 0 0" }}>Houses you have never smelled or sampled{list.length ? ` · ${list.length}` : ""}</span>
+      {<div style={{ marginTop:14 }}>
         <div style={{ position:"relative" }}>
+          <div style={{ display:"flex", gap:8 }}>
           <input value={q} onChange={e => setQ(e.target.value)} onKeyDown={e => { if (e.key === "Enter") { e.preventDefault(); const m = res.find(h => h.name.toLowerCase() === typed.toLowerCase()); add(m ? m.name : typed, m && m.id); } }} placeholder="Search for a brand, or type a new one" style={{ ...FIELD, minHeight:44 }}/>
+          <button onClick={() => { const m = res.find(h => h.name.toLowerCase() === typed.toLowerCase()); add(m ? m.name : typed, m && m.id); }} disabled={typed.length < 1} aria-label="Add brand" style={{ flexShrink:0, width:48, minHeight:44, borderRadius:12, border:"none", background:typed ? "var(--accent)" : T.white, color:typed ? "#fff" : T.faint, fontSize:24, lineHeight:1, cursor:typed ? "pointer" : "default", ...(typed ? null : { border:`1px solid ${T.rule}` }) }}>+</button>
+          </div>
           {typed.length >= 2 && (res.length > 0 || !exact) && <div style={{ marginTop:8, background:T.white, border:`1px solid ${T.rule}`, borderRadius:12, overflow:"hidden" }}>
             {res.map(h => <button key={h.id} onClick={() => add(h.name, h.id)} style={{ display:"block", width:"100%", textAlign:"left", padding:"12px 14px", minHeight:44, background:"none", border:"none", borderBottom:`1px solid ${T.lift}`, fontFamily:sans, fontSize:14, color:T.ink, cursor:"pointer" }}>{h.name}</button>)}
             {!exact && <button onClick={() => add(typed, null)} style={{ display:"block", width:"100%", textAlign:"left", padding:"12px 14px", minHeight:44, background:"none", border:"none", fontFamily:sans, fontSize:14, color:T.mid, cursor:"pointer" }}>Add "{typed}" to my list</button>}
