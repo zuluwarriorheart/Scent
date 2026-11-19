@@ -3172,7 +3172,7 @@ function avgWearRating(wears) {
   return r.length ? r.reduce((a, b) => a + b, 0) / r.length : null;
 }
 function InsightCard({ label, headline, sub, hint, more, children }) {
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(!more || more !== "Full calendar");
   const has = !!children && !hint;
   const chip = { minHeight:38, padding:"0 14px", borderRadius:20, fontFamily:sans, fontSize:14, cursor:"pointer", display:"inline-flex", alignItems:"center" };
   return (
