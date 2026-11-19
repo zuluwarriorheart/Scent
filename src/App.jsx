@@ -5233,10 +5233,10 @@ function CollectionTab({ onEvents, onImport, onOpenBrand, onOpenFrag, statuses:u
       <div role="tablist" style={{display:"flex",overflowX:"auto",borderBottom:`1px solid ${T.rule}`,marginBottom:14}}>
         {TABS.map(([k,l])=>(<button key={k} role="tab" aria-selected={ctab===k} onClick={()=>pickTab(k)} style={{position:"relative",padding:"0 2px 13px",marginRight:24,background:"none",border:"none",cursor:"pointer",fontFamily:sans,fontSize:15,fontWeight:600,whiteSpace:"nowrap",flexShrink:0,color:ctab===k?T.black:T.mid}}>{l}<span style={{fontWeight:400,opacity:0.6,marginLeft:6,fontSize:12}}>{tabCount(k)}</span>{ctab===k&&<span style={{position:"absolute",left:0,right:0,bottom:-1,height:2,background:T.black}}/>}</button>))}
       </div>
-      {ctab==="all"&&<div style={{display:"flex",gap:7,overflowX:"auto",paddingBottom:4,marginBottom:8}}>
+      {ctab==="all"&&<div style={{display:"flex",flexWrap:"wrap",gap:7,marginBottom:8}}>
         {[["love","Love"],["like","Like"],["dislike","Dislike"]].map(([k,l])=>chipB(rxF===k,l,rxCount(k),()=>setRxF(rxF===k?"":k),"rx"+k))}
       </div>}
-      <div style={{display:"flex",gap:7,overflowX:"auto",paddingBottom:4,marginBottom:14}}>
+      <div style={{display:"flex",flexWrap:"wrap",gap:7,marginBottom:14}}>
         {SUBS.map(([k,l])=>chipB(subF===k,l,subCount(k),()=>setSubF(subF===k?"":k),"sub"+k))}
       </div>
       <div style={{display:"flex",gap:8,alignItems:"center",marginBottom:12}}>
