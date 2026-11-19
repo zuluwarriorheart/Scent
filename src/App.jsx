@@ -862,7 +862,7 @@ function StatusSelector({ value, onChange, size, onSize }) {
               );
             })}
           </div>
-          {g.title === "Smelled" && onSize && (
+          {g.title === "Sample" && onSize && (
             <div style={{ marginTop:14 }}>
               <p style={{ fontFamily:sans, fontSize:12, color:T.faint, margin:"0 0 8px" }}>Size you own or wishlist (optional)</p>
               <div style={{ display:"flex", flexWrap:"wrap", gap:7 }}>
