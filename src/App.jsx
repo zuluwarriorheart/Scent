@@ -2188,7 +2188,7 @@ function BrandModal({ brand, onClose, onBack, onOpenFrag }) {
         if (!h) { setHouse(null); return; }
         setHouse(h);
         trackEvent("brand_view", { houseSlug: h.slug, source: "brand", dedupeMs: 1800000 });
-        const r = await fetchFragRows(sel => supabase.from("fragrances").select(sel, { count: "exact" }).eq("house_id", h.id).order("slug", { ascending: true }).range(0, PAGE - 1));
+        const r = await fetchFragRows(sel => supabase.from("fragrances").select(sel, { count: "exact" }).eq("house_id", h.id).order("sort_order", { ascending: true, nullsFirst: false }).order("slug", { ascending: true }).range(0, PAGE - 1));
         if (off) return;
         if (!r.error && r.data) { const m = r.data.map(mapFrag); if (fragSink.fn) fragSink.fn(m); setFrags(m); setTotal(r.count != null ? r.count : m.length); }
         const s = await supabase.from("stores").select("id, name, city, country, address, website, category").ilike("house", h.name).limit(30);
@@ -2202,7 +2202,7 @@ function BrandModal({ brand, onClose, onBack, onOpenFrag }) {
     setBusy(true);
     try {
       const from = frags.length;
-      const r = await fetchFragRows(sel => supabase.from("fragrances").select(sel).eq("house_id", house.id).order("slug", { ascending: true }).range(from, from + PAGE - 1));
+      const r = await fetchFragRows(sel => supabase.from("fragrances").select(sel).eq("house_id", house.id).order("sort_order", { ascending: true, nullsFirst: false }).order("slug", { ascending: true }).range(from, from + PAGE - 1));
       if (!r.error && r.data) { const m = r.data.map(mapFrag); if (fragSink.fn) fragSink.fn(m); setFrags(p => [...p, ...m]); }
     } catch (e) {}
     setBusy(false);
