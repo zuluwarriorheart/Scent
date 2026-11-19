@@ -864,7 +864,7 @@ function StatusSelector({ value, onChange, size, onSize }) {
           </div>
           {g.title === "Smelled" && onSize && (
             <div style={{ marginTop:14 }}>
-              <p style={{ fontFamily:sans, fontSize:12, color:T.faint, margin:"0 0 8px" }}>Size you smelled or tried (optional)</p>
+              <p style={{ fontFamily:sans, fontSize:12, color:T.faint, margin:"0 0 8px" }}>Size you own or wishlist (optional)</p>
               <div style={{ display:"flex", flexWrap:"wrap", gap:7 }}>
                 {SIZES_ML.map(n => { const on = size === n; return <button key={n} onClick={() => onSize(on ? null : n)} aria-pressed={on} style={{ minHeight:38, padding:"0 14px", borderRadius:20, border:`1px solid ${on ? "transparent" : T.rule}`, background:on ? "var(--accent)" : T.white, color:on ? "#fff" : T.ink, fontFamily:sans, fontSize:14, fontWeight:on ? 600 : 400, cursor:"pointer" }}>{n} ml</button>; })}
               </div>
