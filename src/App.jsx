@@ -4642,6 +4642,9 @@ function EventsSheet({ uid, onClose, onSearch, onRate }) {
   const [pasteOpen, setPasteOpen] = useState(false);
   const [pasteText, setPasteText] = useState("");
   const [pasteMsg, setPasteMsg] = useState("");
+  const [seeding, setSeeding] = useState(false);
+  const [tidy, setTidy] = useState(false);
+  const [picked, setPicked] = useState([]);
   const errTimer = useRef(null);
   const flag = (e) => { console.error("Events:", e); setErr("That didn't go through. Try again in a moment."); clearTimeout(errTimer.current); errTimer.current = setTimeout(() => setErr(""), 6000); };
 
@@ -4750,6 +4753,39 @@ function EventsSheet({ uid, onClose, onSearch, onRate }) {
     const { data, error } = await supabase.from("member_event_brands").insert({ user_id:uid, event_id:evId, house_id:row.house_id, brand_name:row.brand_name }).select("*").single();
     if (error) { flag(error); return; }
     setBrands(p => [...p, data]); setBrandId(data.id);
+  }
+  // First time a library brand is opened, bring in all of its fragrances so the member can rate what they smell and remove the rest.
+  useEffect(() => {
+    setTidy(false); setPicked([]);
+    const b = brands.find(x => x.id === brandId);
+    if (!b || !b.house_id || b.frags_loaded) return;
+    let off = false; setSeeding(true);
+    (async () => {
+      try {
+        const lib = await evAll(() => supabase.from("fragrances").select("id, slug").eq("house_id", b.house_id).or("hidden.is.null,hidden.eq.false").order("slug").order("id"));
+        const { data: have } = await supabase.from("member_event_frags").select("fragrance_id").eq("brand_id", b.id).limit(100);
+        const haveIds = new Set((have || []).map(x => x.fragrance_id));
+        const rows = lib.filter(r => !haveIds.has(r.id)).map(r => ({ user_id:uid, event_id:b.event_id, brand_id:b.id, fragrance_id:r.id, frag_name:evFragName(r.slug) }));
+        let added = [];
+        for (let i = 0; i < rows.length; i += 100) {
+          const { data, error } = await supabase.from("member_event_frags").insert(rows.slice(i, i + 100)).select("*");
+          if (error) throw error; added = added.concat(data || []);
+        }
+        const { error: e3 } = await supabase.from("member_event_brands").update({ frags_loaded:true }).eq("id", b.id).eq("user_id", uid);
+        if (e3) throw e3;
+        if (off) return;
+        setFrags(p => [...p, ...added.filter(a => !p.some(x => x.id === a.id))]);
+        setBrands(p => p.map(x => x.id === b.id ? { ...x, frags_loaded:true } : x));
+      } catch (e) { if (!off) flag(e); }
+      if (!off) setSeeding(false);
+    })();
+    return () => { off = true; setSeeding(false); };
+  }, [brandId]);
+  async function removePicked(ids) {
+    if (!ids.length) return;
+    const { error } = await supabase.from("member_event_frags").delete().in("id", ids).eq("user_id", uid);
+    if (error) { flag(error); return; }
+    setFrags(p => p.filter(f => !ids.includes(f.id))); setPicked([]); setTidy(false);
   }
   async function patchBrand(id, patch) {
     const before = brands.find(b => b.id === id); setBrands(p => p.map(b => b.id === id ? { ...b, ...patch } : b));
@@ -4908,9 +4944,26 @@ function EventsSheet({ uid, onClose, onSearch, onRate }) {
 
           <p style={{ ...FLABEL, margin:"26px 0 6px" }}>What you smelled</p>
           <EvFragAdd brand={brand} onSearch={onSearch} onAdd={row => addFrag(brand, row)}/>
+          {seeding && <p style={{ ...EV_SMALL, margin:"12px 0 0" }}>Bringing in {brand.brand_name}'s fragrances…</p>}
+          {!seeding && brand.house_id && brandFrags(brand).length > 1 && <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", gap:10, margin:"14px 0 0" }}>
+            <span style={{ ...EV_SMALL }}>{brandFrags(brand).length} fragrances. Rate the ones you try.</span>
+            <button onClick={() => { setTidy(t => !t); setPicked([]); }} style={{ ...ghostBtn, minHeight:40, padding:"0 14px", fontSize:13 }}>{tidy ? "Done" : "Select to remove"}</button>
+          </div>}
+          {tidy && <div style={{ display:"flex", gap:8, flexWrap:"wrap", margin:"12px 0 4px" }}>
+            <button onClick={() => setPicked(brandFrags(brand).map(f => f.id))} style={{ ...ghostBtn, minHeight:40, padding:"0 14px", fontSize:13 }}>Select all</button>
+            <button onClick={() => setPicked(brandFrags(brand).filter(f => !f.rating && !f.to_buy && !f.note).map(f => f.id))} style={{ ...ghostBtn, minHeight:40, padding:"0 14px", fontSize:13 }}>Select the untouched</button>
+            <button onClick={() => removePicked(picked)} disabled={!picked.length} style={{ ...ghostBtn, minHeight:40, padding:"0 14px", fontSize:13, color:picked.length ? T.bad : T.faint, borderColor:picked.length ? T.bad : T.rule }}>Remove {picked.length ? picked.length : ""} selected</button>
+          </div>}
           <div style={{ marginTop:8 }}>
-            {brandFrags(brand).map(f => <EvFragRow key={f.id} f={f} onRate={v => rate(f, v)} onPatch={p => patchFrag(f.id, p)} onDelete={() => deleteFrag(f.id)}/>)}
-            {!brandFrags(brand).length && <p style={{ fontFamily:sans, fontSize:14, color:T.faint, margin:"14px 0 0" }}>Add the fragrances you try, then tap Love, Like or No.</p>}
+            {tidy
+              ? brandFrags(brand).map(f => { const on = picked.includes(f.id); return (
+                  <button key={f.id} onClick={() => setPicked(p => on ? p.filter(x => x !== f.id) : [...p, f.id])} aria-pressed={on} style={{ display:"flex", alignItems:"center", gap:12, width:"100%", textAlign:"left", background:on ? T.lift : "none", border:"none", borderBottom:`1px solid ${T.rule}`, padding:"12px 4px", minHeight:52, cursor:"pointer" }}>
+                    <span aria-hidden="true" style={{ width:22, height:22, borderRadius:6, flexShrink:0, border:`1.5px solid ${on ? T.black : T.rule}`, background:on ? T.black : T.white, color:T.white, display:"grid", placeItems:"center", fontSize:14 }}>{on ? "✓" : ""}</span>
+                    <span style={{ flex:1, minWidth:0, fontFamily:serif, fontSize:18, color:T.black, overflowWrap:"anywhere" }}>{f.frag_name}</span>
+                    {(f.rating || f.to_buy || f.note) && <span style={EV_SMALL}>{f.rating ? "rated" : "noted"}</span>}
+                  </button>); })
+              : brandFrags(brand).map(f => <EvFragRow key={f.id} f={f} onRate={v => rate(f, v)} onPatch={p => patchFrag(f.id, p)} onDelete={() => deleteFrag(f.id)}/>)}
+            {!seeding && !brandFrags(brand).length && <p style={{ fontFamily:sans, fontSize:14, color:T.faint, margin:"14px 0 0" }}>Add the fragrances you try, then tap Love, Like or No.</p>}
           </div>
           {brandFrags(brand).some(f => f.fragrance_id) && <p style={{ fontFamily:sans, fontSize:12, color:T.faint, lineHeight:1.6, margin:"12px 0 0" }}>Rated fragrances from the library are added to your collection as Smelled.</p>}
 
