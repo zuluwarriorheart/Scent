@@ -1740,6 +1740,7 @@ function mapFrag(f) {
   const accords = f.accords || [];
   return {
     id: f.id,
+    slug: f.slug,
     name: (f.house && f.house.slug === "a-n-other" && /^[a-z]{2}-\d{2,4}$/.test(f.slug)) ? f.slug.replace("-", " ").toUpperCase() : f.slug.replace(/-/g, " ").replace(/\b\w/g, c => c.toUpperCase()).replace(/\bEdp\b/g, "EDP").replace(/\bEdt\b/g, "EDT"),
     house: (f.house && f.house.name) || "",
     houseSlug: (f.house && f.house.slug) || "",
@@ -1891,6 +1892,38 @@ function SimilarScents({ frag, onOpenFrag }) {
   );
 }
 
+// Versions of one fragrance (EDT, EDP, Parfum...) are separate entries with their own notes. This links them.
+const CONC_SUFFIX = /-(eau-de-parfum|eau-de-toilette|eau-de-cologne|edp|edt|extrait|parfum|cologne)$/;
+function OtherVersions({ frag, onOpenFrag }) {
+  const [list, setList] = useState([]);
+  const base = String(frag.slug || "").replace(CONC_SUFFIX, "");
+  useEffect(() => {
+    if (!frag.houseSlug || !base) { setList([]); return; }
+    let off = false;
+    (async () => {
+      try {
+        const { data: h } = await supabase.from("houses").select("id").eq("slug", frag.houseSlug).maybeSingle();
+        if (!h || off) return;
+        const { data } = await fetchFragRows(sel => supabase.from("fragrances").select(sel).eq("house_id", h.id).like("slug", base + "%").order("slug").limit(12));
+        if (off || !data) return;
+        const m = data.map(mapFrag).filter(x => String(x.slug || "").replace(CONC_SUFFIX, "") === base);
+        if (fragSink.fn) fragSink.fn(m);
+        setList(m);
+      } catch (e) {}
+    })();
+    return () => { off = true; };
+  }, [frag.id, frag.houseSlug, base]);
+  if (list.length < 2) return null;
+  return (
+    <div style={{ margin:"12px 0 0" }}>
+      <p style={{ fontFamily:sans, fontSize:11, textTransform:"uppercase", letterSpacing:"0.12em", color:T.mid, margin:"0 0 8px" }}>Versions · each has its own notes</p>
+      <div style={{ display:"flex", flexWrap:"wrap", gap:7 }}>
+        {list.map(v => { const on = v.id === frag.id; const lab = v.concentration || "Standard";
+          return <button key={v.id} onClick={() => !on && onOpenFrag(v.id, "version")} aria-pressed={on} style={{ minHeight:38, padding:"0 14px", borderRadius:20, border:`1px solid ${on ? "transparent" : T.rule}`, background:on ? "var(--accent)" : T.white, color:on ? "#fff" : T.ink, fontFamily:sans, fontSize:14, fontWeight:on ? 600 : 400, cursor:on ? "default" : "pointer" }}>{lab}</button>; })}
+      </div>
+    </div>
+  );
+}
 function HouseStrip({ currentFrag, onOpenFrag, onOpenBrand }) {
   const siblings = useHouseSiblings(currentFrag, true) || [];
   if (!siblings.length) return null;
@@ -3087,6 +3120,7 @@ function DetailModal({ frag, entries, onClose, userStatus, setUserStatus, finish
               <div style={{marginBottom:10}}><span style={{fontFamily:sans,fontSize:"clamp(10px, 0.9vw, 12px)",fontWeight:600,textTransform:"uppercase",letterSpacing:"0.18em",color:T.mid}}>{onOpenBrand&&frag.houseSlug?<button onClick={()=>onOpenBrand({slug:frag.houseSlug,name:frag.house})} style={{font:"inherit",letterSpacing:"inherit",textTransform:"inherit",color:T.black,background:"none",border:"none",borderBottom:`1px solid ${T.mid}`,padding:"0 0 1px",cursor:"pointer",minHeight:24}}>{frag.house}</button>:frag.house}{[frag.line, frag.family].filter(Boolean).length?" · "+[frag.line, frag.family].filter(Boolean).join(" · "):""}</span></div>
               <h2 style={{fontFamily:serif,fontSize:"clamp(36px, 4.4vw, 64px)",fontWeight:400,color:T.black,margin:"0 0 10px",letterSpacing:-1,lineHeight:1.05,paddingRight:44}}>{frag.name}</h2>
               <p style={{fontFamily:sans,fontSize:"clamp(14px, 1.1vw, 17px)",color:T.mid,margin:"0 0 0",lineHeight:1.4}}>{[frag.year, frag.concentration].filter(Boolean).join(" · ")}</p>
+              <OtherVersions frag={frag} onOpenFrag={onOpenFrag}/>
               <div style={{margin:"10px 0 0",display:"flex",flexDirection:"column",alignItems:"flex-start",gap:8}}>
                 {brandTypeLabel(frag.brand_origin) && <span style={{fontFamily:sans,fontSize:"clamp(13px, 1vw, 15px)",color:T.mid}}>Brand type <strong style={{color:"var(--coral)",fontWeight:600}}>{brandTypeLabel(frag.brand_origin)}</strong></span>}
                 {frag.ownership && <span style={{display:"inline-flex",alignItems:"baseline",gap:6,fontFamily:sans,fontSize:"clamp(13px, 1vw, 15px)",color:T.mid}}>Ownership <OwnershipBadge ownership={frag.ownership} size="large" showTooltip={true}/></span>}
