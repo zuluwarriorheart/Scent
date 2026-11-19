@@ -821,14 +821,17 @@ const STATUSES = [
   { key:"sample_have",     label:"Sample, in hand",  iconName:"sample",   group:"sample" },
   { key:"sample_wishlist", label:"Sample, wishlist", iconName:"bookmark", group:"sample" },
   { key:"sample_finished", label:"Sample, finished", iconName:"finished", group:"sample" },
+  { key:"kit_have",        label:"Discovery kit, own", iconName:"sample",  group:"kit"    },
+  { key:"kit_wishlist",    label:"Discovery kit, wishlist", iconName:"bookmark", group:"kit" },
+  { key:"kit_finished",    label:"Discovery kit, finished", iconName:"finished", group:"kit" },
   { key:"smelled",         label:"Smelled",           iconName:"nose",     group:"tried"  },
   { key:"tried_skin",      label:"Tried on skin",     iconName:"skin",     group:"tried"  },
 ];
 // A fragrance can hold several statuses at once (e.g. own the sample, wishlist the bottle, smelled on a blotter).
 // Bottle and Sample each hold one status at a time; Smelled can hold both. `primaryStatus` is the single status the cards and badges show.
-const STATUS_PRIORITY = ["bottle_owned","bottle_finished","travel_have","travel_finished","sample_have","sample_finished","bottle_wishlist","travel_wishlist","sample_wishlist","tried_skin","smelled"];
+const STATUS_PRIORITY = ["bottle_owned","bottle_finished","travel_have","travel_finished","sample_have","sample_finished","kit_have","kit_finished","bottle_wishlist","travel_wishlist","sample_wishlist","kit_wishlist","tried_skin","smelled"];
 const primaryStatus = arr => STATUS_PRIORITY.find(k => (arr || []).includes(k)) || null;
-const isFinishedSet = arr => (arr || []).some(k => k === "bottle_finished" || k === "travel_finished" || k === "sample_finished");
+const isFinishedSet = arr => (arr || []).some(k => k === "bottle_finished" || k === "travel_finished" || k === "sample_finished" || k === "kit_finished");
 function toggleStatus(arr, key) {
   const cur = arr || [], def = STATUSES.find(x => x.key === key);
   if (!def) return cur;
@@ -842,9 +845,10 @@ function StatusSelector({ value, onChange, size, onSize }) {
     { title:"Bottle", items:STATUSES.filter(s=>s.group==="bottle") },
     { title:"Travel size", items:STATUSES.filter(s=>s.group==="travel") },
     { title:"Sample", items:STATUSES.filter(s=>s.group==="sample") },
+    { title:"Discovery kit", items:STATUSES.filter(s=>s.group==="kit") },
     { title:"Smelled",items:STATUSES.filter(s=>s.group==="tried")  },
   ];
-  const SHORT = { bottle_owned:"Own", bottle_wishlist:"Wishlist", sample_have:"Own", sample_wishlist:"Wishlist", travel_have:"Own", travel_wishlist:"Wishlist", travel_finished:"Finished", bottle_finished:"Finished", sample_finished:"Finished", smelled:"On blotter", tried_skin:"Tried on skin" };
+  const SHORT = { bottle_owned:"Own", bottle_wishlist:"Wishlist", sample_have:"Own", sample_wishlist:"Wishlist", kit_have:"Own", kit_wishlist:"Wishlist", kit_finished:"Finished", travel_have:"Own", travel_wishlist:"Wishlist", travel_finished:"Finished", bottle_finished:"Finished", sample_finished:"Finished", smelled:"On blotter", tried_skin:"Tried on skin" };
   return (
     <div>
       {groups.map((g,gi) => (
@@ -878,9 +882,9 @@ function StatusSelector({ value, onChange, size, onSize }) {
 
 // Shown under the status buttons once a bottle or sample is marked Finished.
 function FinishedPanel({ status: statusSet, finish, onChange }) {
-  const status = (statusSet || []).includes("bottle_finished") ? "bottle_finished" : (statusSet || []).includes("travel_finished") ? "travel_finished" : (statusSet || []).includes("sample_finished") ? "sample_finished" : null;
+  const status = (statusSet || []).includes("bottle_finished") ? "bottle_finished" : (statusSet || []).includes("travel_finished") ? "travel_finished" : (statusSet || []).includes("sample_finished") ? "sample_finished" : (statusSet || []).includes("kit_finished") ? "kit_finished" : null;
   if (!status) return null;
-  const what = status === "bottle_finished" ? "bottle" : status === "travel_finished" ? "travel size" : "sample";
+  const what = status === "bottle_finished" ? "bottle" : status === "travel_finished" ? "travel size" : status === "kit_finished" ? "discovery kit" : "sample";
   const f = finish || {};
   const opts = [["yes", "Yes"], ["maybe", "Maybe"], ["no", "No"]];
   return (
@@ -1724,13 +1728,19 @@ function splitNotes(notes, pos) {
   return out;
 }
 const allNoteList = n => [].concat((n && n.top) || [], (n && n.mid) || [], (n && n.base) || [], (n && n.all) || []);
+// The database mostly leaves "concentration" empty, but most variants carry it in the slug (black-orchid-eau-de-toilette).
+function concFromSlug(slug) {
+  const m = String(slug || "").match(/-(eau-de-parfum|eau-de-toilette|eau-de-cologne|edp|edt|extrait|parfum|cologne)$/);
+  if (!m) return "";
+  return { "eau-de-parfum":"Eau de Parfum", edp:"Eau de Parfum", "eau-de-toilette":"Eau de Toilette", edt:"Eau de Toilette", "eau-de-cologne":"Eau de Cologne", cologne:"Cologne", extrait:"Extrait", parfum:"Parfum" }[m[1]] || "";
+}
 function mapFrag(f) {
   const own = f.ownership || (f.house && f.house.ownership) || "";
   const notes = f.notes || [];
   const accords = f.accords || [];
   return {
     id: f.id,
-    name: (f.house && f.house.slug === "a-n-other" && /^[a-z]{2}-\d{2,4}$/.test(f.slug)) ? f.slug.replace("-", " ").toUpperCase() : f.slug.replace(/-/g, " ").replace(/\b\w/g, c => c.toUpperCase()),
+    name: (f.house && f.house.slug === "a-n-other" && /^[a-z]{2}-\d{2,4}$/.test(f.slug)) ? f.slug.replace("-", " ").toUpperCase() : f.slug.replace(/-/g, " ").replace(/\b\w/g, c => c.toUpperCase()).replace(/\bEdp\b/g, "EDP").replace(/\bEdt\b/g, "EDT"),
     house: (f.house && f.house.name) || "",
     houseSlug: (f.house && f.house.slug) || "",
     country: (f.house && f.house.country) || "",
@@ -1745,7 +1755,7 @@ function mapFrag(f) {
     year: f.year,
     perfumer: titleCaseName(f.perfumer),
     story: f.story || "",
-    concentration: f.concentration || "",
+    concentration: f.concentration || concFromSlug(f.slug),
     gender: f.gender,
     url: f.url || "",
     neoGourmand: !!f.neo_gourmand,
@@ -3344,7 +3354,7 @@ function JournalInsights({ entries, userStatuses, reactions, fragrances, wears, 
   const words = Object.entries(wordTally).sort((a, b) => b[1] - a[1]).slice(0, 14);
 
   // accords across what you own, have sampled or love (not dated, so not year-filtered)
-  const LIKE = new Set(["bottle_owned","bottle_wishlist","sample_have","tried_skin","bottle_finished","sample_finished","travel_have","travel_finished"]);
+  const LIKE = new Set(["bottle_owned","bottle_wishlist","sample_have","tried_skin","bottle_finished","sample_finished","travel_have","travel_finished","kit_have","kit_finished"]);
   const accTally = {}, loveNotes = {}; let loved = 0;
   FR.forEach(f => {
     const st = userStatuses[f.id], rx = reactions[f.id];
@@ -5146,30 +5156,28 @@ function EvFragRow({ f, onRate, onSmell, onPatch, onDelete }) {
 
 function CollectionTab({ onEvents, onImport, onOpenBrand, onOpenFrag, statuses:userStatuses, statusSets:sets, reactions, onReaction, onSuggest, fragrances, wears, onOpenJournal }) {
   const FR = (fragrances && fragrances.length) ? fragrances : FRAGRANCES;
-  const [activeFilter,setActiveFilter]=useState("all");
   const [search,setSearch]=useState("");
   const [view,setViewState]=useState(()=>{try{const v=localStorage.getItem("mos_collection_view");return v==="shelf"||v==="list"||v==="grid"?v:"grid";}catch(e){return "grid";}});
   const setView=v=>{setViewState(v);try{localStorage.setItem("mos_collection_view",v);}catch(e){}};
-  const filters=[
-    {key:"all",label:"All",iconName:null},
-    {key:"bottle_owned",label:"Bottles",iconName:"bottle"},
-    {key:"travel_have",label:"Travel size",iconName:"travel"},
-    {key:"sample_have",label:"Samples",iconName:"sample"},
-    {key:"finished",label:"Finished",iconName:"finished"},
-    {key:"tried_skin",label:"Tried",iconName:"skin"},
-    {key:"smelled",label:"Smelled",iconName:"nose"},
-    {key:"bottle_wishlist",label:"Bottle WL",iconName:"wishstar"},
-    {key:"travel_wishlist",label:"Travel WL",iconName:"wishstar"},
-    {key:"sample_wishlist",label:"Sample WL",iconName:"bookmark"},
-    {key:"love",label:"Love",iconName:"flame"},
-    {key:"like",label:"Like",iconName:"thumbsup"},
-    {key:"dislike",label:"Dislike",iconName:"thumbsdown"},
-  ];
+  const [ctab,setCtab]=useState("all");
+  const [rxF,setRxF]=useState("");
+  const [subF,setSubF]=useState("");
+  const TABS=[["all","All"],["bottle","Bottles"],["travel","Travel size"],["sample","Samples"],["kit","Discovery kits"]];
+  const PRE={bottle:["bottle_owned","bottle_wishlist","bottle_finished"],travel:["travel_have","travel_wishlist","travel_finished"],sample:["sample_have","sample_wishlist","sample_finished"],kit:["kit_have","kit_wishlist","kit_finished"]};
+  const SUBS=ctab==="all"?[["smelled","Smelled on blotter"],["tried_skin","Tried on skin"],["finished","Finished"],["wishlist","Wishlist"]]:[["own","Own"],["wishlist","Wishlist"],["finished","Finished"]];
   const has=(id,k)=>((sets||{})[id]||[]).includes(k);
-  const counts={};STATUSES.forEach(s=>{counts[s.key]=FR.filter(f=>has(f.id,s.key)).length;});counts.finished=FR.filter(f=>isFinishedSet((sets||{})[f.id])).length;
-  const rCounts={love:0,like:0,dislike:0};Object.values(reactions).forEach(r=>{if(r)rCounts[r]++;});
-  const chipCount=k=>k==="all"?FR.filter(x=>userStatuses[x.id]||reactions[x.id]).length:(rCounts[k]!==undefined?rCounts[k]:(counts[k]||0));
-  const filtered=FR.filter(f=>{const rf=["love","like","dislike"];const ms=activeFilter==="all"?!!(userStatuses[f.id]||reactions[f.id]):(rf.includes(activeFilter)?reactions[f.id]===activeFilter:(activeFilter==="finished"?isFinishedSet((sets||{})[f.id]):has(f.id,activeFilter)));const q=search.toLowerCase();const mq=!search||String(f.name||"").toLowerCase().includes(q)||String(f.house||"").toLowerCase().includes(q)||String(f.family||"").toLowerCase().includes(q)||(f.accords||[]).some(a=>String(a.n||"").toLowerCase().includes(q))||(allNoteList(f.notes)).some(n=>String((n&&n.n)||"").toLowerCase().includes(q));return ms&&mq;});
+  const mineSet=f=>(sets||{})[f.id]||[];
+  const inTab=f=>ctab==="all"?!!(userStatuses[f.id]||reactions[f.id]):mineSet(f).some(k=>PRE[ctab].includes(k));
+  const subOk=(f,k)=>{const st=mineSet(f);if(!k)return true;
+    if(ctab==="all")return k==="smelled"?st.includes("smelled"):k==="tried_skin"?st.includes("tried_skin"):k==="finished"?isFinishedSet(st):st.some(x=>/_wishlist$/.test(x));
+    const P=PRE[ctab];return k==="own"?st.includes(P[0]):k==="wishlist"?st.includes(P[1]):st.includes(P[2]);};
+  const rxOk=(f,k)=>!k||reactions[f.id]===k;
+  const tabCount=t=>t==="all"?FR.filter(x=>userStatuses[x.id]||reactions[x.id]).length:FR.filter(x=>mineSet(x).some(k=>PRE[t].includes(k))).length;
+  const rxCount=k=>FR.filter(f=>inTab(f)&&reactions[f.id]===k&&subOk(f,subF)).length;
+  const subCount=k=>FR.filter(f=>inTab(f)&&rxOk(f,rxF)&&subOk(f,k)).length;
+  const filtered=FR.filter(f=>{const ms=inTab(f)&&rxOk(f,rxF)&&subOk(f,subF);const q=search.toLowerCase();const mq=!search||String(f.name||"").toLowerCase().includes(q)||String(f.house||"").toLowerCase().includes(q)||String(f.family||"").toLowerCase().includes(q)||(f.accords||[]).some(a=>String(a.n||"").toLowerCase().includes(q))||(allNoteList(f.notes)).some(n=>String((n&&n.n)||"").toLowerCase().includes(q));return ms&&mq;});
+  const pickTab=t=>{setCtab(t);setSubF("");setRxF("");};
+  const chipB=(on,label,count,fn,key)=>(<button key={key||label} onClick={fn} aria-pressed={on} style={{fontFamily:sans,fontSize:12,padding:"0 14px",minHeight:36,borderRadius:20,whiteSpace:"nowrap",flexShrink:0,border:`1px solid ${on?T.black:T.rule}`,background:on?T.black:T.white,color:on?T.white:T.ink,cursor:"pointer"}}>{label}<span style={{opacity:0.65,marginLeft:6}}>{count}</span></button>);
   return (
     <div>
       <div className="mos-pagehead">
@@ -5188,12 +5196,15 @@ function CollectionTab({ onEvents, onImport, onOpenBrand, onOpenFrag, statuses:u
       </div>}
       <BrandsToTry onOpenBrand={onOpenBrand}/>
       {onOpenJournal&&<button onClick={onOpenJournal} style={{display:"block",background:"none",border:"none",padding:0,margin:"0 0 14px",fontFamily:sans,fontSize:12,color:T.mid,cursor:"pointer",textDecoration:"underline",textDecorationColor:T.rule,textUnderlineOffset:3}}>See your taste profile in Journal →</button>}
-      <div style={{display:"flex",gap:6,overflowX:"auto",paddingBottom:4,marginBottom:14}}>{filters.map(f=>(
-        <button key={f.key} onClick={()=>setActiveFilter(f.key)} style={{fontFamily:sans,fontSize:10,padding:"5px 12px",borderRadius:20,whiteSpace:"nowrap",border:`1px solid ${activeFilter===f.key?T.black:T.rule}`,background:activeFilter===f.key?T.black:T.white,color:activeFilter===f.key?T.white:T.mid,cursor:"pointer",display:"flex",alignItems:"center",gap:5}}>
-          {f.iconName&&<Icon name={f.iconName} size={13} color={activeFilter===f.key?T.white:T.mid}/>}
-          {f.label}<span style={{opacity:0.65,marginLeft:2}}>{chipCount(f.key)}</span>
-        </button>
-      ))}</div>
+      <div role="tablist" style={{display:"flex",overflowX:"auto",borderBottom:`1px solid ${T.rule}`,marginBottom:14}}>
+        {TABS.map(([k,l])=>(<button key={k} role="tab" aria-selected={ctab===k} onClick={()=>pickTab(k)} style={{position:"relative",padding:"0 2px 13px",marginRight:24,background:"none",border:"none",cursor:"pointer",fontFamily:sans,fontSize:15,fontWeight:600,whiteSpace:"nowrap",flexShrink:0,color:ctab===k?T.black:T.mid}}>{l}<span style={{fontWeight:400,opacity:0.6,marginLeft:6,fontSize:12}}>{tabCount(k)}</span>{ctab===k&&<span style={{position:"absolute",left:0,right:0,bottom:-1,height:2,background:T.black}}/>}</button>))}
+      </div>
+      {ctab==="all"&&<div style={{display:"flex",gap:7,overflowX:"auto",paddingBottom:4,marginBottom:8}}>
+        {[["love","Love"],["like","Like"],["dislike","Dislike"]].map(([k,l])=>chipB(rxF===k,l,rxCount(k),()=>setRxF(rxF===k?"":k),"rx"+k))}
+      </div>}
+      <div style={{display:"flex",gap:7,overflowX:"auto",paddingBottom:4,marginBottom:14}}>
+        {SUBS.map(([k,l])=>chipB(subF===k,l,subCount(k),()=>setSubF(subF===k?"":k),"sub"+k))}
+      </div>
       <div style={{display:"flex",gap:8,alignItems:"center",marginBottom:12}}>
       <div style={{position:"relative",flex:1,minWidth:0}}>
         <span style={{position:"absolute",left:14,top:"50%",transform:"translateY(-50%)"}}><Icon name="search" size={14} color={T.faint}/></span>
