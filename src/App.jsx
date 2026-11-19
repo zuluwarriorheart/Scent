@@ -1943,10 +1943,22 @@ async function rpcAll(name, args) {
   }
   return { data: out, error: null };
 }
+// Same for a table query: build(from, to) returns the query for one page (give it a stable .order()).
+async function pageAll(build) {
+  const out = [];
+  for (let from = 0; from < 20000; from += 100) {
+    const r = await build(from, from + 99);
+    if (r.error) return { data: null, error: r.error };
+    const rows = r.data || [];
+    out.push(...rows);
+    if (rows.length < 100) break;
+  }
+  return { data: out, error: null };
+}
 async function loadBrands() {
   const r = await rpcAll("brands_list");
   if (!r.error && r.data) return r.data;
-  const f = await supabase.from("houses").select("*").order("name").limit(2000);
+  const f = await pageAll((a, b) => supabase.from("houses").select("*").order("name").order("id").range(a, b));
   if (f.error) throw f.error;
   return (f.data || []).map(h => ({ ...h, frag_count: null }));
 }
@@ -5170,8 +5182,8 @@ function CollectionTab({ onEvents, onImport, onOpenBrand, onOpenFrag, statuses:u
           <span style={{display:"block",fontFamily:sans,fontSize:13,color:T.mid,lineHeight:1.5,marginTop:2}}>Your notebook for fairs and expos. Note brands, rate what you smell.</span>
         </button>}
         {onImport&&<button onClick={onImport} style={{textAlign:"left",background:T.lift,border:`1px solid ${T.rule}`,borderRadius:14,padding:"14px 16px",cursor:"pointer"}}>
-          <span style={{display:"block",fontFamily:serif,fontSize:20,color:T.black}}>Import</span>
-          <span style={{display:"block",fontFamily:sans,fontSize:13,color:T.mid,lineHeight:1.5,marginTop:2}}>Bring in a spreadsheet, a list, or a collection from another site.</span>
+          <span style={{display:"flex",alignItems:"center",gap:8,fontFamily:serif,fontSize:20,color:T.black}}><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M12 16V4"/><path d="M7 9l5-5 5 5"/><path d="M4 16v3a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-3"/></svg>Upload your list</span>
+          <span style={{display:"block",fontFamily:sans,fontSize:13,color:T.mid,lineHeight:1.5,marginTop:2}}>Import a spreadsheet, a list, or a collection from another site.</span>
         </button>}
       </div>}
       <BrandsToTry onOpenBrand={onOpenBrand}/>
@@ -8041,10 +8053,10 @@ export default function SillageApp() {
     (async () => {
       try {
         const [uf, je, ly, wr] = await Promise.all([
-          supabase.from("user_fragrances").select("fragrance_id, status, statuses, reaction, note, finished_on, rebuy, size_ml").eq("user_id", uid).limit(5000),
-          supabase.from("journal_entries").select("*").eq("user_id", uid).order("created_at", { ascending: false }).limit(2000),
-          supabase.from("layerings").select("*").eq("user_id", uid).order("created_at", { ascending: false }).limit(1000),
-          supabase.from("wears").select("id, fragrance_id, worn_on, occasion, weather, occasions, weathers, rating, moods").eq("user_id", uid).order("worn_on", { ascending: false }).limit(5000),
+          pageAll((a, b) => supabase.from("user_fragrances").select("fragrance_id, status, statuses, reaction, note, finished_on, rebuy, size_ml").eq("user_id", uid).order("fragrance_id").range(a, b)),
+          pageAll((a, b) => supabase.from("journal_entries").select("*").eq("user_id", uid).order("created_at", { ascending: false }).order("id").range(a, b)),
+          pageAll((a, b) => supabase.from("layerings").select("*").eq("user_id", uid).order("created_at", { ascending: false }).order("id").range(a, b)),
+          pageAll((a, b) => supabase.from("wears").select("id, fragrance_id, worn_on, occasion, weather, occasions, weathers, rating, moods").eq("user_id", uid).order("worn_on", { ascending: false }).order("id").range(a, b)),
         ]);
         if (off) return;
         if (uf.error || je.error || ly.error) { console.error("Could not load your saved data:", uf.error || je.error || ly.error); return; }
@@ -8056,8 +8068,8 @@ export default function SillageApp() {
         setLayers((ly.data || []).map(r => ({ id: r.id, name: r.name, frags: r.frags || [], ratio: r.ratio, layerWith: r.layer_with, note: r.note, rating: r.rating, isPublic: r.is_public, date: new Date(r.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) })));
         // Make sure every fragrance in the collection is loaded so the Collection tab can show it.
         const ids = [...new Set((uf.data || []).filter(r => r.status || r.reaction).map(r => r.fragrance_id).concat((wr.data || []).map(r => r.fragrance_id)))];
-        for (let i = 0; i < ids.length; i += 150) {
-          const chunk = ids.slice(i, i + 150);
+        for (let i = 0; i < ids.length; i += 100) {
+          const chunk = ids.slice(i, i + 100);
           const { data } = await fetchFragRows(sel => supabase.from("fragrances").select(sel).in("id", chunk));
           if (off) return;
           if (data) mergeFrags(data.map(mapFrag));
