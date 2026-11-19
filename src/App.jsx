@@ -4635,6 +4635,13 @@ function EventsSheet({ uid, onClose, onSearch, onRate }) {
   const [form, setForm] = useState({ name:"", date:"", city:"" });
   const [err, setErr] = useState("");
   const [confirmDel, setConfirmDel] = useState("");
+  const [fairs, setFairs] = useState([]);
+  const [busyFair, setBusyFair] = useState("");
+  const [linkText, setLinkText] = useState("");
+  const [linkSent, setLinkSent] = useState(false);
+  const [pasteOpen, setPasteOpen] = useState(false);
+  const [pasteText, setPasteText] = useState("");
+  const [pasteMsg, setPasteMsg] = useState("");
   const errTimer = useRef(null);
   const flag = (e) => { console.error("Events:", e); setErr("That didn't go through. Try again in a moment."); clearTimeout(errTimer.current); errTimer.current = setTimeout(() => setErr(""), 6000); };
 
@@ -4648,6 +4655,17 @@ function EventsSheet({ uid, onClose, onSearch, onRate }) {
     })();
     return () => { off = true; };
   }, [uid]);
+
+  useEffect(() => {
+    let off = false;
+    (async () => {
+      try {
+        const { data } = await supabase.from("fair_events").select("id, name, event_date, end_date, city, website").eq("published", true).order("event_date", { ascending:true, nullsFirst:false }).limit(100);
+        if (!off) setFairs(data || []);
+      } catch (e) { /* the list is optional */ }
+    })();
+    return () => { off = true; };
+  }, []);
 
   useEffect(() => {
     if (!evId) { setBrands([]); setFrags([]); return; }
@@ -4673,6 +4691,52 @@ function EventsSheet({ uid, onClose, onSearch, onRate }) {
     const { data, error } = await supabase.from("member_events").insert({ user_id:uid, name, event_date:form.date || null, city:form.city.trim() || null }).select("*").single();
     if (error) { flag(error); return; }
     setEvents(p => [data, ...(p || [])]); setEvId(data.id); setCreating(false); setForm({ name:"", date:"", city:"" });
+  }
+  // Fill an event with a list of brand names: match each to a library house, keep the rest as typed.
+  async function addBrandNames(eventId, names, existing) {
+    const seen = new Set((existing || []).map(b => b.brand_name.toLowerCase()));
+    const clean = []; names.forEach(n => { const t = evClean(n).slice(0, 120); if (t && !seen.has(t.toLowerCase())) { seen.add(t.toLowerCase()); clean.push(t); } });
+    if (!clean.length) return [];
+    const rows = [];
+    for (let i = 0; i < clean.length; i += 40) {
+      const part = clean.slice(i, i + 40);
+      const { data } = await supabase.from("houses").select("id, name").in("name", part);
+      const byName = new Map((data || []).map(h => [h.name.toLowerCase(), h]));
+      part.forEach(n => { const h = byName.get(n.toLowerCase()); rows.push({ user_id:uid, event_id:eventId, house_id:h ? h.id : null, brand_name:h ? h.name : n }); });
+    }
+    const out = [];
+    for (let i = 0; i < rows.length; i += 100) {
+      const { data, error } = await supabase.from("member_event_brands").insert(rows.slice(i, i + 100)).select("*");
+      if (error) throw error; out.push(...(data || []));
+    }
+    return out;
+  }
+  async function useFair(fair) {
+    if (busyFair) return; setBusyFair(fair.id);
+    try {
+      const { data: ev0, error } = await supabase.from("member_events").insert({ user_id:uid, name:fair.name, event_date:fair.event_date || null, city:fair.city || null, fair_event_id:fair.id }).select("*").single();
+      if (error) throw error;
+      const ex = await evAll(() => supabase.from("fair_event_exhibitors").select("house_id, brand_name").eq("event_id", fair.id).order("brand_name").order("id"));
+      const rows = ex.map(x => ({ user_id:uid, event_id:ev0.id, house_id:x.house_id, brand_name:x.brand_name }));
+      for (let i = 0; i < rows.length; i += 100) { const { error: e2 } = await supabase.from("member_event_brands").insert(rows.slice(i, i + 100)); if (e2) throw e2; }
+      setEvents(p => [ev0, ...(p || [])]); setEvId(ev0.id); setCreating(false);
+    } catch (e) { flag(e); }
+    setBusyFair("");
+  }
+  async function pasteBrands() {
+    const names = pasteText.split(/[\n;,\t]+/).map(x => x.trim()).filter(Boolean).slice(0, 400);
+    if (!names.length || !evId) return;
+    setPasteMsg("Adding…");
+    try {
+      const added = await addBrandNames(evId, names, brands);
+      setBrands(p => [...p, ...added]); setPasteText(""); setPasteOpen(false); setPasteMsg(""); 
+      if (!added.length) { setErr("Those brands are already in this event."); clearTimeout(errTimer.current); errTimer.current = setTimeout(() => setErr(""), 5000); }
+    } catch (e) { setPasteMsg(""); flag(e); }
+  }
+  async function sendEventLink() {
+    const link = linkText.trim(); if (!link) return;
+    try { await sendSuggestion({ id:uid }, "event", { source:"events_notebook", link, note:"Please add this event with its exhibitor list." }); setLinkSent(true); setLinkText(""); }
+    catch (e) { flag(e); }
   }
   async function deleteEvent(id) {
     const { error } = await supabase.from("member_events").delete().eq("id", id).eq("user_id", uid);
@@ -4748,8 +4812,22 @@ function EventsSheet({ uid, onClose, onSearch, onRate }) {
             <button onClick={() => setCreating(true)} style={chip(creating)}>+ New event</button>
           </div>
 
+          {creating && fairs.length > 0 && <div style={{ marginBottom:18 }}>
+            <p style={{ ...FLABEL, margin:"0 0 6px" }}>Upcoming events</p>
+            <p style={{ fontFamily:sans, fontSize:13, color:T.mid, lineHeight:1.5, margin:"0 0 6px" }}>Pick one and the exhibitors are filled in for you.</p>
+            {fairs.filter(f => !events.some(e => e.fair_event_id === f.id)).map(f => (
+              <div key={f.id} style={{ display:"flex", alignItems:"center", gap:10, borderBottom:`1px solid ${T.rule}`, padding:"10px 0" }}>
+                <span style={{ flex:1, minWidth:0 }}>
+                  <span style={{ display:"block", fontFamily:serif, fontSize:18, color:T.black, overflowWrap:"anywhere" }}>{f.name}</span>
+                  <span style={{ display:"block", fontFamily:sans, fontSize:12, color:T.mid }}>{[f.event_date ? new Date(f.event_date + "T12:00:00").toLocaleDateString(undefined, { day:"numeric", month:"short", year:"numeric" }) : "", f.city].filter(Boolean).join(" · ")}</span>
+                </span>
+                <button onClick={() => useFair(f)} disabled={!!busyFair} style={{ ...communityCta(!busyFair), width:"auto", flex:"0 0 auto", minHeight:44, padding:"0 14px", whiteSpace:"nowrap", fontSize:14 }}>{busyFair === f.id ? "Adding…" : "Use this event"}</button>
+              </div>
+            ))}
+          </div>}
+
           {creating && <div style={{ background:T.lift, border:`1px solid ${T.rule}`, borderRadius:14, padding:16, marginBottom:18 }}>
-            <p style={{ fontFamily:serif, fontSize:20, color:T.black, margin:"0 0 10px" }}>Start an event</p>
+            <p style={{ fontFamily:serif, fontSize:20, color:T.black, margin:"0 0 10px" }}>{fairs.length ? "Or start your own" : "Start an event"}</p>
             <input value={form.name} onChange={e => setForm({ ...form, name:e.target.value })} placeholder="Event name, e.g. Esxence 2027" maxLength={120} aria-label="Event name" style={{ ...FIELD, marginBottom:8 }}/>
             <div style={{ display:"flex", gap:8, marginBottom:12 }}>
               <input type="date" value={form.date} onChange={e => setForm({ ...form, date:e.target.value })} aria-label="Date" style={{ ...FIELD, flex:1 }}/>
@@ -4761,9 +4839,25 @@ function EventsSheet({ uid, onClose, onSearch, onRate }) {
             </div>
           </div>}
 
+          {creating && <div style={{ marginBottom:18 }}>
+            <p style={{ ...FLABEL, margin:"0 0 6px" }}>Don't see your event?</p>
+            {linkSent ? <p style={{ fontFamily:sans, fontSize:14, color:T.ink, lineHeight:1.5, margin:0 }}>Thank you. We'll add it with its exhibitors and it will show up in the list above.</p> : <>
+              <p style={{ fontFamily:sans, fontSize:13, color:T.mid, lineHeight:1.5, margin:"0 0 8px" }}>Paste a link to the event page and we'll add it with its exhibitors.</p>
+              <div style={{ display:"flex", gap:8 }}>
+                <input value={linkText} onChange={e => setLinkText(e.target.value)} placeholder="https://" inputMode="url" maxLength={300} aria-label="Link to the event" style={{ ...FIELD, flex:1 }}/>
+                <button onClick={sendEventLink} disabled={!linkText.trim()} style={{ ...ghostBtn, minHeight:48, padding:"0 16px" }}>Send</button>
+              </div>
+            </>}
+          </div>}
+
           {ev && !creating && <>
             <p style={{ fontFamily:sans, fontSize:13, color:T.mid, margin:"0 0 14px" }}>{when(ev) ? when(ev) + " · " : ""}{brands.length} brand{brands.length === 1 ? "" : "s"} · {ratedCount} rated · {lovedCount} loved</p>
             <EvBrandAdd onAdd={addBrand}/>
+            <button onClick={() => setPasteOpen(o => !o)} style={{ background:"none", border:"none", padding:"10px 0 0", fontFamily:sans, fontSize:13, color:T.mid, textDecoration:"underline", cursor:"pointer" }}>{pasteOpen ? "Close" : "Paste a list of exhibitors"}</button>
+            {pasteOpen && <div style={{ marginTop:8 }}>
+              <textarea value={pasteText} onChange={e => setPasteText(e.target.value)} rows={5} placeholder="One brand per line, or separated by commas" aria-label="Exhibitor list" style={{ ...FIELD, height:"auto", padding:12, resize:"vertical" }}/>
+              <button onClick={pasteBrands} disabled={!pasteText.trim() || !!pasteMsg} style={{ ...communityCta(!!pasteText.trim()), width:"100%", marginTop:8 }}>{pasteMsg || "Add these brands"}</button>
+            </div>}
             {loadingEv && <p style={{ ...EV_SMALL, margin:"14px 0" }}>Loading…</p>}
             {!loadingEv && !brands.length && <p style={{ fontFamily:sans, fontSize:14, color:T.faint, textAlign:"center", margin:"28px 0" }}>No brands yet. Search for the first one you visit.</p>}
             <div style={{ marginTop:8 }}>
@@ -4886,8 +4980,16 @@ function CollectionTab({ onEvents, onImport, onOpenFrag, statuses:userStatuses, 
         <h2 style={{fontFamily:serif,fontSize:"clamp(32px, 3.2vw, 50px)",color:T.black,letterSpacing:-0.8,margin:0,fontWeight:400}}>My collection</h2>
         <p style={{fontFamily:sans,fontSize:"clamp(13px, 1.1vw, 17px)",color:T.mid,margin:"6px 0 0"}}>Bottles, samples, and everything in between.</p>
       </div>
-      {onEvents&&<button onClick={onEvents} style={{display:"block",background:"none",border:"none",padding:0,margin:"0 0 8px",fontFamily:sans,fontSize:12,color:T.black,cursor:"pointer",textDecoration:"underline",fontWeight:600}}>Events: your notebook for fairs and expos</button>}
-      {onImport&&<button onClick={onImport} style={{display:"block",background:"none",border:"none",padding:0,margin:"0 0 8px",fontFamily:sans,fontSize:12,color:T.black,cursor:"pointer",textDecoration:"underline",fontWeight:600}}>Import from a spreadsheet or another site</button>}
+      {(onEvents||onImport)&&<div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit, minmax(240px, 1fr))",gap:10,margin:"0 0 16px"}}>
+        {onEvents&&<button onClick={onEvents} style={{textAlign:"left",background:T.lift,border:`1px solid ${T.rule}`,borderRadius:14,padding:"14px 16px",cursor:"pointer"}}>
+          <span style={{display:"block",fontFamily:serif,fontSize:20,color:T.black}}>Events</span>
+          <span style={{display:"block",fontFamily:sans,fontSize:13,color:T.mid,lineHeight:1.5,marginTop:2}}>Your notebook for fairs and expos. Note brands, rate what you smell.</span>
+        </button>}
+        {onImport&&<button onClick={onImport} style={{textAlign:"left",background:T.lift,border:`1px solid ${T.rule}`,borderRadius:14,padding:"14px 16px",cursor:"pointer"}}>
+          <span style={{display:"block",fontFamily:serif,fontSize:20,color:T.black}}>Import</span>
+          <span style={{display:"block",fontFamily:sans,fontSize:13,color:T.mid,lineHeight:1.5,marginTop:2}}>Bring in a spreadsheet, a list, or a collection from another site.</span>
+        </button>}
+      </div>}
       {onOpenJournal&&<button onClick={onOpenJournal} style={{display:"block",background:"none",border:"none",padding:0,margin:"0 0 14px",fontFamily:sans,fontSize:12,color:T.mid,cursor:"pointer",textDecoration:"underline",textDecorationColor:T.rule,textUnderlineOffset:3}}>See your taste profile in Journal →</button>}
       <div style={{display:"flex",gap:6,overflowX:"auto",paddingBottom:4,marginBottom:14}}>{filters.map(f=>(
         <button key={f.key} onClick={()=>setActiveFilter(f.key)} style={{fontFamily:sans,fontSize:10,padding:"5px 12px",borderRadius:20,whiteSpace:"nowrap",border:`1px solid ${activeFilter===f.key?T.black:T.rule}`,background:activeFilter===f.key?T.black:T.white,color:activeFilter===f.key?T.white:T.mid,cursor:"pointer",display:"flex",alignItems:"center",gap:5}}>
