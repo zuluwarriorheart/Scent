@@ -3412,8 +3412,8 @@ function JournalInsights({ entries, userStatuses, reactions, fragrances, wears, 
   });
   const worn = Object.entries(byFrag).map(([id, n]) => ({ f: FR.find(x => x.id === id), n })).filter(x => x.f).sort((a, b) => b.n - a.n).slice(0, 3);
   // most owned perfumer: counted across what you own (bottles, travel sizes, samples), not by date
-  const OWN = new Set(["bottle_owned","travel_have","sample_have"]), ownedPerf = {};
-  FR.forEach(f => { if (!OWN.has(userStatuses[f.id])) return; String(f.perfumer || "").split(/\s*(?:&|\/|,|\band\b)\s*/i).map(x => x.trim()).filter(Boolean).forEach(n => { ownedPerf[n] = (ownedPerf[n] || 0) + 1; }); });
+  const OWN = new Set(["bottle_owned","travel_have","sample_have"]), ownedPerf = {}, ownedFrags = {};
+  FR.forEach(f => { if (!OWN.has(userStatuses[f.id])) return; String(f.perfumer || "").split(/\s*(?:&|\/|,|\band\b)\s*/i).map(x => x.trim()).filter(Boolean).forEach(n => { ownedPerf[n] = (ownedPerf[n] || 0) + 1; (ownedFrags[n] = ownedFrags[n] || []).push(f); }); });
   const perfs = Object.entries(ownedPerf).sort((a, b) => b[1] - a[1]).slice(0, 3);
   const avg = avgWearRating(W);
   const rMax = Math.max(1, ...[1,2,3,4,5].map(r => ratings[r] || 0));
@@ -3446,8 +3446,13 @@ function JournalInsights({ entries, userStatuses, reactions, fragrances, wears, 
 
       <InsightCard label="Most owned perfumer" more="Top 3" headline={perfs[0] ? perfs[0][0] : "None yet"} sub={perfs[0] ? `${perfs[0][1]} fragrance${perfs[0][1] !== 1 ? "s" : ""} you own` : "across what you own"}
         hint={perfs.length === 0 ? "Mark a few fragrances as Own on their Tracker tab, and your most owned perfumer shows here." : null}>
-        {perfs.length > 0 && <div style={{ display:"flex", flexDirection:"column", gap:12 }}>
-          {perfs.map(([n, c]) => <div key={n} style={{ display:"flex", alignItems:"center", gap:14 }}><PerfumerPortrait name={titleCaseName(n)} size={64}/><span style={{ fontFamily:serif, fontSize:18, color:T.black, flex:1, minWidth:0 }}>{n}</span><span style={{ fontFamily:sans, fontSize:12, color:T.faint, flexShrink:0 }}>{c} owned</span></div>)}
+        {perfs.length > 0 && <div style={{ display:"flex", flexDirection:"column", gap:18 }}>
+          {perfs.map(([n, c]) => <div key={n}>
+            <div style={{ display:"flex", alignItems:"center", gap:14 }}><PerfumerPortrait name={titleCaseName(n)} size={64}/><span style={{ fontFamily:serif, fontSize:18, color:T.black, flex:1, minWidth:0 }}>{n}</span><span style={{ fontFamily:sans, fontSize:12, color:T.faint, flexShrink:0 }}>{c} owned</span></div>
+            <div style={{ display:"flex", flexWrap:"wrap", gap:6, marginTop:10 }}>
+              {(ownedFrags[n] || []).slice(0, 12).map(f => <button key={f.id} onClick={() => onOpenFrag && onOpenFrag(f.id)} style={{ fontFamily:sans, fontSize:12, padding:"5px 12px", minHeight:32, borderRadius:20, border:`1px solid ${T.rule}`, background:T.white, color:T.ink, cursor:"pointer", textAlign:"left" }}>{f.name} <span style={{ color:T.faint }}>{f.house}</span></button>)}
+            </div>
+          </div>)}
         </div>}
       </InsightCard>
 
@@ -5401,7 +5406,7 @@ function JournalTab({ entries, userStatuses, reactions, fragrances, wears, onOpe
 
       {jtab==="overview"&&<div>
       <JournalInsights entries={all} userStatuses={userStatuses||{}} reactions={reactions||{}} fragrances={FR} wears={wears} onOpenFrag={onOpenFrag}/>
-      <CollectionMap items={FR.filter(f=>(userStatuses||{})[f.id])} onOpenFrag={onOpenFrag}/>
+      {/* Collection map hidden for now (CollectionMap component kept) */}
 
       {dominant && previous && <div style={{background:T.lift,border:`1px solid ${T.rule}`,borderRadius:16,padding:18,marginBottom:16}}>
         <Lbl>Taste this year</Lbl>
