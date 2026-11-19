@@ -4086,7 +4086,8 @@ async function loadKits() {
   }
   let counts = new Map();
   try { (await loadBrands()).forEach(b => counts.set(b.slug, Number(b.frag_count) || 0)); } catch (e) {}
-  _kitsCache = out.map(h => ({ ...h, url: h.kit_url || h.website || "", n: counts.get(h.slug) || 0 })).filter(h => h.url);
+  // Kits with a picture first (stable sort keeps A to Z inside each group)
+  _kitsCache = out.map(h => ({ ...h, url: h.kit_url || h.website || "", n: counts.get(h.slug) || 0 })).filter(h => h.url).sort((x, y) => (y.kit_image_url ? 1 : 0) - (x.kit_image_url ? 1 : 0));
   return _kitsCache;
 }
 const KIT_STATES = [["own","Own"],["wishlist","Wishlist"],["finished","Finished"]];
