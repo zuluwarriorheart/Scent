@@ -3170,13 +3170,20 @@ function avgWearRating(wears) {
   const r = (wears || []).map(w => w.rating).filter(Boolean);
   return r.length ? r.reduce((a, b) => a + b, 0) / r.length : null;
 }
-function InsightCard({ label, headline, sub, hint, children }) {
+function InsightCard({ label, headline, sub, hint, more, children }) {
+  const [open, setOpen] = useState(false);
+  const has = !!children && !hint;
   return (
-    <div style={{ background:T.white, border:`1px solid ${T.rule}`, borderRadius:20, padding:"18px 18px 16px", marginBottom:14 }}>
-      <p style={{ fontFamily:sans, fontSize:13, color:T.ink, margin:0 }}>{label}</p>
-      <p style={{ fontFamily:serif, fontSize:"clamp(30px, 8vw, 40px)", lineHeight:1.1, letterSpacing:-0.8, color:"var(--accent)", margin:"4px 0 2px" }}>{typeof headline === "string" ? headline.charAt(0).toUpperCase() + headline.slice(1) : headline}</p>
-      <p style={{ fontFamily:sans, fontSize:12, color:T.mid, margin:"0 0 14px" }}>{sub}</p>
-      {children}
+    <div style={{ background:T.white, border:`1px solid ${T.rule}`, borderRadius:16, padding:"16px 18px", marginBottom:12 }}>
+      <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", gap:12 }}>
+        <div style={{ minWidth:0 }}>
+          <p style={{ fontFamily:sans, fontSize:9, textTransform:"uppercase", letterSpacing:"0.1em", color:T.mid, margin:0 }}>{label}</p>
+          <p style={{ fontFamily:serif, fontSize:"clamp(26px, 7vw, 34px)", lineHeight:1.1, letterSpacing:-0.6, color:"var(--accent)", margin:"4px 0 2px" }}>{typeof headline === "string" ? headline.charAt(0).toUpperCase() + headline.slice(1) : headline}</p>
+          <p style={{ fontFamily:sans, fontSize:12, color:T.mid, margin:0 }}>{sub}</p>
+        </div>
+        {has && <button onClick={() => setOpen(o => !o)} aria-expanded={open} aria-label={(open ? "Hide " : "Show ") + (more || "details")} style={{ flexShrink:0, fontFamily:sans, fontSize:12, fontWeight:500, color:T.ink, background:T.lift, border:`1px solid ${T.rule}`, borderRadius:20, minHeight:36, padding:"0 14px", cursor:"pointer", whiteSpace:"nowrap" }}>{open ? "Hide" : (more || "Details")} <span style={{ display:"inline-block", transform:open ? "rotate(180deg)" : "none", fontSize:10 }}>▾</span></button>}
+      </div>
+      {has && open && <div style={{ marginTop:16, paddingTop:14, borderTop:`1px solid ${T.lift}` }}>{children}</div>}
       {hint && <div style={{ marginTop:14, background:T.lift, borderRadius:12, padding:"12px 14px" }}>
         <p style={{ fontFamily:sans, fontSize:12, color:"var(--accent)", margin:"0 0 4px", fontWeight:600 }}>✦ How to get started</p>
         <p style={{ fontFamily:sans, fontSize:13, color:T.mid, lineHeight:1.6, margin:0 }}>{hint}</p>
@@ -3197,7 +3204,7 @@ function StreakCalendar({ entries, yearSel }) {
   const inYear = !!st.longest && st.longestEnd !== null && (yearSel === "all" || new Date(st.longestEnd * 86400000 + 43200000).getFullYear() === year);
   const fmt = n => new Date(n * 86400000 + 43200000).toLocaleDateString("en-US", { month:"long", day:"numeric" });
   return (
-    <InsightCard label="Best journal streak" headline={String(st.longest)} sub={`${st.longest === 1 ? "day" : "days"} ${yearSel === "all" ? "all time" : "in " + year}${st.current > 0 ? ` · current streak ${st.current}` : ""}`}
+    <InsightCard label="Best journal streak" more="Full calendar" headline={String(st.longest)} sub={`${st.longest === 1 ? "day" : "days"} ${yearSel === "all" ? "all time" : "in " + year}${st.current > 0 ? ` · current streak ${st.current}` : ""}`}
       hint={st.total === 0 ? "Write an entry on the first tab or on a fragrance page and your days light up here. Log on consecutive days to build a streak." : null}>
       <div style={{ display:"flex", gap:8, overflowX:"auto", paddingBottom:6, marginBottom:10 }}>
         {MN.map((m, i) => <button key={m} onClick={() => setMonth(i)} style={{ fontFamily:sans, fontSize:13, fontWeight:month === i ? 600 : 500, padding:"8px 16px", borderRadius:20, border:"none", background:month === i ? "var(--accent)" : T.lift, color:month === i ? "#fff" : T.mid, cursor:"pointer", flexShrink:0 }}>{m}</button>)}
@@ -3278,7 +3285,7 @@ function JournalInsights({ entries, userStatuses, reactions, fragrances, wears, 
 
       <StreakCalendar entries={E} yearSel={yearSel}/>
 
-      <InsightCard label="Top accord" headline={accs[0] ? accs[0][0] : "None yet"} sub="across what you own, sample and love"
+      <InsightCard label="Top accord" more="Accord mix" headline={accs[0] ? accs[0][0] : "None yet"} sub="across what you own, sample and love"
         hint={accs.length === 0 ? "Add fragrances to your collection or mark a few as Love, and your accord mix appears here." : null}>
         {accs.length > 0 && <div style={{ display:"flex", alignItems:"center", gap:18 }}>
           <svg viewBox="0 0 140 140" width="150" height="150" style={{ flexShrink:0 }}>
@@ -3292,26 +3299,26 @@ function JournalInsights({ entries, userStatuses, reactions, fragrances, wears, 
         </div>}
       </InsightCard>
 
-      <InsightCard label="Most loved notes" headline={notes[0] ? notes[0][0] : "None yet"} sub={notes[0] ? `across the ${loved} fragrances you love` : "from the fragrances you love"}
+      <InsightCard label="Most loved notes" more="All notes" headline={notes[0] ? notes[0][0] : "None yet"} sub={notes[0] ? `across the ${loved} fragrances you love` : "from the fragrances you love"}
         hint={notes.length === 0 ? "Mark 2 or more fragrances as Love, and we'll highlight the notes they share." : null}>
         {notes.length > 0 && <div style={{ display:"flex", flexWrap:"wrap", gap:6 }}>
           {notes.map(([n, c]) => <span key={n} style={{ fontFamily:sans, fontSize:12, padding:"5px 12px", borderRadius:20, border:`1px solid ${T.rule}`, background:T.lift, color:T.ink, textTransform:"capitalize" }}>{n} <span style={{ color:T.faint }}>{c}</span></span>)}
         </div>}
       </InsightCard>
 
-      <InsightCard label="Most worn perfumer" headline={perfs[0] ? perfs[0][0] : "None yet"} sub={perfs[0] ? `${perfs[0][1]} wear${perfs[0][1] !== 1 ? "s" : ""} ${when}` : when}
+      <InsightCard label="Most worn perfumer" more="Top 3" headline={perfs[0] ? perfs[0][0] : "None yet"} sub={perfs[0] ? `${perfs[0][1]} wear${perfs[0][1] !== 1 ? "s" : ""} ${when}` : when}
         hint={perfs.length === 0 ? "Log a wear on a fragrance's Tracker tab, and your most worn perfumer shows here." : null}>
         {perfs.length > 1 && perfs.slice(1).map(([n, c]) => <div key={n} style={{ display:"flex", justifyContent:"space-between", marginBottom:6 }}><span style={{ fontFamily:sans, fontSize:13, color:T.ink }}>{n}</span><span style={{ fontFamily:sans, fontSize:11, color:T.faint }}>{c} wear{c !== 1 ? "s" : ""}</span></div>)}
       </InsightCard>
 
-      <InsightCard label="Your words" headline={words[0] ? words[0][0] : "None yet"} sub={words[0] ? `your most used word ${when}` : when}
+      <InsightCard label="Your words" more="All words" headline={words[0] ? words[0][0] : "None yet"} sub={words[0] ? `your most used word ${when}` : when}
         hint={words.length === 0 ? "Open a fragrance, choose its Journal tab and answer a prompt. The words you pick build your scent vocabulary here." : null}>
         {words.length > 0 && <div style={{ display:"flex", flexWrap:"wrap", gap:6 }}>
           {words.map(([w, c]) => <span key={w} style={{ fontFamily:sans, fontSize:12, padding:"5px 12px", borderRadius:20, border:`1px solid ${T.rule}`, background:T.lift, color:T.ink }}>{w} <span style={{ color:T.faint }}>{c}</span></span>)}
         </div>}
       </InsightCard>
 
-      <InsightCard label="Average wear rating" headline={avg ? avg.toFixed(1) : "None yet"} sub={avg ? `stars ${when}` : when}
+      <InsightCard label="Average wear rating" more="Rating spread" headline={avg ? avg.toFixed(1) : "None yet"} sub={avg ? `stars ${when}` : when}
         hint={!avg ? "Rate your wears in the wear log and your rating spread appears here." : null}>
         {avg && <div>
           <div style={{ display:"flex", alignItems:"flex-end", gap:10, height:110 }}>
