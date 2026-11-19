@@ -821,17 +821,14 @@ const STATUSES = [
   { key:"sample_have",     label:"Sample, in hand",  iconName:"sample",   group:"sample" },
   { key:"sample_wishlist", label:"Sample, wishlist", iconName:"bookmark", group:"sample" },
   { key:"sample_finished", label:"Sample, finished", iconName:"finished", group:"sample" },
-  { key:"kit_have",        label:"Discovery kit, own", iconName:"sample",  group:"kit"    },
-  { key:"kit_wishlist",    label:"Discovery kit, wishlist", iconName:"bookmark", group:"kit" },
-  { key:"kit_finished",    label:"Discovery kit, finished", iconName:"finished", group:"kit" },
   { key:"smelled",         label:"Smelled",           iconName:"nose",     group:"tried"  },
   { key:"tried_skin",      label:"Tried on skin",     iconName:"skin",     group:"tried"  },
 ];
 // A fragrance can hold several statuses at once (e.g. own the sample, wishlist the bottle, smelled on a blotter).
 // Bottle and Sample each hold one status at a time; Smelled can hold both. `primaryStatus` is the single status the cards and badges show.
-const STATUS_PRIORITY = ["bottle_owned","bottle_finished","travel_have","travel_finished","sample_have","sample_finished","kit_have","kit_finished","bottle_wishlist","travel_wishlist","sample_wishlist","kit_wishlist","tried_skin","smelled"];
+const STATUS_PRIORITY = ["bottle_owned","bottle_finished","travel_have","travel_finished","sample_have","sample_finished","bottle_wishlist","travel_wishlist","sample_wishlist","tried_skin","smelled"];
 const primaryStatus = arr => STATUS_PRIORITY.find(k => (arr || []).includes(k)) || null;
-const isFinishedSet = arr => (arr || []).some(k => k === "bottle_finished" || k === "travel_finished" || k === "sample_finished" || k === "kit_finished");
+const isFinishedSet = arr => (arr || []).some(k => k === "bottle_finished" || k === "travel_finished" || k === "sample_finished");
 function toggleStatus(arr, key) {
   const cur = arr || [], def = STATUSES.find(x => x.key === key);
   if (!def) return cur;
@@ -845,10 +842,9 @@ function StatusSelector({ value, onChange, size, onSize }) {
     { title:"Bottle", items:STATUSES.filter(s=>s.group==="bottle") },
     { title:"Travel size", items:STATUSES.filter(s=>s.group==="travel") },
     { title:"Sample", items:STATUSES.filter(s=>s.group==="sample") },
-    { title:"Discovery kit", items:STATUSES.filter(s=>s.group==="kit") },
     { title:"Smelled",items:STATUSES.filter(s=>s.group==="tried")  },
   ];
-  const SHORT = { bottle_owned:"Own", bottle_wishlist:"Wishlist", sample_have:"Own", sample_wishlist:"Wishlist", kit_have:"Own", kit_wishlist:"Wishlist", kit_finished:"Finished", travel_have:"Own", travel_wishlist:"Wishlist", travel_finished:"Finished", bottle_finished:"Finished", sample_finished:"Finished", smelled:"On blotter", tried_skin:"Tried on skin" };
+  const SHORT = { bottle_owned:"Own", bottle_wishlist:"Wishlist", sample_have:"Own", sample_wishlist:"Wishlist", travel_have:"Own", travel_wishlist:"Wishlist", travel_finished:"Finished", bottle_finished:"Finished", sample_finished:"Finished", smelled:"On blotter", tried_skin:"Tried on skin" };
   return (
     <div>
       {groups.map((g,gi) => (
@@ -882,9 +878,9 @@ function StatusSelector({ value, onChange, size, onSize }) {
 
 // Shown under the status buttons once a bottle or sample is marked Finished.
 function FinishedPanel({ status: statusSet, finish, onChange }) {
-  const status = (statusSet || []).includes("bottle_finished") ? "bottle_finished" : (statusSet || []).includes("travel_finished") ? "travel_finished" : (statusSet || []).includes("sample_finished") ? "sample_finished" : (statusSet || []).includes("kit_finished") ? "kit_finished" : null;
+  const status = (statusSet || []).includes("bottle_finished") ? "bottle_finished" : (statusSet || []).includes("travel_finished") ? "travel_finished" : (statusSet || []).includes("sample_finished") ? "sample_finished" : null;
   if (!status) return null;
-  const what = status === "bottle_finished" ? "bottle" : status === "travel_finished" ? "travel size" : status === "kit_finished" ? "discovery kit" : "sample";
+  const what = status === "bottle_finished" ? "bottle" : status === "travel_finished" ? "travel size" : "sample";
   const f = finish || {};
   const opts = [["yes", "Yes"], ["maybe", "Maybe"], ["no", "No"]];
   return (
@@ -3388,7 +3384,7 @@ function JournalInsights({ entries, userStatuses, reactions, fragrances, wears, 
   const words = Object.entries(wordTally).sort((a, b) => b[1] - a[1]).slice(0, 14);
 
   // accords across what you own, have sampled or love (not dated, so not year-filtered)
-  const LIKE = new Set(["bottle_owned","bottle_wishlist","sample_have","tried_skin","bottle_finished","sample_finished","travel_have","travel_finished","kit_have","kit_finished"]);
+  const LIKE = new Set(["bottle_owned","bottle_wishlist","sample_have","tried_skin","bottle_finished","sample_finished","travel_have","travel_finished"]);
   const accTally = {}, loveNotes = {}; let loved = 0;
   FR.forEach(f => {
     const st = userStatuses[f.id], rx = reactions[f.id];
@@ -4085,8 +4081,33 @@ async function loadKits() {
   _kitsCache = out.map(h => ({ ...h, url: h.kit_url || h.website || "", n: counts.get(h.slug) || 0 })).filter(h => h.url);
   return _kitsCache;
 }
+const KIT_STATES = [["own","Own"],["wishlist","Wishlist"],["finished","Finished"]];
+function KitChips({ status, onSet }) {
+  return (
+    <div role="group" aria-label="Track this discovery kit" style={{ marginTop:12 }}>
+      <p style={{ fontFamily:sans, fontSize:11, textTransform:"uppercase", letterSpacing:"0.12em", color:T.mid, margin:"0 0 6px" }}>Track this kit</p>
+      <div style={{ display:"flex", gap:6 }}>
+        {KIT_STATES.map(([k, l]) => { const on = status === k; return <button key={k} onClick={() => onSet(on ? null : k)} aria-pressed={on} style={{ flex:1, minHeight:38, padding:"0 6px", borderRadius:20, border:`1px solid ${on ? "transparent" : T.rule}`, background:on ? "var(--accent)" : T.white, color:on ? "#fff" : T.ink, fontFamily:sans, fontSize:13, fontWeight:on ? 600 : 400, cursor:"pointer" }}>{l}</button>; })}
+      </div>
+    </div>
+  );
+}
+async function setKitStatus(houseId, status, had) {
+  if (!status) return supabase.from("user_kits").delete().eq("house_id", houseId);
+  const now = new Date().toISOString();
+  const patch = { status, updated_at: now, finished_on: status === "finished" ? todayISO() : null };
+  return had ? supabase.from("user_kits").update(patch).eq("house_id", houseId) : supabase.from("user_kits").insert({ house_id: houseId, ...patch });
+}
 function KitsShelf({ onOpenBrand, tinted }) {
   const [rows, setRows] = useState(null);
+  const [mine, setMine] = useState({});
+  useEffect(() => { let off = false; pageAll((a, b) => supabase.from("user_kits").select("house_id, status").order("house_id").range(a, b)).then(r => { if (off || r.error) return; const m = {}; (r.data || []).forEach(x => { m[x.house_id] = x.status; }); setMine(m); }).catch(() => {}); return () => { off = true; }; }, []);
+  const trackKit = async (h, st) => {
+    const had = !!mine[h.id], prev = mine[h.id] || null;
+    setMine(p => { const n = { ...p }; if (st) n[h.id] = st; else delete n[h.id]; return n; });
+    const { error } = await setKitStatus(h.id, st, had);
+    if (error) setMine(p => { const n = { ...p }; if (prev) n[h.id] = prev; else delete n[h.id]; return n; });
+  };
   const [all, setAll] = useState(false);
   const [q, setQ] = useState("");
   useEffect(() => { let off = false; loadKits().then(d => { if (!off) setRows(d); }).catch(() => { if (!off) setRows([]); }); return () => { off = true; }; }, []);
@@ -4110,6 +4131,7 @@ function KitsShelf({ onOpenBrand, tinted }) {
         <span style={{ display:"block", fontFamily:sans, fontSize:12, color:T.mid, margin:"4px 0 0" }}>{[h.country, h.brand_origin].filter(Boolean).join(" · ")}{h.n ? (h.country || h.brand_origin ? " · " : "") + h.n + " fragrance" + (h.n === 1 ? "" : "s") : ""}</span>
       </button>
       <p style={{ fontFamily:sans, fontSize:14, color:T.ink, margin:"12px 0 0", lineHeight:1.4 }}>{h.kit_name || "Discovery set or samples"}{h.kit_price && <span style={{ color:T.teal, fontWeight:600 }}> · {h.kit_price}</span>}</p>
+      <KitChips status={mine[h.id] || null} onSet={st => trackKit(h, st)}/>
       <a href={h.url} target="_blank" rel="noopener noreferrer" onClick={() => trackEvent("brand_site_click", { houseSlug:h.slug, source:"kits", detail:"kit" })} style={{ ...ctaBtn(true), marginTop:"auto", display:"inline-flex", alignItems:"center", justifyContent:"center", textDecoration:"none", minHeight:40, fontSize:13, paddingTop:0, paddingBottom:0, marginBlockStart:14 }}>Get it from the brand ↗</a>
     </div>
   );
@@ -5188,6 +5210,38 @@ function EvFragRow({ f, onRate, onSmell, onPatch, onDelete }) {
   );
 }
 
+function MyKits({ rows, setRows, onOpenBrand }) {
+  const [sub, setSub] = useState("");
+  if (rows === null) return <p style={{ fontFamily:sans, fontSize:13, color:T.faint }}>Loading</p>;
+  const list = rows.filter(r => r.houses && (!sub || r.status === sub));
+  const cnt = k => rows.filter(r => r.houses && r.status === k).length;
+  const change = async (r, st) => {
+    const prev = rows;
+    setRows(p => st ? p.map(x => x.house_id === r.house_id ? { ...x, status: st } : x) : p.filter(x => x.house_id !== r.house_id));
+    const { error } = await setKitStatus(r.house_id, st, true);
+    if (error) setRows(prev);
+  };
+  return (
+    <div>
+      <div style={{ display:"flex", flexWrap:"wrap", gap:7, marginBottom:14 }}>
+        {KIT_STATES.map(([k, l]) => { const on = sub === k; return <button key={k} onClick={() => setSub(on ? "" : k)} aria-pressed={on} style={{ fontFamily:sans, fontSize:12, padding:"0 14px", minHeight:36, borderRadius:20, border:`1px solid ${on ? T.black : T.rule}`, background:on ? T.black : T.white, color:on ? T.white : T.ink, cursor:"pointer" }}>{l}<span style={{ opacity:0.65, marginLeft:6 }}>{cnt(k)}</span></button>; })}
+      </div>
+      {list.length === 0
+        ? <div style={{ textAlign:"center", padding:"40px 0", color:T.faint }}><p style={{ fontSize:13, lineHeight:1.6, margin:0 }}>{rows.length === 0 ? "No discovery kits yet. Open Discover, find the Discovery kits shelf and tap Own or Wishlist on a kit." : "Nothing in this list."}</p></div>
+        : <div style={{ display:"flex", flexWrap:"wrap", gap:14 }}>
+          {list.map(r => { const h = r.houses; return (
+            <div key={r.house_id} style={{ flex:"1 1 240px", maxWidth:360, boxSizing:"border-box", background:T.white, border:`1px solid ${T.rule}`, borderRadius:16, padding:"16px 16px 14px" }}>
+              {h.kit_image_url && <img src={h.kit_image_url} alt={(h.kit_name || "Discovery set") + " by " + h.name} loading="lazy" style={{ display:"block", width:"100%", aspectRatio:"1 / 1", objectFit:"contain", background:"#fff", borderRadius:10, marginBottom:12 }} onError={e => { e.currentTarget.style.display = "none"; }}/>}
+              <button onClick={() => onOpenBrand && onOpenBrand({ slug:h.slug, name:h.name })} style={{ textAlign:"left", background:"none", border:"none", padding:0, cursor:"pointer" }}>
+                <span style={{ display:"block", fontFamily:serif, fontSize:20, color:T.black, lineHeight:1.2 }}>{String(h.name).replace(/\s*\(now .*\)$/, "")}</span>
+                <span style={{ display:"block", fontFamily:sans, fontSize:14, color:T.ink, margin:"6px 0 0" }}>{h.kit_name || "Discovery set"}{h.kit_price && <span style={{ color:T.teal, fontWeight:600 }}> · {h.kit_price}</span>}</span>
+              </button>
+              <KitChips status={r.status} onSet={st => change(r, st)}/>
+            </div>); })}
+        </div>}
+    </div>
+  );
+}
 function CollectionTab({ onEvents, onImport, onOpenBrand, onOpenFrag, statuses:userStatuses, statusSets:sets, reactions, onReaction, onSuggest, fragrances, wears, onOpenJournal }) {
   const FR = (fragrances && fragrances.length) ? fragrances : FRAGRANCES;
   const [search,setSearch]=useState("");
@@ -5197,16 +5251,18 @@ function CollectionTab({ onEvents, onImport, onOpenBrand, onOpenFrag, statuses:u
   const [rxF,setRxF]=useState("");
   const [subF,setSubF]=useState("");
   const TABS=[["all","All"],["bottle","Bottles"],["travel","Travel size"],["sample","Samples"],["kit","Discovery kits"]];
-  const PRE={bottle:["bottle_owned","bottle_wishlist","bottle_finished"],travel:["travel_have","travel_wishlist","travel_finished"],sample:["sample_have","sample_wishlist","sample_finished"],kit:["kit_have","kit_wishlist","kit_finished"]};
+  const PRE={bottle:["bottle_owned","bottle_wishlist","bottle_finished"],travel:["travel_have","travel_wishlist","travel_finished"],sample:["sample_have","sample_wishlist","sample_finished"]};
   const SUBS=ctab==="all"?[["smelled","Smelled on blotter"],["tried_skin","Tried on skin"],["finished","Finished"],["wishlist","Wishlist"]]:[["own","Own"],["wishlist","Wishlist"],["finished","Finished"]];
   const has=(id,k)=>((sets||{})[id]||[]).includes(k);
   const mineSet=f=>(sets||{})[f.id]||[];
-  const inTab=f=>ctab==="all"?!!(userStatuses[f.id]||reactions[f.id]):mineSet(f).some(k=>PRE[ctab].includes(k));
+  const inTab=f=>ctab==="all"?!!(userStatuses[f.id]||reactions[f.id]):mineSet(f).some(k=>(PRE[ctab]||[]).includes(k));
   const subOk=(f,k)=>{const st=mineSet(f);if(!k)return true;
     if(ctab==="all")return k==="smelled"?st.includes("smelled"):k==="tried_skin"?st.includes("tried_skin"):k==="finished"?isFinishedSet(st):st.some(x=>/_wishlist$/.test(x));
-    const P=PRE[ctab];return k==="own"?st.includes(P[0]):k==="wishlist"?st.includes(P[1]):st.includes(P[2]);};
+    const P=PRE[ctab]||[];return k==="own"?st.includes(P[0]):k==="wishlist"?st.includes(P[1]):st.includes(P[2]);};
   const rxOk=(f,k)=>!k||reactions[f.id]===k;
-  const tabCount=t=>t==="all"?FR.filter(x=>userStatuses[x.id]||reactions[x.id]).length:FR.filter(x=>mineSet(x).some(k=>PRE[t].includes(k))).length;
+  const [kitRows,setKitRows]=useState(null);
+  useEffect(()=>{let off=false;pageAll((a,b)=>supabase.from("user_kits").select("house_id, status, houses(name, slug, kit_name, kit_price, kit_url, kit_image_url, country)").order("house_id").range(a,b)).then(r=>{if(!off)setKitRows(r.error?[]:(r.data||[]));}).catch(()=>{if(!off)setKitRows([]);});return()=>{off=true;};},[]);
+  const tabCount=t=>t==="kit"?(kitRows||[]).length:t==="all"?FR.filter(x=>userStatuses[x.id]||reactions[x.id]).length:FR.filter(x=>mineSet(x).some(k=>(PRE[t]||[]).includes(k))).length;
   const rxCount=k=>FR.filter(f=>inTab(f)&&reactions[f.id]===k&&subOk(f,subF)).length;
   const subCount=k=>FR.filter(f=>inTab(f)&&rxOk(f,rxF)&&subOk(f,k)).length;
   const filtered=FR.filter(f=>{const ms=inTab(f)&&rxOk(f,rxF)&&subOk(f,subF);const q=search.toLowerCase();const mq=!search||String(f.name||"").toLowerCase().includes(q)||String(f.house||"").toLowerCase().includes(q)||String(f.family||"").toLowerCase().includes(q)||(f.accords||[]).some(a=>String(a.n||"").toLowerCase().includes(q))||(allNoteList(f.notes)).some(n=>String((n&&n.n)||"").toLowerCase().includes(q));return ms&&mq;});
@@ -5236,9 +5292,11 @@ function CollectionTab({ onEvents, onImport, onOpenBrand, onOpenFrag, statuses:u
       {ctab==="all"&&<div style={{display:"flex",flexWrap:"wrap",gap:7,marginBottom:8}}>
         {[["love","Love"],["like","Like"],["dislike","Dislike"]].map(([k,l])=>chipB(rxF===k,l,rxCount(k),()=>setRxF(rxF===k?"":k),"rx"+k))}
       </div>}
-      <div style={{display:"flex",flexWrap:"wrap",gap:7,marginBottom:14}}>
+      {ctab!=="kit"&&<div style={{display:"flex",flexWrap:"wrap",gap:7,marginBottom:14}}>
         {SUBS.map(([k,l])=>chipB(subF===k,l,subCount(k),()=>setSubF(subF===k?"":k),"sub"+k))}
-      </div>
+      </div>}
+      {ctab==="kit"&&<MyKits rows={kitRows} setRows={setKitRows} onOpenBrand={onOpenBrand}/>}
+      {ctab!=="kit"&&<>
       <div style={{display:"flex",gap:8,alignItems:"center",marginBottom:12}}>
       <div style={{position:"relative",flex:1,minWidth:0}}>
         <span style={{position:"absolute",left:14,top:"50%",transform:"translateY(-50%)"}}><Icon name="search" size={14} color={T.faint}/></span>
@@ -5260,6 +5318,7 @@ function CollectionTab({ onEvents, onImport, onOpenBrand, onOpenFrag, statuses:u
           : view==="shelf"
             ? <ShelfView items={filtered} onClick={onOpenFrag} statuses={userStatuses}/>
             : <div className="mos-tiles">{filtered.map(f=><GridTile key={f.id} frag={f} onClick={onOpenFrag} userStatus={userStatuses[f.id]} reaction={reactions[f.id]}/>)}</div>}
+      </>}
       <div style={{marginTop:20}}><button onClick={onSuggest} style={{width:"100%",padding:"13px 0",borderRadius:12,border:`1px solid ${T.rule}`,background:T.white,color:T.mid,fontSize:12,fontFamily:sans,cursor:"pointer"}}>+ Missing a fragrance? Suggest it</button></div>
     </div>
   );
