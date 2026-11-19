@@ -2253,6 +2253,12 @@ function BrandModal({ brand, onClose, onBack, onOpenFrag }) {
                   ))}
                 </div>
               )}
+              {h.about && String(h.about).trim() && (
+                <div style={{ marginBottom:30 }}>
+                  <h3 style={{ fontFamily:serif, fontSize:"clamp(26px, 2.3vw, 38px)", fontWeight:400, letterSpacing:-0.6, color:T.black, margin:"0 0 16px", lineHeight:1.1 }}>About</h3>
+                  {String(h.about).split(/\n\s*\n/).map((p, i) => <p key={i} style={{ fontFamily:sans, fontSize:"clamp(15px, 1.15vw, 17px)", color:T.mid, lineHeight:1.7, margin:"0 0 14px" }}>{p}</p>)}
+                </div>
+              )}
               {lines.length > 0 && (
                 <div style={{ marginBottom:30 }}>
                   <h3 style={{ fontFamily:serif, fontSize:"clamp(26px, 2.3vw, 38px)", fontWeight:400, letterSpacing:-0.6, color:T.black, margin:"0 0 16px", lineHeight:1.1 }}>Lines</h3>
