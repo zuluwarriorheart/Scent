@@ -8098,7 +8098,9 @@ export default function SillageApp() {
                     usedHouse.add(ha); usedHouse.add(hb); items.push(a, b);
                     if (items.length >= 12) break;
                   }
-                  if (items.length >= 4) {
+                  // Hidden until after Christmas 2026 (owner decision Nov 19). Set to true on Dec 27 to bring "Most shared notes" back.
+                  const SHOW_SHARED_SHELF = false;
+                  if (SHOW_SHARED_SHELF && items.length >= 4) {
                     const hix = shelves.findIndex(x => x.key === "designer");
                     const dix = shelves.findIndex(x => x.key === "diversity");
                     const aix = hix >= 0 ? hix : (dix >= 0 ? dix : (shelves.findIndex(x => x.key === "neo") >= 0 ? shelves.findIndex(x => x.key === "neo") : shelves.findIndex(x => x.key === "new")));
