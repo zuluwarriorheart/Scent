@@ -6902,6 +6902,46 @@ const BF_OFFERS = [
     starts:"2026-11-27T00:00:00-05:00", ends:"2026-11-30T23:59:59-05:00", dates:"Nov 27 to Nov 30", startsLabel:"Nov 27", code:"No code listed",
     url:"https://www.instagram.com/brownsugarbabeofficial/", cta:"Open Brown Sugar Babe on Instagram"
   },
+  {
+    id:"andreamaack", via:"Their Instagram post", name:"Andrea Maack", kind:"Fragrance house",
+    deal:"30% off sitewide",
+    terms:"They call it their biggest sale of the year. Dates are not in the post image.",
+    sample:null, caution:null, check:true,
+    starts:null, ends:null, dates:"Dates not in their post", startsLabel:"", code:"No code listed",
+    url:"https://www.instagram.com/andreamaack/", cta:"Open Andrea Maack on Instagram"
+  },
+  {
+    id:"nemat", via:"Their Instagram post", name:"Nemat", kind:"Artisan perfumery",
+    deal:"25% off sitewide",
+    terms:"Their post says the Black Friday sale is live and calls it their biggest sale of the year. Dates are not in the post image.",
+    sample:null, caution:null, check:true,
+    starts:null, ends:null, dates:"Dates not in their post", startsLabel:"", code:"No code listed",
+    url:"https://www.instagram.com/nematperfumes/", cta:"Open Nemat on Instagram"
+  },
+  {
+    id:"stateofmind", via:"Their Instagram post", name:"State of Mind", kind:"Fragrance house, Versailles",
+    deal:"20% off perfumes and the Home Collection",
+    terms:"Offers start Nov 24 on their website, and their caption says it runs until Dec 5. They say it is available only once a year.",
+    sample:null, caution:null,
+    starts:"2026-11-24T00:00:00+01:00", ends:"2026-12-05T23:59:59+01:00", dates:"Nov 24 to Dec 5", startsLabel:"Nov 24", code:"No code listed",
+    url:"https://www.instagram.com/stateofmind.fr/", cta:"Open State of Mind on Instagram"
+  },
+  {
+    id:"jscent", via:"Their Instagram post", name:"J-Scent", kind:"Fragrance house",
+    deal:"10% off storewide",
+    terms:"Their post says Nov 27 to Nov 30.",
+    sample:null, caution:"Shipping is within the United States only.",
+    starts:"2026-11-27T00:00:00-05:00", ends:"2026-11-30T23:59:59-05:00", dates:"Nov 27 to Nov 30", startsLabel:"Nov 27", code:"No code listed",
+    url:"https://www.instagram.com/jscent_fragrance/", cta:"Open J-Scent on Instagram"
+  },
+  {
+    id:"heretic", via:"Their Instagram post", name:"Heretic Parfum", kind:"Fragrance house",
+    deal:"30% off sitewide",
+    terms:"Their post says limited time only. Dates are not in the post image.",
+    sample:null, caution:null, check:true,
+    starts:null, ends:null, dates:"Limited time, dates not listed", startsLabel:"", code:"GOTHIC30",
+    url:"https://www.instagram.com/hereticparfum/", cta:"Open Heretic on Instagram"
+  },
 ];
 function bfStatus(o, now) {
   if (o.ends && now > new Date(o.ends).getTime()) return "ended";
