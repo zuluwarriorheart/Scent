@@ -6835,6 +6835,38 @@ const BF_OFFERS = [
     url:"https://penhaligons.com"
   },
   {
+    id:"moco", house:"moco-fragrances", via:"Their Instagram story ad", name:"Moco Fragrances", kind:"Fragrance house",
+    deal:"25% off",
+    terms:"They call it their once-a-year sale. It ends Nov 27 at 11:59 PM Eastern.",
+    sample:null, caution:null,
+    starts:null, ends:"2026-11-27T23:59:00-05:00", dates:"Through Nov 27", startsLabel:"", code:"FRIDAY2026",
+    url:"https://mocofragrances.com/"
+  },
+  {
+    id:"conde", house:"conde-parfum", via:"Their Instagram story", name:"Condé Parfum", kind:"Fragrance house, Brazil",
+    deal:"15% off 50 mL bottles",
+    terms:"Their story is in Portuguese and calls it Black Week. Dates are not in the part we saw.",
+    sample:null, caution:null, check:true,
+    starts:null, ends:null, dates:"Dates not in their story", startsLabel:"", code:"WEEK15",
+    url:"https://condeparfum.com"
+  },
+  {
+    id:"frederico", house:"frederico-parfums", via:"Their Instagram post and reel", name:"Frederico Parfums", kind:"Fragrance house, Yardley, Pennsylvania",
+    deal:"30% off",
+    terms:"Now through the end of Cyber Monday, Nov 30. No code needed. Their post calls it a thank you to their fans.",
+    sample:null, caution:null,
+    starts:null, ends:"2026-11-30T23:59:00-05:00", dates:"Through Nov 30", startsLabel:"", code:"No code needed",
+    url:"https://fredericoparfums.com"
+  },
+  {
+    id:"ledda", house:"ledda", via:"Their Instagram story ad", name:"LEDDA", kind:"Fragrance house, New York",
+    deal:"22% off everything",
+    terms:"Dates are not in the part of the ad we saw.",
+    sample:null, caution:null, check:true,
+    starts:null, ends:null, dates:"Dates not in their ad", startsLabel:"", code:"No code listed",
+    url:"https://ledda.co"
+  },
+  {
     id:"atwood", house:"atwood-parfum", via:"Their Instagram story, Nov 23", name:"Atwood Parfum", kind:"Fragrance house, Provincetown, Massachusetts",
     deal:"Buy a 30 mL, get any 10 mL free",
     terms:"Add both to your cart. Their story says it runs now through November 30.",
