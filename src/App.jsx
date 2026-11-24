@@ -6908,7 +6908,7 @@ const BF_OFFERS = [
     terms:"They call it their biggest sale of the year. Dates are not in the post image.",
     sample:null, caution:null, check:true,
     starts:null, ends:null, dates:"Dates not in their post", startsLabel:"", code:"No code listed",
-    url:"https://www.instagram.com/andreamaack/", cta:"Open Andrea Maack on Instagram"
+    url:"https://andreamaack.com/"
   },
   {
     id:"nemat", via:"Their Instagram post", name:"Nemat", kind:"Artisan perfumery",
@@ -6916,7 +6916,7 @@ const BF_OFFERS = [
     terms:"Their post says the Black Friday sale is live and calls it their biggest sale of the year. Dates are not in the post image.",
     sample:null, caution:null, check:true,
     starts:null, ends:null, dates:"Dates not in their post", startsLabel:"", code:"No code listed",
-    url:"https://www.instagram.com/nematperfumes/", cta:"Open Nemat on Instagram"
+    url:"https://nematperfumes.com/"
   },
   {
     id:"stateofmind", via:"Their Instagram post", name:"State of Mind", kind:"Fragrance house, Versailles",
@@ -6924,7 +6924,7 @@ const BF_OFFERS = [
     terms:"Offers start Nov 24 on their website, and their caption says it runs until Dec 5. They say it is available only once a year.",
     sample:null, caution:null,
     starts:"2026-11-24T00:00:00+01:00", ends:"2026-12-05T23:59:59+01:00", dates:"Nov 24 to Dec 5", startsLabel:"Nov 24", code:"No code listed",
-    url:"https://www.instagram.com/stateofmind.fr/", cta:"Open State of Mind on Instagram"
+    url:"https://stateofmind.fr/"
   },
   {
     id:"jscent", via:"Their Instagram post", name:"J-Scent", kind:"Fragrance house",
@@ -6932,7 +6932,7 @@ const BF_OFFERS = [
     terms:"Their post says Nov 27 to Nov 30.",
     sample:null, caution:"Shipping is within the United States only.",
     starts:"2026-11-27T00:00:00-05:00", ends:"2026-11-30T23:59:59-05:00", dates:"Nov 27 to Nov 30", startsLabel:"Nov 27", code:"No code listed",
-    url:"https://www.instagram.com/jscent_fragrance/", cta:"Open J-Scent on Instagram"
+    url:"https://j-scent-global.com/"
   },
   {
     id:"heretic", via:"Their Instagram post", name:"Heretic Parfum", kind:"Fragrance house",
@@ -6940,7 +6940,7 @@ const BF_OFFERS = [
     terms:"Their post says limited time only. Dates are not in the post image.",
     sample:null, caution:null, check:true,
     starts:null, ends:null, dates:"Limited time, dates not listed", startsLabel:"", code:"GOTHIC30",
-    url:"https://www.instagram.com/hereticparfum/", cta:"Open Heretic on Instagram"
+    url:"https://hereticparfum.com/"
   },
   {
     id:"histoires", via:"Their website and Instagram story", name:"Histoires de Parfums", kind:"Fragrance house",
@@ -6990,6 +6990,14 @@ const BF_OFFERS = [
     sample:null, caution:null, check:true,
     starts:null, ends:null, dates:"Dates not in their story", startsLabel:"", code:"Subscribe for early access",
     url:"https://www.instagram.com/reinventedparfums/", cta:"Open Reinvented Parfums on Instagram"
+  },
+  {
+    id:"boysmells", via:"Their Instagram story", name:"Boy Smells", kind:"Fragrance and candle house",
+    deal:"30% off almost everything",
+    terms:"Their story says 30% off almost everything, online and in stores. Dates are not in the story.",
+    sample:null, caution:null, check:true,
+    starts:null, ends:null, dates:"Dates not in their story", startsLabel:"", code:"No code listed",
+    url:"https://boysmells.com/"
   },
 ];
 function bfStatus(o, now) {
