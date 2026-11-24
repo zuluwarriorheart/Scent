@@ -6581,6 +6581,7 @@ function LoadingScreen() {
 // ─── BLACK FRIDAY GUIDE ───────────────────────────────────────────────────────
 // Shown in two places: Learn > Black Friday (members) and the public page memoironskin.com/black-friday (no account).
 // Every offer was checked against the brand's own page. To add or change one, edit BF_OFFERS and BF_CHECKED below.
+// An offer with hidden:true is kept here but not shown. Cards are listed alphabetically by name.
 const BF_URL = "https://www.memoironskin.com/black-friday";
 const BF_CHECKED = "Nov 23, 2026";
 const BF_TAB_UNTIL = new Date("2026-12-04T00:00:00-05:00").getTime();
@@ -6595,7 +6596,7 @@ const BF_OFFERS = [
     url:"https://xtraitperfumery.com/pages/black-friday"
   },
   {
-    id:"wyldnotes", via:"Their website", name:"Wyld Notes", kind:"Fragrance house",
+    id:"wyldnotes", hidden:true, via:"Their website", name:"Wyld Notes", kind:"Fragrance house",
     deal:"20% off select fragrances",
     terms:"Also 20% off the Discovery Set, and up to $40 off sets and duos.",
     sample:"The Discovery Set holds five 1.5 mL samples, one of each scent.",
@@ -6604,7 +6605,7 @@ const BF_OFFERS = [
     url:"https://wyldnotes.com/"
   },
   {
-    id:"allyours", via:"Their website", name:"All Yours", kind:"Niche perfume retailer, prices in euros",
+    id:"allyours", hidden:true, via:"Their website", name:"All Yours", kind:"Niche perfume retailer, prices in euros",
     deal:"Sale prices on selected niche perfumes",
     terms:"Their page shows reduced prices rather than a percentage, and lists no code.",
     sample:null,
@@ -6613,7 +6614,7 @@ const BF_OFFERS = [
     url:"https://www.allyours.com/en/pages/black-friday-perfumes-nicho"
   },
   {
-    id:"skylar", via:"Their website", name:"Skylar", kind:"Fragrance house",
+    id:"skylar", hidden:true, via:"Their website", name:"Skylar", kind:"Fragrance house",
     deal:"25% off sitewide",
     terms:"Use the code at checkout.",
     sample:null, caution:null,
@@ -6621,7 +6622,7 @@ const BF_OFFERS = [
     url:"https://skylar.com/"
   },
   {
-    id:"bluemercury", via:"Their website", name:"Bluemercury", kind:"Retailer with niche and designer shelves",
+    id:"bluemercury", hidden:true, via:"Their website", name:"Bluemercury", kind:"Retailer with niche and designer shelves",
     deal:"Up to 30% off almost everything",
     terms:"That is the headline on their site. Tiers, dates and exclusions are on their Black Friday fragrance page.",
     sample:null, caution:null,
@@ -7052,8 +7053,7 @@ function BetaSignupCard({ heading = "Join the beta list", note = "Just your firs
 function BlackFridayGuide({ embedded = false }) {
   const [now] = useState(() => Date.now());
   const [copied, setCopied] = useState(false);
-  const rank = { live:0, check:1, soon:2, ended:3 };
-  const list = BF_OFFERS.map((o, i) => ({ o, i, st:bfStatus(o, now) })).sort((a, b) => (rank[a.st] - rank[b.st]) || (a.i - b.i));
+  const list = BF_OFFERS.filter(o => !o.hidden).map((o, i) => ({ o, i, st:bfStatus(o, now) })).sort((a, b) => a.o.name.localeCompare(b.o.name, "en", { sensitivity:"base", ignorePunctuation:true }) || (a.i - b.i));
   async function shareIt() {
     try { if (navigator.share) { await navigator.share({ title:"Black Friday sales, sample first", url:BF_URL }); return; } } catch (e) { if (e && e.name === "AbortError") return; }
     try { await navigator.clipboard.writeText(BF_URL); setCopied(true); setTimeout(() => setCopied(false), 2200); } catch (e) {}
