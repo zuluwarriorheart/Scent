@@ -6580,711 +6580,11 @@ function LoadingScreen() {
 
 // ─── BLACK FRIDAY GUIDE ───────────────────────────────────────────────────────
 // Shown in two places: Learn > Black Friday (members) and the public page memoironskin.com/black-friday (no account).
-// Every offer was checked against the brand's own page. To add or change one, edit BF_OFFERS and BF_CHECKED below.
+// The sales live in Supabase (tables bf_offers and bf_settings) and are served by bf_get_offers only to people who have joined the beta list or signed in. To add or change one, edit the table: no code change needed.
 // An offer with hidden:true is kept here but not shown. Cards are listed alphabetically by name.
 const BF_URL = "https://www.memoironskin.com/black-friday";
-const BF_CHECKED = "Nov 24, 2026";
 const BF_TAB_UNTIL = new Date("2026-12-04T00:00:00-05:00").getTime();
-const BF_OFFERS = [
-  {
-    id:"xtrait", via:"Their website", name:"Xtrait Perfumery", kind:"Independent boutique, West Hartford, Connecticut",
-    deal:"Up to 20% off",
-    terms:"10% off anything. 15% off orders over $100. 20% off orders over $200. It applies at checkout and needs no code.",
-    sample:"Sells 1.5 mL samples. The discount covers samples, and they count toward your order total.",
-    caution:"A few houses are excluded or capped at a lower tier, and their page lists them two different ways. Check before you build a cart.",
-    starts:"2026-11-27T00:00:00-05:00", ends:"2026-11-30T23:59:59-05:00", dates:"Nov 27 to Nov 30", startsLabel:"Nov 27", code:"No code needed",
-    url:"https://xtraitperfumery.com/pages/black-friday"
-  },
-  {
-    id:"wyldnotes", hidden:true, via:"Their website", name:"Wyld Notes", kind:"Fragrance house",
-    deal:"20% off select fragrances",
-    terms:"Also 20% off the Discovery Set, and up to $40 off sets and duos.",
-    sample:"The Discovery Set holds five 1.5 mL samples, one of each scent.",
-    caution:"Select items only. Discovery Sets are not returnable.",
-    starts:null, ends:"2026-11-30T23:59:59-05:00", dates:"Through Nov 30", startsLabel:"", code:"See their page",
-    url:"https://wyldnotes.com/"
-  },
-  {
-    id:"allyours", hidden:true, via:"Their website", name:"All Yours", kind:"Niche perfume retailer, prices in euros",
-    deal:"Sale prices on selected niche perfumes",
-    terms:"Their page shows reduced prices rather than a percentage, and lists no code.",
-    sample:null,
-    caution:"The delivery times on their page are for Spain. Check shipping to your country before you order.",
-    starts:"2026-11-24T00:00:00+01:00", ends:"2026-11-30T23:59:59+01:00", dates:"Nov 24 to Nov 30", startsLabel:"Nov 24", code:"No code listed",
-    url:"https://www.allyours.com/en/pages/black-friday-perfumes-nicho"
-  },
-  {
-    id:"skylar", hidden:true, via:"Their website", name:"Skylar", kind:"Fragrance house",
-    deal:"25% off sitewide",
-    terms:"Use the code at checkout.",
-    sample:null, caution:null,
-    starts:null, ends:null, dates:"End date not listed on their page", startsLabel:"", code:"BFCM26",
-    url:"https://skylar.com/"
-  },
-  {
-    id:"bluemercury", hidden:true, via:"Their website", name:"Bluemercury", kind:"Retailer with niche and designer shelves",
-    deal:"Up to 30% off almost everything",
-    terms:"That is the headline on their site. Tiers, dates and exclusions are on their Black Friday fragrance page.",
-    sample:null, caution:null,
-    starts:null, ends:null, dates:"Dates not confirmed", startsLabel:"", code:"See their page",
-    url:"https://bluemercury.com/pages/shop-black-friday-fragrance"
-  },
-  {
-    id:"thirdeye", house:"third-eye-fragrance-co", via:"Their Instagram post, Nov 23", name:"Third Eye Fragrance Co", kind:"Fragrance house, Orlando, Florida",
-    deal:"20% off store wide",
-    terms:"Applied automatically at checkout. Their post marks it with an asterisk, so read the terms on their site.",
-    sample:null, caution:null,
-    starts:null, ends:"2026-11-30T08:00:00-05:00", dates:"Through Nov 30, 8am ET", startsLabel:"", code:"No code needed",
-    url:"https://www.thirdeyefragranceco.com/"
-  },
-  {
-    id:"ath", house:"aaron-terence-hughes", via:"Their Instagram post", name:"Aaron Terence Hughes", kind:"Independent British perfume house",
-    deal:"20% off everything",
-    terms:"Unicorn Weekend. It covers the UK and the US, all weekend or until sold out.",
-    sample:null, caution:"Their post gives no end time. When a scent sells out, it is gone.",
-    starts:"2026-11-27T00:00:00-05:00", ends:null, dates:"From Nov 27, all weekend", startsLabel:"Nov 27", code:"Not listed",
-    url:"https://aaronterencehughes.co.uk/"
-  },
-  {
-    id:"bgj", house:"brown-girl-jane", via:"Their Instagram post", name:"Brown Girl Jane", kind:"Black-owned fragrance house",
-    deal:"Up to 30% off",
-    terms:"Their post says up to 30% off during their Black Friday sale. Dates are not in the post.",
-    sample:null, caution:null, check:true,
-    starts:null, ends:null, dates:"Dates not in their post", startsLabel:"", code:"Not listed",
-    url:"https://browngirljane.com/"
-  },
-  {
-    id:"elysian", house:"elysian-parfum", via:"Their Instagram post", name:"Elysian Parfums", kind:"Indie fragrance house",
-    deal:"25% off six fragrances",
-    terms:"The Vault: Sucre de Soie, Sombre Douceur, Jalous, Cafe Avellana, Charmante and Black Gardenia at 25% off before they are locked away. Orders of $250 or more get a surprise 10 mL.",
-    sample:null, caution:"Early access is through the sign-up link in their Instagram bio.",
-    starts:"2026-11-27T00:00:00-05:00", ends:"2026-11-30T23:59:59-05:00", dates:"Nov 27 to Nov 30", startsLabel:"Nov 27", code:"Early access list",
-    url:"https://elysianparfum.com/"
-  },
-  {
-    id:"hiramgreen", house:"hiram-green", via:"His Instagram post", name:"Hiram Green", kind:"Independent natural perfumer, the Netherlands",
-    deal:"20% off all 50 mL fragrances",
-    terms:"He runs this once a year. Every 50 mL also comes with two complimentary add-ons, listed in his post.",
-    sample:null, caution:"The code comes when you sign up for his newsletter at hiramgreen.com.",
-    starts:"2026-11-27T00:00:00+01:00", ends:"2026-11-30T23:59:59+01:00", dates:"Nov 27 to Nov 30", startsLabel:"Nov 27", code:"Newsletter sign-up",
-    url:"https://hiramgreen.com/"
-  },
-  {
-    id:"anjali", house:"anjali-perfumes", via:"Her Instagram post", name:"Anjali Perfumes", kind:"Woman-owned independent house, Bainbridge Island, Washington",
-    deal:"30% off, free shipping",
-    terms:"No code needed. She runs one sale a year.",
-    sample:"During the sale only the Discovery Set of All Samples is available. The sets of 5, 7 and 9 samples are not.",
-    caution:"No complimentary sample comes with a bottle during the sale, and Starlight Sesame is excluded.",
-    starts:"2026-11-27T09:00:00-08:00", ends:"2026-11-30T23:59:00-08:00", dates:"Nov 27 to Nov 30", startsLabel:"Nov 27, 9am PT", code:"No code needed",
-    url:"https://anjaliperfumes.com/"
-  },
-  {
-    id:"leier", house:"leir", via:"Their Instagram post, Nov 23", name:"LEIƏR", kind:"Black-owned independent fragrance house",
-    deal:"20% off sitewide, 15% off bundles",
-    terms:"Their Cyber Week sale. No code needed.",
-    sample:null, caution:null,
-    starts:"2026-11-23T00:00:00-05:00", ends:"2026-11-30T23:59:59-05:00", dates:"Nov 23 to Nov 30", startsLabel:"Nov 23", code:"No code needed",
-    url:"https://leierfragrances.com/"
-  },
-  {
-    id:"paraphrase", house:"paraphrase-perfume", hidden:true, via:"Their Instagram post, Nov 20", name:"Paraphrase Perfume", kind:"Fragrance house, Canada",
-    deal:"25% off sitewide, 30% off orders over $350 CAD",
-    terms:"No code needed. Orders over $500 CAD get complimentary Guaiacwood & Bergamot incense cones while supplies last.",
-    sample:"Check their site for samples before you buy.",
-    caution:null,
-    starts:"2026-11-20T00:00:00-05:00", ends:"2026-11-23T23:59:59-05:00", dates:"Nov 20 to Nov 23", startsLabel:"Nov 20", code:"No code needed",
-    url:"https://paraphraseperfume.ca"
-  },
-  {
-    id:"henryrose", house:"henry-rose", via:"Their Instagram post and story", name:"Henry Rose", kind:"Fragrance house",
-    deal:"25% off sitewide",
-    terms:"They call it a rare Black Friday Event. Dates are not in the post or story.",
-    sample:null,
-    caution:"Excludes holiday gift sets.", check:true,
-    starts:null, ends:null, dates:"Dates not in their post", startsLabel:"", code:"No code listed",
-    url:"https://henryrose.com/"
-  },
-  {
-    id:"czechspeake", via:"Their Instagram story", name:"Czech & Speake", kind:"Fragrance house, London",
-    deal:"20% off everything, up to 30% off larger orders",
-    terms:"25% off when you buy two 100 mL fragrances and 30% off when you buy three. Their story says they deliver worldwide.",
-    sample:null, caution:null,
-    starts:"2026-11-19T00:00:00+00:00", ends:"2026-11-30T23:59:00+00:00", dates:"Nov 19 to Nov 30", startsLabel:"Nov 19", code:"No code listed",
-    url:"https://www.instagram.com/czechandspeake/", cta:"Open Czech & Speake on Instagram"
-  },
-  {
-    id:"mrwaldron", house:"mr-waldron", via:"Their Instagram post and website", name:"Mr. Waldron", kind:"Fragrance house, Spain",
-    deal:"Black Friday sale",
-    terms:"Their post says it starts Nov 23 with many surprises. The offers themselves are on their site, which is in Spanish.",
-    sample:null, caution:null,
-    starts:"2026-11-23T00:00:00+01:00", ends:"2026-11-29T23:59:00+01:00", dates:"Nov 23 to Nov 29", startsLabel:"Nov 23", code:"No code listed",
-    url:"https://mrwaldron.es/"
-  },
-  {
-    id:"roan", house:"roan", via:"Their Instagram post", name:"ROAN Fragrances", kind:"Fragrance house",
-    deal:"20% off sitewide",
-    terms:"Their post says the Black Friday sale is here. Dates are not in the part of the post we saw.",
-    sample:null, caution:null, check:true,
-    starts:null, ends:null, dates:"Dates not in their post", startsLabel:"", code:"No code listed",
-    url:"https://roanfragrances.com/"
-  },
-  {
-    id:"pernoire", house:"pernoire", via:"Their Instagram post", name:"Pernoire", kind:"Fragrance house",
-    deal:"Buy a 50 mL, get 2 travel sizes free",
-    terms:"Their Black Week. One travel size is the GUYABA preview and the other is a scent of your choice. Everyone who joins the offer is also entered in their giveaway.",
-    sample:"The offer includes two travel sizes with each 50 mL bottle.",
-    caution:null,
-    starts:"2026-11-13T00:00:00+01:00", ends:"2026-11-30T23:59:00+01:00", dates:"Nov 13 to Nov 30", startsLabel:"Nov 13", code:"No code listed",
-    url:"https://pernoire.com/"
-  },
-  {
-    id:"strangeharvest", house:"strange-harvest", via:"Their Instagram ad", name:"Strange Harvest", kind:"Fragrance house",
-    deal:"20% off perfumes",
-    terms:"They call it their only sale of the year. Dates are not in the part of the post we saw.",
-    sample:null, caution:null, check:true,
-    starts:null, ends:null, dates:"Dates not in their post", startsLabel:"", code:"No code listed",
-    url:"https://www.instagram.com/strangeharvestofficial/", cta:"Open Strange Harvest on Instagram"
-  },
-  {
-    id:"maisonlouismarie", via:"Their Instagram ad", name:"Maison Louis Marie", kind:"Fragrance house",
-    deal:"25% off sitewide",
-    terms:"Their Holiday Event. Dates are not in the part of the post we saw.",
-    sample:null, caution:null, check:true,
-    starts:null, ends:null, dates:"Dates not in their post", startsLabel:"", code:"No code listed",
-    url:"https://www.instagram.com/maisonlouismarie/", cta:"Open Maison Louis Marie on Instagram"
-  },
-  {
-    id:"binaurale", house:"binaurale", via:"Their Instagram ad", name:"Binaurale", kind:"Fragrance house",
-    deal:"30% off sitewide",
-    terms:"They call it their biggest sale of the year. Dates are not in the part of the post we saw.",
-    sample:null, caution:null, check:true,
-    starts:null, ends:null, dates:"Dates not in their post", startsLabel:"", code:"No code listed",
-    url:"https://binaurale.com/"
-  },
-  {
-    id:"statik", house:"statik-olfactive", via:"Their Instagram post", name:"Statik Olfactive", kind:"Fragrance house, Boynton Beach, Florida",
-    deal:"25% off, or 30% off $300+, or 35% off $400+",
-    terms:"Three codes by order size: BF25 for your whole order, BF30 for orders of $300 or more, BF35 for orders of $400 or more.",
-    sample:null, caution:null,
-    starts:"2026-11-23T00:00:00-05:00", ends:"2026-11-30T23:59:00-05:00", dates:"Nov 23 to Nov 30", startsLabel:"Nov 23", code:"BF25, BF30 or BF35",
-    url:"https://www.instagram.com/statikolfactive/", cta:"Open Statik Olfactive on Instagram"
-  },
-  {
-    id:"faeral", via:"Their Instagram post", name:"Faeral Parfum", kind:"Fragrance house, Bushwick, New York",
-    deal:"22% off",
-    terms:"Online only. Their post calls it Brit Friday, to mark the founder's birthday on Nov 22.",
-    sample:null,
-    caution:"The discount code comes when you sign up to their email list.",
-    starts:"2026-11-20T00:00:00-05:00", ends:"2026-11-30T23:59:00-05:00", dates:"Nov 20 to Nov 30", startsLabel:"Nov 20", code:"Sent by email",
-    url:"https://www.instagram.com/faeral.parfum/", cta:"Open Faeral Parfum on Instagram"
-  },
-  {
-    id:"ormondejayne", house:"ormonde-jayne", via:"Their website", name:"Ormonde Jayne", kind:"Fragrance house, London",
-    deal:"A new offer each day for eight days",
-    terms:"Part of their 25th anniversary. Day 1, Tuesday Nov 24, is 20% off every full-size 88 mL bottle, for that day only. Each later day has its own offer, listed on their site.",
-    sample:null, caution:null,
-    starts:"2026-11-24T00:00:00+00:00", ends:"2026-12-01T23:59:00+00:00", dates:"Nov 24 to Dec 1", startsLabel:"Nov 24", code:"No code listed",
-    url:"https://ormondejayne.com/en-us"
-  },
-  {
-    id:"lorenzopazzaglia", house:"lorenzo-pazzaglia", via:"Their Instagram post and story", name:"Lorenzo Pazzaglia", kind:"Fragrance house, Italy",
-    deal:"Free 10 mL with every 50 mL",
-    terms:"With every 50 mL fragrance purchase you receive a complimentary 10 mL, selected from their collections. Dates are not in the part of the post we saw.",
-    sample:null, caution:null, check:true,
-    starts:null, ends:null, dates:"Dates not in their post", startsLabel:"", code:"No code listed",
-    url:"https://lorenzopazzaglia.com"
-  },
-  {
-    id:"sphinx", house:"sphinx-fragrances", via:"Their Instagram ad", name:"Sphinx Fragrances", kind:"Fragrance house",
-    deal:"Up to 30% off",
-    terms:"Their ad says up to 30% off with the code. Dates are not in the part of the ad we saw.",
-    sample:null, caution:null, check:true,
-    starts:null, ends:null, dates:"Dates not in their ad", startsLabel:"", code:"Black30",
-    url:"https://sphinxfragrances.com"
-  },
-  {
-    id:"maisonchanceux", house:"maison-chanceux", via:"Their Instagram story ad", name:"Maison Chanceux", kind:"Fragrance house, USA",
-    deal:"25% off sitewide",
-    terms:"Began Nov 12 at noon Pacific. The end date is not in the story we saw.",
-    sample:null, caution:null, check:true,
-    starts:"2026-11-12T12:00:00-08:00", ends:null, dates:"Began Nov 12, end date not listed", startsLabel:"Nov 12", code:"EARLYBF",
-    url:"https://chanceuxparfum.com"
-  },
-  {
-    id:"snif", house:"snif", via:"Their Instagram post", name:"Snif", kind:"Fragrance and body brand, USA",
-    deal:"30% off their entire site",
-    terms:"Their post says this Wednesday, which is Nov 25. One day.",
-    sample:null, caution:null,
-    starts:"2026-11-25T00:00:00-05:00", ends:"2026-11-25T23:59:00-05:00", dates:"Wednesday, Nov 25", startsLabel:"Nov 25", code:"No code listed",
-    url:"https://snif.co"
-  },
-  {
-    id:"inverso", house:"inverso-profumi", via:"A retailer's Instagram reel about their sale", name:"Inverso Profumi", kind:"Fragrance house",
-    deal:"$26 off main Inverso extraits",
-    terms:"Free shipping in the US. Does not apply to Lucale. We saw this in a retailer's reel, not on the brand's own page.",
-    sample:null, caution:null, check:true,
-    starts:null, ends:"2026-11-30T23:59:00-05:00", dates:"Through the end of November", startsLabel:"", code:"BLWV26",
-    url:"https://inversoprofumi.com/"
-  },
-  {
-    id:"penhaligons", house:"penhaligon-s", via:"Their Instagram story ad", name:"Penhaligon's", kind:"Fragrance house, London, est. 1870",
-    deal:"Three free 10 mL fragrances on orders over $200",
-    terms:"Dates are not in the part of the ad we saw.",
-    sample:null, caution:null, check:true,
-    starts:null, ends:null, dates:"Dates not in their ad", startsLabel:"", code:"BLACKFRIDAY",
-    url:"https://penhaligons.com"
-  },
-  {
-    id:"moco", house:"moco-fragrances", via:"Their Instagram story ad", name:"Moco Fragrances", kind:"Fragrance house",
-    deal:"25% off",
-    terms:"They call it their once-a-year sale. It ends Nov 27 at 11:59 PM Eastern.",
-    sample:null, caution:null,
-    starts:null, ends:"2026-11-27T23:59:00-05:00", dates:"Through Nov 27", startsLabel:"", code:"FRIDAY2026",
-    url:"https://mocofragrances.com/"
-  },
-  {
-    id:"conde", house:"conde-parfum", via:"Their Instagram story", name:"Condé Parfum", kind:"Fragrance house, Brazil",
-    deal:"15% off 50 mL bottles",
-    terms:"Their story is in Portuguese and calls it Black Week. Dates are not in the part we saw.",
-    sample:null, caution:null, check:true,
-    starts:null, ends:null, dates:"Dates not in their story", startsLabel:"", code:"WEEK15",
-    url:"https://condeparfum.com"
-  },
-  {
-    id:"frederico", house:"frederico-parfums", via:"Their Instagram post and reel", name:"Frederico Parfums", kind:"Fragrance house, Yardley, Pennsylvania",
-    deal:"30% off",
-    terms:"Now through the end of Cyber Monday, Nov 30. No code needed. Their post calls it a thank you to their fans.",
-    sample:null, caution:null,
-    starts:null, ends:"2026-11-30T23:59:00-05:00", dates:"Through Nov 30", startsLabel:"", code:"No code needed",
-    url:"https://fredericoparfums.com"
-  },
-  {
-    id:"ledda", house:"ledda", via:"Their Instagram story ad", name:"LEDDA", kind:"Fragrance house, New York",
-    deal:"22% off everything",
-    terms:"Dates are not in the part of the ad we saw.",
-    sample:null, caution:null, check:true,
-    starts:null, ends:null, dates:"Dates not in their ad", startsLabel:"", code:"No code listed",
-    url:"https://ledda.co"
-  },
-  {
-    id:"micallef", house:"m-micallef", via:"Their website", name:"M. Micallef", kind:"Fragrance house, Paris",
-    deal:"10% to 20% off an exclusive selection",
-    terms:"Only a selection of their fragrances is included. Free shipping on orders over $200, and prices include US customs taxes. Dates are not on the page we saw.",
-    sample:null, caution:null, check:true,
-    starts:null, ends:null, dates:"Dates not on their page", startsLabel:"", code:"No code listed",
-    url:"https://parfumsmicallef.com/"
-  },
-  {
-    id:"alloystudio", house:"alloy-studio", via:"Their Instagram post", name:"Alloy Studio", kind:"Fragrance house",
-    deal:"A new surprise deal every day",
-    terms:"Each deal is live for 24 hours. Only email subscribers get the full details, so sign up on their site. Round one started Nov 23 at 9 AM Eastern. The end date is not in the post.",
-    sample:null, caution:null, check:true,
-    starts:"2026-11-23T09:00:00-05:00", ends:null, dates:"Started Nov 23, end date not listed", startsLabel:"Nov 23", code:"Sent by email",
-    url:"https://thealloystudio.com"
-  },
-  {
-    id:"octaviamorgan", house:"octavia-morgan", via:"Their Instagram story ad", name:"Octavia Morgan Los Angeles", kind:"Fragrance house, Los Angeles",
-    deal:"25% off sitewide",
-    terms:"Dates are not in the part of the ad we saw.",
-    sample:null, caution:null, check:true,
-    starts:null, ends:null, dates:"Dates not in their ad", startsLabel:"", code:"No code listed",
-    url:"https://octaviamorgan.com/"
-  },
-  {
-    id:"byredo", house:"byredo", via:"Their website", name:"Byredo", kind:"Fragrance house, Stockholm",
-    deal:"Free limited-edition La Petite Collection on purchases over $250",
-    terms:"Each set has a 50 mL body wash, 50 mL body lotion, 30 mL hand cream and an 8 mL eau de parfum. Choose from Mojave Ghost, Blanche, Bal d'Afrique, Rose of No Man's Land or Gypsy Water. While stocks last. Dates are not on the page we saw.",
-    sample:null, caution:null, check:true,
-    starts:null, ends:null, dates:"Dates not on their page", startsLabel:"", code:"No code listed",
-    url:"https://byredo.com"
-  },
-  {
-    id:"caswellmassey", via:"Their Instagram story", name:"Caswell-Massey", kind:"Fragrance house, since 1752",
-    deal:"Up to 60% off",
-    terms:"Their story says Black Friday starts now. The end date is not in the part we saw.",
-    sample:null, caution:null, check:true,
-    starts:null, ends:null, dates:"Started Nov 24, end date not listed", startsLabel:"", code:"No code listed",
-    url:"https://www.instagram.com/caswellmassey/", cta:"Open Caswell-Massey on Instagram"
-  },
-  {
-    id:"saltandstone", via:"Their Instagram story and website", name:"Salt & Stone", kind:"Body care and fragrance brand",
-    deal:"20% off sitewide",
-    terms:"They call it their only sale of the year. Their site asks who you are shopping for (yourself or someone else) to unlock the 20%. Their site also shows 30% off the Full Body Set. Dates are not in what we saw.",
-    sample:null, caution:null, check:true,
-    starts:null, ends:null, dates:"Dates not in their story", startsLabel:"", code:"No code listed",
-    url:"https://saltandstone.com"
-  },
-  {
-    id:"cocodemer", via:"Their Instagram story and website", name:"Coco de Mer Fragrance Co.", kind:"Fragrance house",
-    deal:"20% off rare fragrances",
-    terms:"Their story says 20% off rare fragrances. Their site pop-up says 25% off sitewide plus a free gift, with early access for people who join their mailing list. Free shipping on orders of $50 or more. Dates are not in what we saw.",
-    sample:null, caution:null, check:true,
-    starts:null, ends:null, dates:"Dates not in their story", startsLabel:"", code:"Sent by email",
-    url:"https://cocodemerfragrances.com"
-  },
-  {
-    id:"atwood", house:"atwood-parfum", via:"Their Instagram story, Nov 23", name:"Atwood Parfum", kind:"Fragrance house, Provincetown, Massachusetts",
-    deal:"Buy a 30 mL, get any 10 mL free",
-    terms:"Add both to your cart. Their story says it runs now through November 30.",
-    sample:"Each 30 mL bottle comes with a sample vial of the same scent, and you can return the unopened bottle within 14 days if the sample is not for you.",
-    caution:null,
-    starts:null, ends:"2026-11-30T23:59:59-05:00", dates:"Now through Nov 30", startsLabel:"", code:"No code needed",
-    url:"https://atwoodparfum.com/"
-  },
-  {
-    id:"zernell", house:"zernell-gillie-fragrances", via:"Their Instagram story, Nov 23", name:"Zernell Gillie", kind:"Fragrance house, music-inspired collection",
-    deal:"Up to 20% off",
-    terms:"Their story says they don't usually run sales. Dates are not in the story.",
-    sample:null, caution:null, check:true,
-    starts:null, ends:null, dates:"Dates not in their story", startsLabel:"", code:"Not listed",
-    url:"https://zernellgillie.com/"
-  },
-  {
-    id:"dedcool", house:"dedcool", via:"Their website and Instagram ad", name:"DedCool", kind:"Fragrance house, Los Angeles",
-    deal:"Up to 30% off",
-    terms:"Their site banner says the sale starts now and lists 30% off select items. Dates are not on the page.",
-    sample:"Their site also lists 20% off a first full-size fragrance when you buy a sample tin.",
-    caution:"Exclusions apply, and the eligible items are not spelled out.",
-    check:true,
-    starts:null, ends:null, dates:"Dates not listed", startsLabel:"", code:"No code listed",
-    url:"https://www.dedcool.com/"
-  },
-  {
-    id:"kismet", house:"kismet-olfactive", via:"Their Instagram story", name:"Kismet Olfactive", kind:"Fragrance house, New York",
-    deal:"Up to $90 off",
-    terms:"Their story calls it a Black Friday special. The offer details sit behind the See offer link.",
-    sample:null, caution:null, check:true,
-    starts:null, ends:null, dates:"Dates not in their story", startsLabel:"", code:"Not listed",
-    url:"https://kismetolfactive.com/"
-  },
-  {
-    id:"glossier", house:"glossier", via:"Their Instagram story", name:"Glossier", kind:"Beauty brand with a fragrance line",
-    deal:"25% off everything, 30% off orders of $100 or more",
-    terms:"Their story says terms and exclusions apply. Dates are not in the story.",
-    sample:null, caution:"Check whether the fragrance you want is included before you buy.", check:true,
-    starts:null, ends:null, dates:"Dates not in their story", startsLabel:"", code:"Not listed",
-    url:"https://www.glossier.com/"
-  },
-  {
-    id:"maisonfide", house:"maison-fide", via:"Their Instagram post, Nov 23", name:"Maison Fidé", kind:"Fragrance house",
-    deal:"20% off full-size Thé à Casablanca (100 mL)",
-    terms:"Their Black Friday Ritual Week. The post also points to the new Vanille de Malagasy coffret set.",
-    sample:null, caution:"The code applies to the full-size Thé à Casablanca only.", check:true,
-    starts:null, ends:null, dates:"Ritual Week, end date not in their post", startsLabel:"", code:"MF20",
-    url:"https://maisonfide.com/"
-  },
-  {
-    id:"houseofbo", house:"house-of-bo", via:"Their Instagram story", name:"House of BO", kind:"Fragrance brand",
-    deal:"25% off everything, or 30% off 3 or more items",
-    terms:"Their story says it runs while stock lasts. Dates are not in the story.",
-    sample:null, caution:null, check:true,
-    starts:null, ends:null, dates:"While stock lasts", startsLabel:"", code:"Not listed",
-    url:"https://houseofbo.co/"
-  },
-  {
-    id:"influxious", house:"influxious", via:"Their holiday calendar post", name:"Influxious", kind:"Fragrance house",
-    deal:"20% off sitewide",
-    terms:"Their Black Friday to Cyber Monday sale, on influxious.co. Their calendar shows it starting Nov 24 and ending Nov 30. Their story calls it their only offer of the year and says exclusions apply, so see their site for details.",
-    sample:null, caution:null,
-    starts:"2026-11-24T00:00:00-05:00", ends:"2026-11-30T23:59:59-05:00", dates:"Nov 24 to Nov 30", startsLabel:"Nov 24", code:"No code listed",
-    url:"https://influxious.co/"
-  },
-  {
-    id:"kaori", house:"cult-of-kaori", via:"Their Instagram post", name:"Cult of Kaori", kind:"Fragrance house",
-    deal:"25% off sitewide",
-    terms:"Their one online sale of the year. No code needed, it applies at checkout. Wednesday Nov 25 through Cyber Monday.",
-    sample:null, caution:null,
-    starts:"2026-11-25T00:00:00-05:00", ends:"2026-11-30T23:59:59-05:00", dates:"Nov 25 to Nov 30", startsLabel:"Nov 25", code:"No code needed",
-    url:"https://www.cultofkaori.com/"
-  },
-  {
-    id:"harlem", house:"harlem-perfume-co", via:"Their Instagram post", name:"Harlem Perfume Co.", kind:"Fragrance house",
-    deal:"20% off sitewide",
-    terms:"They call it their biggest sale of the year.",
-    sample:null, caution:null,
-    starts:"2026-11-27T00:00:00-05:00", ends:"2026-11-30T23:59:59-05:00", dates:"Nov 27 to Nov 30", startsLabel:"Nov 27", code:"No code listed",
-    url:"https://harlemperfumeco.com/"
-  },
-  {
-    id:"maher", house:"maher-olfactive", via:"Their Instagram story", name:"Maher Olfactive", kind:"Fragrance house",
-    deal:"10% off $100, 20% off $200, 30% off $300",
-    terms:"Their Holiday Sale, with the discount rising as the order grows. It runs through December 6.",
-    sample:null, caution:null,
-    starts:null, ends:"2026-12-06T23:59:59-05:00", dates:"Now through Dec 6", startsLabel:"", code:"No code listed",
-    url:"https://maherolfactive.com/"
-  },
-  {
-    id:"mitti", house:"mitti-parfum", via:"Their email and Instagram story", name:"Mitti Parfum", kind:"Fragrance house",
-    deal:"Sets with free extras, and free shipping",
-    terms:"Pick three full-size bottles and they fill the rest of the box. Every set comes with extras, and the bigger the set, the more goes in. No code needed. Their story says it happens once a year.",
-    sample:null, caution:null, check:true,
-    starts:null, ends:null, dates:"Live since Nov 22, end date not listed", startsLabel:"", code:"No code needed",
-    url:"https://mittiparfum.com/"
-  },
-  {
-    id:"neandertal", house:"neandertal", via:"Their Instagram story", name:"Neandertal", kind:"Fragrance house",
-    deal:"15% off",
-    terms:"Their Black Friday sale. Dates are not in the story.",
-    sample:null, caution:null, check:true,
-    starts:null, ends:null, dates:"Dates not in their story", startsLabel:"", code:"NBF15",
-    url:"https://www.instagram.com/neandertalperfume/", cta:"Open Neandertal on Instagram"
-  },
-  {
-    id:"liberation", house:"liberation-of-flowers", via:"Their Instagram post", name:"Liberation of Flowers", kind:"Fragrance house",
-    deal:"Free shipping and burning papers with every 50 mL",
-    terms:"Their post says this runs all week. It is a gift with purchase, not a discount.",
-    sample:null, caution:null, check:true,
-    starts:null, ends:null, dates:"All week, per their post", startsLabel:"", code:"No code listed",
-    url:"https://liberationofflowers.com/"
-  },
-  {
-    id:"kioku", house:"ki-oku", via:"Their website and Instagram story", name:"KI-OKU", kind:"Fragrance house, Los Angeles",
-    deal:"Holiday Sale, early access list",
-    terms:"Their page counts down to 11.27.2026 and invites you to join for early access. The discount and early access details are not posted yet.",
-    sample:null, caution:null, check:true,
-    starts:"2026-11-27T00:00:00-08:00", ends:null, dates:"Starts Nov 27, end date not listed", startsLabel:"Nov 27", code:"Early access list",
-    url:"https://ki-oku.com/pages/black-friday-cyber-monday", cta:"Go to KI-OKU's sale page"
-  },
-  {
-    id:"elorea", via:"Their website and Instagram story", name:"Elorea", kind:"Modern Korean perfumery, stores in New York, Los Angeles and Seoul",
-    deal:"20% off sitewide",
-    terms:"Their story calls it their biggest sale of the year, in stores and online. Dates are not listed.",
-    sample:null, caution:null, check:true,
-    starts:null, ends:null, dates:"Dates not listed", startsLabel:"", code:"No code listed",
-    url:"https://elorea.com/collections/eau-de-parfum"
-  },
-  {
-    id:"cirrus", house:"cirrus-parfum", via:"Their Instagram reel", name:"Cirrus Parfum", kind:"Fragrance house, San Antonio, Texas",
-    deal:"20% off sitewide",
-    terms:"Their reel calls it Black Friday coming early. No code is mentioned.",
-    sample:"Their site offers a customizable six-piece discovery set where you pick any 6 fragrances. Their site does not say whether the sale applies to it.",
-    caution:null,
-    starts:"2026-11-23T00:00:00-06:00", ends:"2026-11-30T23:59:59-06:00", dates:"Nov 23 to Nov 30", startsLabel:"Nov 23", code:"No code listed",
-    url:"https://cirrusparfum.com/"
-  },
-  {
-    id:"lepoque", house:"l-epoque-parfums", via:"Their Instagram post and email", name:"L'Epoque Parfums", kind:"Fragrance house",
-    deal:"20% off sitewide, 25% off two or more fragrances",
-    terms:"Early access for their email list. Their post says you get the code as soon as you enter your email on their site. Free shipping on orders of $125 or more. The code cannot be combined with other discounts.",
-    sample:"Their Discovery Set lets you try before committing to a full-size parfum.",
-    caution:"Their email says the early access code is for subscribers until Nov 26. Check their site for what follows.", check:true,
-    starts:null, ends:null, dates:"Early access, end date not in their post", startsLabel:"", code:"Enter your email on their site",
-    url:"https://www.lepoqueparfums.com/"
-  },
-  {
-    id:"carner", house:"carner-barcelona", via:"Their Instagram post", name:"Carner Barcelona", kind:"Fragrance house, Barcelona",
-    deal:"Free travel set of 3 x 10 mL with a perfume order",
-    terms:"Their Black Week. Order a perfume and choose the three 10 mL fragrances for your set. Their post says it is only this week.",
-    sample:"The gift is a set of three 10 mL fragrances you choose, a way to try more of the house.",
-    caution:null, check:true,
-    starts:null, ends:null, dates:"This week, per their post", startsLabel:"", code:"No code listed",
-    url:"https://carnerbarcelona.com/"
-  },
-  {
-    id:"brandt", house:"house-of-brandt", via:"Their Instagram story", name:"House of Brandt", kind:"Fragrance brand",
-    deal:"Black Friday offers by invitation",
-    terms:"Their page says they will not announce the offers anywhere else. They go only to people on their list, and you sign up with your name, email and phone number.",
-    sample:null, caution:null, check:true,
-    starts:null, ends:null, dates:"Dates not listed", startsLabel:"", code:"Join their list",
-    url:"https://houseofbrandt.com/"
-  },
-  {
-    id:"dusita", house:"parfums-dusita", via:"Their Instagram post", name:"Dusita", kind:"Fragrance house, Paris",
-    deal:"Free gift-filled holiday box with a 50 mL or a 3 x 15 mL coffret",
-    terms:"The box holds a 15 mL eau de parfum of your choice, seven 2.5 mL samples, a Mocha Absolu Discovery Kit, a holiday card and a EUR 35 voucher. Orders of a 50 mL extrait or a 100 mL eau de parfum get two 15 mL instead of one. Valid until Nov 30.",
-    sample:"Seven 2.5 mL samples and a Mocha Absolu Discovery Kit come in the box.",
-    caution:"The EUR 35 voucher is valid Jan 11 to Mar 15, 2027, on orders of EUR 150 or more.",
-    starts:null, ends:"2026-11-30T23:59:59+01:00", dates:"Now through Nov 30", startsLabel:"", code:"No code listed",
-    url:"https://www.parfumsdusita.com/"
-  },
-  {
-    id:"maisondetto", via:"Their Instagram ad", name:"Maison d'Etto", kind:"Fragrance house",
-    deal:"Discovery Set credit doubled, from $50 to $100",
-    terms:"Every Discovery Set comes with a credit toward a full-size bottle, and this holiday season they have doubled it. Their post says it is their Black Friday offer. Dates are not listed.",
-    sample:"The Discovery Set holds all nine fragrances in 2.5 mL sprays, so you can give each a full day on your skin before you choose one.",
-    caution:null, check:true,
-    starts:null, ends:null, dates:"Dates not listed", startsLabel:"", code:"No code listed",
-    url:"https://maisondetto.com/"
-  },
-  {
-    id:"gabar", house:"gabar", via:"Their Instagram post and story", name:"Gabar", kind:"Fragrance house",
-    deal:"20% off sitewide",
-    terms:"They call it their only sitewide sale of the year. Their post says it ends Nov 30 at midnight GMT.",
-    sample:null,
-    caution:"Limited stock. Their post said 01 Float is US orders only, and 04 Rise and the 02 Ground candle were sold out. They point to their other stockists for what is available now.",
-    starts:null, ends:"2026-11-30T23:59:59+00:00", dates:"Now through Nov 30, midnight GMT", startsLabel:"", code:"No code listed",
-    url:"https://gabarworld.com/"
-  },
-  {
-    id:"scenttrunk", house:"scent-trunk", via:"Their Instagram post", name:"Scent Trunk", kind:"Fragrance house",
-    deal:"30% off all fragrances",
-    terms:"Their Black Friday post, shared with the Whisper of Melancholy collection. The link to shop is in their bio. Dates are not in the post.",
-    sample:null, caution:null, check:true,
-    starts:null, ends:null, dates:"Dates not in their post", startsLabel:"", code:"No code listed",
-    url:"https://scenttrunk.com/"
-  },
-  {
-    id:"fyaf", house:"free-yourself", via:"Their Instagram post", name:"Free Yourself and Flourish", kind:"Fragrance brand",
-    deal:"Free 15 mL with a full-size bottle",
-    terms:"Buy a full-size fragrance from the Elements Collection and get a free 15 mL travel size of the same scent. Buy one from the Mindful Collection and get a free 15 mL refill of the same scent. Black Friday through Cyber Monday, while supplies last.",
-    sample:null, caution:null,
-    starts:"2026-11-27T00:00:00-05:00", ends:"2026-11-30T23:59:59-05:00", dates:"Nov 27 to Nov 30", startsLabel:"Nov 27", code:"No code listed",
-    url:"https://freeyourself.com/"
-  },
-  {
-    id:"bsb", via:"Their Instagram post", name:"Brown Sugar Babe", kind:"Fragrance brand",
-    deal:"35% off Black Friday, 10% off Saturday and Monday",
-    terms:"Black Friday (Nov 27) 35% off. Small Business Saturday (Nov 28) 10% off. Cyber Monday (Nov 30) 10% off plus free shipping. Excludes the Advent Calendar. Terms and conditions apply.",
-    sample:null, caution:null,
-    starts:"2026-11-27T00:00:00-05:00", ends:"2026-11-30T23:59:59-05:00", dates:"Nov 27 to Nov 30", startsLabel:"Nov 27", code:"No code listed",
-    url:"https://www.brownsugarbabe.net/"
-  },
-  {
-    id:"andreamaack", house:"andrea-maack", via:"Their Instagram post", name:"Andrea Maack", kind:"Fragrance house",
-    deal:"30% off sitewide",
-    terms:"They call it their biggest sale of the year. Dates are not in the post image.",
-    sample:null, caution:null, check:true,
-    starts:null, ends:null, dates:"Dates not in their post", startsLabel:"", code:"No code listed",
-    url:"https://andreamaack.com/"
-  },
-  {
-    id:"nemat", house:"nemat-international", via:"Their Instagram post", name:"Nemat", kind:"Artisan perfumery",
-    deal:"25% off sitewide",
-    terms:"Their post says the Black Friday sale is live and calls it their biggest sale of the year. Dates are not in the post image.",
-    sample:null, caution:null, check:true,
-    starts:null, ends:null, dates:"Dates not in their post", startsLabel:"", code:"No code listed",
-    url:"https://nematperfumes.com/"
-  },
-  {
-    id:"stateofmind", via:"Their Instagram post", name:"State of Mind", kind:"Fragrance house, Versailles",
-    deal:"20% off perfumes and the Home Collection",
-    terms:"Offers start Nov 24 on their website, and their caption says it runs until Dec 5. They say it is available only once a year.",
-    sample:null, caution:null,
-    starts:"2026-11-24T00:00:00+01:00", ends:"2026-12-05T23:59:59+01:00", dates:"Nov 24 to Dec 5", startsLabel:"Nov 24", code:"No code listed",
-    url:"https://stateofmind.fr/"
-  },
-  {
-    id:"jscent", house:"j-scent", via:"Their Instagram post", name:"J-Scent", kind:"Fragrance house",
-    deal:"10% off storewide",
-    terms:"Their post says Nov 27 to Nov 30.",
-    sample:null, caution:"Shipping is within the United States only.",
-    starts:"2026-11-27T00:00:00-05:00", ends:"2026-11-30T23:59:59-05:00", dates:"Nov 27 to Nov 30", startsLabel:"Nov 27", code:"No code listed",
-    url:"https://j-scent-global.com/"
-  },
-  {
-    id:"heretic", house:"heretic-parfum", via:"Their Instagram post", name:"Heretic Parfum", kind:"Fragrance house",
-    deal:"30% off sitewide",
-    terms:"Their post says limited time only. Dates are not in the post image.",
-    sample:null, caution:null, check:true,
-    starts:null, ends:null, dates:"Limited time, dates not listed", startsLabel:"", code:"GOTHIC30",
-    url:"https://hereticparfum.com/"
-  },
-  {
-    id:"histoires", house:"histoires-de-parfums", via:"Their website and Instagram story", name:"Histoires de Parfums", kind:"Fragrance house",
-    deal:"20% off up to $299, 30% off from $300",
-    terms:"Early access for their email list. Sign up with your email, and on Thursday Nov 26 at 10am ET you get an email that your access is open. Log in with the same address and the discount applies in your cart. It runs until Monday Nov 30 at midnight ET.",
-    sample:null, caution:null,
-    starts:"2026-11-26T10:00:00-05:00", ends:"2026-11-30T23:59:59-05:00", dates:"Nov 26 to Nov 30", startsLabel:"Nov 26, 10am ET", code:"Sign up for early access",
-    url:"https://usa.histoiresdeparfums.com/"
-  },
-  {
-    id:"mataha", house:"maison-mataha", via:"Their Instagram story", name:"Maison Mataha", kind:"Fragrance house, Paris",
-    deal:"Free discovery set and free worldwide shipping with every order",
-    terms:"Their story calls it an invitation to discover the house. Dates are not in the story.",
-    sample:"A complimentary discovery set comes with every order.",
-    caution:null, check:true,
-    starts:null, ends:null, dates:"Dates not in their story", startsLabel:"", code:"No code listed",
-    url:"https://maisonmataha.com/en-int"
-  },
-  {
-    id:"imaginary", house:"imaginary-authors", via:"Their Instagram post", name:"Imaginary Authors", kind:"Fragrance house",
-    deal:"Free limited fragrance with $100 spend",
-    terms:"Spend $100 on their website and receive their newest, exclusive and extremely limited fragrance, Longing For Light. Dates are not in the post.",
-    sample:null, caution:null, check:true,
-    starts:null, ends:null, dates:"Dates not in their post", startsLabel:"", code:"No code listed",
-    url:"https://imaginaryauthors.com/"
-  },
-  {
-    id:"granado", house:"granado", via:"Their Instagram posts", name:"Granado", kind:"Fragrance house, Rio de Janeiro",
-    deal:"Up to 30% off selected products",
-    terms:"Their Tropical Friday story says up to 30% off selected products, and shows free shipping over $50 and free samples. An earlier post of theirs showed 50% off with Rosa Sublime. Neither gives dates.",
-    sample:"Their story lists free samples.", caution:"The two posts give different discounts, so check their page for what applies to which products.", check:true,
-    starts:null, ends:null, dates:"Dates not in their posts", startsLabel:"", code:"No code listed",
-    url:"https://www.granado.us/usa"
-  },
-  {
-    id:"xinu", via:"Their Instagram story", name:"Xinu", kind:"Fragrance and home scent house",
-    deal:"Free shipping this week only",
-    terms:"Their story says complimentary shipping, this week only. It is shipping, not a discount.",
-    sample:null, caution:null, check:true,
-    starts:null, ends:null, dates:"This week, per their story", startsLabel:"", code:"No code listed",
-    url:"https://xinuperfumes.com/"
-  },
-  {
-    id:"reinvented", via:"Their Instagram story", name:"Reinvented Parfums", kind:"Fragrance house",
-    deal:"A limited 48-hour sale, early access for subscribers",
-    terms:"Their story says to subscribe for early access, and that terms and conditions apply. The discount and the dates are not in the story.",
-    sample:null, caution:null, check:true,
-    starts:null, ends:null, dates:"Dates not in their story", startsLabel:"", code:"Subscribe for early access",
-    url:"https://www.reinventedparfums.com/"
-  },
-  {
-    id:"boysmells", house:"boy-smells", via:"Their Instagram story", name:"Boy Smells", kind:"Fragrance and candle house",
-    deal:"30% off almost everything",
-    terms:"Their story says 30% off almost everything, online and in stores. Dates are not in the story.",
-    sample:null, caution:null, check:true,
-    starts:null, ends:null, dates:"Dates not in their story", startsLabel:"", code:"No code listed",
-    url:"https://boysmells.com/"
-  },
-  {
-    id:"ellisbrooklyn", house:"ellis-brooklyn", via:"Their Instagram post", name:"Ellis Brooklyn", kind:"Fragrance house, Brooklyn",
-    deal:"Black Friday sale starts Nov 24",
-    terms:"Their post says Black Friday kicks off Nov 24, exclusively on their website. The discount and the end date are not in the post.",
-    sample:null, caution:null, check:true,
-    starts:"2026-11-24T00:00:00-05:00", ends:null, dates:"Starts Nov 24, end date not listed", startsLabel:"Nov 24", code:"No code listed",
-    url:"https://ellisbrooklyn.com/"
-  },
-  {
-    id:"regime", house:"regime-des-fleurs", via:"Their Instagram story and post", name:"Régime des Fleurs", kind:"Fragrance house",
-    deal:"25% off any 75 mL eau de parfum",
-    terms:"They call it their one and only sale. Their post says it runs from Friday Nov 20 to the end of Monday Nov 30, and their story shows the 25% on any 75 mL eau de parfum.",
-    sample:null, caution:null,
-    starts:"2026-11-20T00:00:00-05:00", ends:"2026-11-30T23:59:59-05:00", dates:"Nov 20 to Nov 30", startsLabel:"Nov 20", code:"No code listed",
-    url:"https://regimedesfleurs.com/"
-  },
-  {
-    id:"sergelutens", house:"serge-lutens", via:"Their Instagram story", name:"Serge Lutens", kind:"Fragrance house",
-    deal:"20% off",
-    terms:"Their story says Black Friday 20% off. Dates and what it covers are not in the story.",
-    sample:null, caution:null, check:true,
-    starts:null, ends:null, dates:"Dates not in their story", startsLabel:"", code:"No code listed",
-    url:"https://sergelutens.com/collections/black-friday"
-  },
-  {
-    id:"maisonmatine", house:"maison-matine", via:"Their Instagram story", name:"Maison Matine", kind:"Fragrance house",
-    deal:"A free scented candle with a 50 mL or 100 mL perfume",
-    terms:"Their story says the offer lasts while stocks last, this week only. Exact dates are not in the story.",
-    sample:null, caution:"Limited stock.", check:true,
-    starts:null, ends:null, dates:"This week only, while stocks last", startsLabel:"", code:"No code listed",
-    url:"https://maisonmatine.us/"
-  },
-  {
-    id:"jusbox", house:"jusbox", via:"Their Instagram story and website", name:"Jusbox Perfumes", kind:"Fragrance house",
-    deal:"A free Travel Size Kit with a 78 mL fragrance",
-    terms:"For their community only. Until Nov 27, newsletter subscribers get a Travel Size Kit of their choice, three 7.8 mL, free with the purchase of a 78 mL fragrance. Subscribe on their site to join.",
-    sample:null, caution:null,
-    starts:null, ends:"2026-11-27T23:59:59-05:00", dates:"Until Nov 27", startsLabel:"", code:"Subscribe to their newsletter",
-    url:"https://jusboxperfumes.com/"
-  },
-  {
-    id:"twentysecondofmay", house:"twenty-second-of-may", via:"Their Instagram story", name:"Twenty Second of May", kind:"Fragrance house",
-    deal:"A free Discovery Set with every full-size fragrance order",
-    terms:"Their Black Week exclusive. Shipping is free, and it runs until Monday Nov 30.",
-    sample:"The Discovery Set lets you try their scents in small bottles.", caution:null,
-    starts:null, ends:"2026-11-30T23:59:59-05:00", dates:"Until Nov 30", startsLabel:"", code:"No code listed",
-    url:"https://twentysecondofmay.com/"
-  },
-];
+
 function bfStatus(o, now) {
   if (o.ends && now > new Date(o.ends).getTime()) return "ended";
   if (o.starts && now < new Date(o.starts).getTime()) return "soon";
@@ -7292,7 +6592,7 @@ function bfStatus(o, now) {
   return "live";
 }
 
-function BetaSignupCard({ heading = "Join the beta list", note = "Just your first name and email. No password, no payment.", onJoined, cta = "Save my spot" }) {
+function BetaSignupCard({ heading = "Join the beta list", note = "Just your first name and email. No password, no payment.", onJoined, cta = "Save my spot", bf = false }) {
   const [email, setEmail] = useState("");
   const [name, setName] = useState("");
   const [done, setDone] = useState(false);
@@ -7303,11 +6603,11 @@ function BetaSignupCard({ heading = "Join the beta list", note = "Just your firs
     if (!name.trim()) { setError("Please add your first name."); return; }
     if (!okEmail(email)) { setError("Please enter a valid email address."); return; }
     setError(""); setLoading(true);
-    const r = await supabase.rpc("join_waitlist", { p_email: email.trim(), p_name: name.trim(), p_src: getSrc() || "blackfriday" });
+    const r = await supabase.rpc(bf ? "bf_join" : "join_waitlist", { p_email: email.trim(), p_name: name.trim(), p_src: getSrc() || "blackfriday" });
     setLoading(false);
     if (r.error) { setError("That didn't go through. Try again in a moment."); return; }
     setDone(true);
-    if (onJoined) onJoined();
+    if (onJoined) onJoined(r.data);
   }
   const inp = { ...FIELD, minHeight:52 };
   return (
@@ -7386,22 +6686,39 @@ function bfLoad() {
   } catch (e) { return { saved:[], wish:{} }; }
 }
 
-const BF_UNLOCK_KEY = "mos-bf-unlocked-v1";
+const BF_TOKEN_KEY = "mos-bf-token-v1";
 function BlackFridayGuide({ embedded = false }) {
   const [now] = useState(() => Date.now());
-  // The public page asks for a first name and email (the beta list) before showing the sales. Members and the Learn tab see it open.
-  const [unlocked, setUnlocked] = useState(() => { try { return window.localStorage.getItem(BF_UNLOCK_KEY) === "1"; } catch (e) { return false; } });
+  // The sales come from the database. bf_get_offers returns them only to signed-in members or to someone holding the access token that bf_join gave them when they joined the beta list.
+  const [phase, setPhase] = useState("loading"); // loading | locked | open | error
+  const [offers, setOffers] = useState([]);
+  const [checked, setChecked] = useState("");
+  const [count, setCount] = useState(null);
   const [joinedNow, setJoinedNow] = useState(false);
-  const open = embedded || unlocked;
+  const load = async token => {
+    try {
+      const r = await supabase.rpc("bf_get_offers", { p_token: token || null });
+      if (r.error) { setPhase("error"); return; }
+      if (r.data && Array.isArray(r.data.offers)) { setOffers(r.data.offers); setChecked(r.data.checked || ""); setPhase("open"); return; }
+      try { window.localStorage.removeItem(BF_TOKEN_KEY); } catch (e) { /* storage unavailable */ }
+      setPhase("locked");
+      const c = await supabase.rpc("bf_offer_count");
+      if (!c.error && typeof c.data === "number") setCount(c.data);
+    } catch (e) { setPhase("error"); }
+  };
   useEffect(() => {
-    if (embedded || unlocked) return;
-    let live = true;
-    supabase.auth.getSession().then(({ data }) => { if (live && data && data.session) setUnlocked(true); }).catch(() => {});
-    return () => { live = false; };
-  }, [embedded, unlocked]);
-  const onJoined = () => { setJoinedNow(true); setUnlocked(true); try { window.localStorage.setItem(BF_UNLOCK_KEY, "1"); } catch (e) { /* storage unavailable */ } };
+    let tok = null;
+    try { tok = window.localStorage.getItem(BF_TOKEN_KEY); } catch (e) { /* storage unavailable */ }
+    load(tok);
+  }, []);
+  const onJoined = token => {
+    setJoinedNow(true);
+    if (token) { try { window.localStorage.setItem(BF_TOKEN_KEY, String(token)); } catch (e) { /* storage unavailable */ } }
+    load(token ? String(token) : null);
+  };
+  const open = phase === "open";
   const [copied, setCopied] = useState(false);
-  const list = BF_OFFERS.filter(o => !o.hidden).map((o, i) => ({ o, i, st:bfStatus(o, now) })).sort((a, b) => a.o.name.localeCompare(b.o.name, "en", { sensitivity:"base", ignorePunctuation:true }) || (a.i - b.i));
+  const list = offers.filter(o => !o.hidden).map((o, i) => ({ o, i, st:bfStatus(o, now) })).sort((a, b) => a.o.name.localeCompare(b.o.name, "en", { sensitivity:"base", ignorePunctuation:true }) || (a.i - b.i));
   const [mine, setMine] = useState(bfLoad);
   const [view, setView] = useState("all");
   const [confirmId, setConfirmId] = useState(null);
@@ -7483,10 +6800,13 @@ function BlackFridayGuide({ embedded = false }) {
         <p style={{ fontSize:"clamp(15px, 2.2vw, 18px)", lineHeight:1.65, color:T.mid, margin:embedded ? "0 0 4px" : "0 auto", maxWidth:520 }}>Niche &amp; indie sales, each with a link straight to the brand. Where a brand offers samples, we note it.</p>
       </div>
 
-      {!embedded && (!unlocked || joinedNow) && <div style={{ margin:"0 0 30px" }}><BetaSignupCard onJoined={onJoined} cta="Join and see the sales" heading="Sample first. Remember always." note={`Memoir on Skin is a scent journal built around helping people trust their own noses, rather than following trends or hype. Join the beta list with your first name and email to see all ${list.length} sales. We keep your email for the beta list. No password, no payment.`}/></div>}
-      {!open && (
+      {!embedded && (phase === "locked" || joinedNow) && <div style={{ margin:"0 0 30px" }}><BetaSignupCard bf onJoined={onJoined} cta="Join and see the sales" heading="Sample first. Remember always." note={`Memoir on Skin is a scent journal built around helping people trust their own noses, rather than following trends or hype. Join the beta list with your first name and email to see ${count ? `all ${count}` : "all the"} sales. We keep your email for the beta list. No password, no payment.`}/></div>}
+      {phase === "loading" && <p style={{ fontSize:14, color:T.mid, textAlign:"center", margin:"0 0 26px" }}>Loading the sales…</p>}
+      {phase === "error" && <p role="alert" style={{ fontSize:14, color:T.bad, textAlign:"center", lineHeight:1.6, margin:"0 0 26px" }}>The sales did not load. Please refresh the page in a moment.</p>}
+      {embedded && phase === "locked" && <p style={{ fontSize:14, color:T.mid, textAlign:"center", lineHeight:1.6, margin:"0 0 26px" }}>Sign in again to see the sales.</p>}
+      {!embedded && phase === "locked" && !joinedNow && (
         <div style={{ background:T.lift, border:`1px solid ${T.rule}`, borderRadius:20, padding:"22px 18px", textAlign:"center", margin:"0 0 26px" }}>
-          <p style={{ fontFamily:serif, fontSize:22, lineHeight:1.25, color:T.black, margin:"0 0 6px" }}>{list.length} niche &amp; indie sales, A to Z.</p>
+          <p style={{ fontFamily:serif, fontSize:22, lineHeight:1.25, color:T.black, margin:"0 0 6px" }}>{count ? `${count} niche & indie sales, A to Z.` : "Niche & indie sales, A to Z."}</p>
           <p style={{ fontSize:14, color:T.mid, lineHeight:1.65, margin:0 }}>Each one links straight to the brand, with dates, codes and sample notes. They unlock as soon as you join the beta list above.</p>
         </div>
       )}
@@ -7499,7 +6819,7 @@ function BlackFridayGuide({ embedded = false }) {
       </div>
 
       <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", gap:12, flexWrap:"wrap", margin:"0 0 14px" }}>
-        <p style={{ fontSize:12, color:T.mid, margin:0 }}>Checked against each brand's own page or post on {BF_CHECKED}.</p>
+        <p style={{ fontSize:12, color:T.mid, margin:0 }}>Checked against each brand's own page or post on {checked || "the day we last updated"}.</p>
         <button onClick={shareIt} style={{ ...ghostBtn, minHeight:40, padding:"0 16px", fontSize:13 }}>{copied ? "Link copied" : "Share this page"}</button>
       </div>
 
