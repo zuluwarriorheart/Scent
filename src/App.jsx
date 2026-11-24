@@ -6583,7 +6583,7 @@ function LoadingScreen() {
 // Every offer was checked against the brand's own page. To add or change one, edit BF_OFFERS and BF_CHECKED below.
 // An offer with hidden:true is kept here but not shown. Cards are listed alphabetically by name.
 const BF_URL = "https://www.memoironskin.com/black-friday";
-const BF_CHECKED = "Nov 23, 2026";
+const BF_CHECKED = "Nov 24, 2026";
 const BF_TAB_UNTIL = new Date("2026-12-04T00:00:00-05:00").getTime();
 const BF_OFFERS = [
   {
@@ -6694,6 +6694,97 @@ const BF_OFFERS = [
     caution:null,
     starts:"2026-11-20T00:00:00-05:00", ends:"2026-11-23T23:59:59-05:00", dates:"Nov 20 to Nov 23", startsLabel:"Nov 20", code:"No code needed",
     url:"https://paraphraseperfume.ca"
+  },
+  {
+    id:"henryrose", house:"henry-rose", via:"Their Instagram post and story", name:"Henry Rose", kind:"Fragrance house",
+    deal:"25% off sitewide",
+    terms:"They call it a rare Black Friday Event. Dates are not in the post or story.",
+    sample:null,
+    caution:"Excludes holiday gift sets.", check:true,
+    starts:null, ends:null, dates:"Dates not in their post", startsLabel:"", code:"No code listed",
+    url:"https://henryrose.com/"
+  },
+  {
+    id:"czechspeake", via:"Their Instagram story", name:"Czech & Speake", kind:"Fragrance house, London",
+    deal:"20% off everything, up to 30% off larger orders",
+    terms:"25% off when you buy two 100 mL fragrances and 30% off when you buy three. Their story says they deliver worldwide.",
+    sample:null, caution:null,
+    starts:"2026-11-19T00:00:00+00:00", ends:"2026-11-30T23:59:00+00:00", dates:"Nov 19 to Nov 30", startsLabel:"Nov 19", code:"No code listed",
+    url:"https://www.instagram.com/czechandspeake/", cta:"Open Czech & Speake on Instagram"
+  },
+  {
+    id:"mrwaldron", house:"mr-waldron", via:"Their Instagram post and website", name:"Mr. Waldron", kind:"Fragrance house, Spain",
+    deal:"Black Friday sale",
+    terms:"Their post says it starts Nov 23 with many surprises. The offers themselves are on their site, which is in Spanish.",
+    sample:null, caution:null,
+    starts:"2026-11-23T00:00:00+01:00", ends:"2026-11-29T23:59:00+01:00", dates:"Nov 23 to Nov 29", startsLabel:"Nov 23", code:"No code listed",
+    url:"https://mrwaldron.es/"
+  },
+  {
+    id:"roan", house:"roan", via:"Their Instagram post", name:"ROAN Fragrances", kind:"Fragrance house",
+    deal:"20% off sitewide",
+    terms:"Their post says the Black Friday sale is here. Dates are not in the part of the post we saw.",
+    sample:null, caution:null, check:true,
+    starts:null, ends:null, dates:"Dates not in their post", startsLabel:"", code:"No code listed",
+    url:"https://roanfragrances.com/"
+  },
+  {
+    id:"pernoire", house:"pernoire", via:"Their Instagram post", name:"Pernoire", kind:"Fragrance house",
+    deal:"Buy a 50 mL, get 2 travel sizes free",
+    terms:"Their Black Week. One travel size is the GUYABA preview and the other is a scent of your choice. Everyone who joins the offer is also entered in their giveaway.",
+    sample:"The offer includes two travel sizes with each 50 mL bottle.",
+    caution:null,
+    starts:"2026-11-13T00:00:00+01:00", ends:"2026-11-30T23:59:00+01:00", dates:"Nov 13 to Nov 30", startsLabel:"Nov 13", code:"No code listed",
+    url:"https://pernoire.com/"
+  },
+  {
+    id:"strangeharvest", house:"strange-harvest", via:"Their Instagram ad", name:"Strange Harvest", kind:"Fragrance house",
+    deal:"20% off perfumes",
+    terms:"They call it their only sale of the year. Dates are not in the part of the post we saw.",
+    sample:null, caution:null, check:true,
+    starts:null, ends:null, dates:"Dates not in their post", startsLabel:"", code:"No code listed",
+    url:"https://www.instagram.com/strangeharvestofficial/", cta:"Open Strange Harvest on Instagram"
+  },
+  {
+    id:"maisonlouismarie", via:"Their Instagram ad", name:"Maison Louis Marie", kind:"Fragrance house",
+    deal:"25% off sitewide",
+    terms:"Their Holiday Event. Dates are not in the part of the post we saw.",
+    sample:null, caution:null, check:true,
+    starts:null, ends:null, dates:"Dates not in their post", startsLabel:"", code:"No code listed",
+    url:"https://www.instagram.com/maisonlouismarie/", cta:"Open Maison Louis Marie on Instagram"
+  },
+  {
+    id:"binaurale", house:"binaurale", via:"Their Instagram ad", name:"Binaurale", kind:"Fragrance house",
+    deal:"30% off sitewide",
+    terms:"They call it their biggest sale of the year. Dates are not in the part of the post we saw.",
+    sample:null, caution:null, check:true,
+    starts:null, ends:null, dates:"Dates not in their post", startsLabel:"", code:"No code listed",
+    url:"https://binaurale.com/"
+  },
+  {
+    id:"statik", house:"statik-olfactive", via:"Their Instagram post", name:"Statik Olfactive", kind:"Fragrance house, Boynton Beach, Florida",
+    deal:"25% off, or 30% off $300+, or 35% off $400+",
+    terms:"Three codes by order size: BF25 for your whole order, BF30 for orders of $300 or more, BF35 for orders of $400 or more.",
+    sample:null, caution:null,
+    starts:"2026-11-23T00:00:00-05:00", ends:"2026-11-30T23:59:00-05:00", dates:"Nov 23 to Nov 30", startsLabel:"Nov 23", code:"BF25, BF30 or BF35",
+    url:"https://www.instagram.com/statikolfactive/", cta:"Open Statik Olfactive on Instagram"
+  },
+  {
+    id:"faeral", via:"Their Instagram post", name:"Faeral Parfum", kind:"Fragrance house, Bushwick, New York",
+    deal:"22% off",
+    terms:"Online only. Their post calls it Brit Friday, to mark the founder's birthday on Nov 22.",
+    sample:null,
+    caution:"The discount code comes when you sign up to their email list.",
+    starts:"2026-11-20T00:00:00-05:00", ends:"2026-11-30T23:59:00-05:00", dates:"Nov 20 to Nov 30", startsLabel:"Nov 20", code:"Sent by email",
+    url:"https://www.instagram.com/faeral.parfum/", cta:"Open Faeral Parfum on Instagram"
+  },
+  {
+    id:"ormondejayne", house:"ormonde-jayne", via:"Their website", name:"Ormonde Jayne", kind:"Fragrance house, London",
+    deal:"A new offer each day for eight days",
+    terms:"Part of their 25th anniversary. Day 1, Tuesday Nov 24, is 20% off every full-size 88 mL bottle, for that day only. Each later day has its own offer, listed on their site.",
+    sample:null, caution:null,
+    starts:"2026-11-24T00:00:00+00:00", ends:"2026-12-01T23:59:00+00:00", dates:"Nov 24 to Dec 1", startsLabel:"Nov 24", code:"No code listed",
+    url:"https://ormondejayne.com/en-us"
   },
   {
     id:"atwood", house:"atwood-parfum", via:"Their Instagram story, Nov 23", name:"Atwood Parfum", kind:"Fragrance house, Provincetown, Massachusetts",
