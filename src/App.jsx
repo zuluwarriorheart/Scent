@@ -6757,7 +6757,7 @@ function BlackFridayGuide({ embedded = false }) {
                 <span style={{ fontSize:12, color:T.mid }}>{o.dates}</span>
               </div>
               <h2 style={{ fontFamily:serif, fontWeight:400, fontSize:28, letterSpacing:-0.5, color:T.black, margin:"0 0 2px" }}>{o.name}</h2>
-              <p style={{ fontSize:13, color:T.mid, margin:"0 0 12px" }}>{[o.country, o.tier].filter(Boolean).join(" · ")}{(o.country || o.tier) ? " · " : ""}{o.kind}</p>
+              <p style={{ fontSize:13, color:T.mid, margin:"0 0 12px" }}>{o.tier ? o.tier + " · " : ""}{o.kind}</p>
               <p style={{ fontFamily:serif, fontSize:22, lineHeight:1.25, color:T.black, margin:"0 0 6px" }}>{o.deal}</p>
               <p style={{ fontSize:14, color:T.mid, lineHeight:1.65, margin:"0 0 12px" }}>{o.terms}</p>
               <p style={{ fontSize:12, color:T.faint, margin:"0 0 12px" }}>Source: {o.via}</p>
