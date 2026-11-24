@@ -6867,6 +6867,14 @@ const BF_OFFERS = [
     url:"https://ledda.co"
   },
   {
+    id:"micallef", house:"m-micallef", via:"Their website", name:"M. Micallef", kind:"Fragrance house, Paris",
+    deal:"10% to 20% off an exclusive selection",
+    terms:"Only a selection of their fragrances is included. Free shipping on orders over $200, and prices include US customs taxes. Dates are not on the page we saw.",
+    sample:null, caution:null, check:true,
+    starts:null, ends:null, dates:"Dates not on their page", startsLabel:"", code:"No code listed",
+    url:"https://parfumsmicallef.com/"
+  },
+  {
     id:"atwood", house:"atwood-parfum", via:"Their Instagram story, Nov 23", name:"Atwood Parfum", kind:"Fragrance house, Provincetown, Massachusetts",
     deal:"Buy a 30 mL, get any 10 mL free",
     terms:"Add both to your cart. Their story says it runs now through November 30.",
