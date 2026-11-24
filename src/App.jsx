@@ -6744,6 +6744,62 @@ const BF_OFFERS = [
     starts:null, ends:null, dates:"While stock lasts", startsLabel:"", code:"Not listed",
     url:"https://www.instagram.com/houseofbo.co/", cta:"Open House of BO on Instagram"
   },
+  {
+    id:"influxious", via:"Their holiday calendar post", name:"Influxious", kind:"Fragrance house",
+    deal:"20% off full-size bottles",
+    terms:"Their Black Friday to Cyber Monday sale, on influxious.co. Their calendar shows it starting Nov 24 and ending Nov 30.",
+    sample:null, caution:null,
+    starts:"2026-11-24T00:00:00-05:00", ends:"2026-11-30T23:59:59-05:00", dates:"Nov 24 to Nov 30", startsLabel:"Nov 24", code:"No code listed",
+    url:"https://influxious.co/"
+  },
+  {
+    id:"kaori", via:"Their Instagram post", name:"Cult of Kaori", kind:"Fragrance house",
+    deal:"25% off sitewide",
+    terms:"Their one online sale of the year. No code needed, it applies at checkout. Wednesday Nov 25 through Cyber Monday.",
+    sample:null, caution:null,
+    starts:"2026-11-25T00:00:00-05:00", ends:"2026-11-30T23:59:59-05:00", dates:"Nov 25 to Nov 30", startsLabel:"Nov 25", code:"No code needed",
+    url:"https://www.instagram.com/cult_of_kaori/", cta:"Open Cult of Kaori on Instagram"
+  },
+  {
+    id:"harlem", via:"Their Instagram post", name:"Harlem Perfume Co.", kind:"Fragrance house",
+    deal:"20% off sitewide",
+    terms:"They call it their biggest sale of the year.",
+    sample:null, caution:null,
+    starts:"2026-11-27T00:00:00-05:00", ends:"2026-11-30T23:59:59-05:00", dates:"Nov 27 to Nov 30", startsLabel:"Nov 27", code:"No code listed",
+    url:"https://www.instagram.com/harlemperfumeco/", cta:"Open Harlem Perfume Co. on Instagram"
+  },
+  {
+    id:"maher", via:"Their Instagram story", name:"Maher Olfactive", kind:"Fragrance house",
+    deal:"10% off $100, 20% off $200, 30% off $300",
+    terms:"Their Holiday Sale, with the discount rising as the order grows. It runs through December 6.",
+    sample:null, caution:null,
+    starts:null, ends:"2026-12-06T23:59:59-05:00", dates:"Now through Dec 6", startsLabel:"", code:"No code listed",
+    url:"https://www.instagram.com/maherolfactive/", cta:"Open Maher Olfactive on Instagram"
+  },
+  {
+    id:"mitti", via:"Their email and Instagram story", name:"Mitti Parfum", kind:"Fragrance house",
+    deal:"Sets with free extras, and free shipping",
+    terms:"Pick three full-size bottles and they fill the rest of the box. Every set comes with extras, and the bigger the set, the more goes in. No code needed. Their story says it happens once a year.",
+    sample:null, caution:null, check:true,
+    starts:null, ends:null, dates:"Live since Nov 22, end date not listed", startsLabel:"", code:"No code needed",
+    url:"https://mittiparfum.com/"
+  },
+  {
+    id:"neandertal", via:"Their Instagram story", name:"Neandertal", kind:"Fragrance house",
+    deal:"15% off",
+    terms:"Their Black Friday sale. Dates are not in the story.",
+    sample:null, caution:null, check:true,
+    starts:null, ends:null, dates:"Dates not in their story", startsLabel:"", code:"NBF15",
+    url:"https://www.instagram.com/neandertalperfume/", cta:"Open Neandertal on Instagram"
+  },
+  {
+    id:"liberation", via:"Their Instagram post", name:"Liberation of Flowers", kind:"Fragrance house",
+    deal:"Free shipping and burning papers with every 50 mL",
+    terms:"Their post says this runs all week. It is a gift with purchase, not a discount.",
+    sample:null, caution:null, check:true,
+    starts:null, ends:null, dates:"All week, per their post", startsLabel:"", code:"No code listed",
+    url:"https://liberationofflowers.com/"
+  },
 ];
 function bfStatus(o, now) {
   if (o.ends && now > new Date(o.ends).getTime()) return "ended";
