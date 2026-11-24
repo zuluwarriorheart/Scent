@@ -6888,7 +6888,7 @@ const BF_OFFERS = [
     terms:"Dates are not in the part of the ad we saw.",
     sample:null, caution:null, check:true,
     starts:null, ends:null, dates:"Dates not in their ad", startsLabel:"", code:"No code listed",
-    url:"https://www.instagram.com/octaviamorganla/", cta:"Open Octavia Morgan on Instagram"
+    url:"https://octaviamorgan.com/"
   },
   {
     id:"atwood", house:"atwood-parfum", via:"Their Instagram story, Nov 23", name:"Atwood Parfum", kind:"Fragrance house, Provincetown, Massachusetts",
