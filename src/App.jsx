@@ -6686,6 +6686,12 @@ function bfLoad() {
   } catch (e) { return { saved:[], wish:{} }; }
 }
 
+const bfLeadsTo = o => {
+  let host = "";
+  try { host = new URL(o.url).hostname.replace(/^www\./, ""); } catch (e) { /* no url */ }
+  if (host.indexOf("instagram.com") !== -1) return "Opens their Instagram page in a new tab, where they announced the sale. You shop and pay with the brand, not with us.";
+  return `Opens ${host || "their site"} in a new tab. You shop and pay on the brand's own site, not with us.`;
+};
 const BF_TOKEN_KEY = "mos-bf-token-v1";
 function BlackFridayGuide({ embedded = false }) {
   const [now] = useState(() => Date.now());
@@ -6765,13 +6771,14 @@ function BlackFridayGuide({ embedded = false }) {
                 <p style={{ fontSize:14, color:T.ink, lineHeight:1.65, margin:"0 0 12px", paddingLeft:12, borderLeft:"3px solid var(--teal)" }}><strong style={{ fontWeight:600, color:"var(--teal)" }}>Samples. </strong>{o.sample}</p>
               )}
               {o.caution && <p style={{ fontSize:13, color:T.mid, lineHeight:1.6, margin:"0 0 12px" }}>{o.caution}</p>}
+              <p style={{ fontSize:14, color:T.ink, lineHeight:1.65, margin:"0 0 12px", paddingLeft:12, borderLeft:"3px solid var(--accent)" }}><strong style={{ fontWeight:600, color:"var(--accent)" }}>How to get it. </strong>{o.code}</p>
               <div style={{ display:"flex", alignItems:"center", gap:12, flexWrap:"wrap", margin:"14px 0 0" }}>
                 <a href={o.url} target="_blank" rel="noopener noreferrer" style={{ display:"inline-flex", alignItems:"center", justifyContent:"center", minHeight:48, padding:"0 22px", borderRadius:14, background:ended ? T.lift : "var(--accent)", color:ended ? T.mid : "#fff", fontFamily:sans, fontSize:15, fontWeight:600, textDecoration:"none" }}>{o.cta || `Go to ${o.name}`}</a>
-                <span style={{ fontSize:12, color:T.mid }}>Code: <strong style={{ color:T.black, fontWeight:600 }}>{o.code}</strong></span>
                 {inMine
                   ? <button onClick={() => (confirmId === o.id ? removeBrand(o.id) : setConfirmId(o.id))} style={{ ...ghostBtn, minHeight:48, fontSize:14 }}>{confirmId === o.id ? "Tap again to remove" : "Remove brand"}</button>
                   : <button onClick={() => toggleSave(o.id)} aria-pressed={mine.saved.includes(o.id)} style={{ ...ghostBtn, minHeight:48, fontSize:14, color:mine.saved.includes(o.id) ? "var(--accent)" : T.mid, borderColor:mine.saved.includes(o.id) ? "var(--accent)" : T.rule }}>{mine.saved.includes(o.id) ? "Saved to my list" : "Save brand"}</button>}
               </div>
+              <p style={{ fontSize:12, color:T.faint, lineHeight:1.6, margin:"10px 0 0" }}>{bfLeadsTo(o)}</p>
               {inMine && (
                 <div style={{ margin:"16px 0 0", paddingTop:16, borderTop:`1px solid ${T.rule}` }}>
                   <p style={FLABEL}>Fragrances you want</p>
