@@ -6825,6 +6825,15 @@ const BF_OFFERS = [
     starts:"2026-11-23T00:00:00-06:00", ends:"2026-11-30T23:59:59-06:00", dates:"Nov 23 to Nov 30", startsLabel:"Nov 23", code:"No code listed",
     url:"https://cirrusparfum.com/"
   },
+  {
+    id:"lepoque", via:"Their Instagram post and email", name:"L'Epoque Parfums", kind:"Fragrance house",
+    deal:"20% off sitewide, 25% off two or more fragrances",
+    terms:"Early access for their email list. Their post says you get the code as soon as you enter your email on their site. Free shipping on orders of $125 or more. The code cannot be combined with other discounts.",
+    sample:"Their Discovery Set lets you try before committing to a full-size parfum.",
+    caution:"Their email says the early access code is for subscribers until Nov 26. Check their site for what follows.", check:true,
+    starts:null, ends:null, dates:"Early access, end date not in their post", startsLabel:"", code:"Enter your email on their site",
+    url:"https://www.instagram.com/lepoqueparfums/", cta:"Open L'Epoque on Instagram"
+  },
 ];
 function bfStatus(o, now) {
   if (o.ends && now > new Date(o.ends).getTime()) return "ended";
