@@ -6659,7 +6659,7 @@ const BF_OFFERS = [
     terms:"The Vault: Sucre de Soie, Sombre Douceur, Jalous, Cafe Avellana, Charmante and Black Gardenia at 25% off before they are locked away. Orders of $250 or more get a surprise 10 mL.",
     sample:null, caution:"Early access is through the sign-up link in their Instagram bio.",
     starts:"2026-11-27T00:00:00-05:00", ends:"2026-11-30T23:59:59-05:00", dates:"Nov 27 to Nov 30", startsLabel:"Nov 27", code:"Early access list",
-    url:"https://www.instagram.com/elysianparfums/", cta:"Open Elysian on Instagram"
+    url:"https://elysianparfum.com/"
   },
   {
     id:"hiramgreen", via:"His Instagram post", name:"Hiram Green", kind:"Independent natural perfumer, the Netherlands",
@@ -6743,7 +6743,7 @@ const BF_OFFERS = [
     terms:"Their story says it runs while stock lasts. Dates are not in the story.",
     sample:null, caution:null, check:true,
     starts:null, ends:null, dates:"While stock lasts", startsLabel:"", code:"Not listed",
-    url:"https://www.instagram.com/houseofbo.co/", cta:"Open House of BO on Instagram"
+    url:"https://houseofbo.co/"
   },
   {
     id:"influxious", via:"Their holiday calendar post", name:"Influxious", kind:"Fragrance house",
@@ -6759,7 +6759,7 @@ const BF_OFFERS = [
     terms:"Their one online sale of the year. No code needed, it applies at checkout. Wednesday Nov 25 through Cyber Monday.",
     sample:null, caution:null,
     starts:"2026-11-25T00:00:00-05:00", ends:"2026-11-30T23:59:59-05:00", dates:"Nov 25 to Nov 30", startsLabel:"Nov 25", code:"No code needed",
-    url:"https://www.instagram.com/cult_of_kaori/", cta:"Open Cult of Kaori on Instagram"
+    url:"https://www.cultofkaori.com/"
   },
   {
     id:"harlem", via:"Their Instagram post", name:"Harlem Perfume Co.", kind:"Fragrance house",
@@ -6767,7 +6767,7 @@ const BF_OFFERS = [
     terms:"They call it their biggest sale of the year.",
     sample:null, caution:null,
     starts:"2026-11-27T00:00:00-05:00", ends:"2026-11-30T23:59:59-05:00", dates:"Nov 27 to Nov 30", startsLabel:"Nov 27", code:"No code listed",
-    url:"https://www.instagram.com/harlemperfumeco/", cta:"Open Harlem Perfume Co. on Instagram"
+    url:"https://harlemperfumeco.com/"
   },
   {
     id:"maher", via:"Their Instagram story", name:"Maher Olfactive", kind:"Fragrance house",
@@ -6859,7 +6859,7 @@ const BF_OFFERS = [
     sample:"Seven 2.5 mL samples and a Mocha Absolu Discovery Kit come in the box.",
     caution:"The EUR 35 voucher is valid Jan 11 to Mar 15, 2027, on orders of EUR 150 or more.",
     starts:null, ends:"2026-11-30T23:59:59+01:00", dates:"Now through Nov 30", startsLabel:"", code:"No code listed",
-    url:"https://www.instagram.com/parfumsdusita/", cta:"Open Dusita on Instagram"
+    url:"https://www.parfumsdusita.com/"
   },
   {
     id:"maisondetto", via:"Their Instagram ad", name:"Maison d'Etto", kind:"Fragrance house",
@@ -6893,7 +6893,7 @@ const BF_OFFERS = [
     terms:"Buy a full-size fragrance from the Elements Collection and get a free 15 mL travel size of the same scent. Buy one from the Mindful Collection and get a free 15 mL refill of the same scent. Black Friday through Cyber Monday, while supplies last.",
     sample:null, caution:null,
     starts:"2026-11-27T00:00:00-05:00", ends:"2026-11-30T23:59:59-05:00", dates:"Nov 27 to Nov 30", startsLabel:"Nov 27", code:"No code listed",
-    url:"https://www.instagram.com/freeyourselfandflourish/", cta:"Open Free Yourself and Flourish on Instagram"
+    url:"https://freeyourself.com/"
   },
   {
     id:"bsb", via:"Their Instagram post", name:"Brown Sugar Babe", kind:"Fragrance brand",
@@ -6901,7 +6901,7 @@ const BF_OFFERS = [
     terms:"Black Friday (Nov 27) 35% off. Small Business Saturday (Nov 28) 10% off. Cyber Monday (Nov 30) 10% off plus free shipping. Excludes the Advent Calendar. Terms and conditions apply.",
     sample:null, caution:null,
     starts:"2026-11-27T00:00:00-05:00", ends:"2026-11-30T23:59:59-05:00", dates:"Nov 27 to Nov 30", startsLabel:"Nov 27", code:"No code listed",
-    url:"https://www.instagram.com/brownsugarbabeofficial/", cta:"Open Brown Sugar Babe on Instagram"
+    url:"https://www.brownsugarbabe.net/"
   },
   {
     id:"andreamaack", via:"Their Instagram post", name:"Andrea Maack", kind:"Fragrance house",
@@ -6966,7 +6966,7 @@ const BF_OFFERS = [
     terms:"Spend $100 on their website and receive their newest, exclusive and extremely limited fragrance, Longing For Light. Dates are not in the post.",
     sample:null, caution:null, check:true,
     starts:null, ends:null, dates:"Dates not in their post", startsLabel:"", code:"No code listed",
-    url:"https://www.instagram.com/imaginaryauthors/", cta:"Open Imaginary Authors on Instagram"
+    url:"https://imaginaryauthors.com/"
   },
   {
     id:"granado", via:"Their Instagram posts", name:"Granado", kind:"Fragrance house, Rio de Janeiro",
@@ -6974,7 +6974,7 @@ const BF_OFFERS = [
     terms:"Their Tropical Friday story says up to 30% off selected products, and shows free shipping over $50 and free samples. An earlier post of theirs showed 50% off with Rosa Sublime. Neither gives dates.",
     sample:"Their story lists free samples.", caution:"The two posts give different discounts, so check their page for what applies to which products.", check:true,
     starts:null, ends:null, dates:"Dates not in their posts", startsLabel:"", code:"No code listed",
-    url:"https://www.instagram.com/granado/", cta:"Open Granado on Instagram"
+    url:"https://www.granado.us/usa"
   },
   {
     id:"xinu", via:"Their Instagram story", name:"Xinu", kind:"Fragrance and home scent house",
