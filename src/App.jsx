@@ -6834,6 +6834,23 @@ const BF_OFFERS = [
     starts:null, ends:null, dates:"Early access, end date not in their post", startsLabel:"", code:"Enter your email on their site",
     url:"https://www.instagram.com/lepoqueparfums/", cta:"Open L'Epoque on Instagram"
   },
+  {
+    id:"carner", via:"Their Instagram post", name:"Carner Barcelona", kind:"Fragrance house, Barcelona",
+    deal:"Free travel set of 3 x 10 mL with a perfume order",
+    terms:"Their Black Week. Order a perfume and choose the three 10 mL fragrances for your set. Their post says it is only this week.",
+    sample:"The gift is a set of three 10 mL fragrances you choose, a way to try more of the house.",
+    caution:null, check:true,
+    starts:null, ends:null, dates:"This week, per their post", startsLabel:"", code:"No code listed",
+    url:"https://carnerbarcelona.com/"
+  },
+  {
+    id:"brandt", via:"Their Instagram story", name:"House of Brandt", kind:"Fragrance brand",
+    deal:"Black Friday offers by invitation",
+    terms:"Their page says they will not announce the offers anywhere else. They go only to people on their list, and you sign up with your name, email and phone number.",
+    sample:null, caution:null, check:true,
+    starts:null, ends:null, dates:"Dates not listed", startsLabel:"", code:"Join their list",
+    url:"https://houseofbrandt.com/"
+  },
 ];
 function bfStatus(o, now) {
   if (o.ends && now > new Date(o.ends).getTime()) return "ended";
