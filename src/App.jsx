@@ -7014,7 +7014,7 @@ const BF_OFFERS = [
     terms:"They call it their one and only sale. Their post says it runs from Friday Nov 20 to the end of Monday Nov 30, and their story shows the 25% on any 75 mL eau de parfum.",
     sample:null, caution:null,
     starts:"2026-11-20T00:00:00-05:00", ends:"2026-11-30T23:59:59-05:00", dates:"Nov 20 to Nov 30", startsLabel:"Nov 20", code:"No code listed",
-    url:"https://www.instagram.com/regimedesfleurs/", cta:"Open Régime des Fleurs on Instagram"
+    url:"https://regimedesfleurs.com/"
   },
   {
     id:"sergelutens", via:"Their Instagram story", name:"Serge Lutens", kind:"Fragrance house",
@@ -7022,7 +7022,7 @@ const BF_OFFERS = [
     terms:"Their story says Black Friday 20% off. Dates and what it covers are not in the story.",
     sample:null, caution:null, check:true,
     starts:null, ends:null, dates:"Dates not in their story", startsLabel:"", code:"No code listed",
-    url:"https://www.instagram.com/sergelutens/", cta:"Open Serge Lutens on Instagram"
+    url:"https://sergelutens.com/collections/black-friday"
   },
   {
     id:"maisonmatine", via:"Their Instagram story", name:"Maison Matine", kind:"Fragrance house",
@@ -7030,7 +7030,7 @@ const BF_OFFERS = [
     terms:"Their story says the offer lasts while stocks last, this week only. Exact dates are not in the story.",
     sample:null, caution:"Limited stock.", check:true,
     starts:null, ends:null, dates:"This week only, while stocks last", startsLabel:"", code:"No code listed",
-    url:"https://www.instagram.com/maison_matine/", cta:"Open Maison Matine on Instagram"
+    url:"https://maisonmatine.us/"
   },
   {
     id:"jusbox", via:"Their Instagram story and website", name:"Jusbox Perfumes", kind:"Fragrance house",
@@ -7039,6 +7039,14 @@ const BF_OFFERS = [
     sample:null, caution:null,
     starts:null, ends:"2026-11-27T23:59:59-05:00", dates:"Until Nov 27", startsLabel:"", code:"Subscribe to their newsletter",
     url:"https://jusboxperfumes.com/"
+  },
+  {
+    id:"twentysecondofmay", via:"Their Instagram story", name:"Twenty Second of May", kind:"Fragrance house",
+    deal:"A free Discovery Set with every full-size fragrance order",
+    terms:"Their Black Week exclusive. Shipping is free, and it runs until Monday Nov 30.",
+    sample:"The Discovery Set lets you try their scents in small bottles.", caution:null,
+    starts:null, ends:"2026-11-30T23:59:59-05:00", dates:"Until Nov 30", startsLabel:"", code:"No code listed",
+    url:"https://twentysecondofmay.com/"
   },
 ];
 function bfStatus(o, now) {
