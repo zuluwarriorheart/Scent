@@ -7182,7 +7182,7 @@ function BlackFridayGuide({ embedded = false }) {
   const removeFrag = (id, t) => setMine(m => ({ ...m, wish:{ ...m.wish, [id]:(Array.isArray(m.wish[id]) ? m.wish[id] : []).filter(x => x !== t) } }));
   const removeBrand = id => { setConfirmId(null); setMine(m => { const w = { ...m.wish }; delete w[id]; return { saved:m.saved.filter(x => x !== id), wish:w }; }); };
   async function shareIt() {
-    try { if (navigator.share) { await navigator.share({ title:"Black Friday sales, sample first", url:BF_URL }); return; } } catch (e) { if (e && e.name === "AbortError") return; }
+    try { if (navigator.share) { await navigator.share({ title:"Black Friday sales", url:BF_URL }); return; } } catch (e) { if (e && e.name === "AbortError") return; }
     try { await navigator.clipboard.writeText(BF_URL); setCopied(true); setTimeout(() => setCopied(false), 2200); } catch (e) {}
   }
   const chip = st => st === "live"
@@ -7205,7 +7205,7 @@ function BlackFridayGuide({ embedded = false }) {
               <p style={{ fontSize:14, color:T.mid, lineHeight:1.65, margin:"0 0 12px" }}>{o.terms}</p>
               <p style={{ fontSize:12, color:T.faint, margin:"0 0 12px" }}>Source: {o.via}</p>
               {o.sample && (
-                <p style={{ fontSize:14, color:T.ink, lineHeight:1.65, margin:"0 0 12px", paddingLeft:12, borderLeft:"3px solid var(--teal)" }}><strong style={{ fontWeight:600, color:"var(--teal)" }}>Try it first. </strong>{o.sample}</p>
+                <p style={{ fontSize:14, color:T.ink, lineHeight:1.65, margin:"0 0 12px", paddingLeft:12, borderLeft:"3px solid var(--teal)" }}><strong style={{ fontWeight:600, color:"var(--teal)" }}>Samples. </strong>{o.sample}</p>
               )}
               {o.caution && <p style={{ fontSize:13, color:T.mid, lineHeight:1.6, margin:"0 0 12px" }}>{o.caution}</p>}
               <div style={{ display:"flex", alignItems:"center", gap:12, flexWrap:"wrap", margin:"14px 0 0" }}>
@@ -7239,8 +7239,8 @@ function BlackFridayGuide({ embedded = false }) {
     <div>
       <div style={{ textAlign:embedded ? "left" : "center", margin:embedded ? "0 0 22px" : "0 0 26px" }}>
         <p style={{ display:"inline-block", fontSize:11, fontWeight:600, letterSpacing:"0.16em", textTransform:"uppercase", color:"var(--accent)", background:T.lift, border:`1px solid ${T.rule}`, borderRadius:20, padding:"6px 14px", margin:"0 0 18px" }}>Black Friday 2026</p>
-        <h1 style={{ fontFamily:serif, fontWeight:400, fontSize:"clamp(38px, 8vw, 60px)", lineHeight:1.05, letterSpacing:-1.2, color:T.black, margin:"0 0 14px" }}>Black Friday, sample first.</h1>
-        <p style={{ fontSize:"clamp(15px, 2.2vw, 18px)", lineHeight:1.65, color:T.mid, margin:embedded ? "0 0 4px" : "0 auto", maxWidth:520 }}>Niche &amp; indie sales worth a look, each with a link straight to the brand. A discount only helps on a scent you like, so we note where you can try a sample first.</p>
+        <h1 style={{ fontFamily:serif, fontWeight:400, fontSize:"clamp(38px, 8vw, 60px)", lineHeight:1.05, letterSpacing:-1.2, color:T.black, margin:"0 0 14px" }}>Black Friday sales.</h1>
+        <p style={{ fontSize:"clamp(15px, 2.2vw, 18px)", lineHeight:1.65, color:T.mid, margin:embedded ? "0 0 4px" : "0 auto", maxWidth:520 }}>Niche &amp; indie sales, each with a link straight to the brand. Where a brand offers samples, we note it.</p>
       </div>
 
       {!embedded && <div style={{ margin:"0 0 30px" }}><BetaSignupCard heading="Join the beta list first" note="Memoir on Skin is where you sample, wear and keep your scents. Just your first name and email. No password, no payment."/></div>}
@@ -7291,7 +7291,7 @@ function BlackFridayPage() {
     let forced = false;
     if (readThemePref() === "system") { forced = true; themeStore.pref = "dark"; paintTheme("dark"); themeStore.subs.forEach(f => f()); }
     const prev = document.title;
-    document.title = "Black Friday sales, sample first | Memoir on Skin";
+    document.title = "Black Friday sales | Memoir on Skin";
     return () => {
       document.title = prev;
       if (forced && themeStore.pref === "dark" && readThemePref() === "system") { themeStore.pref = "system"; paintTheme("system"); themeStore.subs.forEach(f => f()); }
