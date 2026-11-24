@@ -6875,6 +6875,22 @@ const BF_OFFERS = [
     url:"https://parfumsmicallef.com/"
   },
   {
+    id:"alloystudio", house:"alloy-studio", via:"Their Instagram post", name:"Alloy Studio", kind:"Fragrance house",
+    deal:"A new surprise deal every day",
+    terms:"Each deal is live for 24 hours. Only email subscribers get the full details, so sign up on their site. Round one started Nov 23 at 9 AM Eastern. The end date is not in the post.",
+    sample:null, caution:null, check:true,
+    starts:"2026-11-23T09:00:00-05:00", ends:null, dates:"Started Nov 23, end date not listed", startsLabel:"Nov 23", code:"Sent by email",
+    url:"https://thealloystudio.com"
+  },
+  {
+    id:"octaviamorgan", house:"octavia-morgan", via:"Their Instagram story ad", name:"Octavia Morgan Los Angeles", kind:"Fragrance house, Los Angeles",
+    deal:"25% off sitewide",
+    terms:"Dates are not in the part of the ad we saw.",
+    sample:null, caution:null, check:true,
+    starts:null, ends:null, dates:"Dates not in their ad", startsLabel:"", code:"No code listed",
+    url:"https://www.instagram.com/octaviamorganla/", cta:"Open Octavia Morgan on Instagram"
+  },
+  {
     id:"atwood", house:"atwood-parfum", via:"Their Instagram story, Nov 23", name:"Atwood Parfum", kind:"Fragrance house, Provincetown, Massachusetts",
     deal:"Buy a 30 mL, get any 10 mL free",
     terms:"Add both to your cart. Their story says it runs now through November 30.",
