@@ -7292,7 +7292,7 @@ function bfStatus(o, now) {
   return "live";
 }
 
-function BetaSignupCard({ heading = "Join the beta list", note = "Just your first name and email. No password, no payment." }) {
+function BetaSignupCard({ heading = "Join the beta list", note = "Just your first name and email. No password, no payment.", onJoined, cta = "Save my spot" }) {
   const [email, setEmail] = useState("");
   const [name, setName] = useState("");
   const [done, setDone] = useState(false);
@@ -7307,6 +7307,7 @@ function BetaSignupCard({ heading = "Join the beta list", note = "Just your firs
     setLoading(false);
     if (r.error) { setError("That didn't go through. Try again in a moment."); return; }
     setDone(true);
+    if (onJoined) onJoined();
   }
   const inp = { ...FIELD, minHeight:52 };
   return (
@@ -7319,7 +7320,7 @@ function BetaSignupCard({ heading = "Join the beta list", note = "Just your firs
           <input value={email} onChange={e => { setEmail(e.target.value); setError(""); }} placeholder="Email address" type="email" autoComplete="email" style={inp} onKeyDown={e => e.key === "Enter" && submit()}/>
         </div>
         {error && <p role="alert" style={{ fontSize:13, color:T.bad, margin:"0 0 10px" }}>{error}</p>}
-        <button onClick={submit} disabled={loading} style={ctaBtn(!loading)}>{loading ? "Joining…" : "Save my spot"}</button>
+        <button onClick={submit} disabled={loading} style={ctaBtn(!loading)}>{loading ? "Joining…" : cta}</button>
         <p style={{ fontSize:12, color:T.faint, lineHeight:1.6, margin:"12px 0 0", textAlign:"center" }}>One email when your spot opens. Nothing else, and we never share it.</p>
       </>) : (
         <div style={{ textAlign:"center", padding:"8px 0" }}>
@@ -7385,8 +7386,20 @@ function bfLoad() {
   } catch (e) { return { saved:[], wish:{} }; }
 }
 
+const BF_UNLOCK_KEY = "mos-bf-unlocked-v1";
 function BlackFridayGuide({ embedded = false }) {
   const [now] = useState(() => Date.now());
+  // The public page asks for a first name and email (the beta list) before showing the sales. Members and the Learn tab see it open.
+  const [unlocked, setUnlocked] = useState(() => { try { return window.localStorage.getItem(BF_UNLOCK_KEY) === "1"; } catch (e) { return false; } });
+  const [joinedNow, setJoinedNow] = useState(false);
+  const open = embedded || unlocked;
+  useEffect(() => {
+    if (embedded || unlocked) return;
+    let live = true;
+    supabase.auth.getSession().then(({ data }) => { if (live && data && data.session) setUnlocked(true); }).catch(() => {});
+    return () => { live = false; };
+  }, [embedded, unlocked]);
+  const onJoined = () => { setJoinedNow(true); setUnlocked(true); try { window.localStorage.setItem(BF_UNLOCK_KEY, "1"); } catch (e) { /* storage unavailable */ } };
   const [copied, setCopied] = useState(false);
   const list = BF_OFFERS.filter(o => !o.hidden).map((o, i) => ({ o, i, st:bfStatus(o, now) })).sort((a, b) => a.o.name.localeCompare(b.o.name, "en", { sensitivity:"base", ignorePunctuation:true }) || (a.i - b.i));
   const [mine, setMine] = useState(bfLoad);
@@ -7470,8 +7483,15 @@ function BlackFridayGuide({ embedded = false }) {
         <p style={{ fontSize:"clamp(15px, 2.2vw, 18px)", lineHeight:1.65, color:T.mid, margin:embedded ? "0 0 4px" : "0 auto", maxWidth:520 }}>Niche &amp; indie sales, each with a link straight to the brand. Where a brand offers samples, we note it.</p>
       </div>
 
-      {!embedded && <div style={{ margin:"0 0 30px" }}><BetaSignupCard heading="Sample first. Remember always." note="Memoir on Skin is a scent journal built around helping people trust their own noses, rather than following trends or hype. Just your first name and email. No password, no payment."/></div>}
+      {!embedded && (!unlocked || joinedNow) && <div style={{ margin:"0 0 30px" }}><BetaSignupCard onJoined={onJoined} cta="Join and see the sales" heading="Sample first. Remember always." note={`Memoir on Skin is a scent journal built around helping people trust their own noses, rather than following trends or hype. Join the beta list with your first name and email to see all ${list.length} sales. We keep your email for the beta list. No password, no payment.`}/></div>}
+      {!open && (
+        <div style={{ background:T.lift, border:`1px solid ${T.rule}`, borderRadius:20, padding:"22px 18px", textAlign:"center", margin:"0 0 26px" }}>
+          <p style={{ fontFamily:serif, fontSize:22, lineHeight:1.25, color:T.black, margin:"0 0 6px" }}>{list.length} niche &amp; indie sales, A to Z.</p>
+          <p style={{ fontSize:14, color:T.mid, lineHeight:1.65, margin:0 }}>Each one links straight to the brand, with dates, codes and sample notes. They unlock as soon as you join the beta list above.</p>
+        </div>
+      )}
 
+      {open && (<>
       <div style={{ margin:"0 0 26px", padding:"20px 18px", background:T.lift, border:`1px solid ${T.rule}`, borderRadius:20 }}>
         <p style={{ fontFamily:serif, fontSize:20, lineHeight:1.3, color:T.black, margin:"0 0 8px" }}>We are not here to influence you. Trust your own nose.</p>
         <p style={{ fontSize:13, color:T.mid, lineHeight:1.7, margin:"0 0 8px" }}>These are plain links to the brands. There are no affiliate codes on this page, and we earn nothing if you click. Sales change fast, so each brand's own page has the final word on dates, prices and exclusions.</p>
@@ -7501,13 +7521,7 @@ function BlackFridayGuide({ embedded = false }) {
         )}
       </div>
 
-      {!embedded && (
-        <div style={{ textAlign:"center", margin:"34px 0 0" }}>
-          <p style={{ fontFamily:serif, fontSize:"clamp(24px, 5vw, 32px)", letterSpacing:-0.5, color:T.black, margin:"0 0 8px" }}>Join the beta list.</p>
-          <p style={{ fontSize:15, color:T.mid, lineHeight:1.65, margin:"0 0 18px" }}>Early members help shape what Memoir on Skin becomes.</p>
-          <button onClick={() => { try { document.getElementById("bf-join").scrollIntoView({ behavior:"smooth", block:"center" }); } catch (e) {} }} style={{ ...ctaBtn(true), maxWidth:320 }}>Join the beta list</button>
-        </div>
-      )}
+      </>)}
     </div>
   );
 }
