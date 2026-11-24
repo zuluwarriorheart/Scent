@@ -7243,7 +7243,7 @@ function BlackFridayGuide({ embedded = false }) {
         <p style={{ fontSize:"clamp(15px, 2.2vw, 18px)", lineHeight:1.65, color:T.mid, margin:embedded ? "0 0 4px" : "0 auto", maxWidth:520 }}>Niche &amp; indie sales, each with a link straight to the brand. Where a brand offers samples, we note it.</p>
       </div>
 
-      {!embedded && <div style={{ margin:"0 0 30px" }}><BetaSignupCard heading="Join the beta list first" note="Memoir on Skin is where you sample, wear and keep your scents. Just your first name and email. No password, no payment."/></div>}
+      {!embedded && <div style={{ margin:"0 0 30px" }}><BetaSignupCard heading="Sample first. Remember always." note="Memoir on Skin is a scent journal built around helping people trust their own noses, rather than following trends or hype. Just your first name and email. No password, no payment."/></div>}
 
       <div style={{ margin:"0 0 26px", padding:"20px 18px", background:T.lift, border:`1px solid ${T.rule}`, borderRadius:20 }}>
         <p style={{ fontFamily:serif, fontSize:20, lineHeight:1.3, color:T.black, margin:"0 0 8px" }}>We are not here to influence you. Trust your own nose.</p>
@@ -7276,7 +7276,7 @@ function BlackFridayGuide({ embedded = false }) {
 
       {!embedded && (
         <div style={{ textAlign:"center", margin:"34px 0 0" }}>
-          <p style={{ fontFamily:serif, fontSize:"clamp(24px, 5vw, 32px)", letterSpacing:-0.5, color:T.black, margin:"0 0 8px" }}>Sample first. Remember always.</p>
+          <p style={{ fontFamily:serif, fontSize:"clamp(24px, 5vw, 32px)", letterSpacing:-0.5, color:T.black, margin:"0 0 8px" }}>Join the beta list.</p>
           <p style={{ fontSize:15, color:T.mid, lineHeight:1.65, margin:"0 0 18px" }}>Early members help shape what Memoir on Skin becomes.</p>
           <button onClick={() => { try { document.getElementById("bf-join").scrollIntoView({ behavior:"smooth", block:"center" }); } catch (e) {} }} style={{ ...ctaBtn(true), maxWidth:320 }}>Join the beta list</button>
         </div>
