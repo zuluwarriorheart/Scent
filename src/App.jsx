@@ -6687,6 +6687,15 @@ const BF_OFFERS = [
     url:"https://leierfragrances.com/"
   },
   {
+    id:"paraphrase", house:"paraphrase-perfume", hidden:true, via:"Their Instagram post, Nov 20", name:"Paraphrase Perfume", kind:"Fragrance house, Canada",
+    deal:"25% off sitewide, 30% off orders over $350 CAD",
+    terms:"No code needed. Orders over $500 CAD get complimentary Guaiacwood & Bergamot incense cones while supplies last.",
+    sample:"Check their site for samples before you buy.",
+    caution:null,
+    starts:"2026-11-20T00:00:00-05:00", ends:"2026-11-23T23:59:59-05:00", dates:"Nov 20 to Nov 23", startsLabel:"Nov 20", code:"No code needed",
+    url:"https://paraphraseperfume.ca"
+  },
+  {
     id:"atwood", house:"atwood-parfum", via:"Their Instagram story, Nov 23", name:"Atwood Parfum", kind:"Fragrance house, Provincetown, Massachusetts",
     deal:"Buy a 30 mL, get any 10 mL free",
     terms:"Add both to your cart. Their story says it runs now through November 30.",
