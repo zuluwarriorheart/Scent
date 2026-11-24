@@ -6797,7 +6797,7 @@ function BlackFridayGuide({ embedded = false }) {
       <div style={{ textAlign:embedded ? "left" : "center", margin:embedded ? "0 0 22px" : "0 0 26px" }}>
         <p style={{ display:"inline-block", fontSize:11, fontWeight:600, letterSpacing:"0.16em", textTransform:"uppercase", color:"var(--accent)", background:T.lift, border:`1px solid ${T.rule}`, borderRadius:20, padding:"6px 14px", margin:"0 0 18px" }}>Black Friday 2026</p>
         <h1 style={{ fontFamily:serif, fontWeight:400, fontSize:"clamp(38px, 8vw, 60px)", lineHeight:1.05, letterSpacing:-1.2, color:T.black, margin:"0 0 14px" }}>Black Friday sales.</h1>
-        <p style={{ fontSize:"clamp(15px, 2.2vw, 18px)", lineHeight:1.65, color:T.mid, margin:embedded ? "0 0 4px" : "0 auto", maxWidth:520 }}>Niche &amp; indie sales, each with a link straight to the brand. Where a brand offers samples, we note it.</p>
+        <p style={{ fontSize:"clamp(15px, 2.2vw, 18px)", lineHeight:1.65, color:T.mid, margin:embedded ? "0 0 4px" : "0 auto", maxWidth:520 }}>Niche &amp; indie sales, each with a link straight to the brand.</p>
       </div>
 
       {!embedded && (phase === "locked" || joinedNow) && <div style={{ margin:"0 0 30px" }}><BetaSignupCard bf onJoined={onJoined} cta="Join and see the sales" heading="Sample first. Remember always." note={`Memoir on Skin is a scent journal built around helping people trust their own noses, rather than following trends or hype. Join the beta list with your first name and email to see ${count ? `all ${count}` : "all the"} sales. We keep your email for the beta list. No password, no payment.`}/></div>}
