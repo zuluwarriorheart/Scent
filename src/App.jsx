@@ -6800,6 +6800,22 @@ const BF_OFFERS = [
     starts:null, ends:null, dates:"All week, per their post", startsLabel:"", code:"No code listed",
     url:"https://liberationofflowers.com/"
   },
+  {
+    id:"kioku", via:"Their website and Instagram story", name:"KI-OKU", kind:"Fragrance house, Los Angeles",
+    deal:"Holiday Sale, early access list",
+    terms:"Their page counts down to 11.27.2026 and invites you to join for early access. The discount and early access details are not posted yet.",
+    sample:null, caution:null, check:true,
+    starts:"2026-11-27T00:00:00-08:00", ends:null, dates:"Starts Nov 27, end date not listed", startsLabel:"Nov 27", code:"Early access list",
+    url:"https://ki-oku.com/pages/black-friday-cyber-monday", cta:"Go to KI-OKU's sale page"
+  },
+  {
+    id:"elorea", via:"Their website and Instagram story", name:"Elorea", kind:"Modern Korean perfumery, stores in New York, Los Angeles and Seoul",
+    deal:"20% off sitewide",
+    terms:"Their story calls it their biggest sale of the year, in stores and online. Dates are not listed.",
+    sample:null, caution:null, check:true,
+    starts:null, ends:null, dates:"Dates not listed", startsLabel:"", code:"No code listed",
+    url:"https://elorea.com/collections/eau-de-parfum"
+  },
 ];
 function bfStatus(o, now) {
   if (o.ends && now > new Date(o.ends).getTime()) return "ended";
