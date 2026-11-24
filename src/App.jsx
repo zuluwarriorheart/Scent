@@ -6677,6 +6677,23 @@ const BF_OFFERS = [
     starts:"2026-11-27T09:00:00-08:00", ends:"2026-11-30T23:59:00-08:00", dates:"Nov 27 to Nov 30", startsLabel:"Nov 27, 9am PT", code:"No code needed",
     url:"https://anjaliperfumes.com/"
   },
+  {
+    id:"leier", via:"Their Instagram post, Nov 23", name:"LEIƏR", kind:"Black-owned independent fragrance house",
+    deal:"20% off sitewide, 15% off bundles",
+    terms:"Their Cyber Week sale. No code needed.",
+    sample:null, caution:null,
+    starts:"2026-11-23T00:00:00-05:00", ends:"2026-11-30T23:59:59-05:00", dates:"Nov 23 to Nov 30", startsLabel:"Nov 23", code:"No code needed",
+    url:"https://leierfragrances.com/"
+  },
+  {
+    id:"atwood", via:"Their Instagram story, Nov 23", name:"Atwood Parfum", kind:"Fragrance house, Provincetown, Massachusetts",
+    deal:"Buy a 30 mL, get any 10 mL free",
+    terms:"Add both to your cart. Their story says it runs now through November 30.",
+    sample:"Each 30 mL bottle comes with a sample vial of the same scent, and you can return the unopened bottle within 14 days if the sample is not for you.",
+    caution:null,
+    starts:null, ends:"2026-11-30T23:59:59-05:00", dates:"Now through Nov 30", startsLabel:"", code:"No code needed",
+    url:"https://atwoodparfum.com/"
+  },
 ];
 function bfStatus(o, now) {
   if (o.ends && now > new Date(o.ends).getTime()) return "ended";
