@@ -6969,11 +6969,11 @@ const BF_OFFERS = [
     url:"https://www.instagram.com/imaginaryauthors/", cta:"Open Imaginary Authors on Instagram"
   },
   {
-    id:"granado", via:"Their Instagram post", name:"Granado", kind:"Fragrance house, Rio de Janeiro",
-    deal:"50% off",
-    terms:"Their Black Friday post, shown with the Rosa Sublime fragrance, says 50% off on the website, app and stores. Dates are not in the post.",
-    sample:null, caution:"The post does not say whether the 50% covers the whole range or only the featured fragrance. Check their page.", check:true,
-    starts:null, ends:null, dates:"Dates not in their post", startsLabel:"", code:"No code listed",
+    id:"granado", via:"Their Instagram posts", name:"Granado", kind:"Fragrance house, Rio de Janeiro",
+    deal:"Up to 30% off selected products",
+    terms:"Their Tropical Friday story says up to 30% off selected products, and shows free shipping over $50 and free samples. An earlier post of theirs showed 50% off with Rosa Sublime. Neither gives dates.",
+    sample:"Their story lists free samples.", caution:"The two posts give different discounts, so check their page for what applies to which products.", check:true,
+    starts:null, ends:null, dates:"Dates not in their posts", startsLabel:"", code:"No code listed",
     url:"https://www.instagram.com/granado/", cta:"Open Granado on Instagram"
   },
   {
@@ -6999,6 +6999,46 @@ const BF_OFFERS = [
     sample:null, caution:null, check:true,
     starts:null, ends:null, dates:"Dates not in their story", startsLabel:"", code:"No code listed",
     url:"https://boysmells.com/"
+  },
+  {
+    id:"ellisbrooklyn", via:"Their Instagram post", name:"Ellis Brooklyn", kind:"Fragrance house, Brooklyn",
+    deal:"Black Friday sale starts Nov 24",
+    terms:"Their post says Black Friday kicks off Nov 24, exclusively on their website. The discount and the end date are not in the post.",
+    sample:null, caution:null, check:true,
+    starts:"2026-11-24T00:00:00-05:00", ends:null, dates:"Starts Nov 24, end date not listed", startsLabel:"Nov 24", code:"No code listed",
+    url:"https://ellisbrooklyn.com/"
+  },
+  {
+    id:"regime", via:"Their Instagram story and post", name:"Régime des Fleurs", kind:"Fragrance house",
+    deal:"25% off any 75 mL eau de parfum",
+    terms:"They call it their one and only sale. Their post says it runs from Friday Nov 20 to the end of Monday Nov 30, and their story shows the 25% on any 75 mL eau de parfum.",
+    sample:null, caution:null,
+    starts:"2026-11-20T00:00:00-05:00", ends:"2026-11-30T23:59:59-05:00", dates:"Nov 20 to Nov 30", startsLabel:"Nov 20", code:"No code listed",
+    url:"https://www.instagram.com/regimedesfleurs/", cta:"Open Régime des Fleurs on Instagram"
+  },
+  {
+    id:"sergelutens", via:"Their Instagram story", name:"Serge Lutens", kind:"Fragrance house",
+    deal:"20% off",
+    terms:"Their story says Black Friday 20% off. Dates and what it covers are not in the story.",
+    sample:null, caution:null, check:true,
+    starts:null, ends:null, dates:"Dates not in their story", startsLabel:"", code:"No code listed",
+    url:"https://www.instagram.com/sergelutens/", cta:"Open Serge Lutens on Instagram"
+  },
+  {
+    id:"maisonmatine", via:"Their Instagram story", name:"Maison Matine", kind:"Fragrance house",
+    deal:"A free scented candle with a 50 mL or 100 mL perfume",
+    terms:"Their story says the offer lasts while stocks last, this week only. Exact dates are not in the story.",
+    sample:null, caution:"Limited stock.", check:true,
+    starts:null, ends:null, dates:"This week only, while stocks last", startsLabel:"", code:"No code listed",
+    url:"https://www.instagram.com/maison_matine/", cta:"Open Maison Matine on Instagram"
+  },
+  {
+    id:"jusbox", via:"Their Instagram story and website", name:"Jusbox Perfumes", kind:"Fragrance house",
+    deal:"A free Travel Size Kit with a 78 mL fragrance",
+    terms:"For their community only. Until Nov 27, newsletter subscribers get a Travel Size Kit of their choice, three 7.8 mL, free with the purchase of a 78 mL fragrance. Subscribe on their site to join.",
+    sample:null, caution:null,
+    starts:null, ends:"2026-11-27T23:59:59-05:00", dates:"Until Nov 27", startsLabel:"", code:"Subscribe to their newsletter",
+    url:"https://jusboxperfumes.com/"
   },
 ];
 function bfStatus(o, now) {
