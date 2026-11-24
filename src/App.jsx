@@ -6775,7 +6775,7 @@ const BF_OFFERS = [
     terms:"Their Holiday Sale, with the discount rising as the order grows. It runs through December 6.",
     sample:null, caution:null,
     starts:null, ends:"2026-12-06T23:59:59-05:00", dates:"Now through Dec 6", startsLabel:"", code:"No code listed",
-    url:"https://www.instagram.com/maherolfactive/", cta:"Open Maher Olfactive on Instagram"
+    url:"https://maherolfactive.com/"
   },
   {
     id:"mitti", via:"Their email and Instagram story", name:"Mitti Parfum", kind:"Fragrance house",
