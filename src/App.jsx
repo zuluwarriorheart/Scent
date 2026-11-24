@@ -6816,6 +6816,15 @@ const BF_OFFERS = [
     starts:null, ends:null, dates:"Dates not listed", startsLabel:"", code:"No code listed",
     url:"https://elorea.com/collections/eau-de-parfum"
   },
+  {
+    id:"cirrus", via:"Their Instagram reel", name:"Cirrus Parfum", kind:"Fragrance house, San Antonio, Texas",
+    deal:"20% off sitewide",
+    terms:"Their reel calls it Black Friday coming early. No code is mentioned.",
+    sample:"Their site offers a customizable six-piece discovery set where you pick any 6 fragrances. Their site does not say whether the sale applies to it.",
+    caution:null,
+    starts:"2026-11-23T00:00:00-06:00", ends:"2026-11-30T23:59:59-06:00", dates:"Nov 23 to Nov 30", startsLabel:"Nov 23", code:"No code listed",
+    url:"https://cirrusparfum.com/"
+  },
 ];
 function bfStatus(o, now) {
   if (o.ends && now > new Date(o.ends).getTime()) return "ended";
