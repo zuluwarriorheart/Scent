@@ -6694,6 +6694,56 @@ const BF_OFFERS = [
     starts:null, ends:"2026-11-30T23:59:59-05:00", dates:"Now through Nov 30", startsLabel:"", code:"No code needed",
     url:"https://atwoodparfum.com/"
   },
+  {
+    id:"zernell", via:"Their Instagram story, Nov 23", name:"Zernell Gillie", kind:"Fragrance house, music-inspired collection",
+    deal:"Up to 20% off",
+    terms:"Their story says they don't usually run sales. Dates are not in the story.",
+    sample:null, caution:null, check:true,
+    starts:null, ends:null, dates:"Dates not in their story", startsLabel:"", code:"Not listed",
+    url:"https://zernellgillie.com/"
+  },
+  {
+    id:"dedcool", via:"Their website and Instagram ad", name:"DedCool", kind:"Fragrance house, Los Angeles",
+    deal:"Up to 30% off",
+    terms:"Their site banner says the sale starts now and lists 30% off select items. Dates are not on the page.",
+    sample:"Their site also lists 20% off a first full-size fragrance when you buy a sample tin.",
+    caution:"Exclusions apply, and the eligible items are not spelled out.",
+    check:true,
+    starts:null, ends:null, dates:"Dates not listed", startsLabel:"", code:"No code listed",
+    url:"https://www.dedcool.com/"
+  },
+  {
+    id:"kismet", via:"Their Instagram story", name:"Kismet Olfactive", kind:"Fragrance house, New York",
+    deal:"Up to $90 off",
+    terms:"Their story calls it a Black Friday special. The offer details sit behind the See offer link.",
+    sample:null, caution:null, check:true,
+    starts:null, ends:null, dates:"Dates not in their story", startsLabel:"", code:"Not listed",
+    url:"https://www.instagram.com/kismet.olfactive/", cta:"Open Kismet Olfactive on Instagram"
+  },
+  {
+    id:"glossier", via:"Their Instagram story", name:"Glossier", kind:"Beauty brand with a fragrance line",
+    deal:"25% off everything, 30% off orders of $100 or more",
+    terms:"Their story says terms and exclusions apply. Dates are not in the story.",
+    sample:null, caution:"Check whether the fragrance you want is included before you buy.", check:true,
+    starts:null, ends:null, dates:"Dates not in their story", startsLabel:"", code:"Not listed",
+    url:"https://www.glossier.com/"
+  },
+  {
+    id:"maisonfide", via:"Their Instagram post, Nov 23", name:"Maison Fidé", kind:"Fragrance house",
+    deal:"20% off full-size Thé à Casablanca (100 mL)",
+    terms:"Their Black Friday Ritual Week. The post also points to the new Vanille de Malagasy coffret set.",
+    sample:null, caution:"The code applies to the full-size Thé à Casablanca only.", check:true,
+    starts:null, ends:null, dates:"Ritual Week, end date not in their post", startsLabel:"", code:"MF20",
+    url:"https://www.instagram.com/maisonfide/", cta:"Open Maison Fidé on Instagram"
+  },
+  {
+    id:"houseofbo", via:"Their Instagram story", name:"House of BO", kind:"Fragrance brand",
+    deal:"25% off everything, or 30% off 3 or more items",
+    terms:"Their story says it runs while stock lasts. Dates are not in the story.",
+    sample:null, caution:null, check:true,
+    starts:null, ends:null, dates:"While stock lasts", startsLabel:"", code:"Not listed",
+    url:"https://www.instagram.com/houseofbo.co/", cta:"Open House of BO on Instagram"
+  },
 ];
 function bfStatus(o, now) {
   if (o.ends && now > new Date(o.ends).getTime()) return "ended";
