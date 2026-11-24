@@ -6891,6 +6891,38 @@ const BF_OFFERS = [
     url:"https://octaviamorgan.com/"
   },
   {
+    id:"byredo", house:"byredo", via:"Their website", name:"Byredo", kind:"Fragrance house, Stockholm",
+    deal:"Free limited-edition La Petite Collection on purchases over $250",
+    terms:"Each set has a 50 mL body wash, 50 mL body lotion, 30 mL hand cream and an 8 mL eau de parfum. Choose from Mojave Ghost, Blanche, Bal d'Afrique, Rose of No Man's Land or Gypsy Water. While stocks last. Dates are not on the page we saw.",
+    sample:null, caution:null, check:true,
+    starts:null, ends:null, dates:"Dates not on their page", startsLabel:"", code:"No code listed",
+    url:"https://byredo.com"
+  },
+  {
+    id:"caswellmassey", via:"Their Instagram story", name:"Caswell-Massey", kind:"Fragrance house, since 1752",
+    deal:"Up to 60% off",
+    terms:"Their story says Black Friday starts now. The end date is not in the part we saw.",
+    sample:null, caution:null, check:true,
+    starts:null, ends:null, dates:"Started Nov 24, end date not listed", startsLabel:"", code:"No code listed",
+    url:"https://www.instagram.com/caswellmassey/", cta:"Open Caswell-Massey on Instagram"
+  },
+  {
+    id:"saltandstone", via:"Their Instagram story and website", name:"Salt & Stone", kind:"Body care and fragrance brand",
+    deal:"20% off sitewide",
+    terms:"They call it their only sale of the year. Their site asks who you are shopping for (yourself or someone else) to unlock the 20%. Their site also shows 30% off the Full Body Set. Dates are not in what we saw.",
+    sample:null, caution:null, check:true,
+    starts:null, ends:null, dates:"Dates not in their story", startsLabel:"", code:"No code listed",
+    url:"https://saltandstone.com"
+  },
+  {
+    id:"cocodemer", via:"Their Instagram story and website", name:"Coco de Mer Fragrance Co.", kind:"Fragrance house",
+    deal:"20% off rare fragrances",
+    terms:"Their story says 20% off rare fragrances. Their site pop-up says 25% off sitewide plus a free gift, with early access for people who join their mailing list. Free shipping on orders of $50 or more. Dates are not in what we saw.",
+    sample:null, caution:null, check:true,
+    starts:null, ends:null, dates:"Dates not in their story", startsLabel:"", code:"Sent by email",
+    url:"https://cocodemerfragrances.com"
+  },
+  {
     id:"atwood", house:"atwood-parfum", via:"Their Instagram story, Nov 23", name:"Atwood Parfum", kind:"Fragrance house, Provincetown, Massachusetts",
     deal:"Buy a 30 mL, get any 10 mL free",
     terms:"Add both to your cart. Their story says it runs now through November 30.",
@@ -6951,8 +6983,8 @@ const BF_OFFERS = [
   },
   {
     id:"influxious", house:"influxious", via:"Their holiday calendar post", name:"Influxious", kind:"Fragrance house",
-    deal:"20% off full-size bottles",
-    terms:"Their Black Friday to Cyber Monday sale, on influxious.co. Their calendar shows it starting Nov 24 and ending Nov 30.",
+    deal:"20% off sitewide",
+    terms:"Their Black Friday to Cyber Monday sale, on influxious.co. Their calendar shows it starting Nov 24 and ending Nov 30. Their story calls it their only offer of the year and says exclusions apply, so see their site for details.",
     sample:null, caution:null,
     starts:"2026-11-24T00:00:00-05:00", ends:"2026-11-30T23:59:59-05:00", dates:"Nov 24 to Nov 30", startsLabel:"Nov 24", code:"No code listed",
     url:"https://influxious.co/"
