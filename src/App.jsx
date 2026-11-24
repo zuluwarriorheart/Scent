@@ -7196,6 +7196,12 @@ function BlackFridayGuide({ embedded = false }) {
         <p style={{ fontSize:"clamp(15px, 2.2vw, 18px)", lineHeight:1.65, color:T.mid, margin:embedded ? "0 0 4px" : "0 auto", maxWidth:520 }}>Niche &amp; indie sales worth a look, each with a link straight to the brand. A discount only helps on a scent you like, so we note where you can try a sample first.</p>
       </div>
 
+      <div style={{ margin:"0 0 26px", padding:"20px 18px", background:T.lift, border:`1px solid ${T.rule}`, borderRadius:20 }}>
+        <p style={{ fontFamily:serif, fontSize:20, lineHeight:1.3, color:T.black, margin:"0 0 8px" }}>We are not here to influence you. Trust your own nose.</p>
+        <p style={{ fontSize:13, color:T.mid, lineHeight:1.7, margin:"0 0 8px" }}>These are plain links to the brands. There are no affiliate codes on this page, and we earn nothing if you click. Sales change fast, so each brand's own page has the final word on dates, prices and exclusions.</p>
+        <p style={{ fontSize:13, color:T.mid, lineHeight:1.7, margin:0 }}>Running a sale, or spotted one we missed? Write to <a href="mailto:team@memoironskin.com" style={{ color:T.black, fontWeight:500 }}>team@memoironskin.com</a>.</p>
+      </div>
+
       {!embedded && <div style={{ margin:"0 0 30px" }}><BetaSignupCard heading="Join the beta list first" note="Memoir on Skin is where you sample, wear and keep your scents. Just your first name and email. No password, no payment."/></div>}
 
       <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", gap:12, flexWrap:"wrap", margin:"0 0 14px" }}>
@@ -7219,12 +7225,6 @@ function BlackFridayGuide({ embedded = false }) {
             <button onClick={() => setView("all")} style={{ ...ctaBtn(true), maxWidth:280 }}>Browse the sales</button>
           </div>
         )}
-      </div>
-
-      <div style={{ margin:"26px 0 0", padding:"20px 18px", background:T.lift, border:`1px solid ${T.rule}`, borderRadius:20 }}>
-        <p style={{ fontFamily:serif, fontSize:20, lineHeight:1.3, color:T.black, margin:"0 0 8px" }}>We are not here to influence you. Trust your own nose.</p>
-        <p style={{ fontSize:13, color:T.mid, lineHeight:1.7, margin:"0 0 8px" }}>These are plain links to the brands. There are no affiliate codes on this page, and we earn nothing if you click. Sales change fast, so each brand's own page has the final word on dates, prices and exclusions.</p>
-        <p style={{ fontSize:13, color:T.mid, lineHeight:1.7, margin:0 }}>Running a sale, or spotted one we missed? Write to <a href="mailto:team@memoironskin.com" style={{ color:T.black, fontWeight:500 }}>team@memoironskin.com</a>.</p>
       </div>
 
       {!embedded && (
