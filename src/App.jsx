@@ -6942,6 +6942,55 @@ const BF_OFFERS = [
     starts:null, ends:null, dates:"Limited time, dates not listed", startsLabel:"", code:"GOTHIC30",
     url:"https://www.instagram.com/hereticparfum/", cta:"Open Heretic on Instagram"
   },
+  {
+    id:"histoires", via:"Their website and Instagram story", name:"Histoires de Parfums", kind:"Fragrance house",
+    deal:"20% off up to $299, 30% off from $300",
+    terms:"Early access for their email list. Sign up with your email, and on Thursday Nov 26 at 10am ET you get an email that your access is open. Log in with the same address and the discount applies in your cart. It runs until Monday Nov 30 at midnight ET.",
+    sample:null, caution:null,
+    starts:"2026-11-26T10:00:00-05:00", ends:"2026-11-30T23:59:59-05:00", dates:"Nov 26 to Nov 30", startsLabel:"Nov 26, 10am ET", code:"Sign up for early access",
+    url:"https://usa.histoiresdeparfums.com/"
+  },
+  {
+    id:"mataha", via:"Their Instagram story", name:"Maison Mataha", kind:"Fragrance house, Paris",
+    deal:"Free discovery set and free worldwide shipping with every order",
+    terms:"Their story calls it an invitation to discover the house. Dates are not in the story.",
+    sample:"A complimentary discovery set comes with every order.",
+    caution:null, check:true,
+    starts:null, ends:null, dates:"Dates not in their story", startsLabel:"", code:"No code listed",
+    url:"https://www.instagram.com/maisonmataha/", cta:"Open Maison Mataha on Instagram"
+  },
+  {
+    id:"imaginary", via:"Their Instagram post", name:"Imaginary Authors", kind:"Fragrance house",
+    deal:"Free limited fragrance with $100 spend",
+    terms:"Spend $100 on their website and receive their newest, exclusive and extremely limited fragrance, Longing For Light. Dates are not in the post.",
+    sample:null, caution:null, check:true,
+    starts:null, ends:null, dates:"Dates not in their post", startsLabel:"", code:"No code listed",
+    url:"https://www.instagram.com/imaginaryauthors/", cta:"Open Imaginary Authors on Instagram"
+  },
+  {
+    id:"granado", via:"Their Instagram post", name:"Granado", kind:"Fragrance house, Rio de Janeiro",
+    deal:"50% off",
+    terms:"Their Black Friday post, shown with the Rosa Sublime fragrance, says 50% off on the website, app and stores. Dates are not in the post.",
+    sample:null, caution:"The post does not say whether the 50% covers the whole range or only the featured fragrance. Check their page.", check:true,
+    starts:null, ends:null, dates:"Dates not in their post", startsLabel:"", code:"No code listed",
+    url:"https://www.instagram.com/granado/", cta:"Open Granado on Instagram"
+  },
+  {
+    id:"xinu", via:"Their Instagram story", name:"Xinu", kind:"Fragrance and home scent house",
+    deal:"Free shipping this week only",
+    terms:"Their story says complimentary shipping, this week only. It is shipping, not a discount.",
+    sample:null, caution:null, check:true,
+    starts:null, ends:null, dates:"This week, per their story", startsLabel:"", code:"No code listed",
+    url:"https://xinuperfumes.com/"
+  },
+  {
+    id:"reinvented", via:"Their Instagram story", name:"Reinvented Parfums", kind:"Fragrance house",
+    deal:"A limited 48-hour sale, early access for subscribers",
+    terms:"Their story says to subscribe for early access, and that terms and conditions apply. The discount and the dates are not in the story.",
+    sample:null, caution:null, check:true,
+    starts:null, ends:null, dates:"Dates not in their story", startsLabel:"", code:"Subscribe for early access",
+    url:"https://www.instagram.com/reinventedparfums/", cta:"Open Reinvented Parfums on Instagram"
+  },
 ];
 function bfStatus(o, now) {
   if (o.ends && now > new Date(o.ends).getTime()) return "ended";
