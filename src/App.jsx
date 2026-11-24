@@ -6787,6 +6787,38 @@ const BF_OFFERS = [
     url:"https://ormondejayne.com/en-us"
   },
   {
+    id:"lorenzopazzaglia", house:"lorenzo-pazzaglia", via:"Their Instagram post and story", name:"Lorenzo Pazzaglia", kind:"Fragrance house, Italy",
+    deal:"Free 10 mL with every 50 mL",
+    terms:"With every 50 mL fragrance purchase you receive a complimentary 10 mL, selected from their collections. Dates are not in the part of the post we saw.",
+    sample:null, caution:null, check:true,
+    starts:null, ends:null, dates:"Dates not in their post", startsLabel:"", code:"No code listed",
+    url:"https://lorenzopazzaglia.com"
+  },
+  {
+    id:"sphinx", house:"sphinx-fragrances", via:"Their Instagram ad", name:"Sphinx Fragrances", kind:"Fragrance house",
+    deal:"Up to 30% off",
+    terms:"Their ad says up to 30% off with the code. Dates are not in the part of the ad we saw.",
+    sample:null, caution:null, check:true,
+    starts:null, ends:null, dates:"Dates not in their ad", startsLabel:"", code:"Black30",
+    url:"https://sphinxfragrances.com"
+  },
+  {
+    id:"maisonchanceux", house:"maison-chanceux", via:"Their Instagram story ad", name:"Maison Chanceux", kind:"Fragrance house, USA",
+    deal:"25% off sitewide",
+    terms:"Began Nov 12 at noon Pacific. The end date is not in the story we saw.",
+    sample:null, caution:null, check:true,
+    starts:"2026-11-12T12:00:00-08:00", ends:null, dates:"Began Nov 12, end date not listed", startsLabel:"Nov 12", code:"EARLYBF",
+    url:"https://chanceuxparfum.com"
+  },
+  {
+    id:"snif", house:"snif", via:"Their Instagram post", name:"Snif", kind:"Fragrance and body brand, USA",
+    deal:"30% off their entire site",
+    terms:"Their post says this Wednesday, which is Nov 25. One day.",
+    sample:null, caution:null,
+    starts:"2026-11-25T00:00:00-05:00", ends:"2026-11-25T23:59:00-05:00", dates:"Wednesday, Nov 25", startsLabel:"Nov 25", code:"No code listed",
+    url:"https://snif.co"
+  },
+  {
     id:"atwood", house:"atwood-parfum", via:"Their Instagram story, Nov 23", name:"Atwood Parfum", kind:"Fragrance house, Provincetown, Massachusetts",
     deal:"Buy a 30 mL, get any 10 mL free",
     terms:"Add both to your cart. Their story says it runs now through November 30.",
