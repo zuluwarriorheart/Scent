@@ -6819,6 +6819,22 @@ const BF_OFFERS = [
     url:"https://snif.co"
   },
   {
+    id:"inverso", house:"inverso-profumi", via:"A retailer's Instagram reel about their sale", name:"Inverso Profumi", kind:"Fragrance house",
+    deal:"$26 off main Inverso extraits",
+    terms:"Free shipping in the US. Does not apply to Lucale. We saw this in a retailer's reel, not on the brand's own page.",
+    sample:null, caution:null, check:true,
+    starts:null, ends:"2026-11-30T23:59:00-05:00", dates:"Through the end of November", startsLabel:"", code:"BLWV26",
+    url:"https://inversoprofumi.com/"
+  },
+  {
+    id:"penhaligons", house:"penhaligon-s", via:"Their Instagram story ad", name:"Penhaligon's", kind:"Fragrance house, London, est. 1870",
+    deal:"Three free 10 mL fragrances on orders over $200",
+    terms:"Dates are not in the part of the ad we saw.",
+    sample:null, caution:null, check:true,
+    starts:null, ends:null, dates:"Dates not in their ad", startsLabel:"", code:"BLACKFRIDAY",
+    url:"https://penhaligons.com"
+  },
+  {
     id:"atwood", house:"atwood-parfum", via:"Their Instagram story, Nov 23", name:"Atwood Parfum", kind:"Fragrance house, Provincetown, Massachusetts",
     deal:"Buy a 30 mL, get any 10 mL free",
     terms:"Add both to your cart. Their story says it runs now through November 30.",
