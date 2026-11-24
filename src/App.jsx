@@ -6851,6 +6851,57 @@ const BF_OFFERS = [
     starts:null, ends:null, dates:"Dates not listed", startsLabel:"", code:"Join their list",
     url:"https://houseofbrandt.com/"
   },
+  {
+    id:"dusita", via:"Their Instagram post", name:"Dusita", kind:"Fragrance house, Paris",
+    deal:"Free gift-filled holiday box with a 50 mL or a 3 x 15 mL coffret",
+    terms:"The box holds a 15 mL eau de parfum of your choice, seven 2.5 mL samples, a Mocha Absolu Discovery Kit, a holiday card and a EUR 35 voucher. Orders of a 50 mL extrait or a 100 mL eau de parfum get two 15 mL instead of one. Valid until Nov 30.",
+    sample:"Seven 2.5 mL samples and a Mocha Absolu Discovery Kit come in the box.",
+    caution:"The EUR 35 voucher is valid Jan 11 to Mar 15, 2027, on orders of EUR 150 or more.",
+    starts:null, ends:"2026-11-30T23:59:59+01:00", dates:"Now through Nov 30", startsLabel:"", code:"No code listed",
+    url:"https://www.instagram.com/parfumsdusita/", cta:"Open Dusita on Instagram"
+  },
+  {
+    id:"maisondetto", via:"Their Instagram ad", name:"Maison d'Etto", kind:"Fragrance house",
+    deal:"Discovery Set credit doubled, from $50 to $100",
+    terms:"Every Discovery Set comes with a credit toward a full-size bottle, and this holiday season they have doubled it. Their post says it is their Black Friday offer. Dates are not listed.",
+    sample:"The Discovery Set holds all nine fragrances in 2.5 mL sprays, so you can give each a full day on your skin before you choose one.",
+    caution:null, check:true,
+    starts:null, ends:null, dates:"Dates not listed", startsLabel:"", code:"No code listed",
+    url:"https://www.instagram.com/maisondetto/", cta:"Open Maison d'Etto on Instagram"
+  },
+  {
+    id:"gabar", via:"Their Instagram post and story", name:"Gabar", kind:"Fragrance house",
+    deal:"20% off sitewide",
+    terms:"They call it their only sitewide sale of the year. Their post says it ends Nov 30 at midnight GMT.",
+    sample:null,
+    caution:"Limited stock. Their post said 01 Float is US orders only, and 04 Rise and the 02 Ground candle were sold out. They point to their other stockists for what is available now.",
+    starts:null, ends:"2026-11-30T23:59:59+00:00", dates:"Now through Nov 30, midnight GMT", startsLabel:"", code:"No code listed",
+    url:"https://gabarworld.com/"
+  },
+  {
+    id:"scenttrunk", via:"Their Instagram post", name:"Scent Trunk", kind:"Fragrance house",
+    deal:"30% off all fragrances",
+    terms:"Their Black Friday post, shared with the Whisper of Melancholy collection. The link to shop is in their bio. Dates are not in the post.",
+    sample:null, caution:null, check:true,
+    starts:null, ends:null, dates:"Dates not in their post", startsLabel:"", code:"No code listed",
+    url:"https://www.instagram.com/scenttrunk/", cta:"Open Scent Trunk on Instagram"
+  },
+  {
+    id:"fyaf", via:"Their Instagram post", name:"Free Yourself and Flourish", kind:"Fragrance brand",
+    deal:"Free 15 mL with a full-size bottle",
+    terms:"Buy a full-size fragrance from the Elements Collection and get a free 15 mL travel size of the same scent. Buy one from the Mindful Collection and get a free 15 mL refill of the same scent. Black Friday through Cyber Monday, while supplies last.",
+    sample:null, caution:null,
+    starts:"2026-11-27T00:00:00-05:00", ends:"2026-11-30T23:59:59-05:00", dates:"Nov 27 to Nov 30", startsLabel:"Nov 27", code:"No code listed",
+    url:"https://www.instagram.com/freeyourselfandflourish/", cta:"Open Free Yourself and Flourish on Instagram"
+  },
+  {
+    id:"bsb", via:"Their Instagram post", name:"Brown Sugar Babe", kind:"Fragrance brand",
+    deal:"35% off Black Friday, 10% off Saturday and Monday",
+    terms:"Black Friday (Nov 27) 35% off. Small Business Saturday (Nov 28) 10% off. Cyber Monday (Nov 30) 10% off plus free shipping. Excludes the Advent Calendar. Terms and conditions apply.",
+    sample:null, caution:null,
+    starts:"2026-11-27T00:00:00-05:00", ends:"2026-11-30T23:59:59-05:00", dates:"Nov 27 to Nov 30", startsLabel:"Nov 27", code:"No code listed",
+    url:"https://www.instagram.com/brownsugarbabeofficial/", cta:"Open Brown Sugar Babe on Instagram"
+  },
 ];
 function bfStatus(o, now) {
   if (o.ends && now > new Date(o.ends).getTime()) return "ended";
