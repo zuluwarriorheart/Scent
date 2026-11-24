@@ -7098,10 +7098,39 @@ function BetaSignupCard({ heading = "Join the beta list", note = "Just your firs
   );
 }
 
+const BF_KEY = "mos-bf-list-v1";
+function bfLoad() {
+  try {
+    const v = JSON.parse(window.localStorage.getItem(BF_KEY) || "{}");
+    return { saved:Array.isArray(v.saved) ? v.saved.filter(x => typeof x === "string") : [], wish:v.wish && typeof v.wish === "object" ? v.wish : {} };
+  } catch (e) { return { saved:[], wish:{} }; }
+}
+
 function BlackFridayGuide({ embedded = false }) {
   const [now] = useState(() => Date.now());
   const [copied, setCopied] = useState(false);
   const list = BF_OFFERS.filter(o => !o.hidden).map((o, i) => ({ o, i, st:bfStatus(o, now) })).sort((a, b) => a.o.name.localeCompare(b.o.name, "en", { sensitivity:"base", ignorePunctuation:true }) || (a.i - b.i));
+  const [mine, setMine] = useState(bfLoad);
+  const [view, setView] = useState("all");
+  const [draft, setDraft] = useState({});
+  const [confirmId, setConfirmId] = useState(null);
+  useEffect(() => { try { window.localStorage.setItem(BF_KEY, JSON.stringify(mine)); } catch (e) { /* storage unavailable */ } }, [mine]);
+  const wishOf = id => (Array.isArray(mine.wish[id]) ? mine.wish[id] : []);
+  const inList = id => mine.saved.includes(id) || wishOf(id).length > 0;
+  const myList = list.filter(({ o }) => inList(o.id));
+  const toggleSave = id => setMine(m => ({ ...m, saved:m.saved.includes(id) ? m.saved.filter(x => x !== id) : [...m.saved, id] }));
+  const addFrag = id => {
+    const t = (draft[id] || "").trim().slice(0, 60);
+    if (!t) return;
+    setMine(m => {
+      const cur = Array.isArray(m.wish[id]) ? m.wish[id] : [];
+      if (cur.length >= 20 || cur.some(x => String(x).toLowerCase() === t.toLowerCase())) return m;
+      return { ...m, wish:{ ...m.wish, [id]:[...cur, t] } };
+    });
+    setDraft(d => ({ ...d, [id]:"" }));
+  };
+  const removeFrag = (id, t) => setMine(m => ({ ...m, wish:{ ...m.wish, [id]:(Array.isArray(m.wish[id]) ? m.wish[id] : []).filter(x => x !== t) } }));
+  const removeBrand = id => { setConfirmId(null); setMine(m => { const w = { ...m.wish }; delete w[id]; return { saved:m.saved.filter(x => x !== id), wish:w }; }); };
   async function shareIt() {
     try { if (navigator.share) { await navigator.share({ title:"Black Friday sales, sample first", url:BF_URL }); return; } } catch (e) { if (e && e.name === "AbortError") return; }
     try { await navigator.clipboard.writeText(BF_URL); setCopied(true); setTimeout(() => setCopied(false), 2200); } catch (e) {}
@@ -7111,26 +7140,10 @@ function BlackFridayGuide({ embedded = false }) {
     : st === "soon" ? { label:"Starts soon", color:"var(--violet)", bg:"var(--tint-violet)" }
     : st === "check" ? { label:"Check dates", color:T.mid, bg:T.lift }
     : { label:"Ended", color:T.faint, bg:T.lift };
-  return (
-    <div>
-      <div style={{ textAlign:embedded ? "left" : "center", margin:embedded ? "0 0 22px" : "0 0 26px" }}>
-        <p style={{ display:"inline-block", fontSize:11, fontWeight:600, letterSpacing:"0.16em", textTransform:"uppercase", color:"var(--accent)", background:T.lift, border:`1px solid ${T.rule}`, borderRadius:20, padding:"6px 14px", margin:"0 0 18px" }}>Black Friday 2026</p>
-        <h1 style={{ fontFamily:serif, fontWeight:400, fontSize:"clamp(38px, 8vw, 60px)", lineHeight:1.05, letterSpacing:-1.2, color:T.black, margin:"0 0 14px" }}>Black Friday, sample first.</h1>
-        <p style={{ fontSize:"clamp(15px, 2.2vw, 18px)", lineHeight:1.65, color:T.mid, margin:embedded ? "0 0 4px" : "0 auto", maxWidth:520 }}>Niche &amp; indie sales worth a look, each with a link straight to the brand. A discount only helps on a scent you like, so we note where you can try a sample first.</p>
-      </div>
-
-      {!embedded && <div style={{ margin:"0 0 30px" }}><BetaSignupCard heading="Join the beta list first" note="Memoir on Skin is where you sample, wear and keep your scents. Just your first name and email. No password, no payment."/></div>}
-
-      <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", gap:12, flexWrap:"wrap", margin:"0 0 14px" }}>
-        <p style={{ fontSize:12, color:T.mid, margin:0 }}>Checked against each brand's own page or post on {BF_CHECKED}.</p>
-        <button onClick={shareIt} style={{ ...ghostBtn, minHeight:40, padding:"0 16px", fontSize:13 }}>{copied ? "Link copied" : "Share this page"}</button>
-      </div>
-
-      <div style={{ display:"flex", flexDirection:"column", gap:14 }}>
-        {list.map(({ o, st }) => {
-          const c = chip(st);
-          const ended = st === "ended";
-          return (
+  const renderCard = ({ o, st }, inMine) => {
+    const c = chip(st);
+    const ended = st === "ended";
+    return (
             <article key={o.id} style={{ background:T.white, border:`1px solid ${T.rule}`, borderRadius:20, padding:"20px 18px", opacity:ended ? 0.7 : 1 }}>
               <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", gap:10, margin:"0 0 10px", flexWrap:"wrap" }}>
                 <span style={{ fontSize:11, fontWeight:600, letterSpacing:"0.12em", textTransform:"uppercase", color:c.color, background:c.bg, borderRadius:20, padding:"5px 12px" }}>{st === "soon" && o.startsLabel ? `Starts ${o.startsLabel}` : c.label}</span>
@@ -7148,10 +7161,64 @@ function BlackFridayGuide({ embedded = false }) {
               <div style={{ display:"flex", alignItems:"center", gap:12, flexWrap:"wrap", margin:"14px 0 0" }}>
                 <a href={o.url} target="_blank" rel="noopener noreferrer" style={{ display:"inline-flex", alignItems:"center", justifyContent:"center", minHeight:48, padding:"0 22px", borderRadius:14, background:ended ? T.lift : "var(--accent)", color:ended ? T.mid : "#fff", fontFamily:sans, fontSize:15, fontWeight:600, textDecoration:"none" }}>{o.cta || `Go to ${o.name}`}</a>
                 <span style={{ fontSize:12, color:T.mid }}>Code: <strong style={{ color:T.black, fontWeight:600 }}>{o.code}</strong></span>
+                {inMine
+                  ? <button onClick={() => (confirmId === o.id ? removeBrand(o.id) : setConfirmId(o.id))} style={{ ...ghostBtn, minHeight:48, fontSize:14 }}>{confirmId === o.id ? "Tap again to remove" : "Remove brand"}</button>
+                  : <button onClick={() => toggleSave(o.id)} aria-pressed={mine.saved.includes(o.id)} style={{ ...ghostBtn, minHeight:48, fontSize:14, color:mine.saved.includes(o.id) ? "var(--accent)" : T.mid, borderColor:mine.saved.includes(o.id) ? "var(--accent)" : T.rule }}>{mine.saved.includes(o.id) ? "Saved to my list" : "Save brand"}</button>}
               </div>
+              {inMine && (
+                <div style={{ margin:"16px 0 0", paddingTop:16, borderTop:`1px solid ${T.rule}` }}>
+                  <p style={FLABEL}>Fragrances you want</p>
+                  {wishOf(o.id).length === 0 && <p style={{ fontSize:13, color:T.mid, lineHeight:1.6, margin:"0 0 10px" }}>Add the ones you are thinking about. Then shop them with the button above.</p>}
+                  {wishOf(o.id).length > 0 && (
+                    <ul style={{ listStyle:"none", padding:0, margin:"0 0 10px", display:"flex", flexDirection:"column", gap:8 }}>
+                      {wishOf(o.id).map(t => (
+                        <li key={t} style={{ display:"flex", alignItems:"center", justifyContent:"space-between", gap:10, background:T.lift, borderRadius:12, padding:"6px 6px 6px 14px", fontSize:15, color:T.ink }}>
+                          <span>{t}</span>
+                          <button onClick={() => removeFrag(o.id, t)} aria-label={`Remove ${t}`} style={{ ...ghostBtn, minHeight:40, padding:"0 12px", fontSize:13 }}>Remove</button>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                  <div style={{ display:"flex", gap:8 }}>
+                    <input value={draft[o.id] || ""} onChange={e => setDraft(d => ({ ...d, [o.id]:e.target.value }))} onKeyDown={e => { if (e.key === "Enter") addFrag(o.id); }} placeholder="Fragrance name" maxLength={60} aria-label={`Add a fragrance from ${o.name}`} style={{ ...FIELD, flex:1, minWidth:0 }}/>
+                    <button onClick={() => addFrag(o.id)} style={{ ...ghostBtn, minHeight:48, padding:"0 18px" }}>Add</button>
+                  </div>
+                </div>
+              )}
             </article>
-          );
-        })}
+    );
+  };
+  return (
+    <div>
+      <div style={{ textAlign:embedded ? "left" : "center", margin:embedded ? "0 0 22px" : "0 0 26px" }}>
+        <p style={{ display:"inline-block", fontSize:11, fontWeight:600, letterSpacing:"0.16em", textTransform:"uppercase", color:"var(--accent)", background:T.lift, border:`1px solid ${T.rule}`, borderRadius:20, padding:"6px 14px", margin:"0 0 18px" }}>Black Friday 2026</p>
+        <h1 style={{ fontFamily:serif, fontWeight:400, fontSize:"clamp(38px, 8vw, 60px)", lineHeight:1.05, letterSpacing:-1.2, color:T.black, margin:"0 0 14px" }}>Black Friday, sample first.</h1>
+        <p style={{ fontSize:"clamp(15px, 2.2vw, 18px)", lineHeight:1.65, color:T.mid, margin:embedded ? "0 0 4px" : "0 auto", maxWidth:520 }}>Niche &amp; indie sales worth a look, each with a link straight to the brand. A discount only helps on a scent you like, so we note where you can try a sample first.</p>
+      </div>
+
+      {!embedded && <div style={{ margin:"0 0 30px" }}><BetaSignupCard heading="Join the beta list first" note="Memoir on Skin is where you sample, wear and keep your scents. Just your first name and email. No password, no payment."/></div>}
+
+      <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", gap:12, flexWrap:"wrap", margin:"0 0 14px" }}>
+        <p style={{ fontSize:12, color:T.mid, margin:0 }}>Checked against each brand's own page or post on {BF_CHECKED}.</p>
+        <button onClick={shareIt} style={{ ...ghostBtn, minHeight:40, padding:"0 16px", fontSize:13 }}>{copied ? "Link copied" : "Share this page"}</button>
+      </div>
+
+      <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:10, margin:"0 0 16px" }}>
+        <button onClick={() => setView("all")} aria-pressed={view === "all"} style={selBtn(view === "all")}>All sales ({list.length})</button>
+        <button onClick={() => setView("mine")} aria-pressed={view === "mine"} style={selBtn(view === "mine")}>My list ({myList.length})</button>
+      </div>
+      {view === "mine" && myList.length > 0 && <p style={{ fontSize:12, color:T.mid, lineHeight:1.6, margin:"0 0 14px" }}>Your list is saved on this device only. Nothing is sent to us.</p>}
+
+      <div style={{ display:"flex", flexDirection:"column", gap:14 }}>
+        {view === "all" && list.map(it => renderCard(it, false))}
+        {view === "mine" && myList.map(it => renderCard(it, true))}
+        {view === "mine" && myList.length === 0 && (
+          <div style={{ background:T.white, border:`1px solid ${T.rule}`, borderRadius:20, padding:"24px 18px", textAlign:"center" }}>
+            <p style={{ fontFamily:serif, fontSize:22, lineHeight:1.25, color:T.black, margin:"0 0 8px" }}>Your list is empty.</p>
+            <p style={{ fontSize:14, color:T.mid, lineHeight:1.65, margin:"0 0 16px" }}>Tap Save brand on the houses you are curious about. Then add the fragrances you want, and shop them from here.</p>
+            <button onClick={() => setView("all")} style={{ ...ctaBtn(true), maxWidth:280 }}>Browse the sales</button>
+          </div>
+        )}
       </div>
 
       <div style={{ margin:"26px 0 0", padding:"20px 18px", background:T.lift, border:`1px solid ${T.rule}`, borderRadius:20 }}>
