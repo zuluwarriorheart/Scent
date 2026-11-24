@@ -6630,7 +6630,7 @@ const BF_OFFERS = [
     url:"https://bluemercury.com/pages/shop-black-friday-fragrance"
   },
   {
-    id:"thirdeye", via:"Their Instagram post, Nov 23", name:"Third Eye Fragrance Co", kind:"Fragrance house, Orlando, Florida",
+    id:"thirdeye", house:"third-eye-fragrance-co", via:"Their Instagram post, Nov 23", name:"Third Eye Fragrance Co", kind:"Fragrance house, Orlando, Florida",
     deal:"20% off store wide",
     terms:"Applied automatically at checkout. Their post marks it with an asterisk, so read the terms on their site.",
     sample:null, caution:null,
@@ -6638,7 +6638,7 @@ const BF_OFFERS = [
     url:"https://www.thirdeyefragranceco.com/"
   },
   {
-    id:"ath", via:"Their Instagram post", name:"Aaron Terence Hughes", kind:"Independent British perfume house",
+    id:"ath", house:"aaron-terence-hughes", via:"Their Instagram post", name:"Aaron Terence Hughes", kind:"Independent British perfume house",
     deal:"20% off everything",
     terms:"Unicorn Weekend. It covers the UK and the US, all weekend or until sold out.",
     sample:null, caution:"Their post gives no end time. When a scent sells out, it is gone.",
@@ -6646,7 +6646,7 @@ const BF_OFFERS = [
     url:"https://aaronterencehughes.co.uk/"
   },
   {
-    id:"bgj", via:"Their Instagram post", name:"Brown Girl Jane", kind:"Black-owned fragrance house",
+    id:"bgj", house:"brown-girl-jane", via:"Their Instagram post", name:"Brown Girl Jane", kind:"Black-owned fragrance house",
     deal:"Up to 30% off",
     terms:"Their post says up to 30% off during their Black Friday sale. Dates are not in the post.",
     sample:null, caution:null, check:true,
@@ -6654,7 +6654,7 @@ const BF_OFFERS = [
     url:"https://browngirljane.com/"
   },
   {
-    id:"elysian", via:"Their Instagram post", name:"Elysian Parfums", kind:"Indie fragrance house",
+    id:"elysian", house:"elysian-parfum", via:"Their Instagram post", name:"Elysian Parfums", kind:"Indie fragrance house",
     deal:"25% off six fragrances",
     terms:"The Vault: Sucre de Soie, Sombre Douceur, Jalous, Cafe Avellana, Charmante and Black Gardenia at 25% off before they are locked away. Orders of $250 or more get a surprise 10 mL.",
     sample:null, caution:"Early access is through the sign-up link in their Instagram bio.",
@@ -6662,7 +6662,7 @@ const BF_OFFERS = [
     url:"https://elysianparfum.com/"
   },
   {
-    id:"hiramgreen", via:"His Instagram post", name:"Hiram Green", kind:"Independent natural perfumer, the Netherlands",
+    id:"hiramgreen", house:"hiram-green", via:"His Instagram post", name:"Hiram Green", kind:"Independent natural perfumer, the Netherlands",
     deal:"20% off all 50 mL fragrances",
     terms:"He runs this once a year. Every 50 mL also comes with two complimentary add-ons, listed in his post.",
     sample:null, caution:"The code comes when you sign up for his newsletter at hiramgreen.com.",
@@ -6670,7 +6670,7 @@ const BF_OFFERS = [
     url:"https://hiramgreen.com/"
   },
   {
-    id:"anjali", via:"Her Instagram post", name:"Anjali Perfumes", kind:"Woman-owned independent house, Bainbridge Island, Washington",
+    id:"anjali", house:"anjali-perfumes", via:"Her Instagram post", name:"Anjali Perfumes", kind:"Woman-owned independent house, Bainbridge Island, Washington",
     deal:"30% off, free shipping",
     terms:"No code needed. She runs one sale a year.",
     sample:"During the sale only the Discovery Set of All Samples is available. The sets of 5, 7 and 9 samples are not.",
@@ -6679,7 +6679,7 @@ const BF_OFFERS = [
     url:"https://anjaliperfumes.com/"
   },
   {
-    id:"leier", via:"Their Instagram post, Nov 23", name:"LEIƏR", kind:"Black-owned independent fragrance house",
+    id:"leier", house:"leir", via:"Their Instagram post, Nov 23", name:"LEIƏR", kind:"Black-owned independent fragrance house",
     deal:"20% off sitewide, 15% off bundles",
     terms:"Their Cyber Week sale. No code needed.",
     sample:null, caution:null,
@@ -6687,7 +6687,7 @@ const BF_OFFERS = [
     url:"https://leierfragrances.com/"
   },
   {
-    id:"atwood", via:"Their Instagram story, Nov 23", name:"Atwood Parfum", kind:"Fragrance house, Provincetown, Massachusetts",
+    id:"atwood", house:"atwood-parfum", via:"Their Instagram story, Nov 23", name:"Atwood Parfum", kind:"Fragrance house, Provincetown, Massachusetts",
     deal:"Buy a 30 mL, get any 10 mL free",
     terms:"Add both to your cart. Their story says it runs now through November 30.",
     sample:"Each 30 mL bottle comes with a sample vial of the same scent, and you can return the unopened bottle within 14 days if the sample is not for you.",
@@ -6696,7 +6696,7 @@ const BF_OFFERS = [
     url:"https://atwoodparfum.com/"
   },
   {
-    id:"zernell", via:"Their Instagram story, Nov 23", name:"Zernell Gillie", kind:"Fragrance house, music-inspired collection",
+    id:"zernell", house:"zernell-gillie-fragrances", via:"Their Instagram story, Nov 23", name:"Zernell Gillie", kind:"Fragrance house, music-inspired collection",
     deal:"Up to 20% off",
     terms:"Their story says they don't usually run sales. Dates are not in the story.",
     sample:null, caution:null, check:true,
@@ -6704,7 +6704,7 @@ const BF_OFFERS = [
     url:"https://zernellgillie.com/"
   },
   {
-    id:"dedcool", via:"Their website and Instagram ad", name:"DedCool", kind:"Fragrance house, Los Angeles",
+    id:"dedcool", house:"dedcool", via:"Their website and Instagram ad", name:"DedCool", kind:"Fragrance house, Los Angeles",
     deal:"Up to 30% off",
     terms:"Their site banner says the sale starts now and lists 30% off select items. Dates are not on the page.",
     sample:"Their site also lists 20% off a first full-size fragrance when you buy a sample tin.",
@@ -6714,7 +6714,7 @@ const BF_OFFERS = [
     url:"https://www.dedcool.com/"
   },
   {
-    id:"kismet", via:"Their Instagram story", name:"Kismet Olfactive", kind:"Fragrance house, New York",
+    id:"kismet", house:"kismet-olfactive", via:"Their Instagram story", name:"Kismet Olfactive", kind:"Fragrance house, New York",
     deal:"Up to $90 off",
     terms:"Their story calls it a Black Friday special. The offer details sit behind the See offer link.",
     sample:null, caution:null, check:true,
@@ -6722,7 +6722,7 @@ const BF_OFFERS = [
     url:"https://kismetolfactive.com/"
   },
   {
-    id:"glossier", via:"Their Instagram story", name:"Glossier", kind:"Beauty brand with a fragrance line",
+    id:"glossier", house:"glossier", via:"Their Instagram story", name:"Glossier", kind:"Beauty brand with a fragrance line",
     deal:"25% off everything, 30% off orders of $100 or more",
     terms:"Their story says terms and exclusions apply. Dates are not in the story.",
     sample:null, caution:"Check whether the fragrance you want is included before you buy.", check:true,
@@ -6730,7 +6730,7 @@ const BF_OFFERS = [
     url:"https://www.glossier.com/"
   },
   {
-    id:"maisonfide", via:"Their Instagram post, Nov 23", name:"Maison Fidé", kind:"Fragrance house",
+    id:"maisonfide", house:"maison-fide", via:"Their Instagram post, Nov 23", name:"Maison Fidé", kind:"Fragrance house",
     deal:"20% off full-size Thé à Casablanca (100 mL)",
     terms:"Their Black Friday Ritual Week. The post also points to the new Vanille de Malagasy coffret set.",
     sample:null, caution:"The code applies to the full-size Thé à Casablanca only.", check:true,
@@ -6738,7 +6738,7 @@ const BF_OFFERS = [
     url:"https://maisonfide.com/"
   },
   {
-    id:"houseofbo", via:"Their Instagram story", name:"House of BO", kind:"Fragrance brand",
+    id:"houseofbo", house:"house-of-bo", via:"Their Instagram story", name:"House of BO", kind:"Fragrance brand",
     deal:"25% off everything, or 30% off 3 or more items",
     terms:"Their story says it runs while stock lasts. Dates are not in the story.",
     sample:null, caution:null, check:true,
@@ -6746,7 +6746,7 @@ const BF_OFFERS = [
     url:"https://houseofbo.co/"
   },
   {
-    id:"influxious", via:"Their holiday calendar post", name:"Influxious", kind:"Fragrance house",
+    id:"influxious", house:"influxious", via:"Their holiday calendar post", name:"Influxious", kind:"Fragrance house",
     deal:"20% off full-size bottles",
     terms:"Their Black Friday to Cyber Monday sale, on influxious.co. Their calendar shows it starting Nov 24 and ending Nov 30.",
     sample:null, caution:null,
@@ -6754,7 +6754,7 @@ const BF_OFFERS = [
     url:"https://influxious.co/"
   },
   {
-    id:"kaori", via:"Their Instagram post", name:"Cult of Kaori", kind:"Fragrance house",
+    id:"kaori", house:"cult-of-kaori", via:"Their Instagram post", name:"Cult of Kaori", kind:"Fragrance house",
     deal:"25% off sitewide",
     terms:"Their one online sale of the year. No code needed, it applies at checkout. Wednesday Nov 25 through Cyber Monday.",
     sample:null, caution:null,
@@ -6762,7 +6762,7 @@ const BF_OFFERS = [
     url:"https://www.cultofkaori.com/"
   },
   {
-    id:"harlem", via:"Their Instagram post", name:"Harlem Perfume Co.", kind:"Fragrance house",
+    id:"harlem", house:"harlem-perfume-co", via:"Their Instagram post", name:"Harlem Perfume Co.", kind:"Fragrance house",
     deal:"20% off sitewide",
     terms:"They call it their biggest sale of the year.",
     sample:null, caution:null,
@@ -6770,7 +6770,7 @@ const BF_OFFERS = [
     url:"https://harlemperfumeco.com/"
   },
   {
-    id:"maher", via:"Their Instagram story", name:"Maher Olfactive", kind:"Fragrance house",
+    id:"maher", house:"maher-olfactive", via:"Their Instagram story", name:"Maher Olfactive", kind:"Fragrance house",
     deal:"10% off $100, 20% off $200, 30% off $300",
     terms:"Their Holiday Sale, with the discount rising as the order grows. It runs through December 6.",
     sample:null, caution:null,
@@ -6778,7 +6778,7 @@ const BF_OFFERS = [
     url:"https://maherolfactive.com/"
   },
   {
-    id:"mitti", via:"Their email and Instagram story", name:"Mitti Parfum", kind:"Fragrance house",
+    id:"mitti", house:"mitti-parfum", via:"Their email and Instagram story", name:"Mitti Parfum", kind:"Fragrance house",
     deal:"Sets with free extras, and free shipping",
     terms:"Pick three full-size bottles and they fill the rest of the box. Every set comes with extras, and the bigger the set, the more goes in. No code needed. Their story says it happens once a year.",
     sample:null, caution:null, check:true,
@@ -6786,7 +6786,7 @@ const BF_OFFERS = [
     url:"https://mittiparfum.com/"
   },
   {
-    id:"neandertal", via:"Their Instagram story", name:"Neandertal", kind:"Fragrance house",
+    id:"neandertal", house:"neandertal", via:"Their Instagram story", name:"Neandertal", kind:"Fragrance house",
     deal:"15% off",
     terms:"Their Black Friday sale. Dates are not in the story.",
     sample:null, caution:null, check:true,
@@ -6794,7 +6794,7 @@ const BF_OFFERS = [
     url:"https://www.instagram.com/neandertalperfume/", cta:"Open Neandertal on Instagram"
   },
   {
-    id:"liberation", via:"Their Instagram post", name:"Liberation of Flowers", kind:"Fragrance house",
+    id:"liberation", house:"liberation-of-flowers", via:"Their Instagram post", name:"Liberation of Flowers", kind:"Fragrance house",
     deal:"Free shipping and burning papers with every 50 mL",
     terms:"Their post says this runs all week. It is a gift with purchase, not a discount.",
     sample:null, caution:null, check:true,
@@ -6802,7 +6802,7 @@ const BF_OFFERS = [
     url:"https://liberationofflowers.com/"
   },
   {
-    id:"kioku", via:"Their website and Instagram story", name:"KI-OKU", kind:"Fragrance house, Los Angeles",
+    id:"kioku", house:"ki-oku", via:"Their website and Instagram story", name:"KI-OKU", kind:"Fragrance house, Los Angeles",
     deal:"Holiday Sale, early access list",
     terms:"Their page counts down to 11.27.2026 and invites you to join for early access. The discount and early access details are not posted yet.",
     sample:null, caution:null, check:true,
@@ -6818,7 +6818,7 @@ const BF_OFFERS = [
     url:"https://elorea.com/collections/eau-de-parfum"
   },
   {
-    id:"cirrus", via:"Their Instagram reel", name:"Cirrus Parfum", kind:"Fragrance house, San Antonio, Texas",
+    id:"cirrus", house:"cirrus-parfum", via:"Their Instagram reel", name:"Cirrus Parfum", kind:"Fragrance house, San Antonio, Texas",
     deal:"20% off sitewide",
     terms:"Their reel calls it Black Friday coming early. No code is mentioned.",
     sample:"Their site offers a customizable six-piece discovery set where you pick any 6 fragrances. Their site does not say whether the sale applies to it.",
@@ -6827,7 +6827,7 @@ const BF_OFFERS = [
     url:"https://cirrusparfum.com/"
   },
   {
-    id:"lepoque", via:"Their Instagram post and email", name:"L'Epoque Parfums", kind:"Fragrance house",
+    id:"lepoque", house:"l-epoque-parfums", via:"Their Instagram post and email", name:"L'Epoque Parfums", kind:"Fragrance house",
     deal:"20% off sitewide, 25% off two or more fragrances",
     terms:"Early access for their email list. Their post says you get the code as soon as you enter your email on their site. Free shipping on orders of $125 or more. The code cannot be combined with other discounts.",
     sample:"Their Discovery Set lets you try before committing to a full-size parfum.",
@@ -6836,7 +6836,7 @@ const BF_OFFERS = [
     url:"https://www.lepoqueparfums.com/"
   },
   {
-    id:"carner", via:"Their Instagram post", name:"Carner Barcelona", kind:"Fragrance house, Barcelona",
+    id:"carner", house:"carner-barcelona", via:"Their Instagram post", name:"Carner Barcelona", kind:"Fragrance house, Barcelona",
     deal:"Free travel set of 3 x 10 mL with a perfume order",
     terms:"Their Black Week. Order a perfume and choose the three 10 mL fragrances for your set. Their post says it is only this week.",
     sample:"The gift is a set of three 10 mL fragrances you choose, a way to try more of the house.",
@@ -6845,7 +6845,7 @@ const BF_OFFERS = [
     url:"https://carnerbarcelona.com/"
   },
   {
-    id:"brandt", via:"Their Instagram story", name:"House of Brandt", kind:"Fragrance brand",
+    id:"brandt", house:"house-of-brandt", via:"Their Instagram story", name:"House of Brandt", kind:"Fragrance brand",
     deal:"Black Friday offers by invitation",
     terms:"Their page says they will not announce the offers anywhere else. They go only to people on their list, and you sign up with your name, email and phone number.",
     sample:null, caution:null, check:true,
@@ -6853,7 +6853,7 @@ const BF_OFFERS = [
     url:"https://houseofbrandt.com/"
   },
   {
-    id:"dusita", via:"Their Instagram post", name:"Dusita", kind:"Fragrance house, Paris",
+    id:"dusita", house:"parfums-dusita", via:"Their Instagram post", name:"Dusita", kind:"Fragrance house, Paris",
     deal:"Free gift-filled holiday box with a 50 mL or a 3 x 15 mL coffret",
     terms:"The box holds a 15 mL eau de parfum of your choice, seven 2.5 mL samples, a Mocha Absolu Discovery Kit, a holiday card and a EUR 35 voucher. Orders of a 50 mL extrait or a 100 mL eau de parfum get two 15 mL instead of one. Valid until Nov 30.",
     sample:"Seven 2.5 mL samples and a Mocha Absolu Discovery Kit come in the box.",
@@ -6871,7 +6871,7 @@ const BF_OFFERS = [
     url:"https://maisondetto.com/"
   },
   {
-    id:"gabar", via:"Their Instagram post and story", name:"Gabar", kind:"Fragrance house",
+    id:"gabar", house:"gabar", via:"Their Instagram post and story", name:"Gabar", kind:"Fragrance house",
     deal:"20% off sitewide",
     terms:"They call it their only sitewide sale of the year. Their post says it ends Nov 30 at midnight GMT.",
     sample:null,
@@ -6880,7 +6880,7 @@ const BF_OFFERS = [
     url:"https://gabarworld.com/"
   },
   {
-    id:"scenttrunk", via:"Their Instagram post", name:"Scent Trunk", kind:"Fragrance house",
+    id:"scenttrunk", house:"scent-trunk", via:"Their Instagram post", name:"Scent Trunk", kind:"Fragrance house",
     deal:"30% off all fragrances",
     terms:"Their Black Friday post, shared with the Whisper of Melancholy collection. The link to shop is in their bio. Dates are not in the post.",
     sample:null, caution:null, check:true,
@@ -6888,7 +6888,7 @@ const BF_OFFERS = [
     url:"https://scenttrunk.com/"
   },
   {
-    id:"fyaf", via:"Their Instagram post", name:"Free Yourself and Flourish", kind:"Fragrance brand",
+    id:"fyaf", house:"free-yourself", via:"Their Instagram post", name:"Free Yourself and Flourish", kind:"Fragrance brand",
     deal:"Free 15 mL with a full-size bottle",
     terms:"Buy a full-size fragrance from the Elements Collection and get a free 15 mL travel size of the same scent. Buy one from the Mindful Collection and get a free 15 mL refill of the same scent. Black Friday through Cyber Monday, while supplies last.",
     sample:null, caution:null,
@@ -6904,7 +6904,7 @@ const BF_OFFERS = [
     url:"https://www.brownsugarbabe.net/"
   },
   {
-    id:"andreamaack", via:"Their Instagram post", name:"Andrea Maack", kind:"Fragrance house",
+    id:"andreamaack", house:"andrea-maack", via:"Their Instagram post", name:"Andrea Maack", kind:"Fragrance house",
     deal:"30% off sitewide",
     terms:"They call it their biggest sale of the year. Dates are not in the post image.",
     sample:null, caution:null, check:true,
@@ -6912,7 +6912,7 @@ const BF_OFFERS = [
     url:"https://andreamaack.com/"
   },
   {
-    id:"nemat", via:"Their Instagram post", name:"Nemat", kind:"Artisan perfumery",
+    id:"nemat", house:"nemat-international", via:"Their Instagram post", name:"Nemat", kind:"Artisan perfumery",
     deal:"25% off sitewide",
     terms:"Their post says the Black Friday sale is live and calls it their biggest sale of the year. Dates are not in the post image.",
     sample:null, caution:null, check:true,
@@ -6928,7 +6928,7 @@ const BF_OFFERS = [
     url:"https://stateofmind.fr/"
   },
   {
-    id:"jscent", via:"Their Instagram post", name:"J-Scent", kind:"Fragrance house",
+    id:"jscent", house:"j-scent", via:"Their Instagram post", name:"J-Scent", kind:"Fragrance house",
     deal:"10% off storewide",
     terms:"Their post says Nov 27 to Nov 30.",
     sample:null, caution:"Shipping is within the United States only.",
@@ -6936,7 +6936,7 @@ const BF_OFFERS = [
     url:"https://j-scent-global.com/"
   },
   {
-    id:"heretic", via:"Their Instagram post", name:"Heretic Parfum", kind:"Fragrance house",
+    id:"heretic", house:"heretic-parfum", via:"Their Instagram post", name:"Heretic Parfum", kind:"Fragrance house",
     deal:"30% off sitewide",
     terms:"Their post says limited time only. Dates are not in the post image.",
     sample:null, caution:null, check:true,
@@ -6944,7 +6944,7 @@ const BF_OFFERS = [
     url:"https://hereticparfum.com/"
   },
   {
-    id:"histoires", via:"Their website and Instagram story", name:"Histoires de Parfums", kind:"Fragrance house",
+    id:"histoires", house:"histoires-de-parfums", via:"Their website and Instagram story", name:"Histoires de Parfums", kind:"Fragrance house",
     deal:"20% off up to $299, 30% off from $300",
     terms:"Early access for their email list. Sign up with your email, and on Thursday Nov 26 at 10am ET you get an email that your access is open. Log in with the same address and the discount applies in your cart. It runs until Monday Nov 30 at midnight ET.",
     sample:null, caution:null,
@@ -6952,7 +6952,7 @@ const BF_OFFERS = [
     url:"https://usa.histoiresdeparfums.com/"
   },
   {
-    id:"mataha", via:"Their Instagram story", name:"Maison Mataha", kind:"Fragrance house, Paris",
+    id:"mataha", house:"maison-mataha", via:"Their Instagram story", name:"Maison Mataha", kind:"Fragrance house, Paris",
     deal:"Free discovery set and free worldwide shipping with every order",
     terms:"Their story calls it an invitation to discover the house. Dates are not in the story.",
     sample:"A complimentary discovery set comes with every order.",
@@ -6961,7 +6961,7 @@ const BF_OFFERS = [
     url:"https://maisonmataha.com/en-int"
   },
   {
-    id:"imaginary", via:"Their Instagram post", name:"Imaginary Authors", kind:"Fragrance house",
+    id:"imaginary", house:"imaginary-authors", via:"Their Instagram post", name:"Imaginary Authors", kind:"Fragrance house",
     deal:"Free limited fragrance with $100 spend",
     terms:"Spend $100 on their website and receive their newest, exclusive and extremely limited fragrance, Longing For Light. Dates are not in the post.",
     sample:null, caution:null, check:true,
@@ -6969,7 +6969,7 @@ const BF_OFFERS = [
     url:"https://imaginaryauthors.com/"
   },
   {
-    id:"granado", via:"Their Instagram posts", name:"Granado", kind:"Fragrance house, Rio de Janeiro",
+    id:"granado", house:"granado", via:"Their Instagram posts", name:"Granado", kind:"Fragrance house, Rio de Janeiro",
     deal:"Up to 30% off selected products",
     terms:"Their Tropical Friday story says up to 30% off selected products, and shows free shipping over $50 and free samples. An earlier post of theirs showed 50% off with Rosa Sublime. Neither gives dates.",
     sample:"Their story lists free samples.", caution:"The two posts give different discounts, so check their page for what applies to which products.", check:true,
@@ -6993,7 +6993,7 @@ const BF_OFFERS = [
     url:"https://www.reinventedparfums.com/"
   },
   {
-    id:"boysmells", via:"Their Instagram story", name:"Boy Smells", kind:"Fragrance and candle house",
+    id:"boysmells", house:"boy-smells", via:"Their Instagram story", name:"Boy Smells", kind:"Fragrance and candle house",
     deal:"30% off almost everything",
     terms:"Their story says 30% off almost everything, online and in stores. Dates are not in the story.",
     sample:null, caution:null, check:true,
@@ -7001,7 +7001,7 @@ const BF_OFFERS = [
     url:"https://boysmells.com/"
   },
   {
-    id:"ellisbrooklyn", via:"Their Instagram post", name:"Ellis Brooklyn", kind:"Fragrance house, Brooklyn",
+    id:"ellisbrooklyn", house:"ellis-brooklyn", via:"Their Instagram post", name:"Ellis Brooklyn", kind:"Fragrance house, Brooklyn",
     deal:"Black Friday sale starts Nov 24",
     terms:"Their post says Black Friday kicks off Nov 24, exclusively on their website. The discount and the end date are not in the post.",
     sample:null, caution:null, check:true,
@@ -7009,7 +7009,7 @@ const BF_OFFERS = [
     url:"https://ellisbrooklyn.com/"
   },
   {
-    id:"regime", via:"Their Instagram story and post", name:"Régime des Fleurs", kind:"Fragrance house",
+    id:"regime", house:"regime-des-fleurs", via:"Their Instagram story and post", name:"Régime des Fleurs", kind:"Fragrance house",
     deal:"25% off any 75 mL eau de parfum",
     terms:"They call it their one and only sale. Their post says it runs from Friday Nov 20 to the end of Monday Nov 30, and their story shows the 25% on any 75 mL eau de parfum.",
     sample:null, caution:null,
@@ -7017,7 +7017,7 @@ const BF_OFFERS = [
     url:"https://regimedesfleurs.com/"
   },
   {
-    id:"sergelutens", via:"Their Instagram story", name:"Serge Lutens", kind:"Fragrance house",
+    id:"sergelutens", house:"serge-lutens", via:"Their Instagram story", name:"Serge Lutens", kind:"Fragrance house",
     deal:"20% off",
     terms:"Their story says Black Friday 20% off. Dates and what it covers are not in the story.",
     sample:null, caution:null, check:true,
@@ -7025,7 +7025,7 @@ const BF_OFFERS = [
     url:"https://sergelutens.com/collections/black-friday"
   },
   {
-    id:"maisonmatine", via:"Their Instagram story", name:"Maison Matine", kind:"Fragrance house",
+    id:"maisonmatine", house:"maison-matine", via:"Their Instagram story", name:"Maison Matine", kind:"Fragrance house",
     deal:"A free scented candle with a 50 mL or 100 mL perfume",
     terms:"Their story says the offer lasts while stocks last, this week only. Exact dates are not in the story.",
     sample:null, caution:"Limited stock.", check:true,
@@ -7033,7 +7033,7 @@ const BF_OFFERS = [
     url:"https://maisonmatine.us/"
   },
   {
-    id:"jusbox", via:"Their Instagram story and website", name:"Jusbox Perfumes", kind:"Fragrance house",
+    id:"jusbox", house:"jusbox", via:"Their Instagram story and website", name:"Jusbox Perfumes", kind:"Fragrance house",
     deal:"A free Travel Size Kit with a 78 mL fragrance",
     terms:"For their community only. Until Nov 27, newsletter subscribers get a Travel Size Kit of their choice, three 7.8 mL, free with the purchase of a 78 mL fragrance. Subscribe on their site to join.",
     sample:null, caution:null,
@@ -7041,7 +7041,7 @@ const BF_OFFERS = [
     url:"https://jusboxperfumes.com/"
   },
   {
-    id:"twentysecondofmay", via:"Their Instagram story", name:"Twenty Second of May", kind:"Fragrance house",
+    id:"twentysecondofmay", house:"twenty-second-of-may", via:"Their Instagram story", name:"Twenty Second of May", kind:"Fragrance house",
     deal:"A free Discovery Set with every full-size fragrance order",
     terms:"Their Black Week exclusive. Shipping is free, and it runs until Monday Nov 30.",
     sample:"The Discovery Set lets you try their scents in small bottles.", caution:null,
@@ -7098,6 +7098,49 @@ function BetaSignupCard({ heading = "Join the beta list", note = "Just your firs
   );
 }
 
+function bfFragName(r) {
+  if (r.display_name) return r.display_name;
+  return String(r.fragrance_slug || "").replace(/-/g, " ").replace(/\b\w/g, c => c.toUpperCase()).replace(/\bEdp\b/g, "EDP").replace(/\bEdt\b/g, "EDT");
+}
+
+// Add a fragrance to a brand's wishlist. Searches that brand's fragrances (names only, 3+ letters), or saves what was typed.
+function BfFragranceAdd({ o, have, onAdd }) {
+  const [v, setV] = useState("");
+  const [res, setRes] = useState(null);
+  useEffect(() => {
+    const q = v.trim();
+    if (!o.house || q.length < 3) { setRes(null); return; }
+    let live = true;
+    const t = setTimeout(async () => {
+      try {
+        const r = await supabase.rpc("bf_search_fragrances", { p_house:o.house, p_q:q });
+        if (live) setRes(r.error || !Array.isArray(r.data) ? null : r.data.map(bfFragName));
+      } catch (e) { if (live) setRes(null); }
+    }, 250);
+    return () => { live = false; clearTimeout(t); };
+  }, [v, o.house]);
+  const add = text => { const t = String(text).trim().slice(0, 60); if (!t) return; onAdd(t); setV(""); setRes(null); };
+  const shown = (res || []).filter(n => !have.some(h => String(h).toLowerCase() === n.toLowerCase()));
+  return (
+    <div>
+      <div style={{ display:"flex", gap:8 }}>
+        <input value={v} onChange={e => setV(e.target.value)} onKeyDown={e => { if (e.key === "Enter") add(v); }} placeholder={o.house ? "Search their fragrances" : "Fragrance name"} maxLength={60} aria-label={`Add a fragrance from ${o.name}`} style={{ ...FIELD, flex:1, minWidth:0 }}/>
+        <button onClick={() => add(v)} style={{ ...ghostBtn, minHeight:48, padding:"0 18px" }}>Add</button>
+      </div>
+      {shown.length > 0 && (
+        <ul style={{ listStyle:"none", padding:0, margin:"8px 0 0", display:"flex", flexDirection:"column", gap:6 }}>
+          {shown.map(n => (
+            <li key={n}><button onClick={() => add(n)} style={{ width:"100%", textAlign:"left", minHeight:44, padding:"0 14px", borderRadius:12, border:`1px solid ${T.rule}`, background:T.white, color:T.ink, fontFamily:sans, fontSize:15, cursor:"pointer" }}>{n}</button></li>
+          ))}
+        </ul>
+      )}
+      <p style={{ fontSize:12, color:T.mid, lineHeight:1.6, margin:"8px 0 0" }}>
+        {res && res.length === 0 && v.trim().length >= 3 ? "No match in our library. Tap Add to save what you typed." : o.house ? "Pick a result, or type any name and tap Add." : "Type the name and tap Add."}
+      </p>
+    </div>
+  );
+}
+
 const BF_KEY = "mos-bf-list-v1";
 function bfLoad() {
   try {
@@ -7112,22 +7155,20 @@ function BlackFridayGuide({ embedded = false }) {
   const list = BF_OFFERS.filter(o => !o.hidden).map((o, i) => ({ o, i, st:bfStatus(o, now) })).sort((a, b) => a.o.name.localeCompare(b.o.name, "en", { sensitivity:"base", ignorePunctuation:true }) || (a.i - b.i));
   const [mine, setMine] = useState(bfLoad);
   const [view, setView] = useState("all");
-  const [draft, setDraft] = useState({});
   const [confirmId, setConfirmId] = useState(null);
   useEffect(() => { try { window.localStorage.setItem(BF_KEY, JSON.stringify(mine)); } catch (e) { /* storage unavailable */ } }, [mine]);
   const wishOf = id => (Array.isArray(mine.wish[id]) ? mine.wish[id] : []);
   const inList = id => mine.saved.includes(id) || wishOf(id).length > 0;
   const myList = list.filter(({ o }) => inList(o.id));
   const toggleSave = id => setMine(m => ({ ...m, saved:m.saved.includes(id) ? m.saved.filter(x => x !== id) : [...m.saved, id] }));
-  const addFrag = id => {
-    const t = (draft[id] || "").trim().slice(0, 60);
+  const addFrag = (id, text) => {
+    const t = String(text || "").trim().slice(0, 60);
     if (!t) return;
     setMine(m => {
       const cur = Array.isArray(m.wish[id]) ? m.wish[id] : [];
       if (cur.length >= 20 || cur.some(x => String(x).toLowerCase() === t.toLowerCase())) return m;
       return { ...m, wish:{ ...m.wish, [id]:[...cur, t] } };
     });
-    setDraft(d => ({ ...d, [id]:"" }));
   };
   const removeFrag = (id, t) => setMine(m => ({ ...m, wish:{ ...m.wish, [id]:(Array.isArray(m.wish[id]) ? m.wish[id] : []).filter(x => x !== t) } }));
   const removeBrand = id => { setConfirmId(null); setMine(m => { const w = { ...m.wish }; delete w[id]; return { saved:m.saved.filter(x => x !== id), wish:w }; }); };
@@ -7179,10 +7220,7 @@ function BlackFridayGuide({ embedded = false }) {
                       ))}
                     </ul>
                   )}
-                  <div style={{ display:"flex", gap:8 }}>
-                    <input value={draft[o.id] || ""} onChange={e => setDraft(d => ({ ...d, [o.id]:e.target.value }))} onKeyDown={e => { if (e.key === "Enter") addFrag(o.id); }} placeholder="Fragrance name" maxLength={60} aria-label={`Add a fragrance from ${o.name}`} style={{ ...FIELD, flex:1, minWidth:0 }}/>
-                    <button onClick={() => addFrag(o.id)} style={{ ...ghostBtn, minHeight:48, padding:"0 18px" }}>Add</button>
-                  </div>
+                  <BfFragranceAdd o={o} have={wishOf(o.id)} onAdd={t => addFrag(o.id, t)}/>
                 </div>
               )}
             </article>
