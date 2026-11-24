@@ -6735,7 +6735,7 @@ const BF_OFFERS = [
     terms:"Their Black Friday Ritual Week. The post also points to the new Vanille de Malagasy coffret set.",
     sample:null, caution:"The code applies to the full-size Thé à Casablanca only.", check:true,
     starts:null, ends:null, dates:"Ritual Week, end date not in their post", startsLabel:"", code:"MF20",
-    url:"https://www.instagram.com/maisonfide/", cta:"Open Maison Fidé on Instagram"
+    url:"https://maisonfide.com/"
   },
   {
     id:"houseofbo", via:"Their Instagram story", name:"House of BO", kind:"Fragrance brand",
@@ -6885,7 +6885,7 @@ const BF_OFFERS = [
     terms:"Their Black Friday post, shared with the Whisper of Melancholy collection. The link to shop is in their bio. Dates are not in the post.",
     sample:null, caution:null, check:true,
     starts:null, ends:null, dates:"Dates not in their post", startsLabel:"", code:"No code listed",
-    url:"https://www.instagram.com/scenttrunk/", cta:"Open Scent Trunk on Instagram"
+    url:"https://scenttrunk.com/"
   },
   {
     id:"fyaf", via:"Their Instagram post", name:"Free Yourself and Flourish", kind:"Fragrance brand",
@@ -6958,7 +6958,7 @@ const BF_OFFERS = [
     sample:"A complimentary discovery set comes with every order.",
     caution:null, check:true,
     starts:null, ends:null, dates:"Dates not in their story", startsLabel:"", code:"No code listed",
-    url:"https://www.instagram.com/maisonmataha/", cta:"Open Maison Mataha on Instagram"
+    url:"https://maisonmataha.com/en-int"
   },
   {
     id:"imaginary", via:"Their Instagram post", name:"Imaginary Authors", kind:"Fragrance house",
@@ -6990,7 +6990,7 @@ const BF_OFFERS = [
     terms:"Their story says to subscribe for early access, and that terms and conditions apply. The discount and the dates are not in the story.",
     sample:null, caution:null, check:true,
     starts:null, ends:null, dates:"Dates not in their story", startsLabel:"", code:"Subscribe for early access",
-    url:"https://www.instagram.com/reinventedparfums/", cta:"Open Reinvented Parfums on Instagram"
+    url:"https://www.reinventedparfums.com/"
   },
   {
     id:"boysmells", via:"Their Instagram story", name:"Boy Smells", kind:"Fragrance and candle house",
