@@ -6076,9 +6076,10 @@ function LearnTab({ fragrances, onOpenFrag, onOpenBrand }) {
   const [openTerm,setOpenTerm]=useState(null);
   const [openExpo,setOpenExpo]=useState(null);
   const [openNote,setOpenNote]=useState(null);
-  const [tab,setTab]=useState("ingredients");
+  const bfOn=Date.now()<BF_TAB_UNTIL;
+  const [tab,setTab]=useState(bfOn?"blackfriday":"ingredients");
   const todayTerm=GLOSSARY[Math.floor((Date.now()-new Date().getTimezoneOffset()*60000)/86400000)%GLOSSARY.length];
-  const LEARN_TABS=[["ingredients","Ingredient guide"],["stores","Fragrance stores"],["expos","Fragrance expos"],["articles","Articles"]];
+  const LEARN_TABS=[...(bfOn?[["blackfriday","Black Friday"]]:[]),["ingredients","Ingredient guide"],["stores","Fragrance stores"],["expos","Fragrance expos"],["articles","Articles"]];
   if (openNote) return <IngredientGuide name={openNote} onBack={()=>setOpenNote(null)} fragrances={fragrances} onOpenFrag={onOpenFrag}/>;
   return (
     <div>
@@ -6098,6 +6099,7 @@ function LearnTab({ fragrances, onOpenFrag, onOpenBrand }) {
           <button key={k} role="tab" aria-selected={tab===k} onClick={()=>setTab(k)} style={{fontFamily:sans,fontSize:13,fontWeight:tab===k?600:500,letterSpacing:"0.04em",color:tab===k?T.black:T.mid,background:"none",border:"none",borderBottom:`2px solid ${tab===k?T.black:"transparent"}`,padding:"0 16px",minHeight:46,whiteSpace:"nowrap",cursor:"pointer",flexShrink:0,marginBottom:-1}}>{l}</button>
         ))}
       </div>
+      {tab==="blackfriday"&&<BlackFridayGuide embedded/>}
       {tab==="stores"&&<StoreFinder onOpenBrand={onOpenBrand}/>}
       {tab==="ingredients"&&<>
       <NotesBrowser onOpen={setOpenNote}/>
@@ -6572,6 +6574,255 @@ function LoadingScreen() {
         <div className="mos-spin" style={{ width:34, height:34, borderRadius:"50%", border:`2px solid ${T.rule}`, borderTopColor:T.black, margin:"0 auto", animationDuration:"0.9s" }}/>
         <div style={{ marginTop:18 }}><Wordmark size={22}/></div>
       </div>
+    </div>
+  );
+}
+
+// ─── BLACK FRIDAY GUIDE ───────────────────────────────────────────────────────
+// Shown in two places: Learn > Black Friday (members) and the public page memoironskin.com/black-friday (no account).
+// Every offer was checked against the brand's own page. To add or change one, edit BF_OFFERS and BF_CHECKED below.
+const BF_URL = "https://www.memoironskin.com/black-friday";
+const BF_CHECKED = "Nov 23, 2026";
+const BF_TAB_UNTIL = new Date("2026-12-04T00:00:00-05:00").getTime();
+const BF_OFFERS = [
+  {
+    id:"xtrait", via:"Their website", name:"Xtrait Perfumery", kind:"Independent boutique, West Hartford, Connecticut",
+    deal:"Up to 20% off",
+    terms:"10% off anything. 15% off orders over $100. 20% off orders over $200. It applies at checkout and needs no code.",
+    sample:"Sells 1.5 mL samples. The discount covers samples, and they count toward your order total.",
+    caution:"A few houses are excluded or capped at a lower tier, and their page lists them two different ways. Check before you build a cart.",
+    starts:"2026-11-27T00:00:00-05:00", ends:"2026-11-30T23:59:59-05:00", dates:"Nov 27 to Nov 30", startsLabel:"Nov 27", code:"No code needed",
+    url:"https://xtraitperfumery.com/pages/black-friday"
+  },
+  {
+    id:"wyldnotes", via:"Their website", name:"Wyld Notes", kind:"Fragrance house",
+    deal:"20% off select fragrances",
+    terms:"Also 20% off the Discovery Set, and up to $40 off sets and duos.",
+    sample:"The Discovery Set holds five 1.5 mL samples, one of each scent.",
+    caution:"Select items only. Discovery Sets are not returnable.",
+    starts:null, ends:"2026-11-30T23:59:59-05:00", dates:"Through Nov 30", startsLabel:"", code:"See their page",
+    url:"https://wyldnotes.com/"
+  },
+  {
+    id:"allyours", via:"Their website", name:"All Yours", kind:"Niche perfume retailer, prices in euros",
+    deal:"Sale prices on selected niche perfumes",
+    terms:"Their page shows reduced prices rather than a percentage, and lists no code.",
+    sample:null,
+    caution:"The delivery times on their page are for Spain. Check shipping to your country before you order.",
+    starts:"2026-11-24T00:00:00+01:00", ends:"2026-11-30T23:59:59+01:00", dates:"Nov 24 to Nov 30", startsLabel:"Nov 24", code:"No code listed",
+    url:"https://www.allyours.com/en/pages/black-friday-perfumes-nicho"
+  },
+  {
+    id:"skylar", via:"Their website", name:"Skylar", kind:"Fragrance house",
+    deal:"25% off sitewide",
+    terms:"Use the code at checkout.",
+    sample:null, caution:null,
+    starts:null, ends:null, dates:"End date not listed on their page", startsLabel:"", code:"BFCM26",
+    url:"https://skylar.com/"
+  },
+  {
+    id:"bluemercury", via:"Their website", name:"Bluemercury", kind:"Retailer with niche and designer shelves",
+    deal:"Up to 30% off almost everything",
+    terms:"That is the headline on their site. Tiers, dates and exclusions are on their Black Friday fragrance page.",
+    sample:null, caution:null,
+    starts:null, ends:null, dates:"Dates not confirmed", startsLabel:"", code:"See their page",
+    url:"https://bluemercury.com/pages/shop-black-friday-fragrance"
+  },
+  {
+    id:"thirdeye", via:"Their Instagram post, Nov 23", name:"Third Eye Fragrance Co", kind:"Fragrance house, Orlando, Florida",
+    deal:"20% off store wide",
+    terms:"Applied automatically at checkout. Their post marks it with an asterisk, so read the terms on their site.",
+    sample:null, caution:null,
+    starts:null, ends:"2026-11-30T08:00:00-05:00", dates:"Through Nov 30, 8am ET", startsLabel:"", code:"No code needed",
+    url:"https://www.thirdeyefragranceco.com/"
+  },
+  {
+    id:"ath", via:"Their Instagram post", name:"Aaron Terence Hughes", kind:"Independent British perfume house",
+    deal:"20% off everything",
+    terms:"Unicorn Weekend. It covers the UK and the US, all weekend or until sold out.",
+    sample:null, caution:"Their post gives no end time. When a scent sells out, it is gone.",
+    starts:"2026-11-27T00:00:00-05:00", ends:null, dates:"From Nov 27, all weekend", startsLabel:"Nov 27", code:"Not listed",
+    url:"https://aaronterencehughes.co.uk/"
+  },
+  {
+    id:"bgj", via:"Their Instagram post", name:"Brown Girl Jane", kind:"Black-owned fragrance house",
+    deal:"Up to 30% off",
+    terms:"Their post says up to 30% off during their Black Friday sale. Dates are not in the post.",
+    sample:null, caution:null, check:true,
+    starts:null, ends:null, dates:"Dates not in their post", startsLabel:"", code:"Not listed",
+    url:"https://browngirljane.com/"
+  },
+  {
+    id:"elysian", via:"Their Instagram post", name:"Elysian Parfums", kind:"Indie fragrance house",
+    deal:"25% off six fragrances",
+    terms:"The Vault: Sucre de Soie, Sombre Douceur, Jalous, Cafe Avellana, Charmante and Black Gardenia at 25% off before they are locked away. Orders of $250 or more get a surprise 10 mL.",
+    sample:null, caution:"Early access is through the sign-up link in their Instagram bio.",
+    starts:"2026-11-27T00:00:00-05:00", ends:"2026-11-30T23:59:59-05:00", dates:"Nov 27 to Nov 30", startsLabel:"Nov 27", code:"Early access list",
+    url:"https://www.instagram.com/elysianparfums/", cta:"Open Elysian on Instagram"
+  },
+  {
+    id:"hiramgreen", via:"His Instagram post", name:"Hiram Green", kind:"Independent natural perfumer, the Netherlands",
+    deal:"20% off all 50 mL fragrances",
+    terms:"He runs this once a year. Every 50 mL also comes with two complimentary add-ons, listed in his post.",
+    sample:null, caution:"The code comes when you sign up for his newsletter at hiramgreen.com.",
+    starts:"2026-11-27T00:00:00+01:00", ends:"2026-11-30T23:59:59+01:00", dates:"Nov 27 to Nov 30", startsLabel:"Nov 27", code:"Newsletter sign-up",
+    url:"https://hiramgreen.com/"
+  },
+  {
+    id:"anjali", via:"Her Instagram post", name:"Anjali Perfumes", kind:"Woman-owned independent house, Bainbridge Island, Washington",
+    deal:"30% off, free shipping",
+    terms:"No code needed. She runs one sale a year.",
+    sample:"During the sale only the Discovery Set of All Samples is available. The sets of 5, 7 and 9 samples are not.",
+    caution:"No complimentary sample comes with a bottle during the sale, and Starlight Sesame is excluded.",
+    starts:"2026-11-27T09:00:00-08:00", ends:"2026-11-30T23:59:00-08:00", dates:"Nov 27 to Nov 30", startsLabel:"Nov 27, 9am PT", code:"No code needed",
+    url:"https://anjaliperfumes.com/"
+  },
+];
+function bfStatus(o, now) {
+  if (o.ends && now > new Date(o.ends).getTime()) return "ended";
+  if (o.starts && now < new Date(o.starts).getTime()) return "soon";
+  if (o.check) return "check";
+  return "live";
+}
+
+function BetaSignupCard({ heading = "Join the beta list", note = "Just your first name and email. No password, no payment." }) {
+  const [email, setEmail] = useState("");
+  const [name, setName] = useState("");
+  const [done, setDone] = useState(false);
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+  const okEmail = v => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v.trim());
+  async function submit() {
+    if (!name.trim()) { setError("Please add your first name."); return; }
+    if (!okEmail(email)) { setError("Please enter a valid email address."); return; }
+    setError(""); setLoading(true);
+    const r = await supabase.rpc("join_waitlist", { p_email: email.trim(), p_name: name.trim(), p_src: getSrc() || "blackfriday" });
+    setLoading(false);
+    if (r.error) { setError("That didn't go through. Try again in a moment."); return; }
+    setDone(true);
+  }
+  const inp = { ...FIELD, minHeight:52 };
+  return (
+    <div id="bf-join" style={{ background:T.white, border:`1px solid ${T.rule}`, borderRadius:22, padding:"22px 20px", textAlign:"left" }}>
+      {!done ? (<>
+        <p style={{ fontFamily:serif, fontSize:22, color:T.black, margin:"0 0 4px" }}>{heading}</p>
+        <p style={{ fontSize:13, color:T.mid, lineHeight:1.6, margin:"0 0 16px" }}>{note}</p>
+        <div style={{ display:"flex", flexDirection:"column", gap:10, marginBottom:12 }}>
+          <input value={name} onChange={e => { setName(e.target.value); setError(""); }} placeholder="First name" autoComplete="given-name" style={inp} onKeyDown={e => e.key === "Enter" && submit()}/>
+          <input value={email} onChange={e => { setEmail(e.target.value); setError(""); }} placeholder="Email address" type="email" autoComplete="email" style={inp} onKeyDown={e => e.key === "Enter" && submit()}/>
+        </div>
+        {error && <p role="alert" style={{ fontSize:13, color:T.bad, margin:"0 0 10px" }}>{error}</p>}
+        <button onClick={submit} disabled={loading} style={ctaBtn(!loading)}>{loading ? "Joining…" : "Save my spot"}</button>
+        <p style={{ fontSize:12, color:T.faint, lineHeight:1.6, margin:"12px 0 0", textAlign:"center" }}>One email when your spot opens. Nothing else, and we never share it.</p>
+      </>) : (
+        <div style={{ textAlign:"center", padding:"8px 0" }}>
+          <div style={{ width:52, height:52, borderRadius:"50%", background:"var(--accent)", display:"flex", alignItems:"center", justifyContent:"center", margin:"0 auto 14px" }}>
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+          </div>
+          <p style={{ fontFamily:serif, fontSize:24, color:T.black, margin:"0 0 6px" }}>You're on the list, {name.trim()}.</p>
+          <p style={{ fontSize:14, color:T.mid, lineHeight:1.65, margin:0 }}>We will write to <strong style={{ color:T.black, fontWeight:500 }}>{email.trim()}</strong> when your spot opens. The sales below are yours to look through in the meantime.</p>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function BlackFridayGuide({ embedded = false }) {
+  const [now] = useState(() => Date.now());
+  const [copied, setCopied] = useState(false);
+  const rank = { live:0, check:1, soon:2, ended:3 };
+  const list = BF_OFFERS.map((o, i) => ({ o, i, st:bfStatus(o, now) })).sort((a, b) => (rank[a.st] - rank[b.st]) || (a.i - b.i));
+  async function shareIt() {
+    try { if (navigator.share) { await navigator.share({ title:"Black Friday sales, sample first", url:BF_URL }); return; } } catch (e) { if (e && e.name === "AbortError") return; }
+    try { await navigator.clipboard.writeText(BF_URL); setCopied(true); setTimeout(() => setCopied(false), 2200); } catch (e) {}
+  }
+  const chip = st => st === "live"
+    ? { label:"On now", color:"var(--teal)", bg:"var(--tint-teal)" }
+    : st === "soon" ? { label:"Starts soon", color:"var(--violet)", bg:"var(--tint-violet)" }
+    : st === "check" ? { label:"Check dates", color:T.mid, bg:T.lift }
+    : { label:"Ended", color:T.faint, bg:T.lift };
+  return (
+    <div>
+      <div style={{ textAlign:embedded ? "left" : "center", margin:embedded ? "0 0 22px" : "0 0 26px" }}>
+        <p style={{ display:"inline-block", fontSize:11, fontWeight:600, letterSpacing:"0.16em", textTransform:"uppercase", color:"var(--accent)", background:T.lift, border:`1px solid ${T.rule}`, borderRadius:20, padding:"6px 14px", margin:"0 0 18px" }}>Black Friday 2026</p>
+        <h1 style={{ fontFamily:serif, fontWeight:400, fontSize:"clamp(38px, 8vw, 60px)", lineHeight:1.05, letterSpacing:-1.2, color:T.black, margin:"0 0 14px" }}>Black Friday, sample first.</h1>
+        <p style={{ fontSize:"clamp(15px, 2.2vw, 18px)", lineHeight:1.65, color:T.mid, margin:embedded ? "0 0 4px" : "0 auto", maxWidth:520 }}>Niche &amp; indie sales worth a look, each with a link straight to the brand. A discount only helps on a scent you like, so we note where you can try a sample first.</p>
+      </div>
+
+      {!embedded && <div style={{ margin:"0 0 30px" }}><BetaSignupCard heading="Join the beta list first" note="Memoir on Skin is where you sample, wear and keep your scents. Just your first name and email. No password, no payment."/></div>}
+
+      <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", gap:12, flexWrap:"wrap", margin:"0 0 14px" }}>
+        <p style={{ fontSize:12, color:T.mid, margin:0 }}>Checked against each brand's own page or post on {BF_CHECKED}.</p>
+        <button onClick={shareIt} style={{ ...ghostBtn, minHeight:40, padding:"0 16px", fontSize:13 }}>{copied ? "Link copied" : "Share this page"}</button>
+      </div>
+
+      <div style={{ display:"flex", flexDirection:"column", gap:14 }}>
+        {list.map(({ o, st }) => {
+          const c = chip(st);
+          const ended = st === "ended";
+          return (
+            <article key={o.id} style={{ background:T.white, border:`1px solid ${T.rule}`, borderRadius:20, padding:"20px 18px", opacity:ended ? 0.7 : 1 }}>
+              <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", gap:10, margin:"0 0 10px", flexWrap:"wrap" }}>
+                <span style={{ fontSize:11, fontWeight:600, letterSpacing:"0.12em", textTransform:"uppercase", color:c.color, background:c.bg, borderRadius:20, padding:"5px 12px" }}>{st === "soon" && o.startsLabel ? `Starts ${o.startsLabel}` : c.label}</span>
+                <span style={{ fontSize:12, color:T.mid }}>{o.dates}</span>
+              </div>
+              <h2 style={{ fontFamily:serif, fontWeight:400, fontSize:28, letterSpacing:-0.5, color:T.black, margin:"0 0 2px" }}>{o.name}</h2>
+              <p style={{ fontSize:13, color:T.mid, margin:"0 0 12px" }}>{o.kind}</p>
+              <p style={{ fontFamily:serif, fontSize:22, lineHeight:1.25, color:T.black, margin:"0 0 6px" }}>{o.deal}</p>
+              <p style={{ fontSize:14, color:T.mid, lineHeight:1.65, margin:"0 0 12px" }}>{o.terms}</p>
+              <p style={{ fontSize:12, color:T.faint, margin:"0 0 12px" }}>Source: {o.via}</p>
+              {o.sample && (
+                <p style={{ fontSize:14, color:T.ink, lineHeight:1.65, margin:"0 0 12px", paddingLeft:12, borderLeft:"3px solid var(--teal)" }}><strong style={{ fontWeight:600, color:"var(--teal)" }}>Try it first. </strong>{o.sample}</p>
+              )}
+              {o.caution && <p style={{ fontSize:13, color:T.mid, lineHeight:1.6, margin:"0 0 12px" }}>{o.caution}</p>}
+              <div style={{ display:"flex", alignItems:"center", gap:12, flexWrap:"wrap", margin:"14px 0 0" }}>
+                <a href={o.url} target="_blank" rel="noopener noreferrer" style={{ display:"inline-flex", alignItems:"center", justifyContent:"center", minHeight:48, padding:"0 22px", borderRadius:14, background:ended ? T.lift : "var(--accent)", color:ended ? T.mid : "#fff", fontFamily:sans, fontSize:15, fontWeight:600, textDecoration:"none" }}>{o.cta || `Go to ${o.name}`}</a>
+                <span style={{ fontSize:12, color:T.mid }}>Code: <strong style={{ color:T.black, fontWeight:600 }}>{o.code}</strong></span>
+              </div>
+            </article>
+          );
+        })}
+      </div>
+
+      <div style={{ margin:"26px 0 0", padding:"20px 18px", background:T.lift, border:`1px solid ${T.rule}`, borderRadius:20 }}>
+        <p style={{ fontFamily:serif, fontSize:20, lineHeight:1.3, color:T.black, margin:"0 0 8px" }}>We are not here to influence you. Trust your own nose.</p>
+        <p style={{ fontSize:13, color:T.mid, lineHeight:1.7, margin:"0 0 8px" }}>These are plain links to the brands. There are no affiliate codes on this page, and we earn nothing if you click. Sales change fast, so each brand's own page has the final word on dates, prices and exclusions.</p>
+        <p style={{ fontSize:13, color:T.mid, lineHeight:1.7, margin:0 }}>Running a sale, or spotted one we missed? Write to <a href="mailto:team@memoironskin.com" style={{ color:T.black, fontWeight:500 }}>team@memoironskin.com</a>.</p>
+      </div>
+
+      {!embedded && (
+        <div style={{ textAlign:"center", margin:"34px 0 0" }}>
+          <p style={{ fontFamily:serif, fontSize:"clamp(24px, 5vw, 32px)", letterSpacing:-0.5, color:T.black, margin:"0 0 8px" }}>Sample first. Remember always.</p>
+          <p style={{ fontSize:15, color:T.mid, lineHeight:1.65, margin:"0 0 18px" }}>Early members help shape what Memoir on Skin becomes.</p>
+          <button onClick={() => { try { document.getElementById("bf-join").scrollIntoView({ behavior:"smooth", block:"center" }); } catch (e) {} }} style={{ ...ctaBtn(true), maxWidth:320 }}>Join the beta list</button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function BlackFridayPage() {
+  // Same rule as the beta page: first-time visitors start on the dark page, and nothing is saved unless they press the toggle.
+  useEffect(() => {
+    let forced = false;
+    if (readThemePref() === "system") { forced = true; themeStore.pref = "dark"; paintTheme("dark"); themeStore.subs.forEach(f => f()); }
+    const prev = document.title;
+    document.title = "Black Friday sales, sample first | Memoir on Skin";
+    return () => {
+      document.title = prev;
+      if (forced && themeStore.pref === "dark" && readThemePref() === "system") { themeStore.pref = "system"; paintTheme("system"); themeStore.subs.forEach(f => f()); }
+    };
+  }, []);
+  return (
+    <div style={{ minHeight:"100svh", fontFamily:sans, color:T.ink }}>
+      <header style={{ maxWidth:760, margin:"0 auto", padding:"16px 20px", display:"flex", alignItems:"center", justifyContent:"space-between", gap:12 }}>
+        <a href="/" style={{ textDecoration:"none" }}><Logo size={18}/></a>
+        <ThemeToggle/>
+      </header>
+      <main style={{ maxWidth:760, margin:"0 auto", padding:"28px 20px 40px" }}>
+        <BlackFridayGuide/>
+      </main>
+      <div style={{ maxWidth:760, margin:"0 auto", padding:"0 20px 40px" }}><FooterLinks/></div>
     </div>
   );
 }
@@ -8395,6 +8646,8 @@ export default function SillageApp() {
   if (typeof window !== "undefined" && (window.location.hash === "#beta" || /^\/beta\/?$/.test(window.location.pathname))) return <LandingScreen onSignIn={() => { window.location.href = "/?join=1"; }} onHaveCode={() => { window.location.href = "/?join=1"; }}/>;
   // Public page for brands to submit their house and fragrances (memoironskin.com/brands). No account needed.
   if (typeof window !== "undefined" && (window.location.hash === "#brands" || /^\/brands\/?$/.test(window.location.pathname))) return <BrandSubmitPage/>;
+  // Public Black Friday sales page (memoironskin.com/black-friday). No account needed.
+  if (typeof window !== "undefined" && (window.location.hash === "#black-friday" || /^\/black-friday\/?$/.test(window.location.pathname))) return <BlackFridayPage/>;
   if (appScreen === "loading") return <LoadingScreen/>;
   if (appScreen === "waitlist" && wantsJoinLink()) return <LoginScreen onWaitlist={() => { window.location.href = window.location.pathname; }}/>;
   if (appScreen === "waitlist") return <LandingScreen onSignIn={() => { loginStart.mode = "signin"; setAppScreen("login"); }} onHaveCode={() => { loginStart.mode = "signup"; setAppScreen("login"); }}/>;
