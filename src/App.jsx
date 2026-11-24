@@ -6719,7 +6719,7 @@ const BF_OFFERS = [
     terms:"Their story calls it a Black Friday special. The offer details sit behind the See offer link.",
     sample:null, caution:null, check:true,
     starts:null, ends:null, dates:"Dates not in their story", startsLabel:"", code:"Not listed",
-    url:"https://www.instagram.com/kismet.olfactive/", cta:"Open Kismet Olfactive on Instagram"
+    url:"https://kismetolfactive.com/"
   },
   {
     id:"glossier", via:"Their Instagram story", name:"Glossier", kind:"Beauty brand with a fragrance line",
@@ -6833,7 +6833,7 @@ const BF_OFFERS = [
     sample:"Their Discovery Set lets you try before committing to a full-size parfum.",
     caution:"Their email says the early access code is for subscribers until Nov 26. Check their site for what follows.", check:true,
     starts:null, ends:null, dates:"Early access, end date not in their post", startsLabel:"", code:"Enter your email on their site",
-    url:"https://www.instagram.com/lepoqueparfums/", cta:"Open L'Epoque on Instagram"
+    url:"https://www.lepoqueparfums.com/"
   },
   {
     id:"carner", via:"Their Instagram post", name:"Carner Barcelona", kind:"Fragrance house, Barcelona",
@@ -6868,7 +6868,7 @@ const BF_OFFERS = [
     sample:"The Discovery Set holds all nine fragrances in 2.5 mL sprays, so you can give each a full day on your skin before you choose one.",
     caution:null, check:true,
     starts:null, ends:null, dates:"Dates not listed", startsLabel:"", code:"No code listed",
-    url:"https://www.instagram.com/maisondetto/", cta:"Open Maison d'Etto on Instagram"
+    url:"https://maisondetto.com/"
   },
   {
     id:"gabar", via:"Their Instagram post and story", name:"Gabar", kind:"Fragrance house",
