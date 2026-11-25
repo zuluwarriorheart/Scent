@@ -293,6 +293,7 @@ function Icon({ name, size=18, color=T.mid }) {
     layers: <svg viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="9" cy="12" r="6.2"/><circle cx="15" cy="12" r="6.2"/></svg>,
     book: <svg viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M2.5 4h6a3.5 3.5 0 013.5 3.5V21a2.5 2.5 0 00-2.5-2.5h-7z"/><path d="M21.5 4h-6A3.5 3.5 0 0012 7.5V21a2.5 2.5 0 012.5-2.5h7z"/></svg>,
     sliders: <svg viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><line x1="4" y1="7" x2="20" y2="7"/><circle cx="9" cy="7" r="2.3" fill={T.white}/><line x1="4" y1="17" x2="20" y2="17"/><circle cx="15" cy="17" r="2.3" fill={T.white}/></svg>,
+    sort: <svg viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M7 20V5M7 5L3.5 8.5M7 5l3.5 3.5M17 4v15M17 19l-3.5-3.5M17 19l3.5-3.5"/></svg>,
     spray: <svg viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><rect x="4" y="9" width="10" height="12" rx="2"/><path d="M14 13h2a2 2 0 002-2V9h-4"/><path d="M18 5v2"/><path d="M16 3h4"/><circle cx="18" cy="3" r="0.5" fill={color}/></svg>,
   };
   return <span style={s}>{icons[name] || null}</span>;
@@ -3523,6 +3524,60 @@ function SeeAllPill({ open, onClick, label = "See all" }) {
     </button>
   );
 }
+function SectionHero({ onBack, visual, title, sub, big, children }) {
+  return (
+    <div style={{ marginBottom:20 }}>
+      <BackBtn onBack={onBack} label="Back"/>
+      <div style={{ display:"flex", alignItems:"center", gap:"clamp(14px, 3vw, 28px)", background:T.lift, borderRadius:big ? 36 : 56, padding: big ? "22px clamp(18px, 3vw, 34px)" : "14px clamp(18px, 3vw, 34px)", boxShadow:"0 6px 18px rgba(0,0,0,0.14)" }}>
+        {visual && <div style={{ flex:"none", width: big ? "clamp(96px, 24vw, 160px)" : "clamp(52px, 12vw, 76px)", "--cover-w": big ? "clamp(96px, 24vw, 160px)" : undefined }}>{visual}</div>}
+        <div style={{ flex:1, minWidth:0 }}>
+          <h2 style={{ fontFamily:serif, fontSize:"clamp(28px, 4vw, 52px)", fontWeight:400, letterSpacing:-0.8, color:T.black, margin:0, lineHeight:1.1 }}>{title}</h2>
+          {sub && <p style={{ fontFamily:sans, fontSize:"clamp(13px, 1.1vw, 16px)", color:T.mid, margin:"6px 0 0", lineHeight:1.5 }}>{sub}</p>}
+          {children}
+        </div>
+      </div>
+    </div>
+  );
+}
+function ToolBtn({ icon, label, on, onClick, dot }) {
+  return (
+    <button onClick={onClick} aria-label={label} aria-pressed={!!on} style={{ position:"relative", flexShrink:0, width:52, borderRadius:14, border:`1.5px solid ${on ? T.accent : T.rule}`, background:on ? T.lift : T.white, cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center" }}>
+      <Icon name={icon} size={22} color={on ? T.accent : T.ink}/>
+      {dot && <span style={{ position:"absolute", top:8, right:8, width:9, height:9, borderRadius:"50%", background:T.accent }}/>}
+    </button>
+  );
+}
+function SearchRow({ value, onChange, onKeyDown, placeholder, label, filterOn, filterDot, onFilter, sortOn, onSort }) {
+  return (
+    <div style={{ display:"flex", gap:10, alignItems:"stretch", maxWidth:760, marginBottom:12 }}>
+      <div style={{ position:"relative", flex:1, minWidth:0 }}>
+        <span style={{ position:"absolute", left:14, top:"50%", transform:"translateY(-50%)", pointerEvents:"none" }}><Icon name="search" size={15} color={T.faint}/></span>
+        <input value={value} onChange={e => onChange(e.target.value)} onKeyDown={onKeyDown} placeholder={placeholder} aria-label={label}
+          style={{ width:"100%", background:T.white, border:`1.5px solid ${value ? T.accent : T.rule}`, borderRadius:14, padding:"14px 40px 14px 44px", fontSize:14, color:T.black, outline:"none", boxSizing:"border-box", fontFamily:serif }}/>
+        {value && <button onClick={() => onChange("")} aria-label="Clear" style={{ position:"absolute", right:14, top:"50%", transform:"translateY(-50%)", background:"none", border:"none", fontSize:14, color:T.mid, cursor:"pointer" }}>✕</button>}
+      </div>
+      {onFilter && <ToolBtn icon="sliders" label="Filters" on={filterOn} dot={filterDot} onClick={onFilter}/>}
+      {onSort && <ToolBtn icon="sort" label="Sort" on={sortOn} onClick={onSort}/>}
+    </div>
+  );
+}
+function NoteShelf({ title, blurb, keys, tinted, tile }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <section className={"mos-bleed" + (tinted ? " mos-band" : "")} style={{ padding:"26px 0 22px" }}>
+      <div className="mos-bleed-pad" style={{ marginBottom:16 }}>
+        <div style={{ display:"flex", alignItems:"center", flexWrap:"wrap", gap:"8px 14px" }}>
+          <h3 style={{ fontFamily:serif, fontSize:"clamp(26px, 2.3vw, 38px)", fontWeight:400, letterSpacing:-0.6, color:T.black, margin:0, lineHeight:1.1 }}>{title}</h3>
+          <SeeAllPill open={open} onClick={() => setOpen(v => !v)}/>
+        </div>
+        {blurb && <p style={{ fontFamily:sans, fontSize:"clamp(14px, 1.1vw, 17px)", color:T.mid, margin:"6px 0 0", lineHeight:1.5 }}>{blurb}</p>}
+      </div>
+      {open
+        ? <div className="mos-bleed-pad" style={{ display:"flex", flexWrap:"wrap", alignItems:"flex-start", gap:"22px 14px", paddingTop:2, paddingBottom:10 }}>{keys.map(tile)}</div>
+        : <div className="mos-shelf mos-bleed-pad" style={{ display:"flex", alignItems:"flex-start", gap:14, overflowX:"auto", paddingTop:2, paddingBottom:14, scrollSnapType:"x proximity", WebkitOverflowScrolling:"touch" }}>{keys.map(tile)}</div>}
+    </section>
+  );
+}
 function Shelf({ title, blurb, items, onOpenFrag, userStatuses, tinted, groups, loadMore }) {
   const [sel, setSel] = useState("All");
   const [open, setOpen] = useState(false);
@@ -4198,68 +4253,85 @@ function KitsShelf({ onOpenBrand, tinted }) {
 }
 
 // ─── DISCOVER > NOTES: pick a note, see every fragrance that has it ──────────
-function NotesFinder({ fragrances, onOpenFrag, userStatuses, onSearch }) {
+function NotesFinder({ fragrances, onOpenFrag, userStatuses, onSearch, onBackSection, heroVisual }) {
   const [guideOpen, setGuideOpen] = useState(null);
   const [q, setQ] = useState("");
   const [fam, setFam] = useState("All");
+  const [showFam, setShowFam] = useState(true);
+  const [rev, setRev] = useState(false);
   const [sel, setSel] = useState(null);
   const [items, setItems] = useState([]);
   const [total, setTotal] = useState(0);
   const [busy, setBusy] = useState(false);
+  const [ng, setNg] = useState("all");
+  const [showNg, setShowNg] = useState(false);
+  const [nq, setNq] = useState("");
+  const [nsort, setNsort] = useState(false);
   const cap = k => k.replace(/(^|[\s-])([a-z])/g, (m, p, c) => p + c.toUpperCase());
   const all = NOTE_PHOTO_PREVIEW ? NOTE_PHOTO_GALLERY : LEARN_NOTE_FALLBACK;
   const ql = q.trim().toLowerCase();
   const names = all.filter(k => (fam === "All" || (NOTE_FAMILY_OF[k] || "More") === fam) && (!ql || k.includes(ql)));
-  const localMatch = n => (fragrances || []).filter(f => f.notes && allNoteList(f.notes).some(x => String(x.n).toLowerCase().includes(n.toLowerCase())));
-  async function pick(n) {
-    setSel(n); setItems([]); setTotal(0); setBusy(true);
+  const localMatch = (n, g) => (fragrances || []).filter(f => f.notes && allNoteList(f.notes).some(x => String(x.n).toLowerCase().includes(n.toLowerCase())) && (g === "all" || houseGroups(f).includes(g)));
+  async function pick(n, g = "all") {
+    setSel(n); setNg(g); setItems([]); setTotal(0); setBusy(true);
+    if (g === "all") { setNq(""); setShowNg(false); setNsort(false); }
+    try { window.scrollTo({ top:0 }); } catch (e) {}
     try {
-      if (onSearch) { const r = await onSearch(n, "all", 0); setItems(r.items); setTotal(r.total); }
-      else { const r = localMatch(n); setItems(r); setTotal(r.length); }
+      if (onSearch) { const r = await onSearch(n, g, 0); setItems(r.items); setTotal(r.total); }
+      else { const r = localMatch(n, g); setItems(r); setTotal(r.length); }
     } catch (e) { console.error("Note search failed:", e); }
     setBusy(false);
   }
   async function more() {
     setBusy(true);
-    try { const r = await onSearch(sel, "all", items.length); setItems(p => [...p, ...r.items]); } catch (e) { console.error(e); }
+    try { const r = await onSearch(sel, ng, items.length); setItems(p => [...p, ...r.items]); } catch (e) { console.error(e); }
     setBusy(false);
   }
-  const chip = (on, label, fn) => (<button key={label} onClick={fn} aria-pressed={on} style={{ fontFamily:sans, fontSize:14, fontWeight:on?600:500, padding:"0 18px", minHeight:40, borderRadius:20, whiteSpace:"nowrap", border:`1px solid ${on?T.black:T.rule}`, background:on?T.black:T.white, color:on?T.white:T.ink, cursor:"pointer", flexShrink:0 }}>{label}</button>);
+  const chip = (on, label, fn) => (<button key={label} onClick={fn} aria-pressed={on} style={{ fontFamily:sans, fontSize:14, fontWeight:on?600:500, padding:"0 18px", minHeight:40, borderRadius:20, whiteSpace:"nowrap", border:`1px solid ${on?T.black:T.rule}`, background:on?T.black:T.white, color:on?T.white:T.ink, cursor:"pointer" }}>{label}</button>);
   const grid = { display:"grid", gridTemplateColumns:"repeat(auto-fill, var(--cover-w))", gap:"22px 14px", justifyContent:"start" };
   if (guideOpen) return <IngredientGuide name={guideOpen} onBack={() => setGuideOpen(null)} backLabel="Back to notes" fragrances={fragrances} onOpenFrag={onOpenFrag}/>;
   if (sel) {
     const guide = guideKey(sel);
+    const g = guide && INGREDIENTS[guide];
+    const famName = NOTE_FAMILY_OF[String(sel).toLowerCase()];
+    const needle = nq.trim().toLowerCase();
+    let shownItems = items.filter(f => !needle || [f.name, f.house].some(v => String(v || "").toLowerCase().includes(needle)));
+    if (nsort) shownItems = [...shownItems].sort((a, b) => String(a.name).localeCompare(String(b.name)));
+    const relKeys = famName ? all.filter(k => NOTE_FAMILY_OF[k] === famName && k !== String(sel).toLowerCase()).sort((a, b) => a.localeCompare(b)) : [];
+    const relTile = k => <button key={k} onClick={() => pick(k)} aria-label={`Fragrances with ${k}`} style={{ flex:"none", width:TILE_W, background:"none", border:"none", padding:0, cursor:"pointer", textAlign:"left", fontFamily:sans, scrollSnapAlign:"start" }}><NoteIllustration name={k} tile/></button>;
     return (
       <div>
-        <BackBtn onBack={() => setSel(null)} label="All notes"/>
-        <div style={{ display:"flex", gap:"20px 28px", alignItems:"flex-start", flexWrap:"wrap", marginBottom:24 }}>
-          <div style={{ flex:"1 1 240px", minWidth:0 }}>
-            <h3 style={{ fontFamily:serif, fontSize:"clamp(28px, 3vw, 44px)", fontWeight:400, letterSpacing:-0.6, color:T.black, margin:0, lineHeight:1.1 }}>{cap(sel)}</h3>
-            <p style={{ fontFamily:sans, fontSize:14, color:T.mid, margin:"8px 0 0", lineHeight:1.5 }}>{busy && !items.length ? "Looking…" : `${total} fragrance${total === 1 ? "" : "s"} with this note.`}</p>
-            {guide && <button onClick={() => setGuideOpen(guide)} style={{ marginTop:12, fontFamily:sans, fontSize:12, fontWeight:600, letterSpacing:"0.14em", textTransform:"uppercase", color:T.accent, background:"none", border:`1px solid ${T.accent}`, borderRadius:20, padding:"8px 16px", cursor:"pointer" }}>Read the {guide} guide</button>}
-          </div>
-        </div>
-        {items.length > 0 && <div style={grid}>{items.map(f => <CoverTile key={f.id} frag={f} onClick={onOpenFrag} userStatus={userStatuses && userStatuses[f.id]}/>)}</div>}
+        <SectionHero big onBack={() => setSel(null)} title={cap(sel)}
+          visual={<NoteIllustration name={sel} tile noLabel/>}
+          sub={[famName, g && g.native && g.native.length <= 28 && !/uncertain|unknown/i.test(g.native) ? "From " + g.native : null].filter(Boolean).join(" · ") || null}>
+          <p style={{ fontFamily:sans, fontSize:"clamp(13px, 1.1vw, 16px)", color:T.ink, margin:"10px 0 0", lineHeight:1.55 }}>{(g && g.blurb) || (famName && NOTE_FAMILY_BLURBS[famName]) || ""}</p>
+          <p style={{ fontFamily:sans, fontSize:13, color:T.mid, margin:"8px 0 0" }}>{busy && !items.length ? "Looking…" : `${total} fragrance${total === 1 ? "" : "s"} with this note.`}</p>
+          {guide && <button onClick={() => setGuideOpen(guide)} style={{ marginTop:12, fontFamily:sans, fontSize:12, fontWeight:600, letterSpacing:"0.14em", textTransform:"uppercase", color:T.accent, background:"none", border:`1px solid ${T.accent}`, borderRadius:20, padding:"8px 16px", cursor:"pointer" }}>Read the {guide} guide</button>}
+        </SectionHero>
+        <SearchRow value={nq} onChange={setNq} placeholder={`Search ${sel} fragrances`} label="Search these fragrances" filterOn={showNg || ng !== "all"} filterDot={ng !== "all"} onFilter={() => setShowNg(v => !v)} sortOn={nsort} onSort={() => setNsort(v => !v)}/>
+        {(showNg || ng !== "all") && <div role="group" aria-label="House type" style={{ display:"flex", gap:8, overflowX:"auto", padding:"2px 0 12px" }}>{HOUSE_GROUPS.map(h => chip(ng === h.key, h.label, () => pick(sel, h.key)))}</div>}
+        <h3 style={{ fontFamily:serif, fontSize:"clamp(22px, 2vw, 30px)", fontWeight:400, letterSpacing:-0.4, color:T.black, margin:"10px 0 16px" }}>All perfumes with {sel} notes</h3>
+        {shownItems.length > 0 && <div style={grid}>{shownItems.map(f => <CoverTile key={f.id} frag={f} onClick={onOpenFrag} userStatus={userStatuses && userStatuses[f.id]}/>)}</div>}
         {!busy && !items.length && <p style={{ fontFamily:sans, fontSize:14, color:T.mid, lineHeight:1.6, margin:0 }}>No fragrance in the library lists this note yet.</p>}
+        {!busy && items.length > 0 && !shownItems.length && <p style={{ fontFamily:sans, fontSize:14, color:T.mid, margin:0 }}>Nothing matches that search.</p>}
         {onSearch && items.length < total && <div style={{ marginTop:24 }}><button onClick={more} disabled={busy} style={ghostBtn}>{busy ? "Loading…" : "Show more"}</button></div>}
+        {relKeys.length > 1 && <div style={{ marginTop:18 }}><NoteShelf title={"More " + famName.toLowerCase()} blurb={NOTE_FAMILY_BLURBS[famName]} keys={relKeys} tinted tile={relTile}/></div>}
       </div>
     );
   }
   return (
     <div>
-      <div style={{ position:"relative", maxWidth:760, marginBottom:12 }}>
-        <span style={{ position:"absolute", left:14, top:"50%", transform:"translateY(-50%)", pointerEvents:"none" }}><Icon name="search" size={15} color={T.faint}/></span>
-        <input value={q} onChange={e => setQ(e.target.value)} onKeyDown={e => { if (e.key === "Enter" && ql.length > 1) pick(ql); }} placeholder="Search a note: vetiver, oud, fig…" aria-label="Search notes"
-          style={{ width:"100%", background:T.white, border:`1.5px solid ${q ? T.accent : T.rule}`, borderRadius:14, padding:"14px 44px", fontSize:14, color:T.black, outline:"none", boxSizing:"border-box", fontFamily:serif }}/>
-        {q && <button onClick={() => setQ("")} aria-label="Clear" style={{ position:"absolute", right:14, top:"50%", transform:"translateY(-50%)", background:"none", border:"none", fontSize:14, color:T.mid, cursor:"pointer" }}>✕</button>}
-      </div>
+      <SectionHero onBack={onBackSection} title="Notes" visual={heroVisual} sub="Pick a note to see every fragrance that has it."/>
+      <SearchRow value={q} onChange={setQ} onKeyDown={e => { if (e.key === "Enter" && ql.length > 1) pick(ql); }} placeholder="Search a note: vetiver, oud, fig…" label="Search notes"
+        filterOn={showFam} filterDot={fam !== "All"} onFilter={() => setShowFam(v => !v)} sortOn={rev} onSort={() => setRev(v => !v)}/>
+      {showFam && <div role="group" aria-label="Note family" style={{ display:"flex", gap:8, overflowX:"auto", padding:"2px 0 12px" }}>{["All", ...[...NOTE_FAMILIES].map(f => f[0]).sort()].map(f => chip(fam === f, f, () => setFam(f)))}</div>}
       {ql
         ? <div style={grid}>
             {names.map(k => (
               <button key={k} onClick={() => pick(k)} aria-label={`Fragrances with ${k}`} style={{ flex:"none", width:TILE_W, background:"none", border:"none", padding:0, cursor:"pointer", textAlign:"left", fontFamily:sans }}><NoteIllustration name={k} tile/></button>
             ))}
           </div>
-        : <NotesBrowser onTile={pick}/>}
+        : <NotesBrowser onTile={pick} only={fam} reverse={rev}/>}
       {ql && !names.length && (
         <div style={{ padding:"8px 0" }}>
           <p style={{ fontFamily:sans, fontSize:14, color:T.mid, margin:"0 0 12px" }}>No picture for that note yet, but you can still search the library for it.</p>
@@ -4271,7 +4343,7 @@ function NotesFinder({ fragrances, onOpenFrag, userStatuses, onSearch }) {
 }
 
 // Discover category circles: same look as "Meet the perfumers", each one opens its section in place
-function DiscoverCircles({ mode, setMode, nose }) {
+function useCircleItems(nose) {
   const [pm, setPm] = useState(perfumerPhotoMap);
   useEffect(() => { if (!pm) { let off = false; loadPerfumerPhotos().then(m => { if (!off) setPm(m); }); return () => { off = true; }; } }, [pm]);
   const pKeys = Object.keys(pm || {}).sort();
@@ -4285,6 +4357,9 @@ function DiscoverCircles({ mode, setMode, nose }) {
     ...(nose ? [{ key:"nose", label:"Nose", visual: face("var(--tint-orchid)", <Icon name="nose" size={46} color={T.accent}/>) }] : []),
     { key:"community", label:"Community", visual: face("var(--tint-tangerine)", <Icon name="people" size={46} color={T.accent}/>) },
   ];
+  return items;
+}
+function DiscoverCircles({ items, mode, setMode }) {
   return (
     <div role="tablist" aria-label="Discover" style={{ display:"flex", alignItems:"flex-start", gap:"clamp(12px, 3vw, 26px)", overflowX:"auto", padding:"8px 12px 24px", margin:"0 -12px 6px" }}>
       {items.map(it => {
@@ -4308,6 +4383,7 @@ function DiscoverTab({ onOpenFrag, onOpenBrand, onOpenPerfumer, onOpenProfile, f
   const [search,setSearch]=useState("");
   const [group,setGroup]=useState("all");
   const [showFilters,setShowFilters]=useState(false);
+  const circleItems=useCircleItems(NOSE_ENABLED);
   const serverMode=!!(serverShelves&&onSearch);
   const [results,setResults]=useState([]);
   const [total,setTotal]=useState(0);
@@ -4360,12 +4436,15 @@ function DiscoverTab({ onOpenFrag, onOpenBrand, onOpenPerfumer, onOpenProfile, f
 
   return (
     <div>
+      {mode==="browse"&&<>
       <div style={{marginBottom:20}}>
         <p style={{fontFamily:sans,fontSize:10,fontWeight:600,textTransform:"uppercase",letterSpacing:"0.18em",color:T.accent,margin:"0 0 6px"}}>Discover</p>
         <h2 style={{fontFamily:serif,fontSize:"clamp(32px, 3.2vw, 50px)",color:T.black,letterSpacing:-0.8,margin:0,fontWeight:400}}>{mode==="browse"?"Sample. Wear. Repeat.":mode==="notes"?"Notes":mode==="brands"?"Brands":mode==="perfumers"?"Perfumers":mode==="community"?"Community":mode==="requests"?"Requests":"The Nose"}</h2>
         <p style={{fontFamily:sans,fontSize:"clamp(13px, 1.1vw, 17px)",color:T.mid,margin:"6px 0 0"}}>{mode==="browse"?"Search by name, or browse by category.":mode==="notes"?"Pick a note to see every fragrance that has it.":mode==="brands"?"Every house in the library, with who owns it and what it makes.":mode==="perfumers"?"The noses behind the bottles. Find a perfumer, then everything they have made.":mode==="community"?"Posts, thoughts and requests from members, newest first.":mode==="requests"?"Ask what to smell like. Members answer.":"Describe a memory, a mood or a place."}</p>
       </div>
-      <DiscoverCircles mode={mode} setMode={setMode} nose={NOSE_ENABLED}/>
+      <DiscoverCircles items={circleItems} mode={mode} setMode={setMode}/>
+      </>}
+      {mode!=="browse"&&mode!=="notes"&&(()=>{const it=circleItems.find(x=>x.key===mode);const SUB={brands:"Every house in the library, with who owns it and what it makes.",perfumers:"The noses behind the bottles. Find a perfumer, then everything they have made.",community:"Posts, thoughts and requests from members, newest first.",requests:"Ask what to smell like. Members answer.",nose:"Describe a memory, a mood or a place."};return <SectionHero onBack={()=>setMode("browse")} visual={it&&it.visual} title={it?it.label:"Requests"} sub={SUB[mode]}/>;})()}
 
       {mode==="browse"&&(
         <>
@@ -4430,7 +4509,7 @@ function DiscoverTab({ onOpenFrag, onOpenBrand, onOpenPerfumer, onOpenProfile, f
       {mode==="brands"&&<BrandsDirectory onOpenBrand={onOpenBrand}/>}
       {mode==="perfumers"&&<PerfumersDirectory onOpenPerfumer={onOpenPerfumer}/>}
 
-      {mode==="notes"&&<NotesFinder fragrances={LIST} onOpenFrag={onOpenFrag} userStatuses={userStatuses} onSearch={serverMode?onSearch:null}/>}
+      {mode==="notes"&&<NotesFinder fragrances={LIST} onOpenFrag={onOpenFrag} userStatuses={userStatuses} onSearch={serverMode?onSearch:null} onBackSection={()=>setMode("browse")} heroVisual={(circleItems.find(x=>x.key==="notes")||{}).visual}/>}
       {mode==="community"&&<CommunityFeed onOpenProfile={onOpenProfile} onOpenFrag={onOpenFrag} onSearch={serverMode?onSearch:null} following={following}/>}
       {mode==="requests"&&<RequestsBoard onOpenFrag={onOpenFrag} onSearch={serverMode?onSearch:null}/>}
 
@@ -6097,7 +6176,7 @@ const NOTE_FAMILY_BLURBS = {
   "Musk, leather and smoke":"Skin-close, animal and dark.",
   "Fresh and mineral":"Salt, sand, sea air and clean stone.",
 };
-function NotesBrowser({ onOpen, onTile }) {
+function NotesBrowser({ onOpen, onTile, only, reverse }) {
   const cap = k => k.replace(/(^|[\s-])([a-z])/g, (m, p, c) => p + c.toUpperCase());
   const all = NOTE_PHOTO_PREVIEW ? NOTE_PHOTO_GALLERY : LEARN_NOTE_FALLBACK;
   const guides = ["Vetiver","Sandalwood","Patchouli","Oud","Rose","Jasmine","Bergamot","Vanilla","Iris","Tonka","Amber","Cashmere"].filter(k => INGREDIENTS[k]);
@@ -6110,18 +6189,13 @@ function NotesBrowser({ onOpen, onTile }) {
       ? <button key={k} onClick={() => onOpen(guide)} aria-label={`Open the ${guide} guide`} style={{ ...st, background:"none", border:"none", padding:0, cursor:"pointer" }}>{inner}</button>
       : <div key={k} style={st}>{inner}</div>;
   };
-  const shelf = (title, blurb, keys, tinted) => (
-    <section key={title} className={"mos-bleed" + (tinted ? " mos-band" : "")} style={{ padding:"26px 0 22px" }}>
-      <div className="mos-bleed-pad" style={{ marginBottom:16 }}>
-        <h3 style={{ fontFamily:serif, fontSize:"clamp(26px, 2.3vw, 38px)", fontWeight:400, letterSpacing:-0.6, color:T.black, margin:0, lineHeight:1.1 }}>{title}</h3>
-        <p style={{ fontFamily:sans, fontSize:"clamp(14px, 1.1vw, 17px)", color:T.mid, margin:"6px 0 0", lineHeight:1.5 }}>{blurb}</p>
-      </div>
-      <div className="mos-shelf mos-bleed-pad" style={{ display:"flex", alignItems:"flex-start", gap:14, overflowX:"auto", paddingTop:2, paddingBottom:14, scrollSnapType:"x proximity", WebkitOverflowScrolling:"touch" }}>{keys.map(tile)}</div>
-    </section>
-  );
+  const shelf = (title, blurb, keys, tinted) => <NoteShelf key={title} title={title} blurb={blurb} keys={keys} tinted={tinted} tile={tile}/>;
   const sections = onTile ? [] : [shelf("Start with a guide", "Twelve ingredients to begin with. Every one below has a guide too: where it grows, how it is made, and where you have smelled it.", guides.map(g => g.toLowerCase()), true)];
   let n = onTile ? 0 : 1;
-  [...NOTE_FAMILIES].sort((a, b) => a[0].localeCompare(b[0])).forEach(([fam]) => {
+  const famList = [...NOTE_FAMILIES].sort((a, b) => a[0].localeCompare(b[0]));
+  if (reverse) famList.reverse();
+  famList.forEach(([fam]) => {
+    if (only && only !== "All" && fam !== only) return;
     const keys = all.filter(k => NOTE_FAMILY_OF[k] === fam).sort((a, b) => a.localeCompare(b));
     if (keys.length) sections.push(shelf(fam, NOTE_FAMILY_BLURBS[fam] || "", keys, n++ % 2 === 1));
   });
