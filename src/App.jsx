@@ -2372,6 +2372,7 @@ function lastWord(n) { const w = String(n).trim().split(/\s+/); return w[w.lengt
 function PerfumerShelf({ onOpenPerfumer, tinted }) {
   const [pm, setPm] = useState(perfumerPhotoMap);
   useEffect(() => { if (!pm) { let off = false; loadPerfumerPhotos().then(m => { if (!off) setPm(m); }); return () => { off = true; }; } }, [pm]);
+  const [open, setOpen] = useState(false);
   const list = Object.keys(pm || {}).sort((a, b) => lastWord(a).localeCompare(lastWord(b)));
   if (list.length < 2) return null;
   return (
@@ -2380,7 +2381,7 @@ function PerfumerShelf({ onOpenPerfumer, tinted }) {
         <h3 style={{ fontFamily:serif, fontSize:"clamp(26px, 2.3vw, 38px)", fontWeight:400, letterSpacing:-0.6, color:T.black, margin:0, lineHeight:1.1 }}>Meet the perfumers</h3>
         <p style={{ fontFamily:sans, fontSize:"clamp(14px, 1.1vw, 17px)", color:T.mid, margin:"6px 0 0", lineHeight:1.5 }}>The noses behind the bottles. Tap one to see everything they have made.</p>
       </div>
-      <div className="mos-shelf mos-bleed-pad" style={{ display:"flex", alignItems:"flex-start", gap:22, overflowX:"auto", paddingTop:2, paddingBottom:14, WebkitOverflowScrolling:"touch" }}>
+      <div className={open ? "mos-bleed-pad" : "mos-shelf mos-bleed-pad"} style={{ display:"flex", flexWrap:open?"wrap":"nowrap", alignItems:"flex-start", gap:open?"22px 22px":22, overflowX:open?"visible":"auto", paddingTop:2, paddingBottom:14, WebkitOverflowScrolling:"touch" }}>
         {list.map(k => {
           const nm = titleCaseName(k);
           return (
@@ -2390,6 +2391,9 @@ function PerfumerShelf({ onOpenPerfumer, tinted }) {
             </button>
           );
         })}
+      </div>
+      <div className="mos-bleed-pad" style={{ marginTop:6 }}>
+        <button onClick={() => setOpen(v => !v)} aria-expanded={open} style={{ ...ghostBtn, minHeight:42, fontSize:14, padding:"0 20px" }}>{open ? "Show fewer" : "See all perfumers"}</button>
       </div>
     </section>
   );
@@ -3513,8 +3517,20 @@ function CoverTile({ frag, onClick, userStatus, fit }) {
     </button>
   );
 }
-function Shelf({ title, blurb, items, onOpenFrag, userStatuses, tinted, groups }) {
+function Shelf({ title, blurb, items, onOpenFrag, userStatuses, tinted, groups, loadMore }) {
   const [sel, setSel] = useState("All");
+  const [open, setOpen] = useState(false);
+  const [extra, setExtra] = useState([]);
+  const [total, setTotal] = useState(0);
+  const [busy, setBusy] = useState(false);
+  async function pull(offset) {
+    if (!loadMore) return;
+    setBusy(true);
+    try { const r = await loadMore(offset); setExtra(p => offset ? [...p, ...r.items] : r.items); setTotal(r.total || 0); }
+    catch (e) { console.error("Shelf load failed:", e); }
+    setBusy(false);
+  }
+  function toggle() { const n = !open; setOpen(n); if (n && loadMore && !extra.length) pull(0); }
   const names = groups ? Object.keys(groups) : [];
   const shown = groups && sel !== "All" && groups[sel] ? groups[sel] : items;
   const chipBtn = (on, label, fn) => (<button key={label} onClick={fn} aria-pressed={on} style={{ fontFamily:sans, fontSize:14, fontWeight:on?600:500, padding:"0 18px", minHeight:40, borderRadius:20, whiteSpace:"nowrap", border:`1px solid ${on?T.black:T.rule}`, background:on?T.black:T.white, color:on?T.white:T.ink, cursor:"pointer", flexShrink:0 }}>{label}</button>);
@@ -3525,8 +3541,17 @@ function Shelf({ title, blurb, items, onOpenFrag, userStatuses, tinted, groups }
         <p style={{ fontFamily:sans, fontSize:"clamp(14px, 1.1vw, 17px)", color:T.mid, margin:"6px 0 0", lineHeight:1.5 }}>{blurb}</p>
         {names.length > 0 && <div style={{ display:"flex", flexWrap:"wrap", gap:8, marginTop:16 }}>{chipBtn(sel === "All", "All", () => setSel("All"))}{names.map(n => chipBtn(sel === n, n, () => setSel(n)))}</div>}
       </div>
-      <div className="mos-shelf mos-bleed-pad" style={{ display:"flex", alignItems:"flex-start", gap:14, overflowX:"auto", paddingTop:2, paddingBottom:14, scrollSnapType:"x proximity", WebkitOverflowScrolling:"touch" }}>
-        {shown.map(f => <CoverTile key={f.id} frag={f} onClick={onOpenFrag} userStatus={userStatuses[f.id]}/>)}
+      {open
+        ? <div className="mos-bleed-pad" style={{ display:"flex", flexWrap:"wrap", alignItems:"flex-start", gap:14, paddingTop:2, paddingBottom:10 }}>
+            {(() => { const seen = new Set(); return [...shown, ...(sel === "All" ? extra : [])].filter(f => !seen.has(f.id) && seen.add(f.id)); })().map(f => <CoverTile key={f.id} frag={f} onClick={onOpenFrag} userStatus={userStatuses[f.id]}/>)}
+          </div>
+        : <div className="mos-shelf mos-bleed-pad" style={{ display:"flex", alignItems:"flex-start", gap:14, overflowX:"auto", paddingTop:2, paddingBottom:14, scrollSnapType:"x proximity", WebkitOverflowScrolling:"touch" }}>
+            {shown.map(f => <CoverTile key={f.id} frag={f} onClick={onOpenFrag} userStatus={userStatuses[f.id]}/>)}
+          </div>}
+      <div className="mos-bleed-pad" style={{ marginTop:6, display:"flex", gap:10, flexWrap:"wrap" }}>
+        <button onClick={toggle} aria-expanded={open} style={{ ...ghostBtn, minHeight:42, fontSize:14, padding:"0 20px" }}>{open ? "Show fewer" : "See all"}</button>
+        {open && loadMore && sel === "All" && extra.length > 0 && extra.length < total && <button onClick={() => pull(extra.length)} disabled={busy} style={{ ...ghostBtn, minHeight:42, fontSize:14, padding:"0 20px", opacity:busy?0.6:1 }}>{busy ? "Loading" : "Show more"}</button>}
+        {open && busy && !extra.length && <span style={{ fontFamily:sans, fontSize:13, color:T.mid, alignSelf:"center" }}>Loading</span>}
       </div>
     </section>
   );
@@ -4243,6 +4268,36 @@ function NotesFinder({ fragrances, onOpenFrag, userStatuses, onSearch }) {
   );
 }
 
+// Discover category circles: same look as "Meet the perfumers", each one opens its section in place
+function DiscoverCircles({ mode, setMode, nose }) {
+  const [pm, setPm] = useState(perfumerPhotoMap);
+  useEffect(() => { if (!pm) { let off = false; loadPerfumerPhotos().then(m => { if (!off) setPm(m); }); return () => { off = true; }; } }, [pm]);
+  const pKeys = Object.keys(pm || {}).sort();
+  const pKey = pKeys.length ? pKeys[Math.floor(Date.now() / 86400000) % pKeys.length] : null;
+  const noteSrc = notePhotoFor("rose");
+  const face = (bg, node) => <span style={{ width:"100%", aspectRatio:"1 / 1", borderRadius:"50%", background:bg, display:"flex", alignItems:"center", justifyContent:"center", overflow:"hidden" }}>{node}</span>;
+  const items = [
+    { key:"notes", label:"Notes", visual: noteSrc ? face("#fff", <img src={noteSrc} alt="" style={{ width:"86%", height:"86%", objectFit:"contain" }}/>) : face("var(--tint-pink)", <Icon name="droplet" size={44} color={T.accent}/>) },
+    { key:"brands", label:"Brands", visual: face("var(--tint-teal)", <Icon name="bottle" size={46} color={T.teal}/>) },
+    { key:"perfumers", label:"Perfumers", visual: pKey ? <span style={{ display:"block", width:"100%", aspectRatio:"1 / 1" }}><PerfumerPortrait name={titleCaseName(pKey)} photo={pm[pKey]} size="100%"/></span> : face("var(--tint-violet)", <Icon name="nose" size={46} color={T.accent}/>) },
+    ...(nose ? [{ key:"nose", label:"Nose", visual: face("var(--tint-orchid)", <Icon name="nose" size={46} color={T.accent}/>) }] : []),
+    { key:"community", label:"Community", visual: face("var(--tint-tangerine)", <Icon name="people" size={46} color={T.accent}/>) },
+  ];
+  return (
+    <div role="tablist" aria-label="Discover" style={{ display:"flex", alignItems:"flex-start", gap:"clamp(12px, 3vw, 26px)", overflowX:"auto", padding:"6px 4px 14px", marginBottom:14 }}>
+      {items.map(it => {
+        const on = mode === it.key;
+        return (
+          <button key={it.key} role="tab" aria-selected={on} aria-label={it.label} onClick={() => setMode(on ? "browse" : it.key)} style={{ flex:"0 0 auto", width:"clamp(70px, 19vw, 132px)", background:"none", border:"none", padding:0, cursor:"pointer", textAlign:"center", fontFamily:sans }}>
+            <span style={{ display:"block", borderRadius:"50%", padding:3, boxShadow: on ? `0 0 0 3px ${T.accent}` : "0 0 0 1px transparent", transition:"box-shadow .15s" }}>{it.visual}</span>
+            <span style={{ display:"block", marginTop:10, fontFamily:serif, fontSize:"clamp(14px, 1.3vw, 17px)", lineHeight:1.2, color:T.black, fontWeight: on ? 600 : 400 }}>{it.label}</span>
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
 function DiscoverTab({ onOpenFrag, onOpenBrand, onOpenPerfumer, onOpenProfile, following, userStatuses, reactions, onReaction, onSuggest, fragrances, serverShelves, onSearch }) {
   const [mode,setMode]=useState("browse");
   const [messages,setMessages]=useState([{role:"ai",text:"Tell me what you're in the mood for: a memory, a mood, an aesthetic. I'll find your next fragrance."}]);
@@ -4288,17 +4343,17 @@ function DiscoverTab({ onOpenFrag, onOpenBrand, onOpenPerfumer, onOpenProfile, f
       (f.occasions||[]).some(o => o.toLowerCase().includes(q));
   }) : [];
 
+  const SHELF_GROUP = { indie:"independent", niche:"niche", designer:"designer" };
+  const shelfMore = key => {
+    const g = SHELF_GROUP[key]; if (!g) return null;
+    if (serverMode) return off => onSearch("", g, off);
+    return async off => { const all = LIST.filter(f => houseGroups(f).includes(g)); return { items: all.slice(off, off + 24), total: all.length }; };
+  };
   const isSearching = serverMode ? (search.trim().length>=2||group!=="all") : (!!search||group!=="all");
   const shown = serverMode ? results : searchResults;
   const shownTotal = serverMode ? total : searchResults.length;
   function send(text){const msg=text||input;if(!msg.trim())return;setMessages(m=>[...m,{role:"user",text:msg}]);setInput("");setTyping(true);setTimeout(()=>{const r=getResp(msg);const frag=FRAGRANCES.find(f=>f.id===r.fragId);setTyping(false);setMessages(m=>[...m,{role:"ai",text:r.text,frag}]);},1300);}
 
-  const modeBtn=(key,label)=>(
-    <button key={key} role="tab" aria-selected={mode===key} onClick={()=>setMode(mode===key?"browse":key)} style={{position:"relative",padding:"0 2px 13px",marginRight:24,background:"none",border:"none",cursor:"pointer",fontFamily:sans,fontSize:15,fontWeight:600,color:mode===key?T.black:T.mid}}>
-      {label}
-      {mode===key&&<span style={{position:"absolute",left:0,right:0,bottom:-1,height:2,background:T.black}}/>}
-    </button>
-  );
 
   return (
     <div>
@@ -4307,13 +4362,7 @@ function DiscoverTab({ onOpenFrag, onOpenBrand, onOpenPerfumer, onOpenProfile, f
         <h2 style={{fontFamily:serif,fontSize:"clamp(32px, 3.2vw, 50px)",color:T.black,letterSpacing:-0.8,margin:0,fontWeight:400}}>{mode==="browse"?"Sample. Wear. Repeat.":mode==="notes"?"Notes":mode==="brands"?"Brands":mode==="perfumers"?"Perfumers":mode==="community"?"Community":mode==="requests"?"Requests":"The Nose"}</h2>
         <p style={{fontFamily:sans,fontSize:"clamp(13px, 1.1vw, 17px)",color:T.mid,margin:"6px 0 0"}}>{mode==="browse"?"Search by name, or browse by category.":mode==="notes"?"Pick a note to see every fragrance that has it.":mode==="brands"?"Every house in the library, with who owns it and what it makes.":mode==="perfumers"?"The noses behind the bottles. Find a perfumer, then everything they have made.":mode==="community"?"Posts, thoughts and requests from members, newest first.":mode==="requests"?"Ask what to smell like. Members answer.":"Describe a memory, a mood or a place."}</p>
       </div>
-      <div role="tablist" aria-label="Discover" style={{display:"flex",overflowX:"auto",whiteSpace:"nowrap",borderBottom:`1px solid ${T.rule}`,marginBottom:22}}>
-        {modeBtn("notes","Notes")}
-        {modeBtn("brands","Brands")}
-        {modeBtn("perfumers","Perfumers")}
-        {NOSE_ENABLED&&modeBtn("nose","Nose")}
-        {modeBtn("community","Community")}
-      </div>
+      <DiscoverCircles mode={mode} setMode={setMode} nose={NOSE_ENABLED}/>
 
       {mode==="browse"&&(
         <>
@@ -4362,7 +4411,7 @@ function DiscoverTab({ onOpenFrag, onOpenBrand, onOpenPerfumer, onOpenProfile, f
             <>
               {shelves.map((s,i)=>(
                 <Fragment key={s.key}>
-                  <Shelf title={s.title} blurb={s.blurb} items={s.items} groups={s.groups} onOpenFrag={onOpenFrag} userStatuses={userStatuses} tinted={i%2===0}/>
+                  <Shelf title={s.title} blurb={s.blurb} items={s.items} groups={s.groups} loadMore={shelfMore(s.key)} onOpenFrag={onOpenFrag} userStatuses={userStatuses} tinted={i%2===0}/>
                   {s.key==="new"&&<><PerfumerShelf onOpenPerfumer={onOpenPerfumer} tinted={i%2!==0}/><KitsShelf onOpenBrand={onOpenBrand} tinted={i%2===0}/></>}
                 </Fragment>
               ))}
