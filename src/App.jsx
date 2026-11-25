@@ -6484,6 +6484,11 @@ function LandingScreen({ onSignIn, onHaveCode }) {
   ];
   return (
     <div style={{ minHeight:"100svh", fontFamily:sans, color:T.ink }}>
+      {Date.now() < BF_TAB_UNTIL && (
+        <a href="/black-friday" style={{ display:"block", background:"var(--accent)", color:"#fff", textAlign:"center", textDecoration:"none", fontFamily:sans, fontSize:14, fontWeight:600, lineHeight:1.4, padding:"12px 16px" }}>
+          Black Friday sales, all in one place <span aria-hidden="true">→</span>
+        </a>
+      )}
       <header style={{ maxWidth:1080, margin:"0 auto", padding:"16px 20px", display:"flex", alignItems:"center", justifyContent:"space-between", gap:12 }}>
         <Logo size={18}/>
         <div style={{ display:"flex", alignItems:"center", gap:10 }}>
