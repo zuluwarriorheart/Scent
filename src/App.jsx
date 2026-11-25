@@ -6589,6 +6589,8 @@ function LoadingScreen() {
 // An offer with hidden:true is kept here but not shown. Cards are listed alphabetically by name.
 const BF_URL = "https://www.memoironskin.com/black-friday";
 const BF_TAB_UNTIL = new Date("2026-12-04T00:00:00-05:00").getTime();
+// Until this moment the Black Friday page is the signed-out homepage at memoironskin.com. After it, the usual landing page returns on its own.
+const BF_LANDING_UNTIL = new Date("2026-12-01T00:00:00-05:00").getTime();
 
 function bfStatus(o, now) {
   if (o.ends && now > new Date(o.ends).getTime()) return "ended";
@@ -6858,7 +6860,7 @@ function BlackFridayGuide({ embedded = false }) {
   );
 }
 
-function BlackFridayPage() {
+function BlackFridayPage({ landing = false }) {
   // Same rule as the beta page: first-time visitors start on the dark page, and nothing is saved unless they press the toggle.
   useEffect(() => {
     let forced = false;
@@ -6874,10 +6876,14 @@ function BlackFridayPage() {
     <div style={{ minHeight:"100svh", fontFamily:sans, color:T.ink }}>
       <header style={{ maxWidth:760, margin:"0 auto", padding:"16px 20px", display:"flex", alignItems:"center", justifyContent:"space-between", gap:12 }}>
         <a href="/" style={{ textDecoration:"none" }}><Logo size={18}/></a>
-        <ThemeToggle/>
+        <div style={{ display:"flex", alignItems:"center", gap:10 }}>
+          {landing && <a href="/?join=1" style={{ ...ghostBtn, minHeight:40, padding:"0 18px", fontSize:14, display:"inline-flex", alignItems:"center", textDecoration:"none" }}>Sign in</a>}
+          <ThemeToggle/>
+        </div>
       </header>
       <main style={{ maxWidth:760, margin:"0 auto", padding:"28px 20px 40px" }}>
         <BlackFridayGuide/>
+        {landing && <p style={{ textAlign:"center", fontSize:14, color:T.mid, lineHeight:1.6, margin:"36px 0 0" }}>New here? <a href="/beta" style={{ color:T.black, fontWeight:600 }}>See what Memoir on Skin is and join the beta list</a>.</p>}
       </main>
       <div style={{ maxWidth:760, margin:"0 auto", padding:"0 20px 40px" }}><FooterLinks/></div>
     </div>
@@ -8707,6 +8713,7 @@ export default function SillageApp() {
   if (typeof window !== "undefined" && (window.location.hash === "#black-friday" || /^\/black-friday\/?$/.test(window.location.pathname))) return <BlackFridayPage/>;
   if (appScreen === "loading") return <LoadingScreen/>;
   if (appScreen === "waitlist" && wantsJoinLink()) return <LoginScreen onWaitlist={() => { window.location.href = window.location.pathname; }}/>;
+  if (appScreen === "waitlist" && Date.now() < BF_LANDING_UNTIL) return <BlackFridayPage landing/>;
   if (appScreen === "waitlist") return <LandingScreen onSignIn={() => { loginStart.mode = "signin"; setAppScreen("login"); }} onHaveCode={() => { loginStart.mode = "signup"; setAppScreen("login"); }}/>;
   if (appScreen === "login") return <LoginScreen onWaitlist={() => setAppScreen("waitlist")}/>;
   if (appScreen === "onboarding") return <OnboardingScreen onComplete={handleOnboardingComplete}/>;
