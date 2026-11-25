@@ -4439,7 +4439,6 @@ function DiscoverTab({ onOpenFrag, onOpenBrand, onOpenPerfumer, onOpenProfile, f
     <div>
       {mode==="browse"&&<>
       <div style={{marginBottom:20}}>
-        <p style={{fontFamily:sans,fontSize:10,fontWeight:600,textTransform:"uppercase",letterSpacing:"0.18em",color:T.accent,margin:"0 0 6px"}}>Discover</p>
         <h2 style={{fontFamily:serif,fontSize:"clamp(32px, 3.2vw, 50px)",color:T.black,letterSpacing:-0.8,margin:0,fontWeight:400}}>{mode==="browse"?"Sample. Wear. Repeat.":mode==="notes"?"Notes":mode==="brands"?"Brands":mode==="perfumers"?"Perfumers":mode==="community"?"Community":mode==="requests"?"Requests":"The Nose"}</h2>
         <p hidden={true} style={{fontFamily:sans,fontSize:"clamp(13px, 1.1vw, 17px)",color:T.mid,margin:"6px 0 0"}}>{mode==="browse"?"":mode==="notes"?"Pick a note to see every fragrance that has it.":mode==="brands"?"Every house in the library, with who owns it and what it makes.":mode==="perfumers"?"The noses behind the bottles. Find a perfumer, then everything they have made.":mode==="community"?"Posts, thoughts and requests from members, newest first.":mode==="requests"?"Ask what to smell like. Members answer.":"Describe a memory, a mood or a place."}</p>
       </div>
@@ -5444,7 +5443,7 @@ function CollectionTab({ onEvents, onImport, onOpenBrand, onOpenFrag, statuses:u
       </div>}
       <BrandsToTry onOpenBrand={onOpenBrand}/>
       <div role="tablist" style={{display:"flex",overflowX:"auto",borderBottom:`1px solid ${T.rule}`,marginBottom:14}}>
-        {TABS.map(([k,l])=>(<button key={k} role="tab" aria-selected={ctab===k} onClick={()=>pickTab(k)} style={{position:"relative",padding:"0 2px 13px",marginRight:24,background:"none",border:"none",cursor:"pointer",fontFamily:sans,fontSize:15,fontWeight:600,whiteSpace:"nowrap",flexShrink:0,color:ctab===k?T.black:T.mid}}>{l}<span style={{fontWeight:400,opacity:0.6,marginLeft:6,fontSize:12}}>{tabCount(k)}</span>{ctab===k&&<span style={{position:"absolute",left:0,right:0,bottom:-1,height:2,background:T.black}}/>}</button>))}
+        {TABS.map(([k,l])=>(<button key={k} role="tab" aria-selected={ctab===k} onClick={()=>pickTab(k)} style={{position:"relative",padding:"0 2px 13px",marginRight:24,background:"none",border:"none",cursor:"pointer",fontFamily:sans,fontSize:15,fontWeight:600,whiteSpace:"nowrap",flexShrink:0,color:ctab===k?T.accent:T.mid}}>{l}<span style={{fontWeight:400,opacity:0.6,marginLeft:6,fontSize:12}}>{tabCount(k)}</span>{ctab===k&&<span style={{position:"absolute",left:0,right:0,bottom:-1,height:2,background:T.accent}}/>}</button>))}
       </div>
       {ctab==="all"&&<div style={{display:"flex",flexWrap:"wrap",gap:7,marginBottom:8}}>
         {[["love","Love"],["like","Like"],["dislike","Dislike"]].map(([k,l])=>chipB(rxF===k,l,rxCount(k),()=>setRxF(rxF===k?"":k),"rx"+k))}
@@ -5508,7 +5507,7 @@ function JournalTab({ entries, userStatuses, reactions, fragrances, wears, onOpe
 
       <div role="tablist" style={{display:"flex",gap:28,borderBottom:`1px solid ${T.rule}`,marginBottom:22,overflowX:"auto"}}>
         {[["write","Write an entry"],["overview","Your taste profile"]].map(([k,l])=>(
-          <button key={k} role="tab" aria-selected={jtab===k} onClick={()=>pickTab(k)} style={{padding:"12px 0",whiteSpace:"nowrap",fontFamily:sans,fontSize:"clamp(15px, 1.2vw, 17px)",fontWeight:jtab===k?600:400,color:jtab===k?T.black:T.mid,background:"none",border:"none",borderBottom:jtab===k?`2px solid ${T.black}`:"2px solid transparent",marginBottom:-1,cursor:"pointer"}}>{l}</button>
+          <button key={k} role="tab" aria-selected={jtab===k} onClick={()=>pickTab(k)} style={{padding:"12px 0",whiteSpace:"nowrap",fontFamily:sans,fontSize:"clamp(15px, 1.2vw, 17px)",fontWeight:jtab===k?600:400,color:jtab===k?T.accent:T.mid,background:"none",border:"none",borderBottom:jtab===k?`2px solid ${T.accent}`:"2px solid transparent",marginBottom:-1,cursor:"pointer"}}>{l}</button>
         ))}
       </div>
 
@@ -6233,7 +6232,7 @@ function LearnTab({ fragrances, onOpenFrag, onOpenBrand }) {
       </div>
       <div role="tablist" style={{display:"flex",gap:4,overflowX:"auto",borderBottom:`1px solid ${T.rule}`,marginBottom:24,WebkitOverflowScrolling:"touch"}}>
         {LEARN_TABS.map(([k,l])=>(
-          <button key={k} role="tab" aria-selected={tab===k} onClick={()=>setTab(k)} style={{fontFamily:sans,fontSize:13,fontWeight:tab===k?600:500,letterSpacing:"0.04em",color:tab===k?T.black:T.mid,background:"none",border:"none",borderBottom:`2px solid ${tab===k?T.black:"transparent"}`,padding:"0 16px",minHeight:46,whiteSpace:"nowrap",cursor:"pointer",flexShrink:0,marginBottom:-1}}>{l}</button>
+          <button key={k} role="tab" aria-selected={tab===k} onClick={()=>setTab(k)} style={{fontFamily:sans,fontSize:13,fontWeight:tab===k?600:500,letterSpacing:"0.04em",color:tab===k?T.accent:T.mid,background:"none",border:"none",borderBottom:`2px solid ${tab===k?T.accent:"transparent"}`,padding:"0 16px",minHeight:46,whiteSpace:"nowrap",cursor:"pointer",flexShrink:0,marginBottom:-1}}>{l}</button>
         ))}
       </div>
       {tab==="blackfriday"&&<BlackFridayGuide embedded/>}
@@ -8890,9 +8889,9 @@ export default function SillageApp() {
             {NAV.map(({ tab }) => {
               const on = activeTab === tab;
               return (
-                <button key={tab} onClick={() => setActiveTab(tab)} aria-current={on ? "page" : undefined} style={{ position:"relative", paddingBottom:15, paddingTop:4, fontSize:"var(--nav-fs)", fontWeight:on?600:500, textTransform:"uppercase", letterSpacing:"0.1em", color:on?T.black:T.mid, background:"none", border:"none", cursor:"pointer", whiteSpace:"nowrap", fontFamily:sans }}>
+                <button key={tab} onClick={() => setActiveTab(tab)} aria-current={on ? "page" : undefined} style={{ position:"relative", paddingBottom:15, paddingTop:4, fontSize:"var(--nav-fs)", fontWeight:on?600:500, textTransform:"uppercase", letterSpacing:"0.1em", color:on?T.accent:T.mid, background:"none", border:"none", cursor:"pointer", whiteSpace:"nowrap", fontFamily:sans }}>
                   {tab}
-                  {on && <span style={{ position:"absolute", left:0, right:0, bottom:-1, height:2, background:T.black }}/>}
+                  {on && <span style={{ position:"absolute", left:0, right:0, bottom:-1, height:2, background:T.accent }}/>}
                 </button>
               );
             })}
@@ -8915,7 +8914,7 @@ export default function SillageApp() {
           const on = activeTab === tab;
           return (
             <button key={tab} onClick={() => setActiveTab(tab)} aria-current={on ? "page" : undefined} style={{ flex:1, position:"relative", display:"flex", flexDirection:"column", alignItems:"center", gap:3, padding:"7px 0 1px", background:"none", border:"none", cursor:"pointer", fontFamily:sans, fontSize:10, fontWeight:on?600:500, color:on?T.accent:T.mid }}>
-              {on && <span style={{ position:"absolute", top:-9, width:26, height:2, background:T.black }}/>}
+              {on && <span style={{ position:"absolute", top:-9, width:26, height:2, background:T.accent }}/>}
               <Icon name={icon} size={22} color={on?T.accent:T.mid}/>
               <span>{tab}</span>
             </button>
