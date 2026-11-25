@@ -3494,7 +3494,7 @@ function getResp(msg){const l=msg.toLowerCase();if(l.includes("library")||l.incl
 
 // ─── SHELVES: large cover tiles, Fable-style ─────────────────────────────────
 // Tiles are neutral on purpose: each one holds the bottle photo (frag.image) once images exist.
-function CoverTile({ frag, onClick, userStatus, fit }) {
+function CoverTile({ frag, onClick, userStatus, fit, noRibbon }) {
   const owned = userStatus === "bottle_owned";
   const ini = frag.name.split(" ").map(w => w[0]).join("").slice(0, 2).toUpperCase();
   return (
@@ -3512,7 +3512,7 @@ function CoverTile({ frag, onClick, userStatus, fit }) {
       </span>
       <span style={{ display:"-webkit-box", WebkitLineClamp:2, WebkitBoxOrient:"vertical", overflow:"hidden", marginTop:10, minHeight:"2.4em", fontFamily:serif, fontSize:16, lineHeight:1.2, letterSpacing:-0.2, color:T.black }}>{frag.name}</span>
       <span style={{ display:"block", marginTop:3, fontSize:12, color:T.mid, whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis" }}>{frag.house}</span>
-      <AccordRibbon accords={frag.accords} style={{ marginTop:8 }}/>
+      {!noRibbon && <AccordRibbon accords={frag.accords} style={{ marginTop:8 }}/>}
     </button>
   );
 }
@@ -3604,10 +3604,10 @@ function Shelf({ title, blurb, items, onOpenFrag, userStatuses, tinted, groups, 
       </div>
       {open
         ? <div className="mos-bleed-pad" style={{ display:"flex", flexWrap:"wrap", alignItems:"flex-start", gap:14, paddingTop:2, paddingBottom:10 }}>
-            {(() => { const seen = new Set(); return [...shown, ...(sel === "All" ? extra : [])].filter(f => !seen.has(f.id) && seen.add(f.id)); })().map(f => <CoverTile key={f.id} frag={f} onClick={onOpenFrag} userStatus={userStatuses[f.id]}/>)}
+            {(() => { const seen = new Set(); return [...shown, ...(sel === "All" ? extra : [])].filter(f => !seen.has(f.id) && seen.add(f.id)); })().map(f => <CoverTile noRibbon key={f.id} frag={f} onClick={onOpenFrag} userStatus={userStatuses[f.id]}/>)}
           </div>
         : <div className="mos-shelf mos-bleed-pad" style={{ display:"flex", alignItems:"flex-start", gap:14, overflowX:"auto", paddingTop:2, paddingBottom:14, scrollSnapType:"x proximity", WebkitOverflowScrolling:"touch" }}>
-            {shown.map(f => <CoverTile key={f.id} frag={f} onClick={onOpenFrag} userStatus={userStatuses[f.id]}/>)}
+            {shown.map(f => <CoverTile noRibbon key={f.id} frag={f} onClick={onOpenFrag} userStatus={userStatuses[f.id]}/>)}
           </div>}
       <div className="mos-bleed-pad" style={{ marginTop:6, display:"flex", gap:10, flexWrap:"wrap" }}>
         {open && loadMore && sel === "All" && extra.length > 0 && extra.length < total && <button onClick={() => pull(extra.length)} disabled={busy} style={{ ...ghostBtn, minHeight:42, fontSize:14, padding:"0 20px", opacity:busy?0.6:1 }}>{busy ? "Loading" : "Show more"}</button>}
@@ -4311,7 +4311,7 @@ function NotesFinder({ fragrances, onOpenFrag, userStatuses, onSearch, onBackSec
         <SearchRow value={nq} onChange={setNq} placeholder={`Search ${sel} fragrances`} label="Search these fragrances" filterOn={showNg || ng !== "all"} filterDot={ng !== "all"} onFilter={() => setShowNg(v => !v)} sortOn={nsort} onSort={() => setNsort(v => !v)}/>
         {(showNg || ng !== "all") && <div role="group" aria-label="House type" style={{ display:"flex", gap:8, overflowX:"auto", padding:"2px 0 12px" }}>{HOUSE_GROUPS.map(h => chip(ng === h.key, h.label, () => pick(sel, h.key)))}</div>}
         <h3 style={{ fontFamily:serif, fontSize:"clamp(22px, 2vw, 30px)", fontWeight:400, letterSpacing:-0.4, color:T.black, margin:"10px 0 16px" }}>All perfumes with {sel} notes</h3>
-        {shownItems.length > 0 && <div style={grid}>{shownItems.map(f => <CoverTile key={f.id} frag={f} onClick={onOpenFrag} userStatus={userStatuses && userStatuses[f.id]}/>)}</div>}
+        {shownItems.length > 0 && <div style={grid}>{shownItems.map(f => <CoverTile noRibbon key={f.id} frag={f} onClick={onOpenFrag} userStatus={userStatuses && userStatuses[f.id]}/>)}</div>}
         {!busy && !items.length && <p style={{ fontFamily:sans, fontSize:14, color:T.mid, lineHeight:1.6, margin:0 }}>No fragrance in the library lists this note yet.</p>}
         {!busy && items.length > 0 && !shownItems.length && <p style={{ fontFamily:sans, fontSize:14, color:T.mid, margin:0 }}>Nothing matches that search.</p>}
         {onSearch && items.length < total && <div style={{ marginTop:24 }}><button onClick={more} disabled={busy} style={ghostBtn}>{busy ? "Loading…" : "Show more"}</button></div>}
