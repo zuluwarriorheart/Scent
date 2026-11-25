@@ -292,6 +292,7 @@ function Icon({ name, size=18, color=T.mid }) {
     compass: <svg viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="9.5"/><polygon points="16.2 7.8 14.1 14.1 7.8 16.2 9.9 9.9 16.2 7.8"/></svg>,
     layers: <svg viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="9" cy="12" r="6.2"/><circle cx="15" cy="12" r="6.2"/></svg>,
     book: <svg viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M2.5 4h6a3.5 3.5 0 013.5 3.5V21a2.5 2.5 0 00-2.5-2.5h-7z"/><path d="M21.5 4h-6A3.5 3.5 0 0012 7.5V21a2.5 2.5 0 012.5-2.5h7z"/></svg>,
+    sliders: <svg viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><line x1="4" y1="7" x2="20" y2="7"/><circle cx="9" cy="7" r="2.3" fill={T.white}/><line x1="4" y1="17" x2="20" y2="17"/><circle cx="15" cy="17" r="2.3" fill={T.white}/></svg>,
     spray: <svg viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><rect x="4" y="9" width="10" height="12" rx="2"/><path d="M14 13h2a2 2 0 002-2V9h-4"/><path d="M18 5v2"/><path d="M16 3h4"/><circle cx="18" cy="3" r="0.5" fill={color}/></svg>,
   };
   return <span style={s}>{icons[name] || null}</span>;
@@ -4305,6 +4306,7 @@ function DiscoverTab({ onOpenFrag, onOpenBrand, onOpenPerfumer, onOpenProfile, f
   const [typing,setTyping]=useState(false);
   const [search,setSearch]=useState("");
   const [group,setGroup]=useState("all");
+  const [showFilters,setShowFilters]=useState(false);
   const serverMode=!!(serverShelves&&onSearch);
   const [results,setResults]=useState([]);
   const [total,setTotal]=useState(0);
@@ -4366,8 +4368,8 @@ function DiscoverTab({ onOpenFrag, onOpenBrand, onOpenPerfumer, onOpenProfile, f
 
       {mode==="browse"&&(
         <>
-          <div style={{marginBottom:search?10:6,maxWidth:760}}>
-            <div style={{position:"relative"}}>
+          <div style={{marginBottom:search?10:6,maxWidth:760,display:"flex",gap:10,alignItems:"stretch"}}>
+            <div style={{position:"relative",flex:1,minWidth:0}}>
               <span style={{position:"absolute",left:14,top:"50%",transform:"translateY(-50%)",pointerEvents:"none"}}><Icon name="search" size={15} color={T.faint}/></span>
               <input
                 value={search}
@@ -4377,12 +4379,16 @@ function DiscoverTab({ onOpenFrag, onOpenBrand, onOpenPerfumer, onOpenProfile, f
               />
               {search&&<button onClick={()=>setSearch("")} aria-label="Clear search" style={{position:"absolute",right:14,top:"50%",transform:"translateY(-50%)",background:"none",border:"none",fontSize:14,color:T.mid,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",width:24,height:24}}>✕</button>}
             </div>
+            <button onClick={()=>setShowFilters(v=>!v)} aria-label="Filters" aria-expanded={showFilters||group!=="all"} aria-pressed={showFilters||group!=="all"} style={{position:"relative",flexShrink:0,width:52,borderRadius:14,border:`1.5px solid ${(showFilters||group!=="all")?T.accent:T.rule}`,background:(showFilters||group!=="all")?T.lift:T.white,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>
+              <Icon name="sliders" size={22} color={(showFilters||group!=="all")?T.accent:T.ink}/>
+              {group!=="all"&&<span style={{position:"absolute",top:8,right:8,width:9,height:9,borderRadius:"50%",background:T.accent}}/>}
+            </button>
           </div>
-          <div role="group" aria-label="House type" style={{display:"flex",gap:8,overflowX:"auto",padding:"6px 0 10px",marginBottom:6}}>
+          {(showFilters||group!=="all")&&<div role="group" aria-label="House type" style={{display:"flex",gap:8,overflowX:"auto",padding:"6px 0 10px",marginBottom:6}}>
             {HOUSE_GROUPS.map(g=>{const on=group===g.key;return (
               <button key={g.key} onClick={()=>setGroup(g.key)} aria-pressed={on} style={{fontFamily:sans,fontSize:14,fontWeight:on?600:500,padding:"0 20px",minHeight:42,borderRadius:22,whiteSpace:"nowrap",border:`1px solid ${on?T.black:T.rule}`,background:on?T.black:T.white,color:on?T.white:T.ink,cursor:"pointer",flexShrink:0}}>{g.label}</button>
             );})}
-          </div>
+          </div>}
           {isSearching&&(
             <div style={{marginTop:6}}>
               {shown.length>0 ? (
