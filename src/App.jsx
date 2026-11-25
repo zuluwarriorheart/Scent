@@ -4495,7 +4495,7 @@ function DiscoverTab({ onOpenFrag, onOpenBrand, onOpenPerfumer, onOpenProfile, f
           )}
           {!isSearching&&(
             <>
-              {shelves.map((s,i)=>(
+              {shelves.filter(s=>s.key!=="diversity").map((s,i)=>(
                 <Fragment key={s.key}>
                   <Shelf title={s.title} blurb={s.blurb} items={s.items} groups={s.groups} loadMore={shelfMore(s.key)} onOpenFrag={onOpenFrag} userStatuses={userStatuses} tinted={i%2===0}/>
                   {s.key==="new"&&<><PerfumerShelf onOpenPerfumer={onOpenPerfumer} tinted={i%2!==0}/><KitsShelf onOpenBrand={onOpenBrand} tinted={i%2===0}/></>}
