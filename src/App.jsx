@@ -2379,7 +2379,7 @@ function PerfumerShelf({ onOpenPerfumer, tinted }) {
   return (
     <section className={"mos-bleed" + (tinted ? " mos-band" : "")} style={{ padding:"26px 0 22px" }}>
       <div className="mos-bleed-pad" style={{ marginBottom:16 }}>
-        <h3 style={{ fontFamily:serif, fontSize:"clamp(26px, 2.3vw, 38px)", fontWeight:400, letterSpacing:-0.6, color:T.black, margin:0, lineHeight:1.1 }}>Meet the perfumers</h3>
+        <div style={{ display:"flex", alignItems:"center", flexWrap:"wrap", gap:"8px 14px" }}><h3 style={{ fontFamily:serif, fontSize:"clamp(26px, 2.3vw, 38px)", fontWeight:400, letterSpacing:-0.6, color:T.black, margin:0, lineHeight:1.1 }}>Meet the perfumers</h3><SeeAllPill open={open} onClick={() => setOpen(v => !v)}/></div>
         <p style={{ fontFamily:sans, fontSize:"clamp(14px, 1.1vw, 17px)", color:T.mid, margin:"6px 0 0", lineHeight:1.5 }}>The noses behind the bottles. Tap one to see everything they have made.</p>
       </div>
       <div className={open ? "mos-bleed-pad" : "mos-shelf mos-bleed-pad"} style={{ display:"flex", flexWrap:open?"wrap":"nowrap", alignItems:"flex-start", gap:open?"22px 22px":22, overflowX:open?"visible":"auto", paddingTop:2, paddingBottom:14, WebkitOverflowScrolling:"touch" }}>
@@ -2392,9 +2392,6 @@ function PerfumerShelf({ onOpenPerfumer, tinted }) {
             </button>
           );
         })}
-      </div>
-      <div className="mos-bleed-pad" style={{ marginTop:6 }}>
-        <button onClick={() => setOpen(v => !v)} aria-expanded={open} style={{ ...ghostBtn, minHeight:42, fontSize:14, padding:"0 20px" }}>{open ? "Show fewer" : "See all perfumers"}</button>
       </div>
     </section>
   );
@@ -3518,6 +3515,14 @@ function CoverTile({ frag, onClick, userStatus, fit }) {
     </button>
   );
 }
+function SeeAllPill({ open, onClick, label = "See all" }) {
+  return (
+    <button onClick={onClick} aria-expanded={open} style={{ display:"inline-flex", alignItems:"center", gap:6, padding:"0 14px", minHeight:32, borderRadius:16, border:"none", background:T.accent, color:"#fff", fontFamily:sans, fontSize:13, fontWeight:500, cursor:"pointer", boxShadow:"0 2px 6px rgba(0,0,0,0.22)", whiteSpace:"nowrap" }}>
+      {open ? "Show fewer" : label}
+      <svg width="9" height="13" viewBox="0 0 9 13" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ transform: open ? "rotate(-90deg)" : "none", transition:"transform .15s" }}><path d="M2 2l4.5 4.5L2 11"/></svg>
+    </button>
+  );
+}
 function Shelf({ title, blurb, items, onOpenFrag, userStatuses, tinted, groups, loadMore }) {
   const [sel, setSel] = useState("All");
   const [open, setOpen] = useState(false);
@@ -3538,7 +3543,7 @@ function Shelf({ title, blurb, items, onOpenFrag, userStatuses, tinted, groups, 
   return (
     <section className={"mos-bleed" + (tinted ? " mos-band" : "")} style={{ padding:"26px 0 22px" }}>
       <div className="mos-bleed-pad" style={{ marginBottom:16 }}>
-        <h3 style={{ fontFamily:serif, fontSize:"clamp(26px, 2.3vw, 38px)", fontWeight:400, letterSpacing:-0.6, color:T.black, margin:0, lineHeight:1.1 }}>{title}</h3>
+        <div style={{ display:"flex", alignItems:"center", flexWrap:"wrap", gap:"8px 14px" }}><h3 style={{ fontFamily:serif, fontSize:"clamp(26px, 2.3vw, 38px)", fontWeight:400, letterSpacing:-0.6, color:T.black, margin:0, lineHeight:1.1 }}>{title}</h3><SeeAllPill open={open} onClick={toggle}/></div>
         <p style={{ fontFamily:sans, fontSize:"clamp(14px, 1.1vw, 17px)", color:T.mid, margin:"6px 0 0", lineHeight:1.5 }}>{blurb}</p>
         {names.length > 0 && <div style={{ display:"flex", flexWrap:"wrap", gap:8, marginTop:16 }}>{chipBtn(sel === "All", "All", () => setSel("All"))}{names.map(n => chipBtn(sel === n, n, () => setSel(n)))}</div>}
       </div>
@@ -3550,7 +3555,6 @@ function Shelf({ title, blurb, items, onOpenFrag, userStatuses, tinted, groups, 
             {shown.map(f => <CoverTile key={f.id} frag={f} onClick={onOpenFrag} userStatus={userStatuses[f.id]}/>)}
           </div>}
       <div className="mos-bleed-pad" style={{ marginTop:6, display:"flex", gap:10, flexWrap:"wrap" }}>
-        <button onClick={toggle} aria-expanded={open} style={{ ...ghostBtn, minHeight:42, fontSize:14, padding:"0 20px" }}>{open ? "Show fewer" : "See all"}</button>
         {open && loadMore && sel === "All" && extra.length > 0 && extra.length < total && <button onClick={() => pull(extra.length)} disabled={busy} style={{ ...ghostBtn, minHeight:42, fontSize:14, padding:"0 20px", opacity:busy?0.6:1 }}>{busy ? "Loading" : "Show more"}</button>}
         {open && busy && !extra.length && <span style={{ fontFamily:sans, fontSize:13, color:T.mid, alignSelf:"center" }}>Loading</span>}
       </div>
@@ -4180,7 +4184,7 @@ function KitsShelf({ onOpenBrand, tinted }) {
   return (
     <section className={"mos-bleed" + (tinted ? " mos-band" : "")} style={{ padding:"26px 0 22px" }}>
       <div className="mos-bleed-pad" style={{ marginBottom:16 }}>
-        <h3 style={{ fontFamily:serif, fontSize:"clamp(26px, 2.3vw, 38px)", fontWeight:400, letterSpacing:-0.6, color:T.black, margin:0, lineHeight:1.1 }}>Discovery kits</h3>
+        <div style={{ display:"flex", alignItems:"center", flexWrap:"wrap", gap:"8px 14px" }}><h3 style={{ fontFamily:serif, fontSize:"clamp(26px, 2.3vw, 38px)", fontWeight:400, letterSpacing:-0.6, color:T.black, margin:0, lineHeight:1.1 }}>Discovery kits</h3><SeeAllPill open={all} onClick={() => { setAll(v => !v); setQ(""); }} label="See all"/></div>
         <p style={{ fontFamily:sans, fontSize:"clamp(14px, 1.1vw, 17px)", color:T.mid, margin:"6px 0 0", lineHeight:1.5 }}>Sample first. Houses that sell a discovery set or samples on their own site. Links go straight to the brand, so check the contents and price there.</p>
         {all && <div style={{ position:"relative", marginTop:14, maxWidth:520 }}>
           <input value={q} onChange={e => setQ(e.target.value)} placeholder="Search kits by brand or country" style={{ ...FIELD, width:"100%", boxSizing:"border-box" }}/>
@@ -4189,9 +4193,6 @@ function KitsShelf({ onOpenBrand, tinted }) {
       {all
         ? <div className="mos-bleed-pad" style={{ display:"flex", flexWrap:"wrap", gap:14 }}>{shown.map(card)}{shown.length === 0 && <p style={{ fontFamily:sans, fontSize:14, color:T.mid }}>No kits match that.</p>}</div>
         : <div className="mos-shelf mos-bleed-pad" style={{ display:"flex", alignItems:"stretch", gap:14, overflowX:"auto", paddingTop:2, paddingBottom:14, scrollSnapType:"x proximity", WebkitOverflowScrolling:"touch" }}>{shown.map(card)}</div>}
-      <div className="mos-bleed-pad" style={{ marginTop:6 }}>
-        <button onClick={() => { setAll(v => !v); setQ(""); }} style={{ ...ghostBtn, minHeight:42, fontSize:14, padding:"0 20px" }}>{all ? "Show fewer" : "See all kits"}</button>
-      </div>
     </section>
   );
 }
@@ -4285,12 +4286,12 @@ function DiscoverCircles({ mode, setMode, nose }) {
     { key:"community", label:"Community", visual: face("var(--tint-tangerine)", <Icon name="people" size={46} color={T.accent}/>) },
   ];
   return (
-    <div role="tablist" aria-label="Discover" style={{ display:"flex", alignItems:"flex-start", gap:"clamp(12px, 3vw, 26px)", overflowX:"auto", padding:"6px 4px 14px", marginBottom:14 }}>
+    <div role="tablist" aria-label="Discover" style={{ display:"flex", alignItems:"flex-start", gap:"clamp(12px, 3vw, 26px)", overflowX:"auto", padding:"8px 12px 24px", margin:"0 -12px 6px" }}>
       {items.map(it => {
         const on = mode === it.key;
         return (
           <button key={it.key} role="tab" aria-selected={on} aria-label={it.label} onClick={() => setMode(on ? "browse" : it.key)} style={{ flex:"0 0 auto", width:"clamp(70px, 19vw, 132px)", background:"none", border:"none", padding:0, cursor:"pointer", textAlign:"center", fontFamily:sans }}>
-            <span style={{ display:"block", borderRadius:"50%", padding:3, boxShadow: on ? `0 0 0 3px ${T.accent}` : "0 0 0 1px transparent", transition:"box-shadow .15s" }}>{it.visual}</span>
+            <span style={{ display:"block", borderRadius:"50%", padding:3, boxShadow: on ? `0 0 0 3px ${T.accent}, 0 8px 18px rgba(0,0,0,0.28)` : "0 6px 16px rgba(0,0,0,0.25), 0 1px 3px rgba(0,0,0,0.18)", transition:"box-shadow .15s" }}>{it.visual}</span>
             <span style={{ display:"block", marginTop:10, fontFamily:serif, fontSize:"clamp(14px, 1.3vw, 17px)", lineHeight:1.2, color:T.black, fontWeight: on ? 600 : 400 }}>{it.label}</span>
           </button>
         );
