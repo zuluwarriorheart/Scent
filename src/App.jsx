@@ -4354,6 +4354,7 @@ function useCircleItems(nose) {
     { key:"notes", label:"Notes", visual: noteSrc ? face("#fff", <img src={noteSrc} alt="" style={{ width:"86%", height:"86%", objectFit:"contain" }}/>) : face("var(--tint-pink)", <Icon name="droplet" size={44} color={T.accent}/>) },
     { key:"brands", label:"Brands", visual: face("var(--tint-teal)", <Icon name="bottle" size={46} color={T.teal}/>) },
     { key:"perfumers", label:"Perfumers", visual: pKey ? <span style={{ display:"block", width:"100%", aspectRatio:"1 / 1" }}><PerfumerPortrait name={titleCaseName(pKey)} photo={pm[pKey]} size="100%"/></span> : face("var(--tint-violet)", <Icon name="nose" size={46} color={T.accent}/>) },
+    { key:"diversity", label:"Diversity", visual: face("var(--tint-coral)", <Icon name="globe" size={46} color={T.accent}/>) },
     ...(nose ? [{ key:"nose", label:"Nose", visual: face("var(--tint-orchid)", <Icon name="nose" size={46} color={T.accent}/>) }] : []),
     { key:"community", label:"Community", visual: face("var(--tint-tangerine)", <Icon name="people" size={46} color={T.accent}/>) },
   ];
@@ -4361,13 +4362,13 @@ function useCircleItems(nose) {
 }
 function DiscoverCircles({ items, mode, setMode }) {
   return (
-    <div role="tablist" aria-label="Discover" style={{ display:"flex", alignItems:"flex-start", gap:"clamp(12px, 3vw, 26px)", overflowX:"auto", padding:"8px 12px 24px", margin:"0 -12px 6px" }}>
+    <div role="tablist" aria-label="Discover" style={{ display:"flex", alignItems:"flex-start", gap:"clamp(4px, 2vw, 26px)", overflowX:"auto", padding:"8px 12px 24px", margin:"0 -12px 6px" }}>
       {items.map(it => {
         const on = mode === it.key;
         return (
-          <button key={it.key} role="tab" aria-selected={on} aria-label={it.label} onClick={() => setMode(on ? "browse" : it.key)} style={{ flex:"0 0 auto", width:"clamp(70px, 19vw, 132px)", background:"none", border:"none", padding:0, cursor:"pointer", textAlign:"center", fontFamily:sans }}>
+          <button key={it.key} role="tab" aria-selected={on} aria-label={it.label} onClick={() => setMode(on ? "browse" : it.key)} style={{ flex:"0 0 auto", width:"clamp(54px, 17vw, 132px)", background:"none", border:"none", padding:0, cursor:"pointer", textAlign:"center", fontFamily:sans }}>
             <span style={{ display:"block", borderRadius:"50%", padding:3, boxShadow: on ? `0 0 0 3px ${T.accent}, 0 8px 18px rgba(0,0,0,0.28)` : "0 6px 16px rgba(0,0,0,0.25), 0 1px 3px rgba(0,0,0,0.18)", transition:"box-shadow .15s" }}>{it.visual}</span>
-            <span style={{ display:"block", marginTop:10, fontFamily:serif, fontSize:"clamp(14px, 1.3vw, 17px)", lineHeight:1.2, color:T.black, fontWeight: on ? 600 : 400 }}>{it.label}</span>
+            <span style={{ display:"block", marginTop:10, fontFamily:serif, fontSize:"clamp(12px, 1.3vw, 17px)", lineHeight:1.2, color:T.black, fontWeight: on ? 600 : 400 }}>{it.label}</span>
           </button>
         );
       })}
@@ -4444,7 +4445,7 @@ function DiscoverTab({ onOpenFrag, onOpenBrand, onOpenPerfumer, onOpenProfile, f
       </div>
       <DiscoverCircles items={circleItems} mode={mode} setMode={setMode}/>
       </>}
-      {mode!=="browse"&&mode!=="notes"&&(()=>{const it=circleItems.find(x=>x.key===mode);const SUB={brands:"Every house in the library, with who owns it and what it makes.",perfumers:"The noses behind the bottles. Find a perfumer, then everything they have made.",community:"Posts, thoughts and requests from members, newest first.",requests:"Ask what to smell like. Members answer.",nose:"Describe a memory, a mood or a place."};return <SectionHero onBack={()=>setMode("browse")} visual={it&&it.visual} title={it?it.label:"Requests"} sub={SUB[mode]}/>;})()}
+      {mode!=="browse"&&mode!=="notes"&&(()=>{const it=circleItems.find(x=>x.key===mode);const SUB={brands:"Every house in the library, with who owns it and what it makes.",perfumers:"The noses behind the bottles. Find a perfumer, then everything they have made.",diversity:"Houses founded and owned by people the big names often overlook.",community:"Posts, thoughts and requests from members, newest first.",requests:"Ask what to smell like. Members answer.",nose:"Describe a memory, a mood or a place."};return <SectionHero onBack={()=>setMode("browse")} visual={it&&it.visual} title={it?it.label:"Requests"} sub={SUB[mode]}/>;})()}
 
       {mode==="browse"&&(
         <>
@@ -4506,6 +4507,12 @@ function DiscoverTab({ onOpenFrag, onOpenBrand, onOpenPerfumer, onOpenProfile, f
         </>
       )}
 
+      {mode==="diversity"&&(()=>{
+        const ds=shelves.find(x=>x.key==="diversity");
+        const cats=ds&&ds.groups?Object.keys(ds.groups):[];
+        if(!cats.length) return <p style={{fontFamily:sans,fontSize:14,color:T.mid,margin:"8px 0"}}>Nothing here yet.</p>;
+        return <div>{cats.map((c,i)=><Shelf key={c} title={c} blurb="" items={ds.groups[c]} onOpenFrag={onOpenFrag} userStatuses={userStatuses} tinted={i%2===0}/>)}</div>;
+      })()}
       {mode==="brands"&&<BrandsDirectory onOpenBrand={onOpenBrand}/>}
       {mode==="perfumers"&&<PerfumersDirectory onOpenPerfumer={onOpenPerfumer}/>}
 
