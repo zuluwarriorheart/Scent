@@ -6867,7 +6867,7 @@ function BlackFridayGuide({ embedded = false }) {
   };
   const open = phase === "open";
   const [copied, setCopied] = useState(false);
-  const list = offers.filter(o => !o.hidden).map((o, i) => ({ o, i, st:bfStatus(o, now) })).sort((a, b) => a.o.name.localeCompare(b.o.name, "en", { sensitivity:"base", ignorePunctuation:true }) || (a.i - b.i));
+  const list = offers.filter(o => !o.hidden).map((o, i) => ({ o, i, st:bfStatus(o, now) })).sort((a, b) => (b.o.pinned ? 1 : 0) - (a.o.pinned ? 1 : 0) || a.o.name.localeCompare(b.o.name, "en", { sensitivity:"base", ignorePunctuation:true }) || (a.i - b.i));
   const [mine, setMine] = useState(bfLoad);
   const [view, setView] = useState("all");
   const [confirmId, setConfirmId] = useState(null);
