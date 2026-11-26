@@ -6907,6 +6907,7 @@ function BlackFridayGuide({ embedded = false }) {
               </div>
               <h2 style={{ fontFamily:serif, fontWeight:400, fontSize:28, letterSpacing:-0.5, color:T.black, margin:"0 0 2px" }}>{o.name}</h2>
               <p style={{ fontSize:13, color:T.mid, margin:"0 0 12px" }}>{o.tier ? o.tier + " · " : ""}{o.kind}</p>
+              {o.blackOwned && <p style={{ margin:"-4px 0 12px" }}><span style={{ display:"inline-block", fontSize:11, fontWeight:600, letterSpacing:"0.12em", textTransform:"uppercase", color:"var(--accent)", border:"1px solid var(--accent)", borderRadius:20, padding:"4px 11px" }}>Black-owned</span></p>}
               <p style={{ fontFamily:serif, fontSize:22, lineHeight:1.25, color:T.black, margin:"0 0 6px" }}>{o.deal}</p>
               <p style={{ fontSize:14, color:T.mid, lineHeight:1.65, margin:"0 0 12px" }}>{o.terms}</p>
               <p style={{ fontSize:12, color:T.faint, margin:"0 0 12px" }}>Source: {o.via}</p>
