@@ -161,14 +161,13 @@ button, a, summary, [role="tab"] { touch-action:manipulation; }
 const THEME_KEY = "mos-theme";
 const THEME_COLORS = { light:"#FAF7F5", dark:"#0F0B14" };
 function readThemePref() {
-  // RULE: people always land on the dark page. It only turns light when they choose Light (or Auto) themselves.
-  try { const v = window.localStorage.getItem(THEME_KEY); return v === "light" || v === "dark" || v === "system" ? v : "dark"; }
-  catch (e) { return "dark"; }
+  // RULE (owner, Nov 27): the site is dark always. There is no light or auto mode.
+  return "dark";
 }
 function systemTheme() {
   return typeof window !== "undefined" && window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
 }
-function resolveTheme(pref) { return pref === "system" ? systemTheme() : pref; }
+function resolveTheme() { return "dark"; }
 function paintTheme(pref) {
   const r = resolveTheme(pref);
   document.documentElement.setAttribute("data-theme", r);
@@ -177,9 +176,8 @@ function paintTheme(pref) {
 }
 const themeStore = { pref:"dark", subs:new Set() };
 function setThemePref(p) {
-  themeStore.pref = p;
-  try { window.localStorage.setItem(THEME_KEY, p); } catch (e) { /* storage unavailable */ }
-  paintTheme(p);
+  themeStore.pref = "dark";
+  paintTheme("dark");
   themeStore.subs.forEach(f => f());
 }
 if (typeof document !== "undefined") {
@@ -242,24 +240,6 @@ function ThemeToggle({ size = 32 }) {
     </button>
   );
 }
-function AppearancePicker() {
-  const { pref, setPref } = useTheme();
-  const opts = [["light","Light","sun"], ["dark","Dark","moon"], ["system","Auto","contrast"]];
-  return (
-    <div role="radiogroup" aria-label="Appearance" style={{ display:"flex", gap:4, padding:4, borderRadius:12, background:T.lift, border:`1px solid ${T.rule}` }}>
-      {opts.map(([key, label, icon]) => {
-        const on = pref === key;
-        return (
-          <button key={key} role="radio" aria-checked={on} onClick={() => setPref(key)}
-            style={{ flex:1, display:"flex", alignItems:"center", justifyContent:"center", gap:6, padding:"8px 0", borderRadius:9, border:on ? `1px solid ${T.rule}` : "1px solid transparent", background:on ? T.white : "transparent", color:on ? T.black : T.mid, fontSize:12, fontWeight:on ? 600 : 400, fontFamily:sans, cursor:"pointer", transition:"all 0.15s" }}>
-            <Icon name={icon} size={14} color={on ? T.accent : T.mid}/>{label}
-          </button>
-        );
-      })}
-    </div>
-  );
-}
-
 // ─── SVG ICONS ────────────────────────────────────────────────────────────────
 function Icon({ name, size=18, color=T.mid }) {
   const s = { width:size, height:size, display:"inline-flex", alignItems:"center", justifyContent:"center", flexShrink:0 };
@@ -8148,9 +8128,7 @@ function ProfileModal({ username, onClose, onBack, currentUser, userStatuses, st
 
           {isSelf && showSettings && (
             <div style={{ marginBottom:18, padding:16, background:T.lift, border:`1px solid ${T.rule}`, borderRadius:16 }}>
-              <Lbl mb={8}>Appearance</Lbl>
-              <AppearancePicker/>
-              <button onClick={onSignOut} style={{ marginTop:14, padding:"0 20px", minHeight:42, borderRadius:21, border:`1.5px solid ${T.rule}`, background:T.white, color:T.bad, fontSize:14, fontFamily:sans, cursor:"pointer" }}>Sign out</button>
+              <button onClick={onSignOut} style={{ marginTop:0, padding:"0 20px", minHeight:42, borderRadius:21, border:`1.5px solid ${T.rule}`, background:T.white, color:T.bad, fontSize:14, fontFamily:sans, cursor:"pointer" }}>Sign out</button>
             </div>
           )}
 

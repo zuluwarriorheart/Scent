@@ -11,7 +11,7 @@ A sample-first fragrance journal and discovery app. Live at https://www.memoiron
 6. **Never put passwords, API keys or secrets in this repo, in commits or in chat.**
 7. Keep replies concise and warm. Nothing note-image related goes beyond what she approved; do not touch `note_image_map` or other Supabase tables beyond what she asked for.
 
-7b. **Dark by default.** Everyone lands on the dark page. The site only goes light when the person chooses Light (or Auto on a light device) in the appearance picker. Never fall back to the device setting by default.
+7b. **Dark always (owner, Nov 27).** No Light or Auto mode and no appearance picker. The site is always dark.
 
 ## Layout
 - `src/App.jsx`: almost the whole app (single file, inline styles). Theme tokens `T`, helpers `FIELD`, `ctaBtn`, `ghostBtn`, fonts `serif`/`sans`. CSS variables `--cover-w` (tile width) and `--zoom` (desktop fragrance page). `TILE_W = "calc(var(--cover-w) / var(--zoom, 1))"`.

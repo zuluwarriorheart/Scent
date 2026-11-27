@@ -26,9 +26,8 @@
     <script>
       (function () {
         try {
-          var pref = localStorage.getItem('mos-theme');
-          // RULE: dark by default; light only when the person chose it (Light, or Auto on a light device).
-          var dark = pref === 'light' ? false : (pref === 'system' ? !!(window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) : true);
+          // RULE (owner, Nov 27): dark always, no light or auto mode.
+          var dark = true;
           document.documentElement.setAttribute('data-theme', dark ? 'dark' : 'light');
           var m = document.querySelector('meta[name="theme-color"]');
           if (m) m.setAttribute('content', dark ? '#0F0B14' : '#FAF7F5');
