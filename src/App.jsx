@@ -3312,7 +3312,7 @@ function InsightCard({ label, headline, sub, hint, more, children }) {
       <p style={{ fontFamily:serif, fontSize:18, color:T.black, margin:"0 0 2px" }}>{label}</p>
       <p style={{ fontFamily:sans, fontSize:12, color:T.faint, margin:"0 0 10px" }}>{sub}</p>
       <div style={{ display:"flex", flexWrap:"wrap", gap:7 }}>
-        <span style={{ ...chip, cursor:"default", border:"1px solid transparent", background:"var(--accent)", color:"#fff", fontWeight:600 }}>{typeof headline === "string" ? headline.charAt(0).toUpperCase() + headline.slice(1) : headline}</span>
+        <span style={{ ...chip, cursor:"default", border:"1px solid transparent", padding:"0 2px", background:"none", color:T.black, fontFamily:serif, fontSize:20 }}>{typeof headline === "string" ? headline.charAt(0).toUpperCase() + headline.slice(1) : headline}</span>
         {has && <button onClick={() => setOpen(o => !o)} aria-expanded={open} aria-label={(open ? "Hide " : "Show ") + (more || "details")} style={{ ...chip, border:`1px solid ${T.rule}`, background:T.white, color:T.ink, fontWeight:400 }}>{open ? "Hide" : (more || "Details")}&nbsp;<span style={{ display:"inline-block", transform:open ? "rotate(180deg)" : "none", fontSize:10 }}>▾</span></button>}
       </div>
       {has && open && <div style={{ marginTop:16 }}>{children}</div>}
@@ -4356,7 +4356,7 @@ function DiscoverCircles({ items, mode, setMode }) {
   );
 }
 
-function DiscoverTab({ onOpenFrag, onOpenBrand, onOpenPerfumer, onOpenProfile, following, userStatuses, reactions, onReaction, onSuggest, fragrances, serverShelves, onSearch }) {
+function DiscoverTab({ onSignOut, onOpenFrag, onOpenBrand, onOpenPerfumer, onOpenProfile, following, userStatuses, reactions, onReaction, onSuggest, fragrances, serverShelves, onSearch }) {
   const [mode,setMode]=useState("browse");
   const [messages,setMessages]=useState([{role:"ai",text:"Tell me what you're in the mood for: a memory, a mood, an aesthetic. I'll find your next fragrance."}]);
   const [input,setInput]=useState("");
@@ -4481,6 +4481,7 @@ function DiscoverTab({ onOpenFrag, onOpenBrand, onOpenPerfumer, onOpenProfile, f
                   {s.key==="new"&&<><PerfumerShelf onOpenPerfumer={onOpenPerfumer} tinted={i%2!==0}/><KitsShelf onOpenBrand={onOpenBrand} tinted={i%2===0}/></>}
                 </Fragment>
               ))}
+              {onSignOut&&<div style={{textAlign:"center",padding:"36px 0 12px"}}><button onClick={onSignOut} style={{padding:"0 24px",minHeight:42,borderRadius:21,border:`1.5px solid ${T.rule}`,background:"none",color:T.bad,fontSize:14,fontFamily:sans,cursor:"pointer"}}>Sign out</button></div>}
             </>
           )}
         </>
@@ -7944,7 +7945,6 @@ function ProfileModal({ username, onClose, onBack, currentUser, userStatuses, st
   const isSillage = username === "memoir";
   const mock = MOCK_MEMBERS.find(m => m.username === username);
   const [tab, setTab] = useState(isSelf ? "stats" : mock && !isSelf ? "reviews" : "posts");
-  const [showSettings, setShowSettings] = useState(false);
   const [real, setReal] = useState(null);   // the member's public row from the database
   const [loaded, setLoaded] = useState(isSillage);
   const [list, setList] = useState(null);   // people shown on the Following / Followers tabs
@@ -8004,7 +8004,7 @@ function ProfileModal({ username, onClose, onBack, currentUser, userStatuses, st
   const stats = [[member.followers || 0, "followers"], [member.following || 0, "following"]];
   if (isSelf) stats.push([Object.keys(userStatuses || {}).length, "fragrances"]);
   else if (mock && !real) stats.push([Object.keys(member.statuses || {}).length, "fragrances"]);
-  const tabs = isSillage ? ["posts", "reviews"] : isSelf ? ["stats", "lists", "posts"] : real ? ["posts"] : ["reviews", "layering", "collection", "in common"];
+  const tabs = isSillage ? ["posts", "reviews"] : isSelf ? ["stats", "lists", "reviews", "posts"] : real ? ["posts"] : ["reviews", "layering", "collection", "in common"];
 
   const initials = isSillage ? "m." : (member.username || member.name || "?").slice(0, 2).toUpperCase();
 
@@ -8035,8 +8035,8 @@ function ProfileModal({ username, onClose, onBack, currentUser, userStatuses, st
         ) : (
         <div className="mos-pad" style={{ position:"sticky", top:0, background:T.white, zIndex:2, borderBottom:`1px solid ${T.rule}`, padding:"20px 24px 0" }}>
           <BackBtn onBack={onBack||onClose}/>
-          <div style={{ display:"flex", alignItems:"flex-start", justifyContent:"space-between", marginBottom:18 }}>
-            <div style={{ display:"flex", alignItems:"center", gap:16, minWidth:0, flex:1 }}>
+          <div style={{ display:"flex", alignItems:"flex-start", justifyContent:"center", marginBottom:18 }}>
+            <div style={{ display:"flex", flexDirection:"column", alignItems:"center", textAlign:"center", gap:12, minWidth:0, flex:1 }}>
               <div style={{ width:84, height:84, flexShrink:0, borderRadius:"50%", background:isSillage?T.black:T.black, display:"flex", alignItems:"center", justifyContent:"center", fontSize:isSillage?22:28, fontWeight:600, color:T.white, fontFamily:isSillage?serif:sans, flexShrink:0, position:"relative" }}>
                 {initials}
                 {!isSillage && member.country && (
@@ -8044,7 +8044,7 @@ function ProfileModal({ username, onClose, onBack, currentUser, userStatuses, st
                 )}
               </div>
               <div>
-                <div style={{ display:"flex", alignItems:"center", gap:6, marginBottom:4, flexWrap:"wrap" }}>
+                <div style={{ display:"flex", alignItems:"center", justifyContent:"center", gap:6, marginBottom:4, flexWrap:"wrap" }}>
                   <span style={{ fontFamily:serif, fontSize:"clamp(20px, 5.2vw, 36px)", color:T.black, letterSpacing:-0.6, lineHeight:1.1, overflowWrap:"anywhere" }}>{member.name || "@" + member.username}</span>
                   {isSillage && <span style={{ fontFamily:sans, fontSize:9, textTransform:"uppercase", letterSpacing:"0.1em", color:T.faint, background:T.lift, padding:"2px 7px", borderRadius:10, border:`1px solid ${T.rule}` }}>Official</span>}
                 </div>
@@ -8056,14 +8056,13 @@ function ProfileModal({ username, onClose, onBack, currentUser, userStatuses, st
                 )}
               </div>
             </div>
-            <div style={{ display:"flex", gap:8, flexShrink:0 }}>
-              {isSelf && <button onClick={() => setShowSettings(v => !v)} aria-label="Settings" aria-pressed={showSettings} style={{ width:40, height:40, borderRadius:"50%", border:`1px solid ${showSettings ? T.accent : T.rule}`, background:T.white, cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center" }}><Icon name="sliders" size={18} color={showSettings ? T.accent : T.mid}/></button>}
+            <div style={{ position:"absolute", top:20, right:24, display:"flex", gap:8 }}>
                           <button onClick={onClose} style={{ width:40, height:40, borderRadius:"50%", border:`1px solid ${T.rule}`, background:T.white, cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", fontSize:15, color:T.mid, flexShrink:0 }}>✕</button>
             </div>
           </div>
 
           {member.bio && (
-            <p style={{ fontFamily:sans, fontSize:13, color:T.mid, lineHeight:1.65, margin:"0 0 16px" }}>{member.bio}</p>
+            <p style={{ fontFamily:sans, fontSize:13, color:T.mid, lineHeight:1.65, margin:"0 0 16px", textAlign:"center" }}>{member.bio}</p>
           )}
 
           {!isSelf && (
@@ -8120,19 +8119,13 @@ function ProfileModal({ username, onClose, onBack, currentUser, userStatuses, st
           )}
 
           {isSelf && (
-            <div style={{ display:"flex", gap:10, flexWrap:"wrap", marginBottom:18 }}>
+            <div style={{ display:"flex", gap:10, flexWrap:"wrap", justifyContent:"center", marginBottom:18 }}>
               <button onClick={() => { setTab("followers"); setEditing(false); }} style={{ padding:"0 20px", minHeight:42, borderRadius:21, border:"none", background:T.lift, color:T.ink, fontSize:14, fontFamily:sans, cursor:"pointer" }}>View followers</button>
               <button onClick={() => setEditing(e => !e)} aria-expanded={editing} style={{ padding:"0 26px", minHeight:42, borderRadius:21, border:`1.5px solid ${editing ? T.accent : T.rule}`, background:"none", color:editing ? T.accent : T.ink, fontSize:14, fontFamily:sans, cursor:"pointer" }}>{editing ? "Close editor" : "Edit"}</button>
             </div>
           )}
 
-          {isSelf && showSettings && (
-            <div style={{ marginBottom:18, padding:16, background:T.lift, border:`1px solid ${T.rule}`, borderRadius:16 }}>
-              <button onClick={onSignOut} style={{ marginTop:0, padding:"0 20px", minHeight:42, borderRadius:21, border:`1.5px solid ${T.rule}`, background:T.white, color:T.bad, fontSize:14, fontFamily:sans, cursor:"pointer" }}>Sign out</button>
-            </div>
-          )}
-
-          <div style={{ display:"flex", gap:0, overflowX:"auto" }}>
+          <div style={{ display:"flex", gap:0, overflowX:"auto", justifyContent:"center" }}>
             {tabs.map(t => (
               (t === "in common" && (isSelf || commonFrags.length === 0)) ? null : (
                 <button key={t} onClick={() => { setTab(t); setEditing(false); }} style={{ marginRight:22, padding:"4px 0 12px", fontSize:"clamp(15px, 1.2vw, 17px)", fontWeight:tab===t?600:400, color:tab===t?T.accent:T.mid, background:"none", border:"none", borderBottom:tab===t?`2px solid ${T.accent}`:"2px solid transparent", marginBottom:-1, cursor:"pointer", whiteSpace:"nowrap", fontFamily:sans }}>
@@ -8252,6 +8245,7 @@ function ProfileModal({ username, onClose, onBack, currentUser, userStatuses, st
 
           {!editing && tab === "reviews" && (
             <div>
+              <h3 style={{ fontFamily:serif, fontSize:24, fontWeight:400, color:T.black, margin:"0 0 14px", letterSpacing:-0.3 }}>Reviews</h3>
               {(member.reviews || []).length === 0 ? (
                 <div style={{ textAlign:"center", padding:"40px 0" }}>
                   <p style={{ fontFamily:serif, fontSize:18, color:T.faint, margin:"0 0 8px" }}>No reviews yet</p>
@@ -8941,7 +8935,7 @@ export default function SillageApp() {
       </header>
 
       <main className="mos-main mos-wrap" style={{ position:"relative", zIndex:1, paddingTop:28, paddingBottom:64 }}>
-        {activeTab==="Discover"   && <DiscoverTab   onOpenBrand={openBrand} onOpenPerfumer={openPerfumer} onOpenProfile={openProfile} following={following} fragrances={fragrances} serverShelves={serverShelves} onSearch={serverShelves ? searchFrags : null} onOpenFrag={openFrag} userStatuses={userStatuses} reactions={reactions} onReaction={onReaction} onSuggest={() => setShowSuggest(true)} currentUser={currentUser}/>}
+        {activeTab==="Discover"   && <DiscoverTab   onSignOut={handleSignOut} onOpenBrand={openBrand} onOpenPerfumer={openPerfumer} onOpenProfile={openProfile} following={following} fragrances={fragrances} serverShelves={serverShelves} onSearch={serverShelves ? searchFrags : null} onOpenFrag={openFrag} userStatuses={userStatuses} reactions={reactions} onReaction={onReaction} onSuggest={() => setShowSuggest(true)} currentUser={currentUser}/>}
         {activeTab==="Collection" && <CollectionTab onOpenBrand={openBrand} onEvents={EVENTS_PREVIEW ? () => setEventsOpen(true) : null} onImport={() => setImportOpen(true)} fragrances={fragrances} onOpenFrag={openFrag} statuses={userStatuses} statusSets={statusSets} reactions={reactions} onReaction={onReaction} onSuggest={() => setShowSuggest(true)} wears={wears} onOpenJournal={() => setActiveTab("Journal")}/>}
         {activeTab==="Layering"   && <div className="mos-prose"><LayeringTab layers={layers} onSaveLayer={saveLayer} onSearch={searchFrags} fragrances={fragrances} statusSets={statusSets}/></div>}
         {activeTab==="Journal"    && <div className="mos-prose"><JournalTab entries={journalEntries} userStatuses={userStatuses} reactions={reactions} fragrances={fragrances} wears={wears} onOpenFrag={openFrag} onSearch={searchFrags} onAddJournalEntry={addJournalEntry}/></div>}
