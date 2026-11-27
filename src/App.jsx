@@ -5481,9 +5481,34 @@ function CollectionTab({ onEvents, onImport, onOpenBrand, onOpenFrag, statuses:u
 }
 
 // ─── JOURNAL ──────────────────────────────────────────────────────────────────
+// Taste profile (moved from the Journal to the Stats tab of your profile)
+function TasteProfile({ entries, userStatuses, reactions, fragrances, wears, onOpenFrag }) {
+  const FR = (fragrances && fragrances.length) ? fragrances : FRAGRANCES;
+  const all = [...(entries || [])];
+  const families = all.map(e => e.family).filter(Boolean);
+  const familyCount = families.reduce((acc, f) => { acc[f] = (acc[f] || 0) + 1; return acc; }, {});
+  const topFamilies = Object.entries(familyCount).sort((a, b) => b[1] - a[1]);
+  const dominant = topFamilies[0]?.[0] || "";
+  const previous = topFamilies.length > 1 ? topFamilies[topFamilies.length - 1]?.[0] : "";
+  return (
+    <div>
+      <JournalInsights entries={all} userStatuses={userStatuses||{}} reactions={reactions||{}} fragrances={FR} wears={wears} onOpenFrag={onOpenFrag}/>
+      {/* Collection map hidden for now (CollectionMap component kept) */}
+
+      {dominant && previous && <div style={{background:T.lift,border:`1px solid ${T.rule}`,borderRadius:16,padding:18,marginBottom:16}}>
+        <Lbl>Taste this year</Lbl>
+        <p style={{fontFamily:sans,fontSize:13,color:T.mid,lineHeight:1.7,margin:"0 0 14px"}}>Your sampling is moving from <span style={{color:T.black,fontWeight:500}}>{previous}</span> toward <span style={{color:T.black,fontWeight:500}}>{dominant}</span>.</p>
+        <div style={{display:"flex",alignItems:"center",gap:8}}>
+          <div style={{flex:1,textAlign:"center",padding:"8px 0",borderRadius:8,background:T.white,border:`1px solid ${T.rule}`}}><p style={{fontFamily:sans,fontSize:11,color:T.mid,margin:0}}>{previous}</p></div>
+          <span style={{color:T.faint,fontSize:12}}>→</span>
+          <div style={{flex:1,textAlign:"center",padding:"8px 0",borderRadius:8,background:T.black}}><p style={{fontFamily:sans,fontSize:11,color:T.white,margin:0}}>{dominant}</p></div>
+        </div>
+      </div>}
+    </div>
+  );
+}
+
 function JournalTab({ entries, userStatuses, reactions, fragrances, wears, onOpenFrag, onSearch, onAddJournalEntry }) {
-  const [jtab, setJtab] = useState(() => { try { return sessionStorage.getItem("mos-journal-tab") === "overview" ? "overview" : "write"; } catch (e) { return "write"; } });
-  const pickTab = t => { setJtab(t); try { sessionStorage.setItem("mos-journal-tab", t); } catch (e) {} };
   const [wFrag, setWFrag] = useState(null);
   const FR = (fragrances && fragrances.length) ? fragrances : FRAGRANCES;
   const all = [...(entries||[])];
@@ -5505,13 +5530,8 @@ function JournalTab({ entries, userStatuses, reactions, fragrances, wears, onOpe
         <p style={{fontFamily:sans,fontSize:"clamp(13px, 1.1vw, 17px)",color:T.mid,margin:"6px 0 0"}}>What you reach for, and why. A record that becomes a mirror.</p>
       </div>
 
-      <div role="tablist" style={{display:"flex",gap:28,borderBottom:`1px solid ${T.rule}`,marginBottom:22,overflowX:"auto"}}>
-        {[["write","Write an entry"],["overview","Your taste profile"]].map(([k,l])=>(
-          <button key={k} role="tab" aria-selected={jtab===k} onClick={()=>pickTab(k)} style={{padding:"12px 0",whiteSpace:"nowrap",fontFamily:sans,fontSize:"clamp(15px, 1.2vw, 17px)",fontWeight:jtab===k?600:400,color:jtab===k?T.accent:T.mid,background:"none",border:"none",borderBottom:jtab===k?`2px solid ${T.accent}`:"2px solid transparent",marginBottom:-1,cursor:"pointer"}}>{l}</button>
-        ))}
-      </div>
 
-      {jtab==="write"&&<div>
+      <div>
         <div style={{marginBottom:20}}>
           <JournalComposer frag={wFrag} entries={entries} onAddJournalEntry={onAddJournalEntry} picker={<><Lbl>Which fragrance is this entry about?</Lbl><FragPicker key="jw" value="" onPick={(t,f)=>setWFrag(f||null)} onSearch={onSearch} placeholder="Search for a fragrance"/></>}/>
         </div>
@@ -5550,22 +5570,8 @@ function JournalTab({ entries, userStatuses, reactions, fragrances, wears, onOpe
       {all.length===0&&(
         <p style={{fontFamily:sans,fontSize:11,color:T.faint,textAlign:"center",marginTop:4,lineHeight:1.6}}>Nothing here yet. Wear something today and write down how it feels. Open any fragrance, choose its Journal tab and answer one prompt.</p>
       )}
-      </div>}
+      </div>
 
-      {jtab==="overview"&&<div>
-      <JournalInsights entries={all} userStatuses={userStatuses||{}} reactions={reactions||{}} fragrances={FR} wears={wears} onOpenFrag={onOpenFrag}/>
-      {/* Collection map hidden for now (CollectionMap component kept) */}
-
-      {dominant && previous && <div style={{background:T.lift,border:`1px solid ${T.rule}`,borderRadius:16,padding:18,marginBottom:16}}>
-        <Lbl>Taste this year</Lbl>
-        <p style={{fontFamily:sans,fontSize:13,color:T.mid,lineHeight:1.7,margin:"0 0 14px"}}>Your sampling is moving from <span style={{color:T.black,fontWeight:500}}>{previous}</span> toward <span style={{color:T.black,fontWeight:500}}>{dominant}</span>.</p>
-        <div style={{display:"flex",alignItems:"center",gap:8}}>
-          <div style={{flex:1,textAlign:"center",padding:"8px 0",borderRadius:8,background:T.white,border:`1px solid ${T.rule}`}}><p style={{fontFamily:sans,fontSize:11,color:T.mid,margin:0}}>{previous}</p></div>
-          <span style={{color:T.faint,fontSize:12}}>→</span>
-          <div style={{flex:1,textAlign:"center",padding:"8px 0",borderRadius:8,background:T.black}}><p style={{fontFamily:sans,fontSize:11,color:T.white,margin:0}}>{dominant}</p></div>
-        </div>
-      </div>}
-      </div>}
     </div>
   );
 }
@@ -7953,7 +7959,7 @@ function ProfilePosts({ username, onOpenProfile, onOpenFrag }) {
 }
 
 // ─── PROFILE MODAL ────────────────────────────────────────────────────────────
-function ProfileModal({ username, onClose, onBack, currentUser, userStatuses, statusSets, fragrances, onOpenFrag, isFollowing, onToggleFollow, following, onOpenProfile, onSignOut, myStats, onFindPeople, onProfileSaved }) {
+function ProfileModal({ username, onClose, onBack, currentUser, userStatuses, statusSets, fragrances, journalEntries, reactions, wears, onOpenFrag, isFollowing, onToggleFollow, following, onOpenProfile, onSignOut, myStats, onFindPeople, onProfileSaved }) {
   const isSelf = !!currentUser && String(currentUser.username || "").toLowerCase() === String(username || "").toLowerCase();
   const isSillage = username === "memoir";
   const mock = MOCK_MEMBERS.find(m => m.username === username);
@@ -8152,16 +8158,17 @@ function ProfileModal({ username, onClose, onBack, currentUser, userStatuses, st
             <ProfileEditor user={currentUser} onCancel={() => setEditing(false)} onSaved={fields => { onProfileSaved && onProfileSaved(fields); setReal(r => r ? { ...r, bio: fields.bio, country: fields.country } : r); setEditing(false); }}/>
           )}
 
-          {!editing && tab === "stats" && isSelf && myStats && (
-            <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit, minmax(140px, 1fr))", gap:12 }}>
-              {[["Fragrances", String(myStats.fragrances), ""], ["Followers", String(member.followers || 0), ""], ["Following", String(member.following || 0), ""], ["Best streak", String(myStats.bestStreak), myStats.bestStreak === 1 ? "day" : "days"], ["Avg wear rating", myStats.avgRating ? myStats.avgRating.toFixed(1) : "–", myStats.avgRating ? "stars" : ""]].map(([l, v, u]) => (
+          {!editing && tab === "stats" && isSelf && myStats && (<>
+            <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit, minmax(140px, 1fr))", gap:12, marginBottom:28 }}>
+              {[["Fragrances", String(myStats.fragrances), ""], ["Followers", String(member.followers || 0), ""], ["Following", String(member.following || 0), ""]].map(([l, v, u]) => (
                 <div key={l} style={{ background:T.lift, border:`1px solid ${T.rule}`, borderRadius:18, padding:"18px 10px", textAlign:"center" }}>
                   <p style={{ fontFamily:sans, fontSize:12, color:T.mid, margin:"0 0 6px" }}>{l}</p>
                   <p style={{ fontFamily:serif, fontSize:34, lineHeight:1, color:"var(--accent)", margin:0 }}>{v}</p>
                   <p style={{ fontFamily:sans, fontSize:12, color:T.faint, margin:"5px 0 0", minHeight:14 }}>{u}</p>
                 </div>))}
             </div>
-          )}
+            <TasteProfile entries={journalEntries || []} userStatuses={userStatuses || {}} reactions={reactions || {}} fragrances={fragrances} wears={wears} onOpenFrag={onOpenFrag}/>
+          </>)}
 
           {!editing && tab === "lists" && isSelf && (() => {
             const FR = (fragrances && fragrances.length) ? fragrances : FRAGRANCES;
@@ -9020,6 +9027,9 @@ export default function SillageApp() {
           userStatuses={userStatuses}
           statusSets={statusSets}
           fragrances={fragrances}
+          journalEntries={journalEntries}
+          reactions={reactions}
+          wears={wears}
           onOpenFrag={id => openFrag(id)}
           isFollowing={following.has(String(profileUsername).toLowerCase())}
           onToggleFollow={toggleFollow}
