@@ -7953,11 +7953,12 @@ function ProfilePosts({ username, onOpenProfile, onOpenFrag }) {
 }
 
 // ─── PROFILE MODAL ────────────────────────────────────────────────────────────
-function ProfileModal({ username, onClose, onBack, currentUser, userStatuses, onOpenFrag, isFollowing, onToggleFollow, following, onOpenProfile, onSignOut, myStats, onFindPeople, onProfileSaved }) {
+function ProfileModal({ username, onClose, onBack, currentUser, userStatuses, statusSets, fragrances, onOpenFrag, isFollowing, onToggleFollow, following, onOpenProfile, onSignOut, myStats, onFindPeople, onProfileSaved }) {
   const isSelf = !!currentUser && String(currentUser.username || "").toLowerCase() === String(username || "").toLowerCase();
   const isSillage = username === "memoir";
   const mock = MOCK_MEMBERS.find(m => m.username === username);
-  const [tab, setTab] = useState(mock && !isSelf ? "reviews" : "posts");
+  const [tab, setTab] = useState(isSelf ? "stats" : mock && !isSelf ? "reviews" : "posts");
+  const [showSettings, setShowSettings] = useState(false);
   const [real, setReal] = useState(null);   // the member's public row from the database
   const [loaded, setLoaded] = useState(isSillage);
   const [list, setList] = useState(null);   // people shown on the Following / Followers tabs
@@ -8017,7 +8018,7 @@ function ProfileModal({ username, onClose, onBack, currentUser, userStatuses, on
   const stats = [[member.followers || 0, "followers"], [member.following || 0, "following"]];
   if (isSelf) stats.push([Object.keys(userStatuses || {}).length, "fragrances"]);
   else if (mock && !real) stats.push([Object.keys(member.statuses || {}).length, "fragrances"]);
-  const tabs = isSillage ? ["posts", "reviews"] : isSelf ? ["posts", "following", "followers"] : real ? ["posts"] : ["reviews", "layering", "collection", "in common"];
+  const tabs = isSillage ? ["posts", "reviews"] : isSelf ? ["stats", "lists", "posts", "following", "followers"] : real ? ["posts"] : ["reviews", "layering", "collection", "in common"];
 
   const initials = isSillage ? "m." : (member.username || member.name || "?").slice(0, 2).toUpperCase();
 
@@ -8030,13 +8031,13 @@ function ProfileModal({ username, onClose, onBack, currentUser, userStatuses, on
 
   return (
     <div className="mos-sheet-wrap" onClick={onClose} style={{ position:"fixed", inset:0, zIndex:60, background:"rgba(10,10,10,0.5)", backdropFilter:"blur(12px)", display:"flex", flexDirection:"column", justifyContent:"flex-end", alignItems:"center" }}>
-      <div className="mos-sheet" onClick={e => e.stopPropagation()} style={{ background:T.white, borderRadius:"24px 24px 0 0", border:`1px solid ${T.rule}`, borderBottom:"none", width:"100%", maxWidth:460, maxHeight:"92vh", overflowY:"auto" }}>
+      <div className="mos-sheet" onClick={e => e.stopPropagation()} style={{ background:T.white, borderRadius:"24px 24px 0 0", border:`1px solid ${T.rule}`, borderBottom:"none", width:"100%", maxWidth:720, maxHeight:"94vh", overflowY:"auto" }}>
 
         <div className="mos-pad" style={{ position:"sticky", top:0, background:T.white, zIndex:2, borderBottom:`1px solid ${T.rule}`, padding:"20px 24px 0" }}>
           <BackBtn onBack={onBack||onClose}/>
           <div style={{ display:"flex", alignItems:"flex-start", justifyContent:"space-between", marginBottom:18 }}>
-            <div style={{ display:"flex", alignItems:"center", gap:14 }}>
-              <div style={{ width:54, height:54, borderRadius:"50%", background:isSillage?T.black:T.black, display:"flex", alignItems:"center", justifyContent:"center", fontSize:isSillage?15:18, fontWeight:600, color:T.white, fontFamily:isSillage?serif:sans, flexShrink:0, position:"relative" }}>
+            <div style={{ display:"flex", alignItems:"center", gap:16, minWidth:0, flex:1 }}>
+              <div style={{ width:84, height:84, flexShrink:0, borderRadius:"50%", background:isSillage?T.black:T.black, display:"flex", alignItems:"center", justifyContent:"center", fontSize:isSillage?22:28, fontWeight:600, color:T.white, fontFamily:isSillage?serif:sans, flexShrink:0, position:"relative" }}>
                 {initials}
                 {!isSillage && member.country && (
                   <span style={{ position:"absolute", bottom:-2, right:-2, fontSize:16, lineHeight:1 }}>{countryFlag(member.country)}</span>
@@ -8044,7 +8045,7 @@ function ProfileModal({ username, onClose, onBack, currentUser, userStatuses, on
               </div>
               <div>
                 <div style={{ display:"flex", alignItems:"center", gap:6, marginBottom:4, flexWrap:"wrap" }}>
-                  <span style={{ fontFamily:serif, fontSize:18, color:T.black, letterSpacing:-0.3 }}>{member.name || "@" + member.username}</span>
+                  <span style={{ fontFamily:serif, fontSize:"clamp(20px, 5.2vw, 36px)", color:T.black, letterSpacing:-0.6, lineHeight:1.1, overflowWrap:"anywhere" }}>{member.name || "@" + member.username}</span>
                   {isSillage && <span style={{ fontFamily:sans, fontSize:9, textTransform:"uppercase", letterSpacing:"0.1em", color:T.faint, background:T.lift, padding:"2px 7px", borderRadius:10, border:`1px solid ${T.rule}` }}>Official</span>}
                 </div>
                 {member.name && <span style={{ fontFamily:sans, fontSize:12, color:T.mid }}>@{member.username}</span>}
@@ -8055,32 +8056,27 @@ function ProfileModal({ username, onClose, onBack, currentUser, userStatuses, on
                 )}
               </div>
             </div>
-            <button onClick={onClose} style={{ width:30, height:30, borderRadius:"50%", border:`1px solid ${T.rule}`, background:T.white, cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", fontSize:13, color:T.mid, flexShrink:0 }}>✕</button>
+            <div style={{ display:"flex", gap:8, flexShrink:0 }}>
+              {isSelf && <button onClick={() => setShowSettings(v => !v)} aria-label="Settings" aria-pressed={showSettings} style={{ width:40, height:40, borderRadius:"50%", border:`1px solid ${showSettings ? T.accent : T.rule}`, background:T.white, cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center" }}><Icon name="sliders" size={18} color={showSettings ? T.accent : T.mid}/></button>}
+                          <button onClick={onClose} style={{ width:40, height:40, borderRadius:"50%", border:`1px solid ${T.rule}`, background:T.white, cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", fontSize:15, color:T.mid, flexShrink:0 }}>✕</button>
+            </div>
           </div>
 
           {member.bio && (
             <p style={{ fontFamily:sans, fontSize:13, color:T.mid, lineHeight:1.65, margin:"0 0 16px" }}>{member.bio}</p>
           )}
 
-          <div style={{ display:"flex", gap:24, marginBottom:16 }}>
-            {stats.map(([num, label]) => (
-              <div key={label}>
-                <span style={{ fontFamily:serif, fontSize:18, color:T.black }}>{num}</span>
-                <span style={{ fontFamily:sans, fontSize:11, color:T.mid, marginLeft:4 }}>{label}</span>
-              </div>
-            ))}
-          </div>
-
-          {isSelf && myStats && (
-            <div style={{ display:"flex", gap:8, marginBottom:16 }}>
-              {[["Fragrances", String(myStats.fragrances), ""], ["Best streak", String(myStats.bestStreak), myStats.bestStreak === 1 ? "day" : "days"], ["Avg wear rating", myStats.avgRating ? myStats.avgRating.toFixed(1) : "–", myStats.avgRating ? "stars" : ""]].map(([l, v, u]) => (
-                <div key={l} style={{ flex:1, background:T.lift, border:`1px solid ${T.rule}`, borderRadius:14, padding:"12px 8px", textAlign:"center" }}>
-                  <p style={{ fontFamily:sans, fontSize:10, color:T.mid, margin:"0 0 4px" }}>{l}</p>
-                  <p style={{ fontFamily:serif, fontSize:24, lineHeight:1, color:"var(--accent)", margin:0 }}>{v}</p>
-                  <p style={{ fontFamily:sans, fontSize:10, color:T.faint, margin:"3px 0 0", minHeight:12 }}>{u}</p>
-                </div>))}
+          {!isSelf && (
+            <div style={{ display:"flex", gap:24, marginBottom:16 }}>
+              {stats.map(([num, label]) => (
+                <div key={label}>
+                  <span style={{ fontFamily:serif, fontSize:18, color:T.black }}>{num}</span>
+                  <span style={{ fontFamily:sans, fontSize:11, color:T.mid, marginLeft:4 }}>{label}</span>
+                </div>
+              ))}
             </div>
           )}
+
 
           {!isSelf && (
             <div style={{ display:"flex", gap:8, marginBottom:18 }}>
@@ -8124,31 +8120,26 @@ function ProfileModal({ username, onClose, onBack, currentUser, userStatuses, on
           )}
 
           {isSelf && (
-            <div style={{ display:"flex", gap:8, marginBottom:18 }}>
-              <button onClick={() => setEditing(e => !e)} aria-expanded={editing} style={{ flex:1, padding:"11px 0", borderRadius:12, border:`1px solid ${editing?T.black:T.rule}`, background:T.white, color:editing?T.black:T.mid, fontSize:13, fontFamily:sans, cursor:"pointer" }}>
-                {editing ? "Close editor" : "Edit profile"}
-              </button>
-              <button onClick={() => onFindPeople && onFindPeople()} style={{ flex:1, padding:"11px 0", borderRadius:12, border:`1px solid ${T.rule}`, background:T.white, color:T.mid, fontSize:13, fontFamily:sans, cursor:"pointer" }}>
-                Find people
-              </button>
-              <button onClick={onSignOut} style={{ padding:"11px 18px", borderRadius:12, border:`1px solid ${T.rule}`, background:T.white, color:T.bad, fontSize:13, fontFamily:sans, cursor:"pointer" }}>
-                Sign out
-              </button>
+            <div style={{ display:"flex", gap:10, flexWrap:"wrap", marginBottom:18 }}>
+              <button onClick={() => { setTab("followers"); setEditing(false); }} style={{ padding:"0 20px", minHeight:42, borderRadius:21, border:"none", background:T.lift, color:T.ink, fontSize:14, fontFamily:sans, cursor:"pointer" }}>View followers</button>
+              <button onClick={() => setEditing(e => !e)} aria-expanded={editing} style={{ padding:"0 26px", minHeight:42, borderRadius:21, border:`1.5px solid ${editing ? T.accent : T.rule}`, background:"none", color:editing ? T.accent : T.ink, fontSize:14, fontFamily:sans, cursor:"pointer" }}>{editing ? "Close editor" : "Edit"}</button>
+              <button onClick={() => onFindPeople && onFindPeople()} style={{ padding:"0 20px", minHeight:42, borderRadius:21, border:`1.5px solid ${T.rule}`, background:"none", color:T.ink, fontSize:14, fontFamily:sans, cursor:"pointer" }}>Find people</button>
             </div>
           )}
 
-          {isSelf && (
-            <div style={{ marginBottom:18 }}>
+          {isSelf && showSettings && (
+            <div style={{ marginBottom:18, padding:16, background:T.lift, border:`1px solid ${T.rule}`, borderRadius:16 }}>
               <Lbl mb={8}>Appearance</Lbl>
               <AppearancePicker/>
+              <button onClick={onSignOut} style={{ marginTop:14, padding:"0 20px", minHeight:42, borderRadius:21, border:`1.5px solid ${T.rule}`, background:T.white, color:T.bad, fontSize:14, fontFamily:sans, cursor:"pointer" }}>Sign out</button>
             </div>
           )}
 
-          <div className="mos-dtabs" style={{ display:"flex", gap:0, overflowX:"auto" }}>
+          <div style={{ display:"flex", gap:0, overflowX:"auto" }}>
             {tabs.map(t => (
               (t === "in common" && (isSelf || commonFrags.length === 0)) ? null : (
-                <button key={t} onClick={() => { setTab(t); setEditing(false); }} style={{ marginRight:16, paddingBottom:12, fontSize:10, textTransform:"uppercase", letterSpacing:"0.08em", color:tab===t?T.black:T.faint, background:"none", border:"none", borderBottom:tab===t?`2px solid ${T.black}`:"2px solid transparent", marginBottom:-1, cursor:"pointer", whiteSpace:"nowrap", fontFamily:sans }}>
-                  {t}{t==="layering"&&publicLayers.length>0?` (${publicLayers.length})`:""}
+                <button key={t} onClick={() => { setTab(t); setEditing(false); }} style={{ marginRight:22, padding:"4px 0 12px", fontSize:"clamp(15px, 1.2vw, 17px)", fontWeight:tab===t?600:400, color:tab===t?T.accent:T.mid, background:"none", border:"none", borderBottom:tab===t?`2px solid ${T.accent}`:"2px solid transparent", marginBottom:-1, cursor:"pointer", whiteSpace:"nowrap", fontFamily:sans }}>
+                  {t.charAt(0).toUpperCase() + t.slice(1)}{t==="layering"&&publicLayers.length>0?` (${publicLayers.length})`:""}
                 </button>
               )
             ))}
@@ -8160,6 +8151,55 @@ function ProfileModal({ username, onClose, onBack, currentUser, userStatuses, on
           {editing && isSelf && (
             <ProfileEditor user={currentUser} onCancel={() => setEditing(false)} onSaved={fields => { onProfileSaved && onProfileSaved(fields); setReal(r => r ? { ...r, bio: fields.bio, country: fields.country } : r); setEditing(false); }}/>
           )}
+
+          {!editing && tab === "stats" && isSelf && myStats && (
+            <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit, minmax(140px, 1fr))", gap:12 }}>
+              {[["Fragrances", String(myStats.fragrances), ""], ["Followers", String(member.followers || 0), ""], ["Following", String(member.following || 0), ""], ["Best streak", String(myStats.bestStreak), myStats.bestStreak === 1 ? "day" : "days"], ["Avg wear rating", myStats.avgRating ? myStats.avgRating.toFixed(1) : "–", myStats.avgRating ? "stars" : ""]].map(([l, v, u]) => (
+                <div key={l} style={{ background:T.lift, border:`1px solid ${T.rule}`, borderRadius:18, padding:"18px 10px", textAlign:"center" }}>
+                  <p style={{ fontFamily:sans, fontSize:12, color:T.mid, margin:"0 0 6px" }}>{l}</p>
+                  <p style={{ fontFamily:serif, fontSize:34, lineHeight:1, color:"var(--accent)", margin:0 }}>{v}</p>
+                  <p style={{ fontFamily:sans, fontSize:12, color:T.faint, margin:"5px 0 0", minHeight:14 }}>{u}</p>
+                </div>))}
+            </div>
+          )}
+
+          {!editing && tab === "lists" && isSelf && (() => {
+            const FR = (fragrances && fragrances.length) ? fragrances : FRAGRANCES;
+            const st = id => (statusSets || {})[id] || [];
+            const LISTS = [
+              ["Bottles", f => st(f.id).includes("bottle_owned")],
+              ["Travel sizes", f => st(f.id).includes("travel_have")],
+              ["Samples", f => st(f.id).includes("sample_have")],
+              ["Smelled on blotter", f => st(f.id).includes("smelled")],
+              ["Tried on skin", f => st(f.id).includes("tried_skin")],
+              ["Finished", f => isFinishedSet(st(f.id))],
+              ["Wishlist", f => st(f.id).some(x => /_wishlist$/.test(x))],
+            ].map(([name, fn]) => [name, FR.filter(fn)]).filter(([, items]) => items.length);
+            if (!LISTS.length) return (
+              <div style={{ textAlign:"center", padding:"40px 0" }}>
+                <p style={{ fontFamily:serif, fontSize:20, color:T.mid, margin:"0 0 8px" }}>Nothing on your shelves yet</p>
+                <p style={{ fontFamily:sans, fontSize:13, color:T.faint, margin:0 }}>Tag fragrances as bottles, samples or wishlist and they appear here.</p>
+              </div>
+            );
+            return (
+              <div>
+                {LISTS.map(([name, items], i) => (
+                  <div key={name} style={{ padding:"18px 0 8px", borderBottom: i < LISTS.length - 1 ? `1px solid ${T.rule}` : "none" }}>
+                    <div style={{ display:"flex", alignItems:"center", gap:12, marginBottom:14 }}>
+                      <div style={{ width:44, height:44, borderRadius:"50%", background:T.black, color:T.white, display:"flex", alignItems:"center", justifyContent:"center", fontSize:15, fontWeight:600, fontFamily:sans, flexShrink:0 }}>{initials}</div>
+                      <div style={{ minWidth:0 }}>
+                        <p style={{ fontFamily:serif, fontSize:18, color:T.black, margin:0 }}>@{member.username}</p>
+                        <p style={{ fontFamily:sans, fontSize:14, color:T.mid, margin:"2px 0 0" }}>Updated a list: <span style={{ color:T.accent }}>{name}</span></p>
+                      </div>
+                    </div>
+                    <div style={{ "--cover-w":"112px", "--zoom":1, display:"flex", alignItems:"flex-start", gap:12, overflowX:"auto", paddingBottom:14, WebkitOverflowScrolling:"touch" }}>
+                      {items.map(f => <CoverTile noRibbon key={f.id} frag={f} onClick={onOpenFrag} userStatus={userStatuses[f.id]}/>)}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            );
+          })()}
 
           {!editing && tab === "posts" && !isSillage && !mock && (
             <ProfilePosts username={member.username} onOpenProfile={onOpenProfile} onOpenFrag={onOpenFrag}/>
@@ -8978,6 +9018,8 @@ export default function SillageApp() {
           onBack={goBack}
           currentUser={currentUser}
           userStatuses={userStatuses}
+          statusSets={statusSets}
+          fragrances={fragrances}
           onOpenFrag={id => openFrag(id)}
           isFollowing={following.has(String(profileUsername).toLowerCase())}
           onToggleFollow={toggleFollow}
