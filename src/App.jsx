@@ -8024,7 +8024,7 @@ function ProfileModal({ username, onClose, onBack, currentUser, userStatuses, st
   const stats = [[member.followers || 0, "followers"], [member.following || 0, "following"]];
   if (isSelf) stats.push([Object.keys(userStatuses || {}).length, "fragrances"]);
   else if (mock && !real) stats.push([Object.keys(member.statuses || {}).length, "fragrances"]);
-  const tabs = isSillage ? ["posts", "reviews"] : isSelf ? ["stats", "lists", "posts", "following", "followers"] : real ? ["posts"] : ["reviews", "layering", "collection", "in common"];
+  const tabs = isSillage ? ["posts", "reviews"] : isSelf ? ["stats", "lists", "posts"] : real ? ["posts"] : ["reviews", "layering", "collection", "in common"];
 
   const initials = isSillage ? "m." : (member.username || member.name || "?").slice(0, 2).toUpperCase();
 
@@ -8039,6 +8039,19 @@ function ProfileModal({ username, onClose, onBack, currentUser, userStatuses, st
     <div className="mos-sheet-wrap" onClick={onClose} style={{ position:"fixed", inset:0, zIndex:60, background:"rgba(10,10,10,0.5)", backdropFilter:"blur(12px)", display:"flex", flexDirection:"column", justifyContent:"flex-end", alignItems:"center" }}>
       <div className="mos-sheet" onClick={e => e.stopPropagation()} style={{ background:T.white, borderRadius:"24px 24px 0 0", border:`1px solid ${T.rule}`, borderBottom:"none", width:"100%", maxWidth:720, maxHeight:"94vh", overflowY:"auto" }}>
 
+        {isSelf && (tab === "following" || tab === "followers") ? (
+        <div className="mos-pad" style={{ position:"sticky", top:0, background:T.white, zIndex:2, borderBottom:`1px solid ${T.rule}`, padding:"20px 24px 0" }}>
+          <div style={{ display:"flex", alignItems:"center", gap:12, marginBottom:14 }}>
+            <BackBtn onBack={() => setTab("stats")}/>
+            <h2 style={{ fontFamily:serif, fontSize:22, fontWeight:400, color:T.black, margin:0 }}>Your connections</h2>
+          </div>
+          <div role="tablist" style={{ display:"flex", gap:0 }}>
+            {[["following","Following"],["followers","Followers"]].map(([k,l]) => (
+              <button key={k} role="tab" aria-selected={tab===k} onClick={() => setTab(k)} style={{ marginRight:22, padding:"4px 0 12px", fontSize:15, fontWeight:tab===k?600:400, color:tab===k?T.accent:T.mid, background:"none", border:"none", borderBottom:`2px solid ${tab===k?T.accent:"transparent"}`, fontFamily:sans, cursor:"pointer" }}>{l}</button>
+            ))}
+          </div>
+        </div>
+        ) : (
         <div className="mos-pad" style={{ position:"sticky", top:0, background:T.white, zIndex:2, borderBottom:`1px solid ${T.rule}`, padding:"20px 24px 0" }}>
           <BackBtn onBack={onBack||onClose}/>
           <div style={{ display:"flex", alignItems:"flex-start", justifyContent:"space-between", marginBottom:18 }}>
@@ -8151,6 +8164,7 @@ function ProfileModal({ username, onClose, onBack, currentUser, userStatuses, st
             ))}
           </div>
         </div>
+        )}
 
         <div className="mos-pad" style={{ padding:"20px 24px 40px" }}>
 
