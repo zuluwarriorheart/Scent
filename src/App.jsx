@@ -8043,7 +8043,8 @@ function ProfileModal({ username, onClose, onBack, currentUser, userStatuses, st
         <div className="mos-pad" style={{ position:"sticky", top:0, background:T.white, zIndex:2, borderBottom:`1px solid ${T.rule}`, padding:"20px 24px 0" }}>
           <div style={{ display:"flex", alignItems:"center", gap:12, marginBottom:14 }}>
             <BackBtn onBack={() => setTab("stats")}/>
-            <h2 style={{ fontFamily:serif, fontSize:22, fontWeight:400, color:T.black, margin:0 }}>Your connections</h2>
+            <h2 style={{ fontFamily:serif, fontSize:20, fontWeight:400, color:T.black, margin:0, flex:1, whiteSpace:"nowrap" }}>Connections</h2>
+            <button onClick={() => onFindPeople && onFindPeople()} style={{ padding:"0 16px", minHeight:38, borderRadius:19, border:`1.5px solid ${T.accent}`, background:"none", color:T.accent, fontSize:14, fontFamily:sans, cursor:"pointer", flexShrink:0 }}>Find people</button>
           </div>
           <div role="tablist" style={{ display:"flex", gap:0 }}>
             {[["following","Following"],["followers","Followers"]].map(([k,l]) => (
@@ -8142,7 +8143,6 @@ function ProfileModal({ username, onClose, onBack, currentUser, userStatuses, st
             <div style={{ display:"flex", gap:10, flexWrap:"wrap", marginBottom:18 }}>
               <button onClick={() => { setTab("followers"); setEditing(false); }} style={{ padding:"0 20px", minHeight:42, borderRadius:21, border:"none", background:T.lift, color:T.ink, fontSize:14, fontFamily:sans, cursor:"pointer" }}>View followers</button>
               <button onClick={() => setEditing(e => !e)} aria-expanded={editing} style={{ padding:"0 26px", minHeight:42, borderRadius:21, border:`1.5px solid ${editing ? T.accent : T.rule}`, background:"none", color:editing ? T.accent : T.ink, fontSize:14, fontFamily:sans, cursor:"pointer" }}>{editing ? "Close editor" : "Edit"}</button>
-              <button onClick={() => onFindPeople && onFindPeople()} style={{ padding:"0 20px", minHeight:42, borderRadius:21, border:`1.5px solid ${T.rule}`, background:"none", color:T.ink, fontSize:14, fontFamily:sans, cursor:"pointer" }}>Find people</button>
             </div>
           )}
 
