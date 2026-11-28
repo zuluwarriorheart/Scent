@@ -8145,7 +8145,7 @@ function ProfileModal({ username, onClose, onBack, currentUser, userStatuses, st
 
           {!editing && tab === "stats" && isSelf && myStats && (<>
             <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit, minmax(140px, 1fr))", gap:12, marginBottom:28 }}>
-              {[["Fragrances", String(myStats.fragrances), ""], ["Followers", String(member.followers || 0), ""], ["Following", String(member.following || 0), ""]].map(([l, v, u]) => (
+              {[["Fragrances", String(myStats.fragrances), ""]].map(([l, v, u]) => (
                 <div key={l} style={{ background:T.lift, border:`1px solid ${T.rule}`, borderRadius:18, padding:"18px 10px", textAlign:"center" }}>
                   <p style={{ fontFamily:sans, fontSize:12, color:T.mid, margin:"0 0 6px" }}>{l}</p>
                   <p style={{ fontFamily:serif, fontSize:34, lineHeight:1, color:"var(--accent)", margin:0 }}>{v}</p>
