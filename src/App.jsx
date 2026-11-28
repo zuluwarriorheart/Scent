@@ -3312,7 +3312,7 @@ function InsightCard({ label, headline, sub, hint, more, children }) {
       <p style={{ fontFamily:serif, fontSize:18, color:T.black, margin:"0 0 2px" }}>{label}</p>
       <p style={{ fontFamily:sans, fontSize:12, color:T.faint, margin:"0 0 10px" }}>{sub}</p>
       <div style={{ display:"flex", flexWrap:"wrap", gap:7 }}>
-        <span style={{ ...chip, cursor:"default", border:"1px solid transparent", padding:"0 2px", background:"none", color:T.black, fontFamily:serif, fontSize:20 }}>{typeof headline === "string" ? headline.charAt(0).toUpperCase() + headline.slice(1) : headline}</span>
+        <span style={{ ...chip, cursor:"default", border:"1px solid transparent", background:"var(--accent)", color:"#fff", fontWeight:600 }}>{typeof headline === "string" ? headline.charAt(0).toUpperCase() + headline.slice(1) : headline}</span>
         {has && <button onClick={() => setOpen(o => !o)} aria-expanded={open} aria-label={(open ? "Hide " : "Show ") + (more || "details")} style={{ ...chip, border:`1px solid ${T.rule}`, background:T.white, color:T.ink, fontWeight:400 }}>{open ? "Hide" : (more || "Details")}&nbsp;<span style={{ display:"inline-block", transform:open ? "rotate(180deg)" : "none", fontSize:10 }}>▾</span></button>}
       </div>
       {has && open && <div style={{ marginTop:16 }}>{children}</div>}
