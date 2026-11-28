@@ -7940,6 +7940,25 @@ function ProfilePosts({ username, onOpenProfile, onOpenFrag }) {
 }
 
 // ─── PROFILE MODAL ────────────────────────────────────────────────────────────
+function ProfileListRow({ name, items, last, initials, username, onOpenFrag, userStatuses }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <div style={{ padding:"18px 0 8px", borderBottom: last ? "none" : `1px solid ${T.rule}` }}>
+      <div style={{ display:"flex", alignItems:"center", gap:12, marginBottom:14 }}>
+        <div style={{ width:44, height:44, borderRadius:"50%", background:T.black, color:T.white, display:"flex", alignItems:"center", justifyContent:"center", fontSize:15, fontWeight:600, fontFamily:sans, flexShrink:0 }}>{initials}</div>
+        <div style={{ minWidth:0, flex:1 }}>
+          <p style={{ fontFamily:serif, fontSize:18, color:T.black, margin:0 }}>@{username}</p>
+          <p style={{ fontFamily:sans, fontSize:14, color:T.mid, margin:"2px 0 0" }}>Updated a list: <span style={{ color:T.accent }}>{name}</span></p>
+        </div>
+        <SeeAllPill open={open} onClick={() => setOpen(o => !o)}/>
+      </div>
+      <div style={{ "--cover-w":"112px", "--zoom":1, display:"flex", alignItems:"flex-start", gap:12, paddingBottom:14, ...(open ? { flexWrap:"wrap" } : { overflowX:"auto", WebkitOverflowScrolling:"touch" }) }}>
+        {items.map(f => <CoverTile noRibbon key={f.id} frag={f} onClick={onOpenFrag} userStatus={userStatuses[f.id]}/>)}
+      </div>
+    </div>
+  );
+}
+
 function ProfileModal({ username, onClose, onBack, currentUser, userStatuses, statusSets, fragrances, journalEntries, reactions, wears, onOpenFrag, isFollowing, onToggleFollow, following, onOpenProfile, onSignOut, myStats, onFindPeople, onProfileSaved }) {
   const isSelf = !!currentUser && String(currentUser.username || "").toLowerCase() === String(username || "").toLowerCase();
   const isSillage = username === "memoir";
@@ -8175,20 +8194,7 @@ function ProfileModal({ username, onClose, onBack, currentUser, userStatuses, st
             );
             return (
               <div>
-                {LISTS.map(([name, items], i) => (
-                  <div key={name} style={{ padding:"18px 0 8px", borderBottom: i < LISTS.length - 1 ? `1px solid ${T.rule}` : "none" }}>
-                    <div style={{ display:"flex", alignItems:"center", gap:12, marginBottom:14 }}>
-                      <div style={{ width:44, height:44, borderRadius:"50%", background:T.black, color:T.white, display:"flex", alignItems:"center", justifyContent:"center", fontSize:15, fontWeight:600, fontFamily:sans, flexShrink:0 }}>{initials}</div>
-                      <div style={{ minWidth:0 }}>
-                        <p style={{ fontFamily:serif, fontSize:18, color:T.black, margin:0 }}>@{member.username}</p>
-                        <p style={{ fontFamily:sans, fontSize:14, color:T.mid, margin:"2px 0 0" }}>Updated a list: <span style={{ color:T.accent }}>{name}</span></p>
-                      </div>
-                    </div>
-                    <div style={{ "--cover-w":"112px", "--zoom":1, display:"flex", alignItems:"flex-start", gap:12, overflowX:"auto", paddingBottom:14, WebkitOverflowScrolling:"touch" }}>
-                      {items.map(f => <CoverTile noRibbon key={f.id} frag={f} onClick={onOpenFrag} userStatus={userStatuses[f.id]}/>)}
-                    </div>
-                  </div>
-                ))}
+                {LISTS.map(([name, items], i) => <ProfileListRow key={name} name={name} items={items} last={i === LISTS.length - 1} initials={initials} username={member.username} onOpenFrag={onOpenFrag} userStatuses={userStatuses}/>)}
               </div>
             );
           })()}
