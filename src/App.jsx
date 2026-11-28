@@ -8056,8 +8056,8 @@ function ProfileModal({ username, onClose, onBack, currentUser, userStatuses, st
           <BackBtn onBack={onBack||onClose}/>
           <div style={{ display:"flex", alignItems:"flex-start", justifyContent:"center", marginBottom:18 }}>
             <div style={{ display:"flex", flexDirection:"column", alignItems:"center", textAlign:"center", gap:12, minWidth:0, flex:1 }}>
-              <div style={{ width:84, height:84, flexShrink:0, borderRadius:"50%", background:isSillage?T.black:T.black, display:"flex", alignItems:"center", justifyContent:"center", fontSize:isSillage?22:28, fontWeight:600, color:T.white, fontFamily:isSillage?serif:sans, flexShrink:0, position:"relative" }}>
-                {initials}
+              <div style={{ width:84, height:84, flexShrink:0, borderRadius:"50%", background:isSelf?"#0E0B13":T.black, border:isSelf?`1px solid ${T.rule}`:"none", display:"flex", alignItems:"center", justifyContent:"center", fontSize:isSillage?22:28, fontWeight:600, color:T.white, fontFamily:isSillage?serif:sans, flexShrink:0, position:"relative" }}>
+                {isSelf ? <img src="/icon-192.png" alt="Memoir on Skin" style={{ width:"100%", height:"100%", borderRadius:"50%", objectFit:"contain", padding:10, boxSizing:"border-box", display:"block" }}/> : initials}
                 {!isSillage && member.country && (
                   <span style={{ position:"absolute", bottom:-2, right:-2, fontSize:16, lineHeight:1 }}>{countryFlag(member.country)}</span>
                 )}
